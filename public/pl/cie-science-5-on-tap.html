@@ -39,7 +39,10 @@
         // Không chọn chip nào (mặc định) nghĩa là xem tất cả — xem getter `show`.
         filt: JSON.parse(localStorage.getItem('lms_pick') || 'null') || { gloss: false, facts: false, list: false, watch: false, exp: false, compare: false },
         detail: localStorage.getItem('lms_detail') === '1',
-        scope: null,            // chủ đề đang học; null = cả môn
+        // Chủ đề đang học. Bỏ mục "cả môn" nên sau khi nạp xong đây LUÔN là một
+        // unit cụ thể — xem pickFirstUnit(). Giữ null lúc khởi tạo vì cây chủ đề
+        // chưa có gì để chọn.
+        scope: null,
         navOpen: false,         // ngăn kéo cây trên màn hình hẹp
         queue: [], at: 0, picked: null, answered: false, wrongAgain: 0,
         log: [], shownAt: 0,
@@ -49,6 +52,7 @@
             const r = await fetch('study/cie-science-5.json', { headers: { accept: 'application/json' } });
             if (!r.ok) throw new Error('HTTP ' + r.status);
             this.data = await r.json();
+            this.pickFirstUnit();   // không còn mục "cả môn"
           } catch (e) {
             this.err = 'Không tải được học liệu ôn tập.';
             this.ready = true;
@@ -240,6 +244,19 @@
           return out;
         },
         inScope(cid) { return !this.scope || this.subtree(this.scope).has(cid); },
+        // Không còn mục "cả môn": mở trang là vào thẳng unit đầu tiên.
+        pickFirstUnit() {
+          if (this.scope) return;
+          const u = this.units;
+          if (!u.length) return;
+          // Unit ĐẦU TIÊN CÓ NỘI DUNG, không phải unit số 1: môn Science mới soạn
+          // Unit 2, mở vào Unit 1 rỗng thì trang trông như hỏng.
+          const has = new Set((this.data?.summary || []).map(x => x.concept));
+          const inside = (id) => has.has(id) || this.children(id).some(k => has.has(k.id));
+          const pick = u.find(x => inside(x.id)) || u[0];
+          this.scope = pick.id;
+          this.openMap[pick.id] = true;
+        },
         setScope(cid) {
           this.scope = cid;
           this.navOpen = false;
@@ -951,13 +968,16 @@
     <aside x-show="navOpen" x-cloak
            :class="navOpen ? 'fixed inset-y-0 left-0 w-72 z-30 overflow-y-auto shadow-xl' : ''"
            class="lg:!block lg:static lg:w-60 lg:shrink-0 lg:z-auto lg:shadow-none bg-white lg:bg-transparent p-4 lg:pl-0 lg:py-6">
+      <p class="text-xs font-bold uppercase tracking-wide text-slate-400 mb-1.5">Môn học</p>
+      <select onchange="if(this.value) location.href = this.value"
+              class="w-full mb-4 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-sm text-slate-800">
+        <option value="cie-maths-5-on-tap.html">CIE Maths 5</option>
+        <option value="cie-science-5-on-tap.html" selected>CIE Science 5</option>
+      </select>
       <p class="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">Phần học</p>
-      <button @click="setScope(null)"
-              :class="!scope ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-100'"
-              class="w-full text-left px-2.5 py-1.5 rounded-lg text-sm font-medium">
-        Cả môn
-      </button>
-      <ul class="mt-1 space-y-0.5">
+      <!-- KHÔNG có mục "cả môn": học theo unit, không ôn cả chương trình một lúc.
+           scope vì thế luôn khác null sau khi nạp xong — xem init(). -->
+      <ul class="space-y-0.5">
         <template x-for="u in units" :key="u.id">
           <li>
             <div class="flex items-center gap-0.5">
