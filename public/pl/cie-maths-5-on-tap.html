@@ -7,7 +7,7 @@
   <title>Ôn tập · CIE Maths 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.0551f783.css">
+  <link rel="stylesheet" href="../assets/tw.8a77cb66.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -144,6 +144,41 @@
         skipKnown: localStorage.getItem('lms_skip_known') === '1',
         toggleSkip() { this.skipKnown = !this.skipKnown; localStorage.setItem('lms_skip_known', this.skipKnown ? '1' : '0'); },
         showList: false,
+        // Ô tìm theo từ khoá trong phần tóm tắt. Lọc TỪNG MẨU nội dung, không
+        // lọc cả mục: gõ "oxygen" thì chỉ những từ vựng / ý / hàng bảng có chữ
+        // đó còn lại, mục nào không còn gì thì tự ẩn.
+        // ⚠ ĐỪNG đặt tên `q`: đã có getter q() trả về câu hỏi đang hiện của phần
+        // trắc nghiệm. Khoá sau ghi đè khoá trước trong object literal.
+        kw: '',
+        get qq() { return (this.kw || '').trim().toLowerCase(); },
+        // Số mẩu nội dung còn lại sau khi lọc, chỉ để hiện dòng "không có mục nào".
+        get nHits() {
+          let n = 0;
+          for (const sec of this.scopedSummary) {
+            n += this.fq(sec.topics || [], 'title', 'def', 'rules', 'subtitle').length;
+            n += this.fq(sec.glossary || [], 'term', 'def', 'example').length;
+            for (const leaf of this.leavesOf(sec)) {
+              n += this.tagged(this.points(sec), leaf.id).length
+                 + this.tagged(sec.glossary, leaf.id).length
+                 + this.tagged(sec.watch_out, leaf.id).length
+                 + this.exps(sec, leaf.id).length + this.comps(sec, leaf.id).length
+                 + this.tagged(sec.checklists, leaf.id).length;
+            }
+          }
+          return n;
+        },
+        hit(...parts) {
+          if (!this.qq) return true;
+          return parts.filter(Boolean).join(' ').toLowerCase().includes(this.qq);
+        },
+        // Lọc một mảng khối theo từ khoá; khối nào không khớp thì biến mất.
+        fq(arr, ...keys) {
+          if (!this.qq) return arr || [];
+          return (arr || []).filter(x => this.hit(...keys.map(k => {
+            const v = x[k];
+            return Array.isArray(v) ? v.map(y => typeof y === 'object' ? Object.values(y).join(' ') : y).join(' ') : v;
+          })));
+        },
         // Nguồn của MỌI lượt chọn câu: bật lọc thì mục đã nắm chắc đứng ngoài hẳn.
         pool(kind) {
           const all = kind === 'cards' ? this.scopedCards : this.scopedQuiz;
@@ -324,9 +359,9 @@
         // để dữ liệu môn khác chưa gen lại vẫn hiện.
         arr(sec, many, one) { const a = sec[many]; if (Array.isArray(a)) return a; const o = sec[one]; return o ? [o] : []; },
         lists(sec, leafId)  { return this.arr(sec, 'checklists', 'checklist').filter(x => x.concept === leafId); },
-        exps(sec, leafId)   { return this.arr(sec, 'experiments', 'from_the_book').filter(x => x.concept === leafId); },
-        works(sec, leafId)  { return this.arr(sec, 'worked', null).filter(x => x.concept === leafId); },
-        tops(sec)           { return (sec.topics || []); },
+        exps(sec, leafId)   { return this.fq(this.arr(sec, 'experiments', 'from_the_book').filter(x => x.concept === leafId), 'title','summary','result'); },
+        works(sec, leafId)   { return this.fq(this.arr(sec, 'worked', null).filter(x => x.concept === leafId), 'title','problem','answer','steps'); },
+        tops(sec)           { return this.fq(sec.topics || [], 'title', 'def', 'rules', 'subtitle'); },
         // Một dòng ví dụ "calc" tách thành nhãn | giá trị để CĂN THẲNG CỘT.
         // Trước đây đổ vào lưới 2 cột theo thứ tự, dòng dài xuống dòng là hai
         // cột lệch nhau và không có kẻ nào để bám — đọc thành vô nghĩa.
@@ -334,14 +369,21 @@
           const i = String(line || '').indexOf(': ');
           return i > 0 && i < 32 ? [line.slice(0, i), line.slice(i + 2)] : [null, line];
         },
-        comps(sec, leafId)  { return this.arr(sec, 'compares', 'compare').filter(x => x.concept === leafId); },
+        comps(sec, leafId)   { return this.fq(this.arr(sec, 'compares', 'compare').filter(x => x.concept === leafId), 'title','label_a','label_b','rows'); },
         // Khối cấp MỤC = không gắn lá nào
         secLists(sec) { return this.arr(sec, 'checklists', 'checklist').filter(x => !x.concept); },
         secExps(sec)  { return this.arr(sec, 'experiments', 'from_the_book').filter(x => !x.concept); },
         secComps(sec) { return this.arr(sec, 'compares', 'compare').filter(x => !x.concept); },
         // Lá của một mục = con trực tiếp của chủ đề mục đó, theo thứ tự cây
         leavesOf(sec) { return this.children(sec.concept); },
-        tagged(list, leafId) { return (list || []).filter(x => x && x.concept === leafId); },
+        // Lọc theo lá VÀ theo ô tìm. Mọi khối trong tóm tắt đi qua đây nên chỉ
+        // cần bọc một chỗ; khối nào lọc hết thì phần bao ngoài tự ẩn vì
+        // template dùng `.length` để quyết định có vẽ hay không.
+        tagged(list, leafId) {
+          return this.fq((list || []).filter(x => x && x.concept === leafId),
+                         't', 'term', 'def', 'example', 'title', 'wrong', 'right',
+                         'problem', 'answer', 'summary', 'result', 'rules', 'items', 'rows', 'lines');
+        },
         // Mọi thứ KHÔNG gắn vào lá nào của mục — dữ liệu cũ, hoặc ý thuộc cả mục
         untagged(sec) {
           const ids = new Set(this.leavesOf(sec).map(l => l.id));
@@ -1272,6 +1314,22 @@
          nằm sẵn ở đây.                                                        -->
     <template x-if="ready && data && mode === 'summary'">
     <div class="space-y-5">
+      <!-- Tìm theo từ khoá. Lọc từng mẩu nội dung chứ không lọc cả mục, nên gõ
+           "oxygen" là chỉ còn đúng những chỗ nhắc tới oxygen. -->
+      <div class="relative">
+        <input type="search" x-model="kw" placeholder="Tìm trong bài… (từ vựng, ý, ví dụ)"
+               class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 bg-white text-sm
+                      placeholder:text-slate-400 focus:outline-none focus:border-indigo-500">
+        <svg class="absolute left-2.5 top-2.5 w-4 h-4 text-slate-400" fill="none" stroke="currentColor"
+             stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M20 20l-3.5-3.5"/>
+        </svg>
+      </div>
+      <p x-show="qq && !nHits" x-cloak
+         class="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
+        Không có mục nào khớp «<span x-text="kw"></span>».
+      </p>
+
       <!-- Lọc loại nội dung + bật chi tiết. Class ở KINDS là literal để Tailwind quét thấy. -->
       <div class="flex flex-wrap items-center gap-1.5">
         <template x-for="kd in kinds" :key="kd.k">
@@ -1455,11 +1513,11 @@
 
           <!-- Từ vựng GỘP CHUNG cho mục có thẻ "kiến thức học": chia theo lá thì
                tiêu đề lá lặp lại y hệt tiêu đề thẻ ở trên, đọc rất rối. -->
-          <template x-if="show.gloss && tops(sec).length && (sec.glossary || []).length">
+          <template x-if="show.gloss && (sec.topics || []).length && fq(sec.glossary || [], 'term', 'def', 'example').length">
           <div class="px-5 pb-4">
             <p class="text-[13px] font-bold uppercase tracking-wider text-indigo-600 mb-1.5">📖 Từ vựng</p>
             <dl class="grid sm:grid-cols-2 gap-2">
-              <template x-for="g in (sec.glossary || [])" :key="g.term">
+              <template x-for="g in fq(sec.glossary || [], 'term', 'def', 'example')" :key="g.term">
                 <div class="rounded-lg border border-indigo-200 bg-indigo-50/40 px-3 py-2 flex gap-2.5">
                   <template x-if="g.icon">
                     <svg viewBox="0 0 24 24" class="w-7 h-7 shrink-0 mt-0.5 text-indigo-400"><use :href="'#m-' + g.icon"/></svg>
