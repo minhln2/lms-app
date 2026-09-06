@@ -1076,7 +1076,11 @@
                 <span class="block truncate" x-text="label(u)"></span>
               </button>
             </div>
-            <ul x-show="openMap[u.id]" x-cloak class="ml-5 border-l border-slate-200 pl-1.5 space-y-0.5">
+            <!-- Không có mục con thì KHÔNG vẽ danh sách rỗng: môn Toán cố ý gom cả
+                 unit vào một mục, và pickFirstUnit() tự mở nhánh đầu nên chỗ này
+                 từng lòi ra một dòng giữ chỗ vô nghĩa. -->
+            <ul x-show="openMap[u.id] && navKids(u.id).length" x-cloak
+                class="ml-5 border-l border-slate-200 pl-1.5 space-y-0.5">
               <template x-for="sec in navKids(u.id)" :key="sec.id">
                 <li>
                   <button @click="setScope(sec.id)"
@@ -1089,9 +1093,6 @@
                   </button>
                 </li>
               </template>
-              <li x-show="!navKids(u.id).length" x-cloak class="px-2 py-1.5 text-xs text-slate-400 italic">
-                chưa chia mục
-              </li>
             </ul>
           </li>
         </template>
