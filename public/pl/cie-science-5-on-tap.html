@@ -7,7 +7,7 @@
   <title>Ôn tập · CIE Science 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.8a77cb66.css">
+  <link rel="stylesheet" href="../assets/tw.5b5cd6bf.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -151,22 +151,45 @@
         // trắc nghiệm. Khoá sau ghi đè khoá trước trong object literal.
         kw: '',
         get qq() { return (this.kw || '').trim().toLowerCase(); },
-        // Số mẩu nội dung còn lại sau khi lọc, chỉ để hiện dòng "không có mục nào".
-        get nHits() {
-          let n = 0;
-          for (const sec of this.scopedSummary) {
-            n += this.fq(sec.topics || [], 'title', 'def', 'rules', 'subtitle').length;
-            n += this.fq(sec.glossary || [], 'term', 'def', 'example').length;
-            for (const leaf of this.leavesOf(sec)) {
-              n += this.tagged(this.points(sec), leaf.id).length
-                 + this.tagged(sec.glossary, leaf.id).length
-                 + this.tagged(sec.watch_out, leaf.id).length
-                 + this.exps(sec, leaf.id).length + this.comps(sec, leaf.id).length
-                 + this.tagged(sec.checklists, leaf.id).length;
-            }
-          }
+        // Số mẩu khớp trong MỘT lá. Dùng để ẩn hẳn lá không liên quan khi tìm.
+        leafHits(sec, leafId) {
+          return this.tagged(this.points(sec), leafId).length
+               + this.tagged(sec.glossary, leafId).length
+               + this.tagged(sec.watch_out, leafId).length
+               + this.tagged(sec.checklists, leafId).length
+               + this.exps(sec, leafId).length
+               + this.works(sec, leafId).length
+               + this.comps(sec, leafId).length;
+        },
+        // Số mẩu khớp trong CẢ MỤC, kể cả phần không gắn lá.
+        secHits(sec) {
+          let n = this.fq(sec.topics || [], 'title', 'def', 'rules', 'subtitle').length
+                + this.fq(sec.glossary || [], 'term', 'def', 'example').length
+                + (this.hit(sec.big_en) && this.qq ? 1 : 0);
+          for (const leaf of this.leavesOf(sec)) n += this.leafHits(sec, leaf.id);
           return n;
         },
+        // Mục nào không chứa từ khoá thì biến mất hẳn — kể cả câu chốt và sơ đồ.
+        get shownSummary() {
+          return this.qq ? this.scopedSummary.filter(x => this.secHits(x)) : this.scopedSummary;
+        },
+        shownLeaves(sec) {
+          const L = this.leavesOf(sec);
+          return this.qq ? L.filter(l => this.leafHits(sec, l.id)) : L;
+        },
+        // Tô sáng từ khoá. Tự escape rồi mới chèn <mark>, nên x-html ở đây an toàn.
+        esc(v) {
+          return String(v ?? '').replace(/[&<>"]/g,
+            c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+        },
+        hl(v) {
+          const t = this.esc(v);
+          if (!this.qq) return t;
+          const rx = new RegExp('(' + this.qq.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+          return t.replace(rx, '<mark class="bg-amber-200 text-slate-900 rounded px-0.5">$1</mark>');
+        },
+        // Số mẩu nội dung còn lại sau khi lọc, chỉ để hiện dòng "không có mục nào".
+        get nHits() { return this.scopedSummary.reduce((n, s) => n + this.secHits(s), 0); },
         hit(...parts) {
           if (!this.qq) return true;
           return parts.filter(Boolean).join(' ').toLowerCase().includes(this.qq);
@@ -1345,21 +1368,21 @@
         Chưa có tóm tắt cho phần này.
       </p>
 
-      <template x-for="sec in scopedSummary" :key="sec.concept">
+      <template x-for="sec in shownSummary" :key="sec.concept">
         <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div class="px-5 py-3 bg-indigo-50 border-b border-indigo-100">
-            <h3 class="text-lg font-bold text-indigo-900" x-text="conceptName(sec.concept)"></h3>
+            <h3 class="text-lg font-bold text-indigo-900" x-html="hl(conceptName(sec.concept))"></h3>
           </div>
 
           <!-- Ý lớn: một câu, chữ to, để nhớ được cả mục -->
-          <p x-show="sec.big_en" x-cloak
-             class="px-5 py-4 text-base font-medium text-slate-800 leading-snug" x-text="sec.big_en"></p>
+          <p x-show="sec.big_en && (!qq || hit(sec.big_en))" x-cloak
+             class="px-5 py-4 text-base font-medium text-slate-800 leading-snug" x-html="hl(sec.big_en)"></p>
 
           <!-- ── Sơ đồ: ba trạng thái của chất, theo mô hình hạt ────────────
                Vẽ thẳng, KHÔNG dùng x-for: <template> bên trong <svg> nằm ở không
                gian tên SVG nên không phải HTMLTemplateElement, Alpine không clone
                được và ném "importNode: parameter 1 is not of type 'Node'".      -->
-          <div x-show="sec.diagram === 'particles'" x-cloak class="px-5 pb-4">
+          <div x-show="sec.diagram === 'particles' && !qq" x-cloak class="px-5 pb-4">
             <div class="grid grid-cols-3 gap-2 text-center">
               <div class="rounded-lg border border-slate-200 bg-slate-50 p-2">
                 <svg viewBox="0 0 24 24" class="w-full h-16 text-indigo-600" fill="currentColor"><circle cx="6" cy="6" r="2.1"/><circle cx="12" cy="6" r="2.1"/><circle cx="18" cy="6" r="2.1"/><circle cx="6" cy="12" r="2.1"/><circle cx="12" cy="12" r="2.1"/><circle cx="18" cy="12" r="2.1"/><circle cx="6" cy="18" r="2.1"/><circle cx="12" cy="18" r="2.1"/><circle cx="18" cy="18" r="2.1"/></svg>
@@ -1384,7 +1407,7 @@
           </div>
 
           <!-- ── Sơ đồ: dẫn nhiệt / cách nhiệt ────────────────────────────── -->
-          <div x-show="sec.diagram === 'conduction'" x-cloak class="px-5 pb-4 space-y-2">
+          <div x-show="sec.diagram === 'conduction' && !qq" x-cloak class="px-5 pb-4 space-y-2">
             <div class="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
               <span class="text-xs font-semibold text-emerald-800 w-16 shrink-0">Metal</span>
               <svg class="w-5 h-5 text-emerald-600 shrink-0"><use href="#i-heat"/></svg>
@@ -1400,7 +1423,7 @@
           </div>
 
           <!-- ── Sơ đồ: đảo ngược được / không đảo ngược được ─────────────── -->
-          <div x-show="sec.diagram === 'reversible'" x-cloak class="px-5 pb-4 space-y-2">
+          <div x-show="sec.diagram === 'reversible' && !qq" x-cloak class="px-5 pb-4 space-y-2">
             <div class="flex items-center justify-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3">
               <span class="text-sm font-medium text-slate-800">Ice</span>
               <svg class="w-6 h-6 text-emerald-600"><use href="#i-swap"/></svg>
@@ -1416,7 +1439,7 @@
           </div>
 
           <!-- ── Sơ đồ: chất tham gia → sản phẩm ──────────────────────────── -->
-          <div x-show="sec.diagram === 'reaction'" x-cloak class="px-5 pb-4">
+          <div x-show="sec.diagram === 'reaction' && !qq" x-cloak class="px-5 pb-4">
             <div class="flex items-center gap-2 flex-wrap justify-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
               <template x-for="r in ['Iron', 'Water', 'Oxygen']" :key="r">
                 <span class="px-2 py-1 text-xs rounded bg-white border border-slate-300 text-slate-700" x-text="r"></span>
@@ -1443,13 +1466,13 @@
               <div class="flex items-center gap-2 px-3 py-2 bg-orange-50 border-b border-orange-200">
                 <span class="shrink-0 w-6 h-6 rounded-full bg-orange-500 text-white text-xs font-bold grid place-items-center"
                       x-text="ti + 1"></span>
-                <h4 class="text-base font-bold text-orange-800 uppercase tracking-wide" x-text="tp.title"></h4>
+                <h4 class="text-base font-bold text-orange-800 uppercase tracking-wide" x-html="hl(tp.title)"></h4>
                 <span x-show="tp.subtitle" class="text-xs text-orange-500 normal-case" x-text="'(' + tp.subtitle + ')'"></span>
                 <span class="ml-auto text-xs text-slate-400" x-text="tp.page ? 'p.' + tp.page : ''"></span>
               </div>
               <!-- Định nghĩa: infographic này để TỔNG HỢP kiến thức, không chỉ liệt kê
                    nội dung sẽ thi — nên mỗi thẻ mở đầu bằng một câu "cái này là gì". -->
-              <p x-show="tp.def" class="px-3 pt-2.5 text-sm font-medium text-slate-900" x-text="tp.def"></p>
+              <p x-show="tp.def" class="px-3 pt-2.5 text-sm font-medium text-slate-900" x-html="hl(tp.def)"></p>
               <div class="grid sm:grid-cols-2 gap-x-4 gap-y-2 px-3 py-2.5">
                 <div class="flex gap-3 self-start">
                 <template x-if="tp.figure">
@@ -1487,7 +1510,7 @@
                           <tr :class="ri === 0 ? 'bg-slate-100 font-semibold text-slate-600'
                                      : (ri === tp.example.rows.length - 1 ? 'bg-orange-50 font-bold text-orange-700' : 'text-slate-700')">
                             <template x-for="(cell, ci) in row" :key="ci">
-                              <td class="px-1 py-1 border border-slate-200 whitespace-nowrap" x-text="cell"></td>
+                              <td class="px-1 py-1 border border-slate-200 whitespace-nowrap" x-html="hl(cell)"></td>
                             </template>
                           </tr>
                         </template>
@@ -1499,9 +1522,9 @@
                   <div class="space-y-1.5">
                     <template x-for="(br, bi) in tp.example.branches" :key="bi">
                       <div class="rounded-lg bg-slate-50 border border-slate-200 px-3 py-1.5 text-sm">
-                        <p class="text-slate-800"><span x-text="br.when"></span>
-                          <span class="text-orange-500 font-bold"> → </span><span x-text="br.then"></span></p>
-                        <p x-show="br.eg" class="text-xs text-slate-500 tabular-nums" x-text="br.eg"></p>
+                        <p class="text-slate-800"><span x-html="hl(br.when)"></span>
+                          <span class="text-orange-500 font-bold"> → </span><span x-html="hl(br.then)"></span></p>
+                        <p x-show="br.eg" class="text-xs text-slate-500 tabular-nums" x-html="hl(br.eg)"></p>
                       </div>
                     </template>
                   </div>
@@ -1523,10 +1546,10 @@
                     <svg viewBox="0 0 24 24" class="w-7 h-7 shrink-0 mt-0.5 text-indigo-400"><use :href="'#m-' + g.icon"/></svg>
                   </template>
                   <div class="min-w-0">
-                  <dt class="text-sm font-semibold text-indigo-900"><span x-text="g.term"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
+                  <dt class="text-sm font-semibold text-indigo-900"><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
                       class="ml-1 align-middle text-indigo-400 hover:text-indigo-700">🔊</button></dt>
-                  <dd class="text-sm text-slate-700 leading-snug" x-text="g.def"></dd>
-                  <dd x-show="g.example" class="mt-0.5 text-xs text-slate-500 italic" x-text="g.example"></dd>
+                  <dd class="text-sm text-slate-700 leading-snug" x-html="hl(g.def)"></dd>
+                  <dd x-show="g.example" class="mt-0.5 text-xs text-slate-500 italic" x-html="hl(g.example)"></dd>
                   </div>
                 </div>
               </template>
@@ -1534,12 +1557,12 @@
           </div>
           </template>
 
-          <template x-for="leaf in (tops(sec).length ? [] : leavesOf(sec))" :key="leaf.id">
+          <template x-for="leaf in (tops(sec).length ? [] : shownLeaves(sec))" :key="leaf.id">
             <div class="mx-5 mb-4 rounded-xl border border-slate-200 overflow-hidden">
               <div class="flex items-center gap-2 px-4 py-2 bg-slate-50 border-b border-slate-200">
                 <span class="w-2 h-2 rounded-full shrink-0"
                       :class="branchStat(leaf.id).wrong > 0 ? 'bg-rose-400' : 'bg-indigo-400'"></span>
-                <h4 class="text-base font-bold text-slate-800" x-text="leaf.en"></h4>
+                <h4 class="text-base font-bold text-slate-800" x-html="hl(leaf.en)"></h4>
                 <span class="ml-auto text-xs text-slate-400" x-text="leaf.pages ? 'p.' + leaf.pages : ''"></span>
               </div>
 
@@ -1550,10 +1573,10 @@
               <dl class="grid gap-x-3 gap-y-1.5 sm:grid-cols-2">
                 <template x-for="g in tagged(sec.glossary, leaf.id)" :key="g.term">
                   <div class="rounded-lg bg-indigo-50/60 border border-indigo-100 px-3 py-2">
-                    <dt class="text-sm font-semibold text-indigo-900"><span x-text="g.term"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
+                    <dt class="text-sm font-semibold text-indigo-900"><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
                         class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></dt>
-                    <dd class="text-sm text-slate-700 leading-snug" x-text="g.def"></dd>
-                    <dd x-show="g.example" class="mt-0.5 text-xs text-slate-500 italic" x-text="g.example"></dd>
+                    <dd class="text-sm text-slate-700 leading-snug" x-html="hl(g.def)"></dd>
+                    <dd x-show="g.example" class="mt-0.5 text-xs text-slate-500 italic" x-html="hl(g.example)"></dd>
                   </div>
                 </template>
               </dl>
@@ -1579,19 +1602,19 @@
               <template x-if="show.list"><div>
               <template x-for="(ck, ci) in lists(sec, leaf.id)" :key="'l' + ci">
               <div class="px-4 pt-3">
-                <p class="text-[13px] font-bold uppercase tracking-wider text-emerald-700 mb-1.5">☑ <span x-text="ck.title"></span></p>
+                <p class="text-[13px] font-bold uppercase tracking-wider text-emerald-700 mb-1.5">☑ <span x-html="hl(ck.title)"></span></p>
                 <ol class="grid gap-1.5 sm:grid-cols-2">
                   <template x-for="(it, i) in ck.items" :key="i">
                     <li class="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50/60 px-2.5 py-1.5">
                       <div class="min-w-0 text-sm leading-snug">
-                        <span class="font-semibold text-slate-900" x-text="it.sign"></span>
-                        <template x-if="it.look_for"><span><span class="text-slate-500"> — </span><span class="text-slate-700" x-text="it.look_for"></span></span></template>
-                        <p x-show="detail && it.book_example" class="text-xs text-slate-500 italic" x-text="it.book_example"></p>
+                        <span class="font-semibold text-slate-900" x-html="hl(it.sign)"></span>
+                        <template x-if="it.look_for"><span><span class="text-slate-500"> — </span><span class="text-slate-700" x-html="hl(it.look_for)"></span></span></template>
+                        <p x-show="detail && it.book_example" class="text-xs text-slate-500 italic" x-html="hl(it.book_example)"></p>
                       </div>
                     </li>
                   </template>
                 </ol>
-                <p x-show="detail && ck.note" class="mt-1.5 text-xs text-emerald-800 bg-emerald-100 rounded px-2.5 py-1" x-text="ck.note"></p>
+                <p x-show="detail && ck.note" class="mt-1.5 text-xs text-emerald-800 bg-emerald-100 rounded px-2.5 py-1" x-html="hl(ck.note)"></p>
               </div>
               </template>
               </div></template>
@@ -1605,11 +1628,11 @@
                     <div class="rounded-lg border border-amber-200 bg-amber-50 overflow-hidden">
                       <p class="flex gap-2 px-3 py-2 text-sm text-slate-600">
                         <span class="text-rose-500 font-bold shrink-0">✗</span>
-                        <span class="line-through decoration-rose-300" x-text="w.wrong"></span>
+                        <span class="line-through decoration-rose-300" x-html="hl(w.wrong)"></span>
                       </p>
                       <p class="flex gap-2 px-3 py-2 text-sm text-slate-800 bg-white border-t border-amber-200">
                         <span class="text-emerald-600 font-bold shrink-0">✓</span>
-                        <span x-text="w.right"></span>
+                        <span x-html="hl(w.right)"></span>
                       </p>
                     </div>
                   </template>
@@ -1625,8 +1648,8 @@
                 <p class="text-[13px] font-bold uppercase tracking-wider text-violet-600 mb-1.5">🔬 <span x-text="ex.title || 'Thí nghiệm trong sách'"></span><span x-show="ex.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + ex.page"></span></p>
                 <div class="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2.5 flex gap-3 items-start">
                   <div class="min-w-0 flex-1 text-sm space-y-1.5">
-                    <p x-show="ex.summary" class="text-slate-700" x-text="ex.summary"></p>
-                    <p x-show="ex.result" class="font-medium text-violet-900"><span class="font-semibold">Thấy:</span> <span x-text="ex.result"></span></p>
+                    <p x-show="ex.summary" class="text-slate-700" x-html="hl(ex.summary)"></p>
+                    <p x-show="ex.result" class="font-medium text-violet-900"><span class="font-semibold">Thấy:</span> <span x-html="hl(ex.result)"></span></p>
                   </div>
                   <!-- x-if chứ không x-show: :src vẫn bind khi ẩn → trình duyệt tải "img/null" (404) -->
                   <template x-if="ex.image">
@@ -1646,11 +1669,11 @@
               <div class="px-4 pt-3">
                 <p class="text-[13px] font-bold uppercase tracking-wider text-teal-700 mb-1.5">🧮 <span x-text="wk.title || 'Bài mẫu'"></span><span x-show="wk.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + wk.page"></span></p>
                 <div class="rounded-lg border border-teal-200 bg-teal-50 px-3 py-2.5 text-sm space-y-1.5">
-                  <p class="font-semibold text-slate-900" x-text="wk.problem"></p>
+                  <p class="font-semibold text-slate-900" x-html="hl(wk.problem)"></p>
                   <ol class="list-decimal pl-5 text-slate-700 space-y-0.5">
-                    <template x-for="(st, si) in (wk.steps || [])" :key="si"><li x-text="st"></li></template>
+                    <template x-for="(st, si) in (wk.steps || [])" :key="si"><li x-html="hl(st)"></li></template>
                   </ol>
-                  <p class="font-medium text-teal-900"><span class="font-semibold">Đáp số:</span> <span x-text="wk.answer"></span></p>
+                  <p class="font-medium text-teal-900"><span class="font-semibold">Đáp số:</span> <span x-html="hl(wk.answer)"></span></p>
                   <p x-show="detail && wk.why" class="text-xs text-slate-500 italic" x-text="wk.why"></p>
                 </div>
               </div>
@@ -1665,14 +1688,14 @@
                 <div class="rounded-lg border border-slate-200 overflow-hidden">
                   <div class="grid grid-cols-[6.5rem_1fr_1fr] text-sm font-semibold">
                     <div class="bg-slate-100 px-2 py-2"></div>
-                    <div class="bg-emerald-50 text-emerald-800 px-2 py-2 border-l border-slate-200" x-text="cp.label_a"></div>
-                    <div class="bg-slate-50 text-slate-700 px-2 py-2 border-l border-slate-200" x-text="cp.label_b"></div>
+                    <div class="bg-emerald-50 text-emerald-800 px-2 py-2 border-l border-slate-200" x-html="hl(cp.label_a)"></div>
+                    <div class="bg-slate-50 text-slate-700 px-2 py-2 border-l border-slate-200" x-html="hl(cp.label_b)"></div>
                   </div>
                   <template x-for="(r, i) in cp.rows" :key="i">
                     <div class="grid grid-cols-[6.5rem_1fr_1fr] text-sm border-t border-slate-200">
-                      <div class="bg-slate-50 px-2 py-2 font-medium text-slate-600" x-text="r.aspect"></div>
-                      <div class="px-2 py-2 text-slate-700 border-l border-slate-200" x-text="r.a"></div>
-                      <div class="px-2 py-2 text-slate-500 border-l border-slate-200" x-text="r.b"></div>
+                      <div class="bg-slate-50 px-2 py-2 font-medium text-slate-600" x-html="hl(r.aspect)"></div>
+                      <div class="px-2 py-2 text-slate-700 border-l border-slate-200" x-html="hl(r.a)"></div>
+                      <div class="px-2 py-2 text-slate-500 border-l border-slate-200" x-html="hl(r.b)"></div>
                     </div>
                   </template>
                 </div>
@@ -1691,14 +1714,14 @@
             <div class="rounded-lg border border-slate-200 overflow-hidden">
               <div class="grid grid-cols-[6.5rem_1fr_1fr] text-sm font-semibold">
                 <div class="bg-slate-100 px-2 py-2"></div>
-                <div class="bg-emerald-50 text-emerald-800 px-2 py-2 border-l border-slate-200" x-text="cp.label_a"></div>
-                <div class="bg-slate-50 text-slate-700 px-2 py-2 border-l border-slate-200" x-text="cp.label_b"></div>
+                <div class="bg-emerald-50 text-emerald-800 px-2 py-2 border-l border-slate-200" x-html="hl(cp.label_a)"></div>
+                <div class="bg-slate-50 text-slate-700 px-2 py-2 border-l border-slate-200" x-html="hl(cp.label_b)"></div>
               </div>
               <template x-for="(r, i) in cp.rows" :key="i">
                 <div class="grid grid-cols-[6.5rem_1fr_1fr] text-sm border-t border-slate-200">
-                  <div class="bg-slate-50 px-2 py-2 font-medium text-slate-600" x-text="r.aspect"></div>
-                  <div class="px-2 py-2 text-slate-700 border-l border-slate-200" x-text="r.a"></div>
-                  <div class="px-2 py-2 text-slate-500 border-l border-slate-200" x-text="r.b"></div>
+                  <div class="bg-slate-50 px-2 py-2 font-medium text-slate-600" x-html="hl(r.aspect)"></div>
+                  <div class="px-2 py-2 text-slate-700 border-l border-slate-200" x-html="hl(r.a)"></div>
+                  <div class="px-2 py-2 text-slate-500 border-l border-slate-200" x-html="hl(r.b)"></div>
                 </div>
               </template>
             </div>
@@ -1711,10 +1734,10 @@
             <dl class="grid gap-x-3 gap-y-1.5 sm:grid-cols-2">
               <template x-for="g in untagged(sec).glossary" :key="g.term">
                 <div class="rounded-lg bg-indigo-50/60 border border-indigo-100 px-3 py-2">
-                  <dt class="text-sm font-semibold text-indigo-900"><span x-text="g.term"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
+                  <dt class="text-sm font-semibold text-indigo-900"><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
                         class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></dt>
-                  <dd class="text-sm text-slate-700 leading-snug" x-text="g.def"></dd>
-                  <dd x-show="g.example" class="mt-0.5 text-xs text-slate-500 italic" x-text="g.example"></dd>
+                  <dd class="text-sm text-slate-700 leading-snug" x-html="hl(g.def)"></dd>
+                  <dd x-show="g.example" class="mt-0.5 text-xs text-slate-500 italic" x-html="hl(g.example)"></dd>
                 </div>
               </template>
             </dl>
@@ -1735,9 +1758,9 @@
                 <template x-for="(it, i) in sec.checklist.items" :key="i">
                   <li class="flex gap-3 rounded-lg border border-emerald-200 bg-emerald-50/60 px-3 py-2.5">
                     <div class="min-w-0">
-                      <p class="text-sm font-semibold text-slate-900" x-text="it.sign"></p>
-                      <p class="text-sm text-slate-700" x-text="it.look_for"></p>
-                      <p x-show="it.book_example" class="mt-0.5 text-xs text-slate-500 italic" x-text="it.book_example"></p>
+                      <p class="text-sm font-semibold text-slate-900" x-html="hl(it.sign)"></p>
+                      <p class="text-sm text-slate-700" x-html="hl(it.look_for)"></p>
+                      <p x-show="it.book_example" class="mt-0.5 text-xs text-slate-500 italic" x-html="hl(it.book_example)"></p>
                     </div>
                   </li>
                 </template>
@@ -1751,8 +1774,8 @@
               <div class="space-y-2">
                 <template x-for="(w, i) in untagged(sec).watch" :key="i">
                   <div class="rounded-lg border border-amber-200 bg-amber-50 overflow-hidden">
-                    <p class="flex gap-2 px-3 py-2 text-sm text-slate-600"><span class="text-rose-500 font-bold shrink-0">✗</span><span class="line-through decoration-rose-300" x-text="w.wrong"></span></p>
-                    <p class="flex gap-2 px-3 py-2 text-sm text-slate-800 bg-white border-t border-amber-200"><span class="text-emerald-600 font-bold shrink-0">✓</span><span x-text="w.right"></span></p>
+                    <p class="flex gap-2 px-3 py-2 text-sm text-slate-600"><span class="text-rose-500 font-bold shrink-0">✗</span><span class="line-through decoration-rose-300" x-html="hl(w.wrong)"></span></p>
+                    <p class="flex gap-2 px-3 py-2 text-sm text-slate-800 bg-white border-t border-amber-200"><span class="text-emerald-600 font-bold shrink-0">✓</span><span x-html="hl(w.right)"></span></p>
                   </div>
                 </template>
               </div>
@@ -1769,8 +1792,8 @@
           </template>
 
           <!-- ── Thuật ngữ ────────────────────────────────────────────────── -->
-          <div x-show="(sec.terms || []).length" x-cloak class="px-5 pb-5 flex flex-wrap gap-1.5">
-            <template x-for="t in (sec.terms || [])" :key="t">
+          <div x-show="(sec.terms || []).filter(t => hit(t)).length" x-cloak class="px-5 pb-5 flex flex-wrap gap-1.5">
+            <template x-for="t in (sec.terms || []).filter(t => hit(t))" :key="t">
               <span class="px-2 py-0.5 text-xs rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100" x-text="t"></span>
             </template>
           </div>
