@@ -1495,6 +1495,24 @@
           <!-- ── Ba khối của môn ngoại ngữ ───────────────────────────────────
                Đặt ở cấp MỤC chứ không theo lá: bộ từ vựng và hộp ngữ pháp của
                sách vốn trải ngang cả mục, chia theo lá là cắt vụn vô nghĩa.   -->
+          <template x-if="show.grammar"><div class="px-5 pb-1 space-y-3">
+          <template x-for="(gr, gi) in grammars(sec)" :key="'g' + gi">
+            <div>
+              <p class="text-[13px] font-bold uppercase tracking-wider text-rose-700 mb-1.5">📐 <span x-html="hl(gr.title)"></span><span x-show="gr.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + gr.page"></span></p>
+              <div class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-sm space-y-1.5">
+                <p class="font-semibold text-slate-900" x-html="hl(gr.when)"></p>
+                <p x-show="gr.form" class="font-mono text-[13px] text-rose-900 bg-white rounded border border-rose-200 px-2 py-1" x-html="hl(gr.form)"></p>
+                <ul class="space-y-0.5 text-slate-700">
+                  <template x-for="(eg, ei) in fq(gr.examples || [], 'en', 'why')" :key="ei">
+                    <li><span x-html="hl(eg.en)"></span><span x-show="detail && eg.why" class="text-xs text-slate-500 italic"> — <span x-html="hl(eg.why)"></span></span></li>
+                  </template>
+                </ul>
+                <p x-show="gr.watch" class="text-xs text-rose-800 bg-rose-100 rounded px-2 py-1" x-html="'⚠ ' + hl(gr.watch)"></p>
+              </div>
+            </div>
+          </template>
+          </div></template>
+
           <template x-if="show.words"><div class="px-5 pb-1 space-y-3">
           <template x-for="(ws, wi) in wordsets(sec)" :key="'w' + wi">
             <div>
@@ -1514,24 +1532,6 @@
                 </template>
               </div>
               <p x-show="detail && ws.note" class="mt-1.5 text-xs text-cyan-800 bg-cyan-100 rounded px-2.5 py-1" x-html="hl(ws.note)"></p>
-            </div>
-          </template>
-          </div></template>
-
-          <template x-if="show.grammar"><div class="px-5 pb-1 space-y-3">
-          <template x-for="(gr, gi) in grammars(sec)" :key="'g' + gi">
-            <div>
-              <p class="text-[13px] font-bold uppercase tracking-wider text-rose-700 mb-1.5">📐 <span x-html="hl(gr.title)"></span><span x-show="gr.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + gr.page"></span></p>
-              <div class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-sm space-y-1.5">
-                <p class="font-semibold text-slate-900" x-html="hl(gr.when)"></p>
-                <p x-show="gr.form" class="font-mono text-[13px] text-rose-900 bg-white rounded border border-rose-200 px-2 py-1" x-html="hl(gr.form)"></p>
-                <ul class="space-y-0.5 text-slate-700">
-                  <template x-for="(eg, ei) in fq(gr.examples || [], 'en', 'why')" :key="ei">
-                    <li><span x-html="hl(eg.en)"></span><span x-show="detail && eg.why" class="text-xs text-slate-500 italic"> — <span x-html="hl(eg.why)"></span></span></li>
-                  </template>
-                </ul>
-                <p x-show="gr.watch" class="text-xs text-rose-800 bg-rose-100 rounded px-2 py-1" x-html="'⚠ ' + hl(gr.watch)"></p>
-              </div>
             </div>
           </template>
           </div></template>
