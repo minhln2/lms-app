@@ -7,7 +7,7 @@
   <title>Ôn tập · CIE Maths 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.5b5cd6bf.css">
+  <link rel="stylesheet" href="../assets/tw.21192f61.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -165,6 +165,9 @@
         secHits(sec) {
           let n = this.fq(sec.topics || [], 'title', 'def', 'rules', 'subtitle').length
                 + this.fq(sec.glossary || [], 'term', 'def', 'example').length
+                + this.wordsets(sec).reduce((k, ws) =>
+                    k + this.fq(ws.items || [], 'word', 'pos', 'def', 'example').length, 0)
+                + this.grammars(sec).length + this.phrasesets(sec).length + this.reads(sec).length
                 + (this.hit(sec.big_en) && this.qq ? 1 : 0);
           for (const leaf of this.leavesOf(sec)) n += this.leafHits(sec, leaf.id);
           return n;
@@ -282,6 +285,10 @@
           { k: 'exp',     t: '🔬 Thí nghiệm',  on: 'bg-violet-600 text-white border-violet-600',  off: 'bg-white text-violet-700 border-violet-300' },
           { k: 'worked',  t: '🧮 Bài mẫu',     on: 'bg-teal-600 text-white border-teal-600',      off: 'bg-white text-teal-700 border-teal-300' },
           { k: 'topics',  t: '① Kiến thức học', on: 'bg-orange-600 text-white border-orange-600', off: 'bg-white text-orange-700 border-orange-300' },
+          { k: 'words',   t: '🔤 Từ theo bộ',   on: 'bg-cyan-600 text-white border-cyan-600',      off: 'bg-white text-cyan-700 border-cyan-300' },
+          { k: 'grammar', t: '📐 Ngữ pháp',     on: 'bg-rose-600 text-white border-rose-600',      off: 'bg-white text-rose-700 border-rose-300' },
+          { k: 'phrases', t: '💬 Mẫu câu',      on: 'bg-lime-600 text-white border-lime-600',      off: 'bg-white text-lime-700 border-lime-300' },
+          { k: 'reading', t: '📕 Bài đọc',      on: 'bg-fuchsia-600 text-white border-fuchsia-600', off: 'bg-white text-fuchsia-700 border-fuchsia-300' },
           { k: 'compare', t: '⇄ So sánh',      on: 'bg-slate-700 text-white border-slate-700',    off: 'bg-white text-slate-700 border-slate-300' },
         ],
         // ⚠ ĐỪNG đặt tên state này là `pick`: đã có method pick(c) chọn đáp án
@@ -298,7 +305,9 @@
         // nên đổi phạm vi ở cây bên trái là chip tự hiện/ẩn theo.
         hasKind(k) {
           const F = { gloss: 'glossary', facts: null, list: 'checklists',
-                      watch: 'watch_out', exp: 'experiments', worked: 'worked', topics: 'topics', compare: 'compares' };
+                      watch: 'watch_out', exp: 'experiments', worked: 'worked', topics: 'topics',
+                      words: 'words', grammar: 'grammar', phrases: 'phrases', reading: 'readings',
+                      compare: 'compares' };
           return this.scopedSummary.some(sec =>
             (k === 'facts' ? this.points(sec) : (sec[F[k]] || [])).length);
         },
@@ -400,6 +409,15 @@
         exps(sec, leafId)   { return this.fq(this.arr(sec, 'experiments', 'from_the_book').filter(x => x.concept === leafId), 'title','summary','result'); },
         works(sec, leafId)   { return this.fq(this.arr(sec, 'worked', null).filter(x => x.concept === leafId), 'title','problem','answer','steps'); },
         tops(sec)           { return this.fq(sec.topics || [], 'title', 'def', 'rules', 'subtitle'); },
+        // Ba khối riêng của môn ngoại ngữ. ESL dạy KỸ NĂNG DÙNG chứ không dạy
+        // kiến thức để nhớ, nên "điều cần nhớ" và "thí nghiệm" không hợp:
+        //   words   — bộ từ vựng, mỗi từ kèm loại từ và câu ví dụ thật trong bài
+        //   grammar — mỗi hộp "Use of English" của sách một thẻ
+        //   phrases — cụm câu chép ra dùng ngay (hộp "Speaking tip")
+        wordsets(sec) { return this.fq(sec.words || [], 'title', 'note', 'items'); },
+        grammars(sec) { return this.fq(sec.grammar || [], 'title', 'when', 'form', 'examples'); },
+        phrasesets(sec) { return this.fq(sec.phrases || [], 'title', 'groups'); },
+        reads(sec)    { return this.fq(sec.readings || [], 'title', 'kind', 'about', 'words'); },
         // Một dòng ví dụ "calc" tách thành nhãn | giá trị để CĂN THẲNG CỘT.
         // Trước đây đổ vào lưới 2 cột theo thứ tự, dòng dài xuống dòng là hai
         // cột lệch nhau và không có kẻ nào để bám — đọc thành vô nghĩa.
@@ -1052,6 +1070,7 @@
       <select onchange="if(this.value) location.href = this.value"
               class="w-full mb-4 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-sm text-slate-800">
         <option value="cie-maths-5-on-tap.html" selected>CIE Maths 5</option>
+        <option value="cie-esl-5-on-tap.html">CIE ESL 5</option>
         <option value="cie-science-5-on-tap.html">CIE Science 5</option>
       </select>
       <p class="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">Phần học</p>
@@ -1471,6 +1490,83 @@
                từ vựng → ý → checklist → ngộ nhận → thí nghiệm của riêng lá đó.
                Trải phẳng thì người đọc không thấy cấu trúc sách; xếp theo lá thì
                infographic và cây điều hướng nói cùng một ngôn ngữ.                -->
+          <!-- ── Ba khối của môn ngoại ngữ ───────────────────────────────────
+               Đặt ở cấp MỤC chứ không theo lá: bộ từ vựng và hộp ngữ pháp của
+               sách vốn trải ngang cả mục, chia theo lá là cắt vụn vô nghĩa.   -->
+          <template x-if="show.words"><div class="px-5 pb-1 space-y-3">
+          <template x-for="(ws, wi) in wordsets(sec)" :key="'w' + wi">
+            <div>
+              <p class="text-[13px] font-bold uppercase tracking-wider text-cyan-700 mb-1.5">🔤 <span x-html="hl(ws.title)"></span><span x-show="ws.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + ws.page"></span></p>
+              <div class="grid sm:grid-cols-2 gap-2">
+                <template x-for="w in fq(ws.items || [], 'word', 'pos', 'def', 'example')" :key="w.word">
+                  <div class="rounded-lg border border-cyan-200 bg-cyan-50/40 px-3 py-2">
+                    <p class="text-sm">
+                      <span class="font-semibold text-cyan-900" x-html="hl(w.word)"></span><button x-show="canSpeak" @click.stop="speak(w.word)" type="button" title="Đọc to"
+                        class="ml-1 align-middle text-cyan-500 hover:text-cyan-800">🔊</button>
+                      <span x-show="w.pos" class="ml-1 text-[11px] italic text-slate-400" x-text="w.pos"></span>
+                    </p>
+                    <p class="text-sm text-slate-700 leading-snug" x-html="hl(w.def)"></p>
+                    <p x-show="w.example" class="mt-0.5 text-xs text-slate-500 italic" x-html="hl(w.example)"></p>
+                  </div>
+                </template>
+              </div>
+              <p x-show="detail && ws.note" class="mt-1.5 text-xs text-cyan-800 bg-cyan-100 rounded px-2.5 py-1" x-html="hl(ws.note)"></p>
+            </div>
+          </template>
+          </div></template>
+
+          <template x-if="show.grammar"><div class="px-5 pb-1 space-y-3">
+          <template x-for="(gr, gi) in grammars(sec)" :key="'g' + gi">
+            <div>
+              <p class="text-[13px] font-bold uppercase tracking-wider text-rose-700 mb-1.5">📐 <span x-html="hl(gr.title)"></span><span x-show="gr.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + gr.page"></span></p>
+              <div class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-sm space-y-1.5">
+                <p class="font-semibold text-slate-900" x-html="hl(gr.when)"></p>
+                <p x-show="gr.form" class="font-mono text-[13px] text-rose-900 bg-white rounded border border-rose-200 px-2 py-1" x-html="hl(gr.form)"></p>
+                <ul class="space-y-0.5 text-slate-700">
+                  <template x-for="(eg, ei) in fq(gr.examples || [], 'en', 'why')" :key="ei">
+                    <li><span x-html="hl(eg.en)"></span><span x-show="detail && eg.why" class="text-xs text-slate-500 italic"> — <span x-html="hl(eg.why)"></span></span></li>
+                  </template>
+                </ul>
+                <p x-show="gr.watch" class="text-xs text-rose-800 bg-rose-100 rounded px-2 py-1" x-html="'⚠ ' + hl(gr.watch)"></p>
+              </div>
+            </div>
+          </template>
+          </div></template>
+
+          <template x-if="show.phrases"><div class="px-5 pb-1 space-y-3">
+          <template x-for="(ph, pi) in phrasesets(sec)" :key="'p' + pi">
+            <div>
+              <p class="text-[13px] font-bold uppercase tracking-wider text-lime-700 mb-1.5">💬 <span x-html="hl(ph.title)"></span><span x-show="ph.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + ph.page"></span></p>
+              <div class="grid sm:grid-cols-3 gap-2">
+                <template x-for="(gp, gi) in (ph.groups || [])" :key="gi">
+                  <div x-show="fq(gp.lines.map(l => ({ l })), 'l').length" class="rounded-lg border border-lime-200 bg-lime-50/50 px-3 py-2">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-lime-800 mb-1" x-html="hl(gp.when)"></p>
+                    <ul class="space-y-1 text-sm text-slate-700">
+                      <template x-for="(ln, li) in gp.lines.filter(l => hit(l))" :key="li">
+                        <li x-html="hl(ln)"></li>
+                      </template>
+                    </ul>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+          </div></template>
+
+          <template x-if="show.reading"><div class="px-5 pb-1 space-y-3">
+          <template x-for="(rd, ri) in reads(sec)" :key="'r' + ri">
+            <div>
+              <p class="text-[13px] font-bold uppercase tracking-wider text-fuchsia-700 mb-1.5">📕 <span x-html="hl(rd.title)"></span><span x-show="rd.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + rd.page"></span></p>
+              <div class="rounded-lg border border-fuchsia-200 bg-fuchsia-50/50 px-3 py-2.5 text-sm space-y-1">
+                <p x-show="rd.kind" class="text-xs uppercase tracking-wide text-fuchsia-700" x-html="hl(rd.kind)"></p>
+                <p class="text-slate-800" x-html="hl(rd.about)"></p>
+                <p x-show="(rd.words || []).length" class="text-xs text-slate-500">
+                  <span class="font-semibold">Từ mới:</span> <span x-html="hl((rd.words || []).join(', '))"></span></p>
+              </div>
+            </div>
+          </template>
+          </div></template>
+
           <!-- ── Kiến thức học (môn Toán) ────────────────────────────────────
                Mỗi kiến thức MỘT THẺ ĐÁNH SỐ: quy tắc bên trái, ví dụ ngay bên
                phải. Trước đây quy tắc nằm ở "Điều cần nhớ" còn ví dụ ở tận khối
@@ -1552,7 +1648,7 @@
 
           <!-- Từ vựng GỘP CHUNG cho mục có thẻ "kiến thức học": chia theo lá thì
                tiêu đề lá lặp lại y hệt tiêu đề thẻ ở trên, đọc rất rối. -->
-          <template x-if="show.gloss && (sec.topics || []).length && fq(sec.glossary || [], 'term', 'def', 'example').length">
+          <template x-if="show.gloss && ((sec.topics || []).length || (sec.words || []).length) && fq(sec.glossary || [], 'term', 'def', 'example').length">
           <div class="px-5 pb-4">
             <p class="text-[13px] font-bold uppercase tracking-wider text-indigo-600 mb-1.5">📖 Từ vựng</p>
             <dl class="grid sm:grid-cols-2 gap-2">
@@ -1573,7 +1669,9 @@
           </div>
           </template>
 
-          <template x-for="leaf in (tops(sec).length ? [] : shownLeaves(sec))" :key="leaf.id">
+          <!-- Mục nào dùng khối kiểu Toán (topics) hoặc kiểu ESL (words) thì KHÔNG
+               vẽ thẻ theo lá nữa: từ vựng đã gộp ở trên, thẻ lá còn lại rỗng ruột. -->
+          <template x-for="leaf in ((tops(sec).length || (sec.words || []).length) ? [] : shownLeaves(sec))" :key="leaf.id">
             <div class="mx-5 mb-4 rounded-xl border border-slate-200 overflow-hidden">
               <div class="flex items-center gap-2 px-4 py-2 bg-slate-50 border-b border-slate-200">
                 <span class="w-2 h-2 rounded-full shrink-0"
