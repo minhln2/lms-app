@@ -7,7 +7,7 @@
   <title>Ôn tập · CIE ESL 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.5afd9c1b.css">
+  <link rel="stylesheet" href="../assets/tw.6c36b73f.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -168,7 +168,7 @@
                 + this.wordsets(sec).reduce((k, ws) =>
                     k + this.fq(ws.items || [], 'word', 'pos', 'def', 'example').length, 0)
                 + this.grammars(sec).length + this.phrasesets(sec).length + this.reads(sec).length
-                + this.sounds(sec).length + this.skills(sec).length
+                + this.sounds(sec).length
                 + (this.hit(sec.big_en) && this.qq ? 1 : 0);
           for (const leaf of this.leavesOf(sec)) n += this.leafHits(sec, leaf.id);
           return n;
@@ -289,7 +289,6 @@
           { k: 'words',   t: '🔤 Từ vựng',      on: 'bg-cyan-600 text-white border-cyan-600',      off: 'bg-white text-cyan-700 border-cyan-300' },
           { k: 'grammar', t: '📐 Ngữ pháp',     on: 'bg-rose-600 text-white border-rose-600',      off: 'bg-white text-rose-700 border-rose-300' },
           { k: 'sounds',  t: '🗣 Phát âm',      on: 'bg-amber-600 text-white border-amber-600',    off: 'bg-white text-amber-700 border-amber-300' },
-          { k: 'skills',  t: '🧭 Cách làm',     on: 'bg-violet-600 text-white border-violet-600',  off: 'bg-white text-violet-700 border-violet-300' },
           { k: 'phrases', t: '💬 Mẫu câu',      on: 'bg-lime-600 text-white border-lime-600',      off: 'bg-white text-lime-700 border-lime-300' },
           { k: 'reading', t: '📕 Bài đọc',      on: 'bg-fuchsia-600 text-white border-fuchsia-600', off: 'bg-white text-fuchsia-700 border-fuchsia-300' },
           { k: 'compare', t: '⇄ So sánh',      on: 'bg-slate-700 text-white border-slate-700',    off: 'bg-white text-slate-700 border-slate-300' },
@@ -310,7 +309,7 @@
           const F = { gloss: 'glossary', facts: null, list: 'checklists',
                       watch: 'watch_out', exp: 'experiments', worked: 'worked', topics: 'topics',
                       words: 'words', grammar: 'grammar', phrases: 'phrases', reading: 'readings',
-                      sounds: 'sounds', skills: 'skills',
+                      sounds: 'sounds',
                       compare: 'compares' };
           return this.scopedSummary.some(sec =>
             (k === 'facts' ? this.points(sec) : (sec[F[k]] || [])).length);
@@ -422,7 +421,6 @@
         grammars(sec) { return this.fq(sec.grammar || [], 'title', 'when', 'form', 'examples'); },
         phrasesets(sec) { return this.fq(sec.phrases || [], 'title', 'groups'); },
         reads(sec)    { return this.fq(sec.readings || [], 'title', 'kind', 'about', 'words'); },
-        skills(sec)   { return this.fq(sec.skills || [], 'title', 'skill', 'how', 'steps'); },
         sounds(sec)   { return this.fq(sec.sounds || [], 'title', 'focus', 'words', 'note'); },
         // Một dòng ví dụ "calc" tách thành nhãn | giá trị để CĂN THẲNG CỘT.
         // Trước đây đổ vào lưới 2 cột theo thứ tự, dòng dài xuống dòng là hai
@@ -1560,23 +1558,6 @@
                   </template>
                 </div>
                 <p x-show="sd.note" class="text-xs text-amber-800" x-html="hl(sd.note)"></p>
-              </div>
-            </div>
-          </template>
-          </div></template>
-
-          <template x-if="show.skills"><div class="px-5 pb-1 space-y-3">
-          <template x-for="(sk, ki) in skills(sec)" :key="'k' + ki">
-            <div>
-              <p class="text-[13px] font-bold uppercase tracking-wider text-violet-700 mb-1.5">🧭 <span x-html="hl(sk.title)"></span><span x-show="sk.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + sk.page"></span></p>
-              <div class="rounded-lg border border-violet-200 bg-violet-50/60 px-3 py-2.5 text-sm space-y-1.5">
-                <p><span class="inline-block rounded px-1.5 py-0.5 text-[11px] font-semibold uppercase bg-violet-200 text-violet-900" x-text="sk.skill"></span></p>
-                <p class="text-slate-800" x-html="hl(sk.how)"></p>
-                <ol x-show="(sk.steps || []).length" class="list-decimal pl-5 text-slate-700 space-y-0.5">
-                  <template x-for="(st, sti) in (sk.steps || []).filter(x => hit(x))" :key="sti">
-                    <li x-html="hl(st)"></li>
-                  </template>
-                </ol>
               </div>
             </div>
           </template>
