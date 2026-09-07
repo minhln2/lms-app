@@ -3,8 +3,13 @@
  *
  * Trình duyệt không được cầm khoá Google nên Worker làm proxy. Mỗi câu chỉ tốn
  * Google đúng một lần: kết quả vào Cache API của Cloudflare (miễn phí, không
- * tính vào 1.000 lượt ghi KV/ngày), khoá theo sha1(text). Hạn mức Google free:
- * 1 triệu ký tự/tháng giọng Neural2; cả cuốn sách chưa tới 40.000.
+ * tính vào 1.000 lượt ghi KV/ngày), khoá theo sha1(giọng + text). Hạn mức Google
+ * free: 1 triệu ký tự/tháng cho cả Neural2 lẫn Chirp 3: HD (khác nhau ở giá VƯỢT
+ * hạn mức — 16$ so với 30$ mỗi triệu); cả cuốn sách chưa tới 40.000 ký tự.
+ *
+ * ⚠️ Tên giọng PHẢI nằm trong khoá cache. MP3 trả về kèm `immutable, max-age=1
+ * năm`, nên đổi giọng mà giữ nguyên khoá thì mọi câu đã đọc vẫn phát giọng cũ
+ * suốt một năm — đổi giọng trông như không có tác dụng, mà không hề báo lỗi.
  *
  * Endpoint công khai nên phải chặn lạm dụng: chỉ đọc chuỗi CÓ TRONG HỌC LIỆU
  * (đối chiếu với study/{course}.json qua ASSETS — chính file trang đang tải),
@@ -16,26 +21,60 @@
  */
 
 const ENDPOINT = "https://texttospeech.googleapis.com/v1/text:synthesize";
-const VOICE = { languageCode: "en-US", name: "en-US-Neural2-F" };
 const AUDIO = { audioEncoding: "MP3", speakingRate: 0.92 };
 const MAX_LEN = 200;
+
+/** Giọng đang dùng. Chirp 3: HD — thế hệ mới hơn Neural2, cùng hạn mức free. */
+const VOICE = "en-US-Chirp3-HD-Leda";
+/**
+ * Danh sách trắng để nghe SO SÁNH bằng `?voice=` trên máy thật trước khi chốt.
+ * Đây là knob tạm; chốt xong thì bỏ tham số và giữ lại đúng một hằng số.
+ * Phải là danh sách trắng chứ không phải chuỗi tự do: endpoint công khai, thả
+ * cho gọi giọng nào cũng được là mở đường đốt hạn mức bằng giọng đắt tiền.
+ */
+const VOICES = new Set([
+  "en-US-Chirp3-HD-Leda",      // trẻ trung
+  "en-US-Chirp3-HD-Aoede",     // nhẹ, thoáng
+  "en-US-Chirp3-HD-Kore",      // chắc, rõ
+  "en-US-Chirp3-HD-Zephyr",    // sáng
+  "en-US-Chirp3-HD-Autonoe",   // ấm
+  "en-US-Neural2-F",           // giọng cũ, để đối chứng
+]);
 
 async function sha1(s) {
   const b = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(s));
   return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
 }
 
-/** Chuỗi được phép đọc của một môn: thuật ngữ, mặt trước thẻ, đề bài. KHÔNG đáp án. */
+/**
+ * Mọi chuỗi trang được phép đọc to. KHÔNG bao giờ có đáp án.
+ *
+ * Danh sách này phải phủ ĐÚNG mọi chỗ gọi `speak()` trong `templates/study.html`.
+ * Thiếu một nguồn thì nút loa ở đó trả 403 rồi trang **lặng lẽ** lùi về giọng
+ * của hệ điều hành — vẫn kêu, nên nhìn như đang chạy, nhưng là giọng khác hẳn
+ * và không có lỗi nào hiện ra. Đã dính đúng lỗi này: `words[]` (từ vựng ESL,
+ * 317 từ) và `sounds[]` bị bỏ sót, mà môn ESL để `glossary` rỗng theo SPEC nên
+ * gần như MỌI nút loa của môn đó đều rơi về giọng dự phòng.
+ * `test_tts_routes.mjs` chốt hai bên khớp nhau.
+ */
+export function speakable(doc) {
+  const set = new Set();
+  const add = (s) => { const t = (s == null ? "" : String(s)).trim(); if (t) set.add(t); };
+  for (const s of doc.summary || []) {
+    for (const g of s.glossary || []) add(g.term);                                 // g.term
+    for (const ws of s.words || []) for (const it of ws.items || []) add(it.word);  // w.word
+    for (const sd of s.sounds || []) for (const wd of sd.words || []) add(wd.en);   // wd.en
+  }
+  for (const c of doc.flashcards || []) add(c.front_en);   // learnCard.front_en · q.front_en
+  for (const q of doc.quiz || []) add(q.stem_en);          // q.stem_en
+  return set;
+}
+
 async function allowed(env, request, user, course) {
   const url = new URL(`/${user}/study/${course}.json`, request.url);
   const r = await env.ASSETS.fetch(new Request(url, request));
   if (!r.ok) return null;
-  const d = await r.json();
-  const set = new Set();
-  for (const s of d.summary || []) for (const g of s.glossary || []) if (g.term) set.add(g.term.trim());
-  for (const c of d.flashcards || []) if (c.front_en) set.add(c.front_en.trim());
-  for (const q of d.quiz || []) if (q.stem_en) set.add(q.stem_en.trim());
-  return set;
+  return speakable(await r.json());
 }
 
 export async function handleTts(request, env, url) {
@@ -48,10 +87,12 @@ export async function handleTts(request, env, url) {
   const text = (url.searchParams.get("text") || "").trim();
   if (!/^[\w-]{1,32}$/.test(user) || !/^[\w-]{1,64}$/.test(course)) return new Response("Sai user/course", { status: 400 });
   if (!text || text.length > MAX_LEN) return new Response("Thiếu hoặc quá dài", { status: 400 });
+  const voice = url.searchParams.get("voice") || VOICE;
+  if (!VOICES.has(voice)) return new Response("Giọng không hỗ trợ", { status: 400 });
 
   // Cache TRƯỚC khi đối chiếu học liệu: câu đã có thì không parse JSON, không gọi Google.
   const cache = caches.default;
-  const ckey = new Request(new URL(`/__tts/${await sha1(user + "|" + course + "|" + text)}`, url).toString());
+  const ckey = new Request(new URL(`/__tts/${await sha1(voice + "|" + user + "|" + course + "|" + text)}`, url).toString());
   const hit = await cache.match(ckey);
   if (hit) return hit;
 
@@ -62,7 +103,11 @@ export async function handleTts(request, env, url) {
   const g = await fetch(`${ENDPOINT}?key=${encodeURIComponent(key)}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ input: { text }, voice: VOICE, audioConfig: AUDIO }),
+    body: JSON.stringify({
+      input: { text },
+      voice: { languageCode: "en-US", name: voice },
+      audioConfig: AUDIO,
+    }),
   });
   if (!g.ok) return new Response("Google TTS lỗi " + g.status, { status: 502 });
   const { audioContent } = await g.json();

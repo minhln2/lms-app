@@ -24,7 +24,7 @@
  */
 
 import { readSheet, writeCell } from "./sheet.js";
-import { readCards, writeSession, readStats } from "./study.js";
+import { readCards, writeSession, writeKnown, readStats } from "./study.js";
 import { handleTts } from "./tts.js";
 
 const KEY = "progress";
@@ -188,9 +188,17 @@ export default {
         }
         let body;
         try { body = await request.json(); } catch { return json({ error: "Body không hợp lệ" }, 400); }
-        if (!Array.isArray(body?.attempts)) return json({ error: "Thiếu 'attempts'" }, 400);
+        // Hai loại ghi đi chung một endpoint: 'attempts' là kết quả làm bài,
+        // 'known' là đánh dấu đã thuộc bằng tay. Tách endpoint chẳng được gì mà
+        // lại thêm một chỗ phải nhớ chặn mã bí mật.
+        const isKnown = Array.isArray(body?.known);
+        if (!isKnown && !Array.isArray(body?.attempts)) {
+          return json({ error: "Thiếu 'attempts' hoặc 'known'" }, 400);
+        }
         try {
-          return json(await writeSession(env, user, course, body.attempts));
+          return json(isKnown
+            ? await writeKnown(env, user, course, body.known)
+            : await writeSession(env, user, course, body.attempts));
         } catch (e) {
           return json({ error: String(e.message || e) }, 500);
         }

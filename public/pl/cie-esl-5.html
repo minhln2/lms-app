@@ -7,7 +7,7 @@
   <title>CIE ESL 5 — PL</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.6c36b73f.css">
+  <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="../assets/collapse.d0a27f2d.js"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>
@@ -272,7 +272,7 @@
         
         <div class="min-w-0 flex-1">
           <h1 class="text-lg font-bold text-slate-900 truncate">CIE ESL 5</h1>
-          <p class="text-xs text-slate-500">PL · 3 tuần/bài · cập nhật 2026-09-04 18:01</p>
+          <p class="text-xs text-slate-500">PL · 4 tuần/bài · cập nhật 2026-09-07 18:01</p>
         </div>
       </div>
       <div class="mt-2 flex items-center gap-2">
@@ -316,6 +316,12 @@
           📎 tài liệu
         </button>
         
+        <button @click="toggle('quiz')"
+                :class="types.includes('quiz') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
+                class="px-2 py-1 text-xs rounded-full border transition-colors">
+          🧪 bài kiểm tra
+        </button>
+        
         <button @click="toggle('external')"
                 :class="types.includes('external') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
                 class="px-2 py-1 text-xs rounded-full border transition-colors">
@@ -344,10 +350,10 @@
       <div x-show="p.ready && p.online" x-cloak class="mt-2 flex items-center gap-2 text-xs">
         <div class="flex-1 h-1.5 rounded-full bg-slate-200 overflow-hidden">
           <div class="h-full bg-emerald-500 transition-all duration-300"
-               :style="'width: ' + (recent7 ? recentPct(p.done) : Math.round(Object.keys(p.done).filter(k => k.startsWith('pl/79605/')).length / 21 * 100)) + '%'"></div>
+               :style="'width: ' + (recent7 ? recentPct(p.done) : Math.round(Object.keys(p.done).filter(k => k.startsWith('pl/79605/')).length / 35 * 100)) + '%'"></div>
         </div>
         <span class="text-slate-500 whitespace-nowrap"
-              x-text="recent7 ? (recentStats(p.done).done + '/' + recentStats(p.done).total + ' trong 7 ngày') : (Object.keys(p.done).filter(k => k.startsWith('pl/79605/')).length + '/21 đã học')"></span>
+              x-text="recent7 ? (recentStats(p.done).done + '/' + recentStats(p.done).total + ' trong 7 ngày') : (Object.keys(p.done).filter(k => k.startsWith('pl/79605/')).length + '/35 đã học')"></span>
         <span x-show="p.saving" x-cloak class="text-indigo-500">đang lưu…</span>
         <span x-show="p.err" x-cloak class="text-rose-600" x-text="p.err"></span>
       </div>
@@ -358,6 +364,921 @@
     
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: true }"
+             @expand-all.window="open = true"
+             @collapse-all.window="open = false"
+             x-effect="if (q || filtering) open = true"
+             data-module data-title="Week 6 - Unit 4.1 Positive and Negative Integers"
+             x-show="moduleMatches($el, f)"
+             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <button @click="open = !open"
+              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
+        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
+             :class="open ? 'rotate-90' : ''"
+             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">Week 6 - Unit 4.1 Positive and Negative Integers</span>
+        <template x-if="p.online">
+          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 14
+                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/14'"></span>
+        </template>
+        <span class="text-xs text-slate-400 shrink-0">14 mục</span>
+      </button>
+
+      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-sechead data-title="Homework" data-sec="1"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>Homework</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="Unit 4 - Addition and Subtraction" data-type="quiz" data-sec="1"
+             data-pkey="pl/79605/8730351" data-hash="28a520d28a4a9a509617d08bda47006ed126266d" data-ts="1788778860000"
+             
+             data-hw="1"
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/79605/8730351'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox" title="Đánh dấu đã học"
+                     x-effect="$el.checked = !!p.done['pl/79605/8730351']"
+                     @change="await p.toggle('pl/79605/8730351', '28a520d28a4a9a509617d08bda47006ed126266d'); $el.checked = !!p.done['pl/79605/8730351']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài kiểm tra">🧪</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://lms.vinschool.edu.vn/courses/79605/quizzes/2193685" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Unit 4 - Addition and Subtraction
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài kiểm tra</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79605/8730351', '28a520d28a4a9a509617d08bda47006ed126266d')">
+                  <button @click.stop="p.seen('pl/79605/8730351', '28a520d28a4a9a509617d08bda47006ed126266d')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                  <span>14 câu hỏi</span>
+                  <span>14 điểm</span>
+                  
+                  <span>2 lượt làm</span>
+                
+                <span class="text-amber-600">Hạn nộp: 30/09/2025 23:59</span>
+                <span>Mở từ: 25/09/2025 16:00</span>
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 07/09</span>
+                
+                <a href="https://lms.vinschool.edu.vn/courses/79605/quizzes/2193685" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem bản gốc ↗</a>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-sechead data-title="Class Resources" data-sec="2"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>Class Resources</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="1. 6Ni.01 – Estimate, add and subtract integers...pptx" data-type="file" data-sec="2"
+             data-pkey="pl/79605/8730353" data-hash="4d242229975eb2d1946223d3899852a2465ea057" data-ts="1788767960000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/79605/8730353'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox" title="Đánh dấu đã học"
+                     x-effect="$el.checked = !!p.done['pl/79605/8730353']"
+                     @change="await p.toggle('pl/79605/8730353', '4d242229975eb2d1946223d3899852a2465ea057'); $el.checked = !!p.done['pl/79605/8730353']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="https://sinarale.github.io/lms/pl/materials/cie-esl-5/week-6-unit-4-1-positive-and-negative-integers/1. 6Ni.01 – Estimate, add and subtract integers...pptx" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                1. 6Ni.01 – Estimate, add and subtract integers...pptx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79605/8730353', '4d242229975eb2d1946223d3899852a2465ea057')">
+                  <button @click.stop="p.seen('pl/79605/8730353', '4d242229975eb2d1946223d3899852a2465ea057')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                <span>1.5 MB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 07/09</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="2. 6Ni.01 – Estimate, add and subtract integers...pptx" data-type="file" data-sec="2"
+             data-pkey="pl/79605/8730354" data-hash="e510a877d261f41cf23249b19a242a63105e9b52" data-ts="1788756420000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/79605/8730354'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox" title="Đánh dấu đã học"
+                     x-effect="$el.checked = !!p.done['pl/79605/8730354']"
+                     @change="await p.toggle('pl/79605/8730354', 'e510a877d261f41cf23249b19a242a63105e9b52'); $el.checked = !!p.done['pl/79605/8730354']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="https://sinarale.github.io/lms/pl/materials/cie-esl-5/week-6-unit-4-1-positive-and-negative-integers/2. 6Ni.01 – Estimate, add and subtract integers...pptx" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                2. 6Ni.01 – Estimate, add and subtract integers...pptx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79605/8730354', 'e510a877d261f41cf23249b19a242a63105e9b52')">
+                  <button @click.stop="p.seen('pl/79605/8730354', 'e510a877d261f41cf23249b19a242a63105e9b52')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                <span>468.3 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 07/09</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="3. 6Ni.01 – Estimate, add and subtract integers...pptx" data-type="file" data-sec="2"
+             data-pkey="pl/79605/8730355" data-hash="0ed14eca37436e8f01e1f6a8d9b214ee50412e87" data-ts="1788756420000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/79605/8730355'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox" title="Đánh dấu đã học"
+                     x-effect="$el.checked = !!p.done['pl/79605/8730355']"
+                     @change="await p.toggle('pl/79605/8730355', '0ed14eca37436e8f01e1f6a8d9b214ee50412e87'); $el.checked = !!p.done['pl/79605/8730355']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="https://sinarale.github.io/lms/pl/materials/cie-esl-5/week-6-unit-4-1-positive-and-negative-integers/3. 6Ni.01 – Estimate, add and subtract integers...pptx" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                3. 6Ni.01 – Estimate, add and subtract integers...pptx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79605/8730355', '0ed14eca37436e8f01e1f6a8d9b214ee50412e87')">
+                  <button @click.stop="p.seen('pl/79605/8730355', '0ed14eca37436e8f01e1f6a8d9b214ee50412e87')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                <span>972.7 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 07/09</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="4. 6Nc.02 – Recognise the use of letters to represent quantities that vary in addition and subtraction calculations..pptx" data-type="file" data-sec="2"
+             data-pkey="pl/79605/8730356" data-hash="83c9f5fc286f59c9ccd3107856498a90c09044c4" data-ts="1788756420000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/79605/8730356'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox" title="Đánh dấu đã học"
+                     x-effect="$el.checked = !!p.done['pl/79605/8730356']"
+                     @change="await p.toggle('pl/79605/8730356', '83c9f5fc286f59c9ccd3107856498a90c09044c4'); $el.checked = !!p.done['pl/79605/8730356']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="https://sinarale.github.io/lms/pl/materials/cie-esl-5/week-6-unit-4-1-positive-and-negative-integers/4. 6Nc.02 – Recognise the use of letters to represent quantities that vary in addition and subtraction calculations..pptx" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                4. 6Nc.02 – Recognise the use of letters to represent quantities that vary in addition and subtraction calculations..pptx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79605/8730356', '83c9f5fc286f59c9ccd3107856498a90c09044c4')">
+                  <button @click.stop="p.seen('pl/79605/8730356', '83c9f5fc286f59c9ccd3107856498a90c09044c4')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                <span>562.2 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 07/09</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="5. 6Nc.02 – Recognise the use of letters to represent quantities that vary in addition and subtraction calculations..pptx" data-type="file" data-sec="2"
+             data-pkey="pl/79605/8730357" data-hash="f360109df162df1782fe7ca398e9cec0dd32d8d1" data-ts="1788756420000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/79605/8730357'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox" title="Đánh dấu đã học"
+                     x-effect="$el.checked = !!p.done['pl/79605/8730357']"
+                     @change="await p.toggle('pl/79605/8730357', 'f360109df162df1782fe7ca398e9cec0dd32d8d1'); $el.checked = !!p.done['pl/79605/8730357']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="https://sinarale.github.io/lms/pl/materials/cie-esl-5/week-6-unit-4-1-positive-and-negative-integers/5. 6Nc.02 – Recognise the use of letters to represent quantities that vary in addition and subtraction calculations..pptx" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                5. 6Nc.02 – Recognise the use of letters to represent quantities that vary in addition and subtraction calculations..pptx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79605/8730357', 'f360109df162df1782fe7ca398e9cec0dd32d8d1')">
+                  <button @click.stop="p.seen('pl/79605/8730357', 'f360109df162df1782fe7ca398e9cec0dd32d8d1')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                <span>700.1 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 07/09</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="6. Consolidation.pptx" data-type="file" data-sec="2"
+             data-pkey="pl/79605/8730358" data-hash="8bc25a7df78466d05ced70c06fed20b1824b716d" data-ts="1788756420000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/79605/8730358'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox" title="Đánh dấu đã học"
+                     x-effect="$el.checked = !!p.done['pl/79605/8730358']"
+                     @change="await p.toggle('pl/79605/8730358', '8bc25a7df78466d05ced70c06fed20b1824b716d'); $el.checked = !!p.done['pl/79605/8730358']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="https://sinarale.github.io/lms/pl/materials/cie-esl-5/week-6-unit-4-1-positive-and-negative-integers/6. Consolidation.pptx" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                6. Consolidation.pptx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79605/8730358', '8bc25a7df78466d05ced70c06fed20b1824b716d')">
+                  <button @click.stop="p.seen('pl/79605/8730358', '8bc25a7df78466d05ced70c06fed20b1824b716d')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                <span>486.3 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 07/09</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-sechead data-title="Optional Activities" data-sec="3"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>Optional Activities</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="Adding and Subtracting Large Numbers - Video" data-type="external" data-sec="3"
+             data-pkey="pl/79605/8730360" data-hash="f9c0309bf43b72ec1b5411190dbb3e8d598147a5" data-ts="1788778860000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/79605/8730360'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox" title="Đánh dấu đã học"
+                     x-effect="$el.checked = !!p.done['pl/79605/8730360']"
+                     @change="await p.toggle('pl/79605/8730360', 'f9c0309bf43b72ec1b5411190dbb3e8d598147a5'); $el.checked = !!p.done['pl/79605/8730360']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://www.youtube.com/watch?v=186wdnoAYJc" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Adding and Subtracting Large Numbers - Video
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79605/8730360', 'f9c0309bf43b72ec1b5411190dbb3e8d598147a5')">
+                  <button @click.stop="p.seen('pl/79605/8730360', 'f9c0309bf43b72ec1b5411190dbb3e8d598147a5')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 07/09</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Adding Integers - Video" data-type="external" data-sec="3"
+             data-pkey="pl/79605/8730361" data-hash="14dc238c1936eae155b5efca40faa7b4070302ea" data-ts="1788778860000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/79605/8730361'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox" title="Đánh dấu đã học"
+                     x-effect="$el.checked = !!p.done['pl/79605/8730361']"
+                     @change="await p.toggle('pl/79605/8730361', '14dc238c1936eae155b5efca40faa7b4070302ea'); $el.checked = !!p.done['pl/79605/8730361']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://www.youtube.com/watch?v=3LUTYhmltQY" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Adding Integers - Video
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79605/8730361', '14dc238c1936eae155b5efca40faa7b4070302ea')">
+                  <button @click.stop="p.seen('pl/79605/8730361', '14dc238c1936eae155b5efca40faa7b4070302ea')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 07/09</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Subtracting Integers - Video" data-type="external" data-sec="3"
+             data-pkey="pl/79605/8730362" data-hash="c44feb8c544bbc2b469569978763e5665c21b376" data-ts="1788778860000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/79605/8730362'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox" title="Đánh dấu đã học"
+                     x-effect="$el.checked = !!p.done['pl/79605/8730362']"
+                     @change="await p.toggle('pl/79605/8730362', 'c44feb8c544bbc2b469569978763e5665c21b376'); $el.checked = !!p.done['pl/79605/8730362']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://www.youtube.com/watch?v=Dfytkh_lYME" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Subtracting Integers - Video
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79605/8730362', 'c44feb8c544bbc2b469569978763e5665c21b376')">
+                  <button @click.stop="p.seen('pl/79605/8730362', 'c44feb8c544bbc2b469569978763e5665c21b376')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 07/09</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Adding and Subtracting Positive and Negative Numbers - Worksheet" data-type="external" data-sec="3"
+             data-pkey="pl/79605/8730363" data-hash="c8095122a8680e59aa856372ce30f7a54c27cd98" data-ts="1788778860000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/79605/8730363'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox" title="Đánh dấu đã học"
+                     x-effect="$el.checked = !!p.done['pl/79605/8730363']"
+                     @change="await p.toggle('pl/79605/8730363', 'c8095122a8680e59aa856372ce30f7a54c27cd98'); $el.checked = !!p.done['pl/79605/8730363']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://drive.google.com/file/d/1kmYy19NQ2Tzqrv5uV1jEpsPrwyvcQA7X/view?usp=drive_link" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Adding and Subtracting Positive and Negative Numbers - Worksheet
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79605/8730363', 'c8095122a8680e59aa856372ce30f7a54c27cd98')">
+                  <button @click.stop="p.seen('pl/79605/8730363', 'c8095122a8680e59aa856372ce30f7a54c27cd98')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 07/09</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Adding and Subtracting Positive and Negative Numbers - Worksheet-Answers" data-type="external" data-sec="3"
+             data-pkey="pl/79605/8730364" data-hash="ca070dd057e155bbd12ec95ddd81adb4ee827072" data-ts="1788778860000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/79605/8730364'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox" title="Đánh dấu đã học"
+                     x-effect="$el.checked = !!p.done['pl/79605/8730364']"
+                     @change="await p.toggle('pl/79605/8730364', 'ca070dd057e155bbd12ec95ddd81adb4ee827072'); $el.checked = !!p.done['pl/79605/8730364']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://drive.google.com/open?id=1eNgVZKb24SlenO2G40cZ0t2nnKNE3t5_&amp;usp=drive_copy" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Adding and Subtracting Positive and Negative Numbers - Worksheet-Answers
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79605/8730364', 'ca070dd057e155bbd12ec95ddd81adb4ee827072')">
+                  <button @click.stop="p.seen('pl/79605/8730364', 'ca070dd057e155bbd12ec95ddd81adb4ee827072')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 07/09</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Addition and Subtraction Worded Questions (With Answers)" data-type="external" data-sec="3"
+             data-pkey="pl/79605/8730365" data-hash="73373aa1d9bb675377bda5d900bc0cc34a03d6b2" data-ts="1788778860000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/79605/8730365'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox" title="Đánh dấu đã học"
+                     x-effect="$el.checked = !!p.done['pl/79605/8730365']"
+                     @change="await p.toggle('pl/79605/8730365', '73373aa1d9bb675377bda5d900bc0cc34a03d6b2'); $el.checked = !!p.done['pl/79605/8730365']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://drive.google.com/file/d/1fPRhqpPPO7YOJO78Q65cdP8dqFboIvJo/view?usp=drive_link" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Addition and Subtraction Worded Questions (With Answers)
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79605/8730365', '73373aa1d9bb675377bda5d900bc0cc34a03d6b2')">
+                  <button @click.stop="p.seen('pl/79605/8730365', '73373aa1d9bb675377bda5d900bc0cc34a03d6b2')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 07/09</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Addition and Subtraction Mastery Questions (With Answers)" data-type="external" data-sec="3"
+             data-pkey="pl/79605/8730366" data-hash="14a0f3c9e3ec610894dd8c7676646680a867936d" data-ts="1788778860000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/79605/8730366'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox" title="Đánh dấu đã học"
+                     x-effect="$el.checked = !!p.done['pl/79605/8730366']"
+                     @change="await p.toggle('pl/79605/8730366', '14a0f3c9e3ec610894dd8c7676646680a867936d'); $el.checked = !!p.done['pl/79605/8730366']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://drive.google.com/open?id=1rlu0XDhEUHJ1HW357IQUvjT3sc14-7Hw&amp;usp=drive_copy" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Addition and Subtraction Mastery Questions (With Answers)
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79605/8730366', '14a0f3c9e3ec610894dd8c7676646680a867936d')">
+                  <button @click.stop="p.seen('pl/79605/8730366', '14a0f3c9e3ec610894dd8c7676646680a867936d')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 07/09</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+      </div>
+    </section>
+    
+    <!-- Một Tuần học / Bài học -->
+    <section x-data="{ open: false }"
              @expand-all.window="open = true"
              @collapse-all.window="open = false"
              x-effect="if (q || filtering) open = true"

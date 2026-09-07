@@ -7,7 +7,7 @@
   <title>Ôn tập · CIE Science 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.6c36b73f.css">
+  <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -151,31 +151,53 @@
         // trắc nghiệm. Khoá sau ghi đè khoá trước trong object literal.
         kw: '',
         get qq() { return (this.kw || '').trim().toLowerCase(); },
-        // Số mẩu khớp trong MỘT lá. Dùng để ẩn hẳn lá không liên quan khi tìm.
+        // Số mẩu còn lại trong MỘT lá sau khi lọc. Chỉ đếm loại ĐANG HIỆN, nên
+        // dùng được cho cả ô tìm lẫn chip. Danh sách dưới đây phải soi đúng các
+        // khối mà lá thật sự vẽ ra (mỗi dòng ứng với một `x-if="show.…"` trong
+        // vòng lặp lá); lệch một khối là lá rỗng vẫn hiện, hoặc lá có nội dung
+        // bị giấu — cả hai đều im lặng.
         leafHits(sec, leafId) {
-          return this.tagged(this.points(sec), leafId).length
-               + this.tagged(sec.glossary, leafId).length
-               + this.tagged(sec.watch_out, leafId).length
-               + this.tagged(sec.checklists, leafId).length
-               + this.exps(sec, leafId).length
-               + this.works(sec, leafId).length
-               + this.comps(sec, leafId).length;
+          const s = this.show;
+          return (s.facts   ? this.tagged(this.points(sec), leafId).length : 0)
+               + (s.gloss   ? this.tagged(sec.glossary, leafId).length : 0)
+               + (s.watch   ? this.tagged(sec.watch_out, leafId).length : 0)
+               + (s.list    ? this.lists(sec, leafId).length : 0)
+               + (s.exp     ? this.exps(sec, leafId).length : 0)
+               + (s.worked  ? this.works(sec, leafId).length : 0)
+               + (s.compare ? this.comps(sec, leafId).length : 0);
         },
-        // Số mẩu khớp trong CẢ MỤC, kể cả phần không gắn lá.
+        // Số mẩu còn lại trong CẢ MỤC, kể cả phần không gắn lá.
         secHits(sec) {
-          let n = this.fq(sec.topics || [], 'title', 'def', 'rules', 'subtitle').length
-                + this.fq(sec.glossary || [], 'term', 'def', 'example').length
-                + this.wordsets(sec).reduce((k, ws) =>
-                    k + this.fq(ws.items || [], 'word', 'pos', 'def', 'example').length, 0)
-                + this.grammars(sec).length + this.phrasesets(sec).length + this.reads(sec).length
-                + this.sounds(sec).length
+          const s = this.show, u = this.untagged(sec);
+          let n = (s.topics  ? this.tops(sec).length : 0)
+                + (s.gloss   ? this.fq(sec.glossary || [], 'term', 'def', 'example').length : 0)
+                + (s.words   ? this.wordsets(sec).reduce((k, ws) =>
+                     k + this.fq(ws.items || [], 'word', 'pos', 'def', 'example').length, 0) : 0)
+                + (s.grammar ? this.grammars(sec).length : 0)
+                + (s.phrases ? this.phrasesets(sec).length : 0)
+                + (s.reading ? this.reads(sec).length : 0)
+                + (s.sounds  ? this.sounds(sec).length : 0)
+                // Khối cấp MỤC (không gắn lá nào) cũng phải tính: mục chỉ có
+                // phần này mà bỏ sót là bị giấu oan.
+                + (s.facts   ? u.points.length : 0)
+                + (s.watch   ? u.watch.length : 0)
+                + (s.list    ? this.secLists(sec).length : 0)
+                + (s.exp     ? this.secExps(sec).length : 0)
                 + (this.hit(sec.big_en) && this.qq ? 1 : 0);
           for (const leaf of this.leavesOf(sec)) n += this.leafHits(sec, leaf.id);
           return n;
         },
-        // Mục nào không chứa từ khoá thì biến mất hẳn — kể cả câu chốt và sơ đồ.
+        // Đang lọc = có từ khoá HOẶC có chip được chọn. Cả hai phải ẩn HẲN mục và
+        // lá rỗng, không chỉ ẩn nội dung bên trong: mục trơ mỗi tiêu đề trông y
+        // như "phần này chưa soạn", mà trẻ thì không biết đó là do bộ lọc.
+        get filtering() { return !!this.qq || this.anyPick; },
+        // Tổng số mẩu còn lại sau khi lọc, gộp cả môn trong phạm vi. Không dùng
+        // để vẽ (dòng "không có mục nào" soi thẳng shownSummary), nhưng là con số
+        // duy nhất đo được bộ lọc từ ngoài — tests/test_study_search.py đọc nó.
+        get nHits() { return this.scopedSummary.reduce((n, x) => n + this.secHits(x), 0); },
+        // Mục nào không còn gì để hiện thì biến mất hẳn — kể cả câu chốt và sơ đồ.
         get shownSummary() {
-          return this.qq ? this.scopedSummary.filter(x => this.secHits(x)) : this.scopedSummary;
+          return this.filtering ? this.scopedSummary.filter(x => this.secHits(x)) : this.scopedSummary;
         },
         // Bên trong một bảng/danh sách ĐÃ khớp: nếu có hàng nào khớp thì chỉ giữ
         // các hàng đó; nếu chỉ tiêu đề khớp thì giữ nguyên cả bảng, vì lúc đó
@@ -194,7 +216,7 @@
         },
         shownLeaves(sec) {
           const L = this.leavesOf(sec);
-          return this.qq ? L.filter(l => this.leafHits(sec, l.id)) : L;
+          return this.filtering ? L.filter(l => this.leafHits(sec, l.id)) : L;
         },
         // Tô sáng từ khoá. Tự escape rồi mới chèn <mark>, nên x-html ở đây an toàn.
         esc(v) {
@@ -207,8 +229,6 @@
           const rx = new RegExp('(' + this.qq.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
           return t.replace(rx, '<mark class="bg-amber-200 text-slate-900 rounded px-0.5">$1</mark>');
         },
-        // Số mẩu nội dung còn lại sau khi lọc, chỉ để hiện dòng "không có mục nào".
-        get nHits() { return this.scopedSummary.reduce((n, s) => n + this.secHits(s), 0); },
         hit(...parts) {
           if (!this.qq) return true;
           return parts.filter(Boolean).join(' ').toLowerCase().includes(this.qq);
@@ -296,7 +316,10 @@
         // ⚠ ĐỪNG đặt tên state này là `pick`: đã có method pick(c) chọn đáp án
         // trắc nghiệm, khoá sau ghi đè khoá trước trong object literal.
         toggleShow(k) { this.filt[k] = !this.filt[k]; localStorage.setItem('lms_pick', JSON.stringify(this.filt)); },
-        get anyPick() { return Object.values(this.filt).some(Boolean); },
+        // Chỉ tính chip CÓ MẶT trong phạm vi đang xem. `filt` lưu ở localStorage nên
+        // một lựa chọn cũ (ví dụ Thí nghiệm) đi theo sang unit không có loại đó;
+        // tính cả nó thì `show` cho ra false hết và cả trang trắng, không lý do.
+        get anyPick() { return this.kinds.some(kd => this.filt[kd.k]); },
         // Hiển thị thật sự: chưa chọn gì thì hiện hết, chọn rồi thì chỉ hiện phần đã chọn.
         get show() {
           const on = this.anyPick;
@@ -408,7 +431,9 @@
         // có thể có 0, 1 hay nhiều, tuỳ độ quan trọng. Nhận cả dạng cũ (một object)
         // để dữ liệu môn khác chưa gen lại vẫn hiện.
         arr(sec, many, one) { const a = sec[many]; if (Array.isArray(a)) return a; const o = sec[one]; return o ? [o] : []; },
-        lists(sec, leafId)  { return this.arr(sec, 'checklists', 'checklist').filter(x => x.concept === leafId); },
+        // Qua fq như exps/works: đếm và vẽ phải dùng CHUNG một phép lọc, lệch
+        // nhau là lá rỗng vẫn hiện hoặc lá có nội dung bị giấu.
+        lists(sec, leafId)  { return this.fq(this.arr(sec, 'checklists', 'checklist').filter(x => x.concept === leafId), 'title', 'note', 'items'); },
         exps(sec, leafId)   { return this.fq(this.arr(sec, 'experiments', 'from_the_book').filter(x => x.concept === leafId), 'title','summary','result'); },
         works(sec, leafId)   { return this.fq(this.arr(sec, 'worked', null).filter(x => x.concept === leafId), 'title','problem','answer','steps'); },
         tops(sec)           { return this.fq(sec.topics || [], 'title', 'def', 'rules', 'subtitle'); },
@@ -1391,9 +1416,9 @@
           <circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M20 20l-3.5-3.5"/>
         </svg>
       </div>
-      <p x-show="qq && !nHits" x-cloak
+      <p x-show="filtering && !shownSummary.length" x-cloak
          class="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
-        Không có mục nào khớp «<span x-text="kw"></span>».
+        Không có mục nào khớp<template x-if="qq"><span> «<span x-text="kw"></span>»</span></template>.
       </p>
 
       <!-- Lọc loại nội dung + bật chi tiết. Class ở KINDS là literal để Tailwind quét thấy. -->

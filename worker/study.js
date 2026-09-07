@@ -21,20 +21,21 @@ const ID_RE = /^[\w.-]{1,64}$/;
 const MAX_ATTEMPTS = 200; // một phiên dài nhất còn hợp lý
 const MS_CAP = 600000;    // 10 phút cho một câu là quá thừa
 const DUE_CAP = 31536000; // không cho hoãn quá 1 năm
+const MAX_KNOWN = 500;    // một lượt tick nhóm lớn nhất còn hợp lý
 
 const ok = (s) => typeof s === "string" && ID_RE.test(s);
 
 /** Lịch ôn của một học sinh trong một môn. 1 câu lệnh, 2 tham số. */
 export async function readCards(env, user, course) {
   const r = await env.STUDY_DB.prepare(
-    `SELECT item_id, n, wrong, streak, box, ease, due, last_ts
+    `SELECT item_id, n, wrong, streak, box, ease, due, last_ts, known
        FROM card WHERE user_id = ?1 AND course = ?2`
   )
     .bind(user, course)
     .all();
   // Trả dạng cột + hàng chứ không phải mảng object: khoảng 1/3 số byte và 1/3
   // thời gian stringify — đáng kể khi chỉ có 10ms CPU.
-  const cols = ["item_id", "n", "wrong", "streak", "box", "ease", "due", "last_ts"];
+  const cols = ["item_id", "n", "wrong", "streak", "box", "ease", "due", "last_ts", "known"];
   return { cols, rows: (r.results || []).map((o) => cols.map((c) => o[c])) };
 }
 
@@ -121,6 +122,39 @@ export async function writeSession(env, user, course, attempts) {
     .bind(user, course, now, payload);
 
   await db.batch([insertAttempts, upsertCards]);
+  return { ok: true, n: rows.length };
+}
+
+/**
+ * Đánh dấu "đã thuộc" cho một hoặc NHIỀU mục cùng lúc — 1 câu lệnh, 3 tham số.
+ *
+ * Bấm ô của một mục hay một lá là ghi cho cả cụm bên trong, nên hàm này phải
+ * nhận cả lô: 40 từ mà gọi 40 lượt là 8 giây từ Việt Nam (~200ms mỗi vòng).
+ *
+ * Dòng `card` có thể CHƯA TỒN TẠI — từ vựng chưa lật thẻ lần nào thì không có
+ * lịch sử làm bài. Vì vậy INSERT … ON CONFLICT chứ không phải UPDATE: UPDATE sẽ
+ * âm thầm không ghi được gì, mà giao diện đã tick sẵn nên trông như đã lưu.
+ */
+export async function writeKnown(env, user, course, marks) {
+  const rows = (marks || [])
+    .filter((m) => m && ok(m.i) && ok(m.c))
+    .slice(0, MAX_KNOWN)
+    .map((m) => ({ i: m.i, c: m.c, v: m.v ? 1 : 0 }));
+  if (!rows.length) return { ok: true, n: 0 };
+
+  await env.STUDY_DB.prepare(
+    `INSERT INTO card (user_id,item_id,course,concept_id,known)
+     SELECT ?1, json_extract(e.value,'$.i'), ?2, json_extract(e.value,'$.c'),
+            CASE WHEN json_extract(e.value,'$.v') THEN 1 ELSE 0 END
+       FROM json_each(?3) AS e
+      WHERE true   -- BẮT BUỘC: xem ghi chú ở upsertCards.
+     ON CONFLICT(user_id, item_id) DO UPDATE SET
+            known      = excluded.known,
+            course     = excluded.course,
+            concept_id = excluded.concept_id`
+  )
+    .bind(user, course, JSON.stringify(rows))
+    .run();
   return { ok: true, n: rows.length };
 }
 
