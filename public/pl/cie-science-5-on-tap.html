@@ -7,7 +7,7 @@
   <title>Ôn tập · CIE Science 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../assets/tw.3915128d.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -538,7 +538,7 @@
         lists(sec, leafId)  { return this.fq(this.arr(sec, 'checklists', 'checklist').filter(x => x.concept === leafId), 'title', 'note', 'items'); },
         exps(sec, leafId)   { return this.fq(this.arr(sec, 'experiments', 'from_the_book').filter(x => x.concept === leafId), 'title','summary','result'); },
         works(sec, leafId)   { return this.fq(this.arr(sec, 'worked', null).filter(x => x.concept === leafId), 'title','problem','answer','steps'); },
-        tops(sec)           { return this.fq(sec.topics || [], 'title', 'def', 'rules', 'subtitle'); },
+        tops(sec)           { return this.fq(sec.topics || [], 'title', 'def', 'def_vi', 'rules', 'rules_vi', 'subtitle'); },
         // Ba khối riêng của môn ngoại ngữ. ESL dạy KỸ NĂNG DÙNG chứ không dạy
         // kiến thức để nhớ, nên "điều cần nhớ" và "thí nghiệm" không hợp:
         //   words   — bộ từ vựng, mỗi từ kèm loại từ và câu ví dụ thật trong bài
@@ -1761,6 +1761,7 @@
               <!-- Định nghĩa: infographic này để TỔNG HỢP kiến thức, không chỉ liệt kê
                    nội dung sẽ thi — nên mỗi thẻ mở đầu bằng một câu "cái này là gì". -->
               <p x-show="tp.def" class="px-3 pt-2.5 text-sm font-medium text-slate-900" x-html="hl(tp.def)"></p>
+              <p x-show="tp.def_vi" x-cloak class="px-3 pt-0.5 text-sm text-cyan-700 leading-snug" x-html="hl(tp.def_vi)"></p>
               <div class="grid sm:grid-cols-2 gap-x-4 gap-y-2 px-3 py-2.5">
                 <div class="flex gap-3 self-start">
                 <template x-if="tp.figure">
@@ -1768,7 +1769,10 @@
                 </template>
                 <ul class="space-y-1 text-sm text-slate-700 self-start">
                   <template x-for="(r, ri) in (tp.rules || [])" :key="ri">
-                    <li class="flex gap-2"><span class="text-orange-400 shrink-0">•</span><span x-html="hl(r)"></span></li>
+                    <li class="flex gap-2"><span class="text-orange-400 shrink-0">•</span><span>
+                      <span x-html="hl(r)"></span>
+                      <span x-show="(tp.rules_vi || [])[ri]" x-cloak class="block text-cyan-700" x-html="hl((tp.rules_vi || [])[ri])"></span>
+                    </span></li>
                   </template>
                 </ul>
                 </div>
