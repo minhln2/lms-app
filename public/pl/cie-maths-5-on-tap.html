@@ -7,7 +7,7 @@
   <title>Ôn tập · CIE Maths 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.41de24b9.css">
+  <link rel="stylesheet" href="../assets/tw.15c9ba65.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -1423,6 +1423,7 @@
         <p x-show="learnCard.ipa" x-cloak class="text-sm text-slate-400 font-mono" x-text="learnCard.ipa"></p>
         <div class="mt-4 pt-4 border-t border-slate-100">
           <p class="text-slate-700" x-text="learnCard.back_en"></p>
+          <p x-show="learnCard.back_vi" x-cloak class="text-cyan-700" x-text="learnCard.back_vi"></p>
           <p x-show="learnCard.example_en" class="mt-2 text-sm text-slate-500 italic" x-text="learnCard.example_en"></p>
           <p x-show="learnCard.example_vi" class="text-sm text-cyan-700" x-text="learnCard.example_vi"></p>
         </div>
@@ -1459,6 +1460,7 @@
         <p x-show="q.ipa" x-cloak class="text-sm text-slate-400 font-mono" x-text="q.ipa"></p>
         <div x-show="revealed" x-cloak class="mt-4 pt-4 border-t border-slate-100">
           <p class="text-slate-700" x-text="q.back_en"></p>
+          <p x-show="q.back_vi" x-cloak class="text-cyan-700" x-text="q.back_vi"></p>
           <p x-show="q.example_en" class="mt-2 text-sm text-slate-500 italic" x-text="q.example_en"></p>
           <p x-show="q.example_vi" class="text-sm text-cyan-700" x-text="q.example_vi"></p>
         </div>
@@ -1542,8 +1544,12 @@
           </div>
 
           <!-- Ý lớn: một câu, chữ to, để nhớ được cả mục -->
-          <p x-show="sec.big_en && (!qq || hit(sec.big_en))" x-cloak
-             class="px-5 py-4 text-base font-medium text-slate-800 leading-snug" x-html="hl(sec.big_en)"></p>
+          <div x-show="sec.big_en && (!qq || hit(sec.big_en))" x-cloak class="px-5 py-4">
+            <p class="text-base font-medium text-slate-800 leading-snug" x-html="hl(sec.big_en)"></p>
+            <!-- Dòng tiếng Việt chỉ hiện khi học liệu CÓ bản dịch. Môn của PL dựng
+                 kèm --no-gloss nên không có trường *_vi, các dòng này tự ẩn hết. -->
+            <p x-show="sec.big_vi" x-cloak class="text-sm text-cyan-700 leading-snug" x-html="hl(sec.big_vi)"></p>
+          </div>
 
           <!-- ── Sơ đồ: ba trạng thái của chất, theo mô hình hạt ────────────
                Vẽ thẳng, KHÔNG dùng x-for: <template> bên trong <svg> nằm ở không
@@ -1823,7 +1829,9 @@
                     class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
                       class="ml-1 align-middle text-indigo-400 hover:text-indigo-700">🔊</button></dt>
                   <dd class="text-sm text-slate-700 leading-snug" x-html="hl(g.def)"></dd>
+                  <dd x-show="g.def_vi" x-cloak class="text-sm text-cyan-700 leading-snug" x-html="hl(g.def_vi)"></dd>
                   <dd x-show="g.example" class="mt-0.5 text-xs text-slate-500 italic" x-html="hl(g.example)"></dd>
+                  <dd x-show="g.example_vi" x-cloak class="text-xs text-cyan-700" x-html="hl(g.example_vi)"></dd>
                   </div>
                 </div>
               </template>
@@ -1862,7 +1870,9 @@
                     class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
                         class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></dt>
                     <dd class="text-sm text-slate-700 leading-snug" x-html="hl(g.def)"></dd>
+                    <dd x-show="g.def_vi" x-cloak class="text-sm text-cyan-700 leading-snug" x-html="hl(g.def_vi)"></dd>
                     <dd x-show="g.example" class="mt-0.5 text-xs text-slate-500 italic" x-html="hl(g.example)"></dd>
+                    <dd x-show="g.example_vi" x-cloak class="text-xs text-cyan-700" x-html="hl(g.example_vi)"></dd>
                   </div>
                 </template>
               </dl>
@@ -1876,7 +1886,8 @@
               <div class="grid gap-2 sm:grid-cols-2">
                 <template x-for="(pt, i) in tagged(points(sec), leaf.id)" :key="i">
                   <div class="flex gap-2.5 rounded-lg border border-sky-200 bg-sky-50/40 p-3">
-                    <p class="text-sm text-slate-700 leading-snug flex-1"><span class="font-semibold text-slate-900" x-html="hl(lead(pt.t)[0])"></span><span x-html="hl(lead(pt.t)[1])"></span></p>
+                    <div class="flex-1"><p class="text-sm text-slate-700 leading-snug"><span class="font-semibold text-slate-900" x-html="hl(lead(pt.t)[0])"></span><span x-html="hl(lead(pt.t)[1])"></span></p>
+                    <p x-show="pt.t_vi" x-cloak class="text-sm text-cyan-700 leading-snug" x-html="hl(pt.t_vi)"></p></div>
                     <template x-if="pt.image"><img :src="'study/img/' + pt.image" alt="" class="w-16 shrink-0 self-start rounded border border-sky-200 bg-white object-contain"></template>
                   </div>
                 </template>
@@ -2026,7 +2037,9 @@
                     class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
                         class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></dt>
                   <dd class="text-sm text-slate-700 leading-snug" x-html="hl(g.def)"></dd>
+                  <dd x-show="g.def_vi" x-cloak class="text-sm text-cyan-700 leading-snug" x-html="hl(g.def_vi)"></dd>
                   <dd x-show="g.example" class="mt-0.5 text-xs text-slate-500 italic" x-html="hl(g.example)"></dd>
+                  <dd x-show="g.example_vi" x-cloak class="text-xs text-cyan-700" x-html="hl(g.example_vi)"></dd>
                 </div>
               </template>
             </dl>
@@ -2034,8 +2047,18 @@
             <template x-if="show.facts && untagged(sec).points.length">
             <div class="grid gap-2 sm:grid-cols-2">
               <template x-for="(pt, i) in untagged(sec).points" :key="i">
+                <!-- Thẻ là `flex` (chừa chỗ cho hình), nên hai dòng Anh–Việt phải
+                     bọc chung một khối, không thì chúng nằm thành HAI CỘT. -->
                 <div class="flex gap-2.5 rounded-lg border border-slate-200 p-3">
-                  <p class="text-sm text-slate-700 leading-snug"><span class="font-semibold text-slate-900" x-html="hl(lead(pt.t)[0])"></span><span x-html="hl(lead(pt.t)[1])"></span></p>
+                  <!-- x-if chứ không x-show: :src vẫn bind khi ẩn → tải "img/null" (404) -->
+                  <template x-if="pt.image">
+                    <img :src="'study/img/' + pt.image" alt="" loading="lazy"
+                         class="w-20 shrink-0 self-start rounded border border-slate-200 bg-white object-contain">
+                  </template>
+                  <div class="min-w-0">
+                    <p class="text-sm text-slate-700 leading-snug"><span class="font-semibold text-slate-900" x-html="hl(lead(pt.t)[0])"></span><span x-html="hl(lead(pt.t)[1])"></span></p>
+                    <p x-show="pt.t_vi" x-cloak class="text-sm text-cyan-700 leading-snug" x-html="hl(pt.t_vi)"></p>
+                  </div>
                 </div>
               </template>
             </div>
