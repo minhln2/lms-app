@@ -3,7 +3,7 @@
  *
  * Định tuyến:
  *   /api/progress  → API tiến độ học tập (đọc/ghi Workers KV)
- *   /api/study     → lịch ôn + kết quả làm bài (đọc/ghi D1)
+ *   /api/study     → lịch ôn, kết quả làm bài, cờ "đã thuộc" (đọc/ghi D1)
  *   /api/tts       → đọc to bằng Google TTS, sinh lúc bấm, cache ở edge
  *   còn lại        → trả file tĩnh từ binding ASSETS (thư mục dist/)
  *

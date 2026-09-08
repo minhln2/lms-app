@@ -7,7 +7,7 @@
   <title>Ôn tập · CIE ESL 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../assets/tw.41de24b9.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -139,6 +139,89 @@
         // đúng dồn trong MỘT buổi (muốn lên bậc phải đúng ở các lần cách nhau
         // nhiều ngày). Hạ ngưỡng thì hạ cả ba, đừng bỏ hẳn điều kiện nào.
         RETIRE: { n: 3, box: 3, err: 0.25 },
+
+        // ── "Đã thuộc": cờ đánh dấu bằng TAY ────────────────────────────────
+        // KHÔNG suy từ kết quả làm bài (khác `retired()` mà trắc nghiệm vẫn dùng)
+        // — đây là tuyên bố của người học. Một từ vựng trong tóm tắt và thẻ ghi
+        // nhớ sinh ra từ nó dùng CHUNG một item_id (src/study.py ghi sẵn trường
+        // `card` cho từng thuật ngữ), nên tick ở đâu cũng là một trạng thái duy
+        // nhất — để hai nơi thì chúng lệch nhau mà không có gì báo.
+        isKnown(id) { return !!(id && this.cards[id] && this.cards[id].known); },
+        // Ghi được thì mới hiện ô tick. Mở file cục bộ hay bản GitHub Pages không
+        // có API: hiện ô mà bấm không lưu được còn tệ hơn là không có ô nào.
+        get canMark() { return this.online && !!this.secret; },
+
+        // Các mẩu tick được. CHỈ từ vựng/thuật ngữ — chúng là thứ duy nhất trong
+        // phần tóm tắt có item_id ổn định. Ô của LÁ và của MỤC không có trạng thái
+        // riêng, luôn suy từ đám này (đúng khuôn ô tick nhóm ở trang môn): bỏ tick
+        // một từ là ô cha tự về "một phần" ngay, không bao giờ lệch nhau.
+        atomsOf(list, secId) {
+          return (list || []).filter(x => x && x.card)
+                             .map(x => ({ id: x.card, c: x.concept || secId }));
+        },
+        leafAtoms(sec, leafId) {
+          return this.atomsOf((sec.glossary || []).filter(g => g.concept === leafId), sec.concept);
+        },
+        secAtoms(sec) {
+          const out = this.atomsOf(sec.glossary, sec.concept);
+          for (const ws of sec.words || []) {
+            out.push(...this.atomsOf((ws.items || []).map(it => ({ ...it, concept: it.concept || ws.concept })),
+                                     sec.concept));
+          }
+          return out;
+        },
+        // null = không có gì để tick → KHÔNG vẽ ô. Lá chỉ có "điều cần nhớ" hay
+        // thí nghiệm thì không có từ nào; vẽ ô ở đó là ô không bao giờ đổi được.
+        knownState(atoms) {
+          if (!atoms || !atoms.length) return null;
+          const n = atoms.filter(a => this.isKnown(a.id)).length;
+          return n === 0 ? 'none' : (n === atoms.length ? 'all' : 'some');
+        },
+        // Ghi cả cụm bằng ĐÚNG MỘT lượt POST, hỏng thì hoàn tác toàn bộ — cùng
+        // khuôn với ô tick nhóm ở trang môn. Gọi lẻ từng từ là 40 vòng mạng, mà
+        // từ Việt Nam mỗi vòng ~200ms.
+        async setKnown(atoms, v) {
+          const list = (atoms || []).filter(a => this.isKnown(a.id) !== !!v);
+          if (!list.length || !this.canMark) return;
+          const prev = {};
+          for (const a of list) {
+            prev[a.id] = this.cards[a.id];
+            this.cards[a.id] = { ...(this.cards[a.id] || {}), known: v ? 1 : 0 };
+          }
+          try {
+            const r = await fetch(`/api/study?user=${this.user}&course=${this.course}`, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'x-progress-key': this.secret },
+              body: JSON.stringify({ known: list.map(a => ({ i: a.id, c: a.c, v: v ? 1 : 0 })) }),
+            });
+            if (r.status === 401) {
+              this.secret = ''; localStorage.removeItem('lms_key');
+              throw new Error('Mã bí mật không đúng');
+            }
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            this.err = '';
+          } catch (e) {
+            for (const a of list) {
+              if (prev[a.id] === undefined) delete this.cards[a.id]; else this.cards[a.id] = prev[a.id];
+            }
+            this.err = 'Chưa lưu được đánh dấu "đã thuộc" — thử lại. (' + e.message + ')';
+          }
+        },
+        // Chỉ hiện phần CHƯA thuộc. Nhớ trong localStorage như các bộ lọc khác.
+        onlyNew: localStorage.getItem('lms_only_new') === '1',
+        toggleOnlyNew() {
+          this.onlyNew = !this.onlyNew;
+          localStorage.setItem('lms_only_new', this.onlyNew ? '1' : '0');
+        },
+        // Ẩn mẩu ĐÃ THUỘC. Mẩu không có `card` (điều cần nhớ, thí nghiệm, bảng…)
+        // không tick được nên luôn giữ lại — lọc mất chúng là giấu nội dung mà
+        // người học chưa hề nói là đã thuộc.
+        fk(arr) {
+          if (!this.onlyNew) return arr || [];
+          return (arr || []).filter(x => !(x && x.card && this.isKnown(x.card)));
+        },
+        secGloss(sec) { return this.fk(this.fq(sec.glossary || [], 'term', 'def', 'example')); },
+        wordItems(ws) { return this.fk(this.fq(ws.items || [], 'word', 'pos', 'def', 'example')); },
         // Bỏ qua mục đã nắm chắc — MẶC ĐỊNH TẮT: người mới vào chưa có mục nào
         // "nắm chắc", bật sẵn thì chẳng lọc gì mà lại giấu mất một lựa chọn.
         skipKnown: localStorage.getItem('lms_skip_known') === '1',
@@ -170,9 +253,8 @@
         secHits(sec) {
           const s = this.show, u = this.untagged(sec);
           let n = (s.topics  ? this.tops(sec).length : 0)
-                + (s.gloss   ? this.fq(sec.glossary || [], 'term', 'def', 'example').length : 0)
-                + (s.words   ? this.wordsets(sec).reduce((k, ws) =>
-                     k + this.fq(ws.items || [], 'word', 'pos', 'def', 'example').length, 0) : 0)
+                + (s.gloss   ? this.secGloss(sec).length : 0)
+                + (s.words   ? this.wordsets(sec).reduce((k, ws) => k + this.wordItems(ws).length, 0) : 0)
                 + (s.grammar ? this.grammars(sec).length : 0)
                 + (s.phrases ? this.phrasesets(sec).length : 0)
                 + (s.reading ? this.reads(sec).length : 0)
@@ -190,14 +272,20 @@
         // Đang lọc = có từ khoá HOẶC có chip được chọn. Cả hai phải ẩn HẲN mục và
         // lá rỗng, không chỉ ẩn nội dung bên trong: mục trơ mỗi tiêu đề trông y
         // như "phần này chưa soạn", mà trẻ thì không biết đó là do bộ lọc.
-        get filtering() { return !!this.qq || this.anyPick; },
+        get filtering() { return !!this.qq || this.anyPick || this.onlyNew; },
         // Tổng số mẩu còn lại sau khi lọc, gộp cả môn trong phạm vi. Không dùng
         // để vẽ (dòng "không có mục nào" soi thẳng shownSummary), nhưng là con số
         // duy nhất đo được bộ lọc từ ngoài — tests/test_study_search.py đọc nó.
         get nHits() { return this.scopedSummary.reduce((n, x) => n + this.secHits(x), 0); },
         // Mục nào không còn gì để hiện thì biến mất hẳn — kể cả câu chốt và sơ đồ.
         get shownSummary() {
-          return this.filtering ? this.scopedSummary.filter(x => this.secHits(x)) : this.scopedSummary;
+          // Mục đã tick "đã thuộc" TOÀN BỘ thì biến mất kể cả khi bên trong còn
+          // điều cần nhớ hay thí nghiệm: ô tick của mục là lời khẳng định về cả
+          // mục, không riêng đám từ vựng.
+          let S = this.onlyNew
+            ? this.scopedSummary.filter(x => this.knownState(this.secAtoms(x)) !== 'all')
+            : this.scopedSummary;
+          return this.filtering ? S.filter(x => this.secHits(x)) : S;
         },
         // Bên trong một bảng/danh sách ĐÃ khớp: nếu có hàng nào khớp thì chỉ giữ
         // các hàng đó; nếu chỉ tiêu đề khớp thì giữ nguyên cả bảng, vì lúc đó
@@ -215,7 +303,8 @@
           return m.length ? m : it;
         },
         shownLeaves(sec) {
-          const L = this.leavesOf(sec);
+          let L = this.leavesOf(sec);
+          if (this.onlyNew) L = L.filter(l => this.knownState(this.leafAtoms(sec, l.id)) !== 'all');
           return this.filtering ? L.filter(l => this.leafHits(sec, l.id)) : L;
         },
         // Tô sáng từ khoá. Tự escape rồi mới chèn <mark>, nên x-html ở đây an toàn.
@@ -241,10 +330,14 @@
             return Array.isArray(v) ? v.map(y => typeof y === 'object' ? Object.values(y).join(' ') : y).join(' ') : v;
           })));
         },
-        // Nguồn của MỌI lượt chọn câu: bật lọc thì mục đã nắm chắc đứng ngoài hẳn.
+        // Nguồn của MỌI lượt chọn câu: bật lọc thì mục đã thuộc đứng ngoài hẳn.
+        // HAI thước đo khác nhau, cố ý: thẻ ghi nhớ dùng CỜ TAY, còn trắc nghiệm
+        // vẫn dùng ngưỡng RETIRE suy từ kết quả làm bài — phần trắc nghiệm giữ
+        // nguyên cơ chế chấm điểm để còn nuôi được thống kê "câu nào hay sai".
+        isDone(kind, q) { return kind === 'cards' ? this.isKnown(q.id) : this.retired(q); },
         pool(kind) {
           const all = kind === 'cards' ? this.scopedCards : this.scopedQuiz;
-          return this.skipKnown ? all.filter(q => !this.retired(q)) : all;
+          return this.skipKnown ? all.filter(q => !this.isDone(kind, q)) : all;
         },
         get poolItems() { return this.pool(this.mode === 'cards' ? 'cards' : 'quiz'); },
         // Bảng trạng thái: một dòng mỗi mục, sắp mục yếu lên trước.
@@ -253,8 +346,11 @@
           return this.modeItems.map(q => {
             const c = this.cards[q.id];
             const n = c?.n || 0, wrong = c?.wrong || 0;
-            const st = !c || !n ? 'new' : (this.retired(q) ? 'known'
-                     : (wrong / n > 0.34 ? 'weak' : 'learning'));
+            // Cờ tay thắng: đã tick "đã thuộc" thì bảng phải nói vậy, kể cả khi
+            // thẻ đó chưa từng được lật lần nào.
+            const st = this.isKnown(q.id) ? 'known'
+                     : (!c || !n ? 'new' : (this.retired(q) ? 'known'
+                     : (wrong / n > 0.34 ? 'weak' : 'learning')));
             return {
               id: q.id, text: q.stem_en || q.front_en || '', concept: this.conceptName(q.concept),
               n, wrong, box: c?.box || 0, st,
@@ -276,7 +372,10 @@
         // Thanh "đã nắm chắc" ở màn hình đầu tính theo ĐÚNG tab đang mở (trắc nghiệm
         // hay thẻ) — gộp cả hai thì con số không khớp thứ đang nhìn (9 câu mà /17).
         get modeItems() { return this.mode === 'cards' ? this.scopedCards : this.scopedQuiz; },
-        get modeRetired() { return this.modeItems.filter(q => this.retired(q)).length; },
+        get modeRetired() {
+          const k = this.mode === 'cards' ? 'cards' : 'quiz';
+          return this.modeItems.filter(q => this.isDone(k, q)).length;
+        },
         get scopedItems() {
           return [...this.scopedQuiz, ...this.scopedCards];
         },
@@ -465,15 +564,15 @@
         // cần bọc một chỗ; khối nào lọc hết thì phần bao ngoài tự ẩn vì
         // template dùng `.length` để quyết định có vẽ hay không.
         tagged(list, leafId) {
-          return this.fq((list || []).filter(x => x && x.concept === leafId),
+          return this.fk(this.fq((list || []).filter(x => x && x.concept === leafId),
                          't', 'term', 'def', 'example', 'title', 'wrong', 'right',
-                         'problem', 'answer', 'summary', 'result', 'rules', 'items', 'rows', 'lines');
+                         'problem', 'answer', 'summary', 'result', 'rules', 'items', 'rows', 'lines'));
         },
         // Mọi thứ KHÔNG gắn vào lá nào của mục — dữ liệu cũ, hoặc ý thuộc cả mục
         untagged(sec) {
           const ids = new Set(this.leavesOf(sec).map(l => l.id));
           const f = (list) => (list || []).filter(x => !x || !ids.has(x.concept));
-          const r = { glossary: f(sec.glossary), points: f(this.points(sec)), watch: f(sec.watch_out) };
+          const r = { glossary: this.fk(f(sec.glossary)), points: f(this.points(sec)), watch: f(sec.watch_out) };
           r.any = r.glossary.length || r.points.length || r.watch.length
                   || this.secLists(sec).length || this.secExps(sec).length;
           return r;
@@ -645,88 +744,56 @@
         get learnCard() { return this.learnDeck[this.learnAt] || null; },
 
         // ── Thẻ ghi nhớ: KIỂM TRA ──────────────────────────────────────────────
-        // Quay vòng vô hạn. Mỗi lượt CHỌN NGẪU NHIÊN CÓ TRỌNG SỐ: thẻ vừa đánh
-        // "cần kiểm tra lại" nặng hơn hẳn, thẻ "đã thuộc" nhẹ đi, thẻ chưa gặp
-        // trong phiên thì dựa vào tỉ lệ sai đã lưu. Không lặp thẻ vừa hiện.
-        weight(q) {
-          const st = this.seen[q.id];
-          if (st === 'again') return 4.0;
-          if (st === 'known') return 0.25;
-          if (this.retired(q)) return 0.15;
-          const c = this.cards[q.id];
-          const err = c ? (c.wrong + 0.5) / (c.n + 1.0) : 0.5;
-          return 1.0 + 3.0 * err;
-        },
-        pickWeighted() {
-          const src = this.pool('cards');
-          let pool = src.filter(q => q.id !== this.lastId);
-          if (!pool.length) pool = src;
-          const total = pool.reduce((a, q) => a + this.weight(q), 0);
-          let r = Math.random() * total;
-          for (const q of pool) { r -= this.weight(q); if (r <= 0) return q; }
-          return pool[pool.length - 1];
-        },
+        // Không chấm điểm, không lịch ôn giãn cách: mỗi thẻ chỉ có HAI trạng thái —
+        // đã thuộc hay chưa. Hàng đợi là bộ thẻ đã xáo; thẻ nào phải "Xem đáp án"
+        // thì xếp lại vào cuối ĐÚNG MỘT LẦN rồi thôi.
+        //
+        // Có điểm dừng, không quay vòng vô hạn như bản trước: phiên không bao giờ
+        // kết thúc thì cách duy nhất để ra là bỏ dở, mà bỏ dở thì không có màn
+        // tổng kết nào để thấy mình vừa thuộc thêm bao nhiêu.
+        again: null,
         startTest() {
-          this._cerr = {}; this.seen = {}; this.tStats = { n: 0, known: 0 };
-          this.lastId = null; this.log = []; this.revealed = false;
-          this.queue = [this.pickWeighted()]; this.at = 0;
-          this.shownAt = Date.now(); this.screen = 'test';
+          const a = [...this.pool('cards')];
+          for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+          this.queue = a; this.at = 0;
+          this.seen = {}; this.again = new Set(); this.tStats = { n: 0, known: 0 };
+          this.revealed = false; this.shownAt = Date.now(); this.screen = 'test';
           this.autoRead(this.q?.front_en);
         },
-        // known=true → điểm 3 ("Đã thuộc"), false → điểm 0 ("Cần kiểm tra lại").
-        // Cùng thang với trắc nghiệm nên D1 và lịch ôn giãn cách dùng chung.
-        // Đã thuộc → chấm 3 và sang thẻ kế ngay. Xem đáp án → chấm 0, lật thẻ, chờ
-        // bấm Tiếp theo. Chấm ngay lúc bấm (không đợi Tiếp theo) để đóng tab giữa
-        // chừng cũng không mất lượt: log đã có, save() định kỳ sẽ đẩy.
-        markKnown() { this.grade(true); this.advance(); },
-        reveal() { if (this.revealed) return; this.revealed = true; this.grade(false); },
-        grade(known) {
-          const g = known ? 3 : 0;
-          const now = Math.floor(Date.now() / 1000);
-          const q = this.q;
-          const st = this.sched(q.id, this.cards[q.id], g, now);
-          this.log.push({ i: q.id, c: q.concept, ok: known ? 1 : 0, g,
-                          ms: Date.now() - this.shownAt, x: null,
-                          t: now, box: st.box, ease: st.ease, due: st.due });
-          const prev = this.cards[q.id] || { n: 0, wrong: 0, streak: 0 };
-          this.cards[q.id] = { ...prev, ...st, n: prev.n + 1,
-                               wrong: prev.wrong + (known ? 0 : 1),
-                               streak: known ? prev.streak + 1 : 0, last_ts: now };
+        // Ghi thẳng cờ "đã thuộc" — CÙNG trạng thái với ô tick cạnh từ đó trong
+        // phần tóm tắt, vì thẻ và từ chung một item_id.
+        mark(q, known) {
+          if (this.seen[q.id] === undefined) this.tStats.n++;
+          const was = this.seen[q.id] === 'known';
           this.seen[q.id] = known ? 'known' : 'again';
-          this.tStats.n++; if (known) this.tStats.known++;
-          this.lastId = q.id;
-          if (this.log.length >= 5) this.save();   // lưu định kỳ: vòng vô hạn không có "kết thúc" để chờ
+          if (known && !was) this.tStats.known++;
+          if (!known && was) this.tStats.known--;
+          this.setKnown([{ id: q.id, c: q.concept }], known);
+        },
+        markKnown() {
+          const q = this.q; if (!q) return;
+          this.mark(q, true);
+          this.advance();
+        },
+        // Phải xem đáp án nghĩa là CHƯA thuộc — kể cả khi trước đó đã tick. Bỏ
+        // bước hạ cờ này thì thẻ đã tick nhầm không có đường nào quay lại.
+        reveal() {
+          if (this.revealed) return;
+          this.revealed = true;
+          const q = this.q; if (!q) return;
+          this.mark(q, false);
+          if (!this.again.has(q.id)) { this.again.add(q.id); this.queue.push(q); }
         },
         advance() {
-          this.queue = [this.pickWeighted()]; this.at = 0;
-          this.revealed = false; this.shownAt = Date.now();
+          this.revealed = false;
+          this.at++;
+          this.shownAt = Date.now();
+          if (this.at >= this.queue.length) { this.screen = 'done'; return; }
           this.autoRead(this.q?.front_en);
         },
         get nAgain() { return Object.values(this.seen).filter(v => v === 'again').length; },
-        get nUnseen() { return this.scopedCards.filter(q => !this.seen[q.id]).length; },
-        finishTest() { this.save(); this.screen = 'done'; },
-
-        // ── Thẻ ghi nhớ (cũ) ──────────────────────────────────────────────────
-        // Người học tự chấm 0..3 (Lại / Khó / Được / Dễ) — cùng thang điểm với
-        // trắc nghiệm nên dùng chung sched() và chung lịch sử trong D1.
-        rate(g) {
-          if (!this.revealed) return;
-          const now = Math.floor(Date.now() / 1000);
-          const q = this.q;
-          const st = this.sched(q.id, this.cards[q.id], g, now);
-          const okAns = g >= 2;
-          this.log.push({ i: q.id, c: q.concept, ok: okAns ? 1 : 0, g,
-                          ms: Date.now() - this.shownAt, x: null,
-                          t: now, box: st.box, ease: st.ease, due: st.due });
-          const prev = this.cards[q.id] || { n: 0, wrong: 0, streak: 0 };
-          this.cards[q.id] = { ...prev, ...st, n: prev.n + 1,
-                               wrong: prev.wrong + (okAns ? 0 : 1),
-                               streak: okAns ? prev.streak + 1 : 0, last_ts: now };
-          if (!okAns && this.wrongAgain < 5) { this.queue.push(q); this.wrongAgain++; }
-          this.revealed = false;
-          this.at++; this.shownAt = Date.now();
-          if (this.at >= this.queue.length) { this.screen = 'done'; this.save(); }
-        },
+        get nLeft() { return Math.max(0, this.queue.length - this.at - 1); },
+        finishTest() { this.screen = 'done'; },
 
         // ── Ghi kết quả ───────────────────────────────────────────────────────
         // Đệm vào localStorage TRƯỚC khi gửi. Mất mạng ở câu 19 mà mất cả phiên
@@ -1168,11 +1235,14 @@
               <div class="h-full bg-emerald-500 transition-all duration-300"
                    :style="'width:' + Math.round(modeRetired / modeItems.length * 100) + '%'"></div>
             </div>
-            <!-- "nắm chắc" ≠ nút "Đã thuộc" trong Kiểm tra: đây là mức nghỉ hưu,
-                 lấy ngưỡng từ RETIRE — một lần may mắn không thành "thuộc". -->
+            <!-- HAI thước đo, tuỳ tab đang mở — nói rõ ra ở tooltip, vì cùng một
+                 chữ "đã thuộc" mà đếm theo hai cách là chỗ dễ hiểu nhầm nhất:
+                 thẻ ghi nhớ đếm cờ TAY, trắc nghiệm đếm mức nghỉ hưu suy từ kết
+                 quả (RETIRE) để một lần may mắn không thành "thuộc". -->
             <span class="text-slate-500 whitespace-nowrap"
-                  :title="'Đã làm ≥ ' + RETIRE.n + ' lần, sai ≤ ' + Math.round(RETIRE.err * 100) + '%, bậc ôn ≥ ' + RETIRE.box">
-              <span x-text="modeRetired"></span>/<span x-text="modeItems.length"></span> đã nắm chắc
+                  :title="mode === 'cards' ? 'Số thẻ đã tự đánh dấu là đã thuộc'
+                          : 'Đã làm ≥ ' + RETIRE.n + ' lần, sai ≤ ' + Math.round(RETIRE.err * 100) + '%, bậc ôn ≥ ' + RETIRE.box">
+              <span x-text="modeRetired"></span>/<span x-text="modeItems.length"></span> đã thuộc
             </span>
           </div>
         </div>
@@ -1191,7 +1261,7 @@
         <div x-show="online && modeItems.length" x-cloak class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
           <label class="flex items-center gap-1.5 text-sm text-slate-600 cursor-pointer select-none">
             <input type="checkbox" :checked="skipKnown" @change="toggleSkip()" class="accent-indigo-600">
-            Bỏ qua mục đã nắm chắc
+            Chỉ mục chưa thuộc
             <span x-show="skipKnown" x-cloak class="text-xs text-slate-400"
                   x-text="'(còn ' + poolItems.length + '/' + modeItems.length + ')'"></span>
           </label>
@@ -1201,7 +1271,7 @@
         </div>
         <p x-show="skipKnown && !poolItems.length" x-cloak
            class="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-xs text-emerald-800">
-          Đã nắm chắc hết rồi. Bỏ tick ở trên để ôn lại.
+          Đã thuộc hết rồi. Bỏ tick ở trên để ôn lại.
         </p>
         <div x-show="mode === 'cards'" x-cloak class="mt-4 flex gap-2">
           <button @click="startLearn()" :disabled="!pool('cards').length"
@@ -1338,7 +1408,16 @@
         <span x-text="(learnAt + 1) + '/' + learnDeck.length"></span>
       </div>
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <p class="text-xs text-slate-400" x-text="conceptName(learnCard.concept)"></p>
+        <div class="flex items-start gap-3">
+          <p class="text-xs text-slate-400 flex-1" x-text="conceptName(learnCard.concept)"></p>
+          <!-- Cùng một cờ với ô tick cạnh từ đó trong phần tóm tắt: thẻ và từ
+               chung item_id, nên bấm ở đây là tóm tắt cũng đổi theo. -->
+          <button x-show="canMark" x-cloak type="button"
+                  @click="setKnown([{ id: learnCard.id, c: learnCard.concept }], !isKnown(learnCard.id))"
+                  :class="isKnown(learnCard.id) ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-700 border-emerald-300'"
+                  class="shrink-0 px-2.5 py-1 text-xs font-medium rounded-full border transition-colors"
+                  x-text="isKnown(learnCard.id) ? '✓ Đã thuộc' : 'Đánh dấu đã thuộc'"></button>
+        </div>
         <p class="mt-2 text-lg font-medium text-slate-900"><span x-text="learnCard.front_en"></span><button x-show="canSpeak" @click.stop="speak(learnCard.front_en)" type="button" title="Đọc to"
                         class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></p>
         <p x-show="learnCard.ipa" x-cloak class="text-sm text-slate-400 font-mono" x-text="learnCard.ipa"></p>
@@ -1366,7 +1445,7 @@
     <div class="space-y-4">
       <div class="flex items-center justify-between text-xs text-slate-500">
         <span><span class="font-semibold text-slate-700" x-text="tStats.known"></span>/<span x-text="tStats.n"></span> đã thuộc</span>
-        <span><span class="font-semibold text-rose-600" x-text="nAgain"></span> cần xem lại · <span x-text="nUnseen"></span> chưa gặp</span>
+        <span><span class="font-semibold text-rose-600" x-text="nAgain"></span> cần xem lại · <span x-text="nLeft"></span> còn lại</span>
       </div>
       <!-- Bấm vào thẻ để lật -->
       <!-- Bấm vào thẻ = "Xem đáp án" (chấm 0, lật). div role=button chứ không
@@ -1427,9 +1506,18 @@
           <button @click="toggleShow(kd.k)" :class="filt[kd.k] ? kd.on : kd.off"
                   class="px-2.5 py-1 text-xs font-medium rounded-full border transition-colors" x-text="kd.t"></button>
         </template>
-        <label class="ml-auto flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
-          <input type="checkbox" :checked="detail" @change="toggleDetail()" class="accent-indigo-600"> Chi tiết
-        </label>
+        <div class="ml-auto flex items-center gap-3">
+          <!-- Ẩn hẳn phần ĐÃ tick: từ đã thuộc biến mất, lá/mục tick đủ cả cụm thì
+               biến mất luôn cả khối. Chỉ hiện khi ghi được — không ghi được thì
+               chẳng có gì đã thuộc để mà lọc. -->
+          <label x-show="canMark" x-cloak class="flex items-center gap-1.5 text-xs text-emerald-700 cursor-pointer select-none">
+            <input type="checkbox" :checked="onlyNew" @change="toggleOnlyNew()" class="accent-emerald-600">
+            ✅ Chỉ chưa thuộc
+          </label>
+          <label class="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
+            <input type="checkbox" :checked="detail" @change="toggleDetail()" class="accent-indigo-600"> Chi tiết
+          </label>
+        </div>
       </div>
       <p x-show="!scopedSummary.length" x-cloak
          class="rounded-lg bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-500">
@@ -1438,7 +1526,18 @@
 
       <template x-for="sec in shownSummary" :key="sec.concept">
         <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div class="px-5 py-3 bg-indigo-50 border-b border-indigo-100">
+          <div class="px-5 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center gap-2.5">
+            <!-- Ô của mục KHÔNG có trạng thái riêng: luôn suy từ các từ bên trong
+                 (xong hết / một phần / chưa gì), đúng khuôn ô tick nhóm ở trang
+                 môn. Nhờ vậy bỏ tick một từ là ô này tự về "một phần" ngay, không
+                 bao giờ có cảnh mục báo "đã thuộc" mà bên trong còn từ chưa thuộc. -->
+            <template x-if="canMark && knownState(secAtoms(sec))">
+              <input type="checkbox" title="Đã thuộc cả mục"
+                     :checked="knownState(secAtoms(sec)) === 'all'"
+                     x-effect="$el.indeterminate = knownState(secAtoms(sec)) === 'some'"
+                     @change="setKnown(secAtoms(sec), $event.target.checked)"
+                     class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600">
+            </template>
             <h3 class="text-lg font-bold text-indigo-900" x-html="hl(conceptName(sec.concept))"></h3>
           </div>
 
@@ -1549,10 +1648,13 @@
             <div>
               <p class="text-[13px] font-bold uppercase tracking-wider text-cyan-700 mb-1.5">🔤 <span x-html="hl(ws.title)"></span><span x-show="ws.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + ws.page"></span></p>
               <div class="grid sm:grid-cols-2 gap-2">
-                <template x-for="w in fq(ws.items || [], 'word', 'pos', 'def', 'example')" :key="w.word">
+                <template x-for="w in wordItems(ws)" :key="w.word">
                   <div class="rounded-lg border border-cyan-200 bg-cyan-50/40 px-3 py-2">
                     <p class="text-sm">
-                      <span class="font-semibold text-cyan-900" x-html="hl(w.word)"></span><button x-show="canSpeak" @click.stop="speak(w.word)" type="button" title="Đọc to"
+                      <input x-show="canMark && w.card" type="checkbox" title="Đã thuộc"
+                    :checked="isKnown(w.card)"
+                    @change="setKnown([{id: w.card, c: w.concept || ws.concept || sec.concept}], $event.target.checked)"
+                    class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><span class="font-semibold text-cyan-900" x-html="hl(w.word)"></span><button x-show="canSpeak" @click.stop="speak(w.word)" type="button" title="Đọc to"
                         class="ml-1 align-middle text-cyan-500 hover:text-cyan-800">🔊</button>
                       <span x-show="w.ipa" class="ml-1 text-[12px] text-slate-400 font-mono" x-text="w.ipa"></span>
                       <span x-show="w.pos" class="ml-1 text-[11px] italic text-slate-400" x-text="w.pos"></span>
@@ -1705,17 +1807,20 @@
 
           <!-- Từ vựng GỘP CHUNG cho mục có thẻ "kiến thức học": chia theo lá thì
                tiêu đề lá lặp lại y hệt tiêu đề thẻ ở trên, đọc rất rối. -->
-          <template x-if="show.gloss && ((sec.topics || []).length || (sec.words || []).length) && fq(sec.glossary || [], 'term', 'def', 'example').length">
+          <template x-if="show.gloss && ((sec.topics || []).length || (sec.words || []).length) && secGloss(sec).length">
           <div class="px-5 pb-4">
             <p class="text-[13px] font-bold uppercase tracking-wider text-indigo-600 mb-1.5">📖 Từ vựng</p>
             <dl class="grid sm:grid-cols-2 gap-2">
-              <template x-for="g in fq(sec.glossary || [], 'term', 'def', 'example')" :key="g.term">
+              <template x-for="g in secGloss(sec)" :key="g.term">
                 <div class="rounded-lg border border-indigo-200 bg-indigo-50/40 px-3 py-2 flex gap-2.5">
                   <template x-if="g.icon">
                     <svg viewBox="0 0 24 24" class="w-7 h-7 shrink-0 mt-0.5 text-indigo-400"><use :href="'#m-' + g.icon"/></svg>
                   </template>
                   <div class="min-w-0">
-                  <dt class="text-sm font-semibold text-indigo-900"><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
+                  <dt class="text-sm font-semibold text-indigo-900"><input x-show="canMark && g.card" type="checkbox" title="Đã thuộc"
+                    :checked="isKnown(g.card)"
+                    @change="setKnown([{id: g.card, c: g.concept || sec.concept}], $event.target.checked)"
+                    class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
                       class="ml-1 align-middle text-indigo-400 hover:text-indigo-700">🔊</button></dt>
                   <dd class="text-sm text-slate-700 leading-snug" x-html="hl(g.def)"></dd>
                   <dd x-show="g.example" class="mt-0.5 text-xs text-slate-500 italic" x-html="hl(g.example)"></dd>
@@ -1731,6 +1836,13 @@
           <template x-for="leaf in ((tops(sec).length || (sec.words || []).length) ? [] : shownLeaves(sec))" :key="leaf.id">
             <div class="mx-5 mb-4 rounded-xl border border-slate-200 overflow-hidden">
               <div class="flex items-center gap-2 px-4 py-2 bg-slate-50 border-b border-slate-200">
+                <template x-if="canMark && knownState(leafAtoms(sec, leaf.id))">
+                  <input type="checkbox" title="Đã thuộc cả phần này"
+                         :checked="knownState(leafAtoms(sec, leaf.id)) === 'all'"
+                         x-effect="$el.indeterminate = knownState(leafAtoms(sec, leaf.id)) === 'some'"
+                         @change="setKnown(leafAtoms(sec, leaf.id), $event.target.checked)"
+                         class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600">
+                </template>
                 <span class="w-2 h-2 rounded-full shrink-0"
                       :class="branchStat(leaf.id).wrong > 0 ? 'bg-rose-400' : 'bg-indigo-400'"></span>
                 <h4 class="text-base font-bold text-slate-800" x-html="hl(leaf.en)"></h4>
@@ -1744,7 +1856,10 @@
               <dl class="grid gap-x-3 gap-y-1.5 sm:grid-cols-2">
                 <template x-for="g in tagged(sec.glossary, leaf.id)" :key="g.term">
                   <div class="rounded-lg bg-indigo-50/60 border border-indigo-100 px-3 py-2">
-                    <dt class="text-sm font-semibold text-indigo-900"><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
+                    <dt class="text-sm font-semibold text-indigo-900"><input x-show="canMark && g.card" type="checkbox" title="Đã thuộc"
+                    :checked="isKnown(g.card)"
+                    @change="setKnown([{id: g.card, c: g.concept || sec.concept}], $event.target.checked)"
+                    class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
                         class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></dt>
                     <dd class="text-sm text-slate-700 leading-snug" x-html="hl(g.def)"></dd>
                     <dd x-show="g.example" class="mt-0.5 text-xs text-slate-500 italic" x-html="hl(g.example)"></dd>
@@ -1905,7 +2020,10 @@
             <dl class="grid gap-x-3 gap-y-1.5 sm:grid-cols-2">
               <template x-for="g in untagged(sec).glossary" :key="g.term">
                 <div class="rounded-lg bg-indigo-50/60 border border-indigo-100 px-3 py-2">
-                  <dt class="text-sm font-semibold text-indigo-900"><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
+                  <dt class="text-sm font-semibold text-indigo-900"><input x-show="canMark && g.card" type="checkbox" title="Đã thuộc"
+                    :checked="isKnown(g.card)"
+                    @change="setKnown([{id: g.card, c: g.concept || sec.concept}], $event.target.checked)"
+                    class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
                         class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></dt>
                   <dd class="text-sm text-slate-700 leading-snug" x-html="hl(g.def)"></dd>
                   <dd x-show="g.example" class="mt-0.5 text-xs text-slate-500 italic" x-html="hl(g.example)"></dd>
