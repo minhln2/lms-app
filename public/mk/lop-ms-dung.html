@@ -22,15 +22,21 @@
         recent7: false,                 // chỉ hiện buổi trong 7 ngày gần nhất
         open: {},                       // buổi nào đang mở rộng
         secret: localStorage.getItem('lms_key') || '',
+        sourceUrl: '',                  // link sheet gốc — chỉ có khi gửi đúng mã bí mật
 
         async init() { await this.load(); },
 
         async load() {
           this.loading = true; this.err = '';
           try {
-            const r = await fetch('/api/sheet', { headers: { accept: 'application/json' } });
+            // Gửi kèm mã bí mật nếu có: máy chủ chỉ trả link sheet gốc cho ai có
+            // mã. Không có mã thì vẫn đọc được bảng như cũ, chỉ không thấy link.
+            const h = { accept: 'application/json' };
+            if (this.secret) h['x-progress-key'] = this.secret;
+            const r = await fetch('/api/sheet', { headers: h });
             const d = await r.json();
             if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
+            this.sourceUrl = d.source_url || '';
             this.sessions = d.sessions || [];
             this.total = d.total || 0;
             this.done = d.done || 0;
@@ -140,7 +146,13 @@
           </svg>
         </a>
         <div class="min-w-0 flex-1">
-          <h1 class="text-lg font-bold text-slate-900 truncate">Lớp Ms Dung</h1>
+          <div class="flex flex-wrap items-baseline gap-x-2 min-w-0">
+            <h1 class="text-lg font-bold text-slate-900 truncate">Lớp Ms Dung</h1>
+            <!-- Chỉ hiện khi máy chủ trả link, tức khi trình duyệt này có mã bí mật. -->
+            <a x-show="sourceUrl" x-cloak :href="sourceUrl" target="_blank" rel="noopener noreferrer"
+               title="Mở bảng gốc của lớp trên Google Sheets"
+               class="shrink-0 text-xs text-indigo-400 hover:text-indigo-600 hover:underline whitespace-nowrap">Xem trang gốc ↗</a>
+          </div>
           <p class="text-xs text-slate-500">
             MK · đọc trực tiếp từ bảng của lớp
             <span x-show="saving" x-cloak class="text-indigo-500">· đang lưu…</span>

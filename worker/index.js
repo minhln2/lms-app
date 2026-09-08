@@ -115,7 +115,17 @@ export default {
       if (request.method === "GET") {
         try {
           const d = await readSheet(env);
-          return d.error ? json({ error: d.error }, d.status || 500) : json(d);
+          if (d.error) return json({ error: d.error }, d.status || 500);
+          // Link tới sheet gốc CHỈ trả khi có mã bí mật. Bảng của lớp cho phép
+          // sửa ẩn danh (xem ghi chú ở wrangler.toml), nên lộ id là ai vào site
+          // cũng sửa hoặc xoá được bảng chung của cả lớp. Nội dung ĐỌC thì vốn đã
+          // công khai qua chính endpoint này — thứ thêm ở đây đúng là quyền GHI.
+          const secret = env.LMS_SECRET || "";
+          if (secret && (request.headers.get("x-progress-key") || "") === secret && env.SHEET_ID) {
+            d.source_url = `https://docs.google.com/spreadsheets/d/${env.SHEET_ID}/edit` +
+              (env.SHEET_GID ? `#gid=${env.SHEET_GID}` : "");
+          }
+          return json(d);
         } catch (e) {
           return json({ error: String(e.message || e) }, 502);
         }
