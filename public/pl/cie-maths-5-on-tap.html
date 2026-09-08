@@ -7,7 +7,7 @@
   <title>Ôn tập · CIE Maths 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.910731c8.css">
+  <link rel="stylesheet" href="../assets/tw.2500f9b7.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -227,6 +227,9 @@
         skipKnown: localStorage.getItem('lms_skip_known') === '1',
         toggleSkip() { this.skipKnown = !this.skipKnown; localStorage.setItem('lms_skip_known', this.skipKnown ? '1' : '0'); },
         showList: false,
+        // Ảnh đang phóng to (tên file trong study/img/). Rỗng = không phóng.
+        // Bấm ảnh để phóng, bấm lần nữa (hoặc Esc) để bỏ.
+        zoom: '',
         // Ô tìm theo từ khoá trong phần tóm tắt. Lọc TỪNG MẨU nội dung, không
         // lọc cả mục: gõ "oxygen" thì chỉ những từ vựng / ý / hàng bảng có chữ
         // đó còn lại, mục nào không còn gì thì tự ẩn.
@@ -1422,8 +1425,8 @@
                         class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></p>
         <p x-show="learnCard.ipa" x-cloak class="text-sm text-slate-400 font-mono" x-text="learnCard.ipa"></p>
         <template x-if="learnCard.image">
-          <img :src="'study/img/' + learnCard.image" alt="" loading="lazy"
-               class="mt-3 max-h-44 rounded-lg border border-slate-200 bg-white object-contain">
+          <img @click.stop="zoom = 'study/img/' + learnCard.image" :src="'study/img/' + learnCard.image" alt="" loading="lazy"
+               class="cursor-zoom-in mt-3 max-h-44 rounded-lg border border-slate-200 bg-white object-contain">
         </template>
         <div class="mt-4 pt-4 border-t border-slate-100">
           <p class="text-slate-700" x-text="learnCard.back_en"></p>
@@ -1463,8 +1466,8 @@
                         class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></p>
         <p x-show="q.ipa" x-cloak class="text-sm text-slate-400 font-mono" x-text="q.ipa"></p>
         <template x-if="q.image">
-          <img :src="'study/img/' + q.image" alt="" loading="lazy"
-               class="mt-3 max-h-44 rounded-lg border border-slate-200 bg-white object-contain">
+          <img @click.stop="zoom = 'study/img/' + q.image" :src="'study/img/' + q.image" alt="" loading="lazy"
+               class="cursor-zoom-in mt-3 max-h-44 rounded-lg border border-slate-200 bg-white object-contain">
         </template>
         <div x-show="revealed" x-cloak class="mt-4 pt-4 border-t border-slate-100">
           <p class="text-slate-700" x-text="q.back_en"></p>
@@ -1826,7 +1829,7 @@
             <p class="text-[13px] font-bold uppercase tracking-wider text-indigo-600 mb-1.5">📖 Từ vựng</p>
             <dl class="grid sm:grid-cols-2 gap-2">
               <template x-for="g in secGloss(sec)" :key="g.term">
-                <div class="rounded-lg border border-indigo-200 bg-indigo-50/40 px-3 py-2 flex gap-2.5">
+                <div class="overflow-hidden rounded-lg border border-indigo-200 bg-indigo-50/40 px-3 py-2 flex gap-2.5">
                   <template x-if="g.icon">
                     <svg viewBox="0 0 24 24" class="w-7 h-7 shrink-0 mt-0.5 text-indigo-400"><use :href="'#m-' + g.icon"/></svg>
                   </template>
@@ -1834,7 +1837,7 @@
                   <dt class="text-sm font-semibold text-indigo-900"><input x-show="canMark && g.card" type="checkbox" title="Đã thuộc"
                     :checked="isKnown(g.card)"
                     @change="setKnown([{id: g.card, c: g.concept || sec.concept}], $event.target.checked)"
-                    class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><template x-if="g.image"><img :src="'study/img/' + g.image" alt="" loading="lazy" class="inline-block align-middle w-12 h-12 mr-1.5 rounded border border-indigo-200 bg-white object-cover"></template><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
+                    class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><template x-if="g.image"><img @click.stop="zoom = 'study/img/' + g.image" :src="'study/img/' + g.image" alt="" loading="lazy" class="cursor-zoom-in float-right ml-2 -mt-0.5 w-16 h-16 rounded border border-indigo-200 bg-white object-cover"></template><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
                       class="ml-1 align-middle text-indigo-400 hover:text-indigo-700">🔊</button></dt>
                   <dd class="text-sm text-slate-700 leading-snug" x-html="hl(g.def)"></dd>
                   <dd x-show="g.def_vi" x-cloak class="text-sm text-cyan-700 leading-snug" x-html="hl(g.def_vi)"></dd>
@@ -1871,11 +1874,11 @@
               <p class="text-[13px] font-bold uppercase tracking-wider text-indigo-600 mb-1.5">📖 Từ vựng</p>
               <dl class="grid gap-x-3 gap-y-1.5 sm:grid-cols-2">
                 <template x-for="g in tagged(sec.glossary, leaf.id)" :key="g.term">
-                  <div class="rounded-lg bg-indigo-50/60 border border-indigo-100 px-3 py-2">
+                  <div class="overflow-hidden rounded-lg bg-indigo-50/60 border border-indigo-100 px-3 py-2">
                     <dt class="text-sm font-semibold text-indigo-900"><input x-show="canMark && g.card" type="checkbox" title="Đã thuộc"
                     :checked="isKnown(g.card)"
                     @change="setKnown([{id: g.card, c: g.concept || sec.concept}], $event.target.checked)"
-                    class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><template x-if="g.image"><img :src="'study/img/' + g.image" alt="" loading="lazy" class="inline-block align-middle w-12 h-12 mr-1.5 rounded border border-indigo-200 bg-white object-cover"></template><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
+                    class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><template x-if="g.image"><img @click.stop="zoom = 'study/img/' + g.image" :src="'study/img/' + g.image" alt="" loading="lazy" class="cursor-zoom-in float-right ml-2 -mt-0.5 w-16 h-16 rounded border border-indigo-200 bg-white object-cover"></template><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
                         class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></dt>
                     <dd class="text-sm text-slate-700 leading-snug" x-html="hl(g.def)"></dd>
                     <dd x-show="g.def_vi" x-cloak class="text-sm text-cyan-700 leading-snug" x-html="hl(g.def_vi)"></dd>
@@ -1896,7 +1899,7 @@
                   <div class="flex gap-2.5 rounded-lg border border-sky-200 bg-sky-50/40 p-3">
                     <div class="flex-1"><p class="text-sm text-slate-700 leading-snug"><span class="font-semibold text-slate-900" x-html="hl(lead(pt.t)[0])"></span><span x-html="hl(lead(pt.t)[1])"></span></p>
                     <p x-show="pt.t_vi" x-cloak class="text-sm text-cyan-700 leading-snug" x-html="hl(pt.t_vi)"></p></div>
-                    <template x-if="pt.image"><img :src="'study/img/' + pt.image" alt="" class="w-16 shrink-0 self-start rounded border border-sky-200 bg-white object-contain"></template>
+                    <template x-if="pt.image"><img @click.stop="zoom = 'study/img/' + pt.image" :src="'study/img/' + pt.image" alt="" class="cursor-zoom-in w-16 shrink-0 self-start rounded border border-sky-200 bg-white object-contain"></template>
                   </div>
                 </template>
               </div>
@@ -1958,8 +1961,8 @@
                   </div>
                   <!-- x-if chứ không x-show: :src vẫn bind khi ẩn → trình duyệt tải "img/null" (404) -->
                   <template x-if="ex.image">
-                  <img :src="'study/img/' + ex.image" :alt="ex.title || ''" loading="lazy"
-                       class="w-36 sm:w-52 max-h-56 shrink-0 rounded-md border border-violet-200 bg-white object-contain">
+                  <img @click.stop="zoom = 'study/img/' + ex.image" :src="'study/img/' + ex.image" :alt="ex.title || ''" loading="lazy"
+                       class="cursor-zoom-in w-36 sm:w-52 max-h-56 shrink-0 rounded-md border border-violet-200 bg-white object-contain">
                   </template>
                 </div>
               </div>
@@ -2038,11 +2041,11 @@
             <template x-if="show.gloss && untagged(sec).glossary.length">
             <dl class="grid gap-x-3 gap-y-1.5 sm:grid-cols-2">
               <template x-for="g in untagged(sec).glossary" :key="g.term">
-                <div class="rounded-lg bg-indigo-50/60 border border-indigo-100 px-3 py-2">
+                <div class="overflow-hidden rounded-lg bg-indigo-50/60 border border-indigo-100 px-3 py-2">
                   <dt class="text-sm font-semibold text-indigo-900"><input x-show="canMark && g.card" type="checkbox" title="Đã thuộc"
                     :checked="isKnown(g.card)"
                     @change="setKnown([{id: g.card, c: g.concept || sec.concept}], $event.target.checked)"
-                    class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><template x-if="g.image"><img :src="'study/img/' + g.image" alt="" loading="lazy" class="inline-block align-middle w-12 h-12 mr-1.5 rounded border border-indigo-200 bg-white object-cover"></template><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
+                    class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><template x-if="g.image"><img @click.stop="zoom = 'study/img/' + g.image" :src="'study/img/' + g.image" alt="" loading="lazy" class="cursor-zoom-in float-right ml-2 -mt-0.5 w-16 h-16 rounded border border-indigo-200 bg-white object-cover"></template><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
                         class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></dt>
                   <dd class="text-sm text-slate-700 leading-snug" x-html="hl(g.def)"></dd>
                   <dd x-show="g.def_vi" x-cloak class="text-sm text-cyan-700 leading-snug" x-html="hl(g.def_vi)"></dd>
@@ -2060,8 +2063,8 @@
                 <div class="flex gap-2.5 rounded-lg border border-slate-200 p-3">
                   <!-- x-if chứ không x-show: :src vẫn bind khi ẩn → tải "img/null" (404) -->
                   <template x-if="pt.image">
-                    <img :src="'study/img/' + pt.image" alt="" loading="lazy"
-                         class="w-20 shrink-0 self-start rounded border border-slate-200 bg-white object-contain">
+                    <img @click.stop="zoom = 'study/img/' + pt.image" :src="'study/img/' + pt.image" alt="" loading="lazy"
+                         class="cursor-zoom-in w-20 shrink-0 self-start rounded border border-slate-200 bg-white object-contain">
                   </template>
                   <div class="min-w-0">
                     <p class="text-sm text-slate-700 leading-snug"><span class="font-semibold text-slate-900" x-html="hl(lead(pt.t)[0])"></span><span x-html="hl(lead(pt.t)[1])"></span></p>
@@ -2140,5 +2143,23 @@
     </div>
   </main>
   </div>
+
+  <!-- ── Xem ảnh phóng to ────────────────────────────────────────────────────
+       Bấm ảnh bất kỳ để phóng, bấm lần nữa (hoặc Esc, hoặc nút ✕) để bỏ. Phủ kín
+       màn hình thay vì phóng tại chỗ: ảnh từ vựng chỉ 48px, phóng tại chỗ vẫn
+       không đủ to để nhìn rõ, mà lại đẩy cả trang nhảy chỗ.
+       x-if chứ không x-show: :src vẫn bind khi ẩn → tải "study/img/" (404). -->
+  <template x-if="zoom">
+    <div @click="zoom = ''" @keydown.escape.window="zoom = ''"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4 cursor-zoom-out">
+      <!-- `zoom` giữ NGUYÊN đường dẫn của ảnh vừa bấm, không phải tên file: mỗi
+           chỗ vẽ ảnh tự dựng src theo cách của nó, ghép tiền tố lần nữa ở đây là
+           ra "study/img/study/img/…" và ảnh 404 mà lớp phủ vẫn hiện. -->
+      <img :src="zoom" alt=""
+           class="max-h-[88vh] max-w-full rounded-lg bg-white shadow-2xl object-contain">
+      <button @click.stop="zoom = ''" type="button" title="Đóng"
+              class="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/90 text-slate-700 text-xl leading-none hover:bg-white">✕</button>
+    </div>
+  </template>
 </body>
 </html>
