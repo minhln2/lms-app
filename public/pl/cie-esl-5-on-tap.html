@@ -7,7 +7,7 @@
   <title>Ôn tập · CIE ESL 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.56da59bb.css">
+  <link rel="stylesheet" href="../assets/tw.2f6a741f.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -1227,10 +1227,19 @@
     <!-- ── Cây chọn phần học ─────────────────────────────────────────────── -->
     <!-- x-show chỉ điều khiển ngăn kéo trên màn hẹp; màn rộng thì `lg:!block`
          ghi đè display:none mà x-show đặt. Không dùng window.innerWidth trong
-         x-show: giá trị đó không phản ứng, xoay máy tính bảng là kẹt trạng thái. -->
+         x-show: giá trị đó không phản ứng, xoay máy tính bảng là kẹt trạng thái.
+
+         Màn rộng: cây DÍNH dưới thanh chế độ (47px) để cuộn xuống vẫn chọn được
+         mục khác. Ba mảnh phải đi cùng nhau:
+           lg:sticky lg:top-[47px]  — dính ngay dưới thanh chế độ đang sticky
+           lg:self-start            — flex item mặc định giãn cao bằng anh em, mà
+                                      giãn hết thì sticky không còn chỗ để trượt
+           lg:max-h + overflow-y    — cây ESL 5 cao 5121px, cao hơn màn hình thì
+                                      "dính" chỉ dính được cái đáy, vô dụng. Phải
+                                      cho nó thanh cuộn riêng. -->
     <aside x-show="navOpen" x-cloak
            :class="navOpen ? 'fixed inset-y-0 left-0 w-72 z-30 overflow-y-auto shadow-xl' : ''"
-           class="no-print lg:!block lg:static lg:w-60 lg:shrink-0 lg:z-auto lg:shadow-none bg-white lg:bg-transparent p-4 lg:pl-0 lg:py-6">
+           class="no-print lg:!block lg:sticky lg:top-[47px] lg:self-start lg:max-h-[calc(100vh-47px)] lg:overflow-y-auto lg:w-60 lg:shrink-0 lg:z-auto lg:shadow-none bg-white lg:bg-transparent p-4 lg:pl-0 lg:py-6">
       <p class="text-xs font-bold uppercase tracking-wide text-slate-400 mb-1.5">Môn học</p>
       <select onchange="if(this.value) location.href = this.value"
               class="w-full mb-4 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-sm text-slate-800">
