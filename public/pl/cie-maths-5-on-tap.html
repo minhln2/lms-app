@@ -197,16 +197,15 @@
         // Bản in bỏ thanh chế độ, mục lục, ô tìm, chip lọc, ô tick và nút loa —
         // xem khối @media print ở đầu file. Ở đây chỉ cần gọi hộp thoại in; giữ
         // nguyên bộ lọc đang bật để bản in khớp với màn hình.
-        // Tiếng Anh, vì nội dung ôn tập là tiếng Anh. "Revision notes" là từ sách
-        // Cambridge dùng cho việc ôn bài; "Summarization" không phải cách nói tự
-        // nhiên. `label()` đã cho sẵn "Unit 1 — The human body" / "1.1 The
-        // circulatory system", nên chỉ cần ghép tiền tố.
+        // Tiếng Anh, vì nội dung ôn tập là tiếng Anh. `label()` đã cho sẵn
+        // "Unit 1 — The human body" / "1.1 The circulatory system", nên chỉ cần
+        // ghép tiền tố — thêm unit hay đổi tên mục thì tiêu đề tự theo.
         get printTitle() {
           const cs = this.data?.concepts || [];
           const root = cs.find(c => !c.parent);
           const what = this.scope ? this.label(cs.find(x => x.id === this.scope))
                                   : (root?.en || '');
-          return 'Revision notes: ' + what;
+          return 'Summary: ' + what;
         },
         // Dòng nhỏ: tên môn, chỉ khi tiêu đề chính đã nói về một unit/mục cụ thể.
         get printSub() {
