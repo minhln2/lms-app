@@ -7,7 +7,7 @@
   <title>Ôn tập · CIE ESL 1</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.2f6a741f.css">
+  <link rel="stylesheet" href="../assets/tw.2f0151f9.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -299,7 +299,7 @@
                 // phần này mà bỏ sót là bị giấu oan.
                 + (s.facts   ? u.points.length : 0)
                 + (s.watch   ? u.watch.length : 0)
-                + (s.list    ? this.secLists(sec).length : 0)
+                + (s.list    ? this.allLists(sec).length : 0)
                 + (s.exp     ? this.secExps(sec).length : 0)
                 + (this.hit(sec.big_en) && this.qq ? 1 : 0);
           for (const leaf of this.leavesOf(sec)) n += this.leafHits(sec, leaf.id);
@@ -569,6 +569,14 @@
         // nhau là lá rỗng vẫn hiện hoặc lá có nội dung bị giấu.
         lists(sec, leafId)  { return this.fq(this.arr(sec, 'checklists', 'checklist').filter(x => x.concept === leafId), 'title', 'note', 'items'); },
         exps(sec, leafId)   { return this.fq(this.arr(sec, 'experiments', 'from_the_book').filter(x => x.concept === leafId), 'title','summary','result'); },
+        // Bản CẤP MỤC: mục dùng `topics` (Toán) hay `words` (ESL) bỏ hẳn vùng vẽ
+        // theo lá, nên bài mẫu và checklist của nó không hiện ở đâu cả. Đã đo:
+        // Toán 1 có 7 bài mẫu + 6 checklist viết ra mà chưa từng lên màn hình.
+        secWorks(sec) { return this.fq(this.arr(sec, 'worked', null), 'title','problem','answer','steps'); },
+        // TÊN KHÁC `secLists`: đã có một `secLists` khác ở dưới (checklist KHÔNG
+        // gắn lá). Trong object literal thì định nghĩa sau thắng, nên trùng tên là
+        // hàm của mình thành hàm chết mà không có lỗi nào.
+        allLists(sec) { return this.fq(this.arr(sec, 'checklists', 'checklist'), 'title','note','items'); },
         works(sec, leafId)   { return this.fq(this.arr(sec, 'worked', null).filter(x => x.concept === leafId), 'title','problem','answer','steps'); },
         tops(sec)           { return this.fq(sec.topics || [], 'title', 'def', 'def_vi', 'rules', 'rules_vi', 'subtitle'); },
         // Ba khối riêng của môn ngoại ngữ. ESL dạy KỸ NĂNG DÙNG chứ không dạy
@@ -1843,7 +1851,13 @@
               <p x-show="tp.def_vi" x-cloak class="px-3 pt-0.5 text-sm text-cyan-700 leading-snug" x-html="hl(tp.def_vi)"></p>
               <div class="grid sm:grid-cols-2 gap-x-4 gap-y-2 px-3 py-2.5">
                 <div class="flex gap-3 self-start">
-                <template x-if="tp.figure">
+                <!-- Có hình sách thì dùng hình sách; không thì mới rơi về biểu tượng
+                     sprite. Sprite là nét trừu tượng chung chung, chỉ hơn không có gì. -->
+                <template x-if="tp.image">
+                  <img @click.stop="zoom = 'study/img/' + tp.image" :src="'study/img/' + tp.image" :alt="tp.title || ''" loading="lazy"
+                       class="cursor-zoom-in w-32 sm:w-44 max-h-44 shrink-0 rounded-md border border-orange-200 bg-white object-contain">
+                </template>
+                <template x-if="!tp.image && tp.figure">
                   <svg viewBox="0 0 24 24" class="w-14 h-14 shrink-0 text-orange-400"><use :href="'#m-' + tp.figure"/></svg>
                 </template>
                 <ul class="space-y-1 text-sm text-slate-700 self-start">
@@ -1907,6 +1921,51 @@
 
           <!-- Từ vựng GỘP CHUNG cho mục có thẻ "kiến thức học": chia theo lá thì
                tiêu đề lá lặp lại y hệt tiêu đề thẻ ở trên, đọc rất rối. -->
+          <!-- Bài mẫu ở CẤP MỤC. Chỉ vẽ khi mục bỏ vùng theo lá, để không vẽ hai lần. -->
+          <template x-if="show.worked && ((sec.topics || []).length || (sec.words || []).length) && secWorks(sec).length">
+          <div class="px-5 pb-1 space-y-3">
+            <template x-for="(wk, wi) in secWorks(sec)" :key="'sw' + wi">
+              <div>
+                <p class="text-[13px] font-bold uppercase tracking-wider text-teal-700 mb-1.5"><input x-show="canMark && wk.mark" x-cloak type="checkbox" title="Đã thuộc" :checked="isKnown(wk.mark)" @change="setKnown([{id: wk.mark, c: wk.concept || sec.concept}], $event.target.checked)" class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600">🧮 <span x-html="hl(wk.title || 'Bài mẫu')"></span><span x-show="wk.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + wk.page"></span></p>
+                <div class="rounded-lg border border-teal-200 bg-teal-50 px-3 py-2.5 flex gap-3 items-start">
+                  <div class="min-w-0 flex-1 text-sm space-y-1.5">
+                    <p class="font-semibold text-slate-900" x-html="hl(wk.problem)"></p>
+                    <ol class="list-decimal pl-5 text-slate-700 space-y-0.5">
+                      <template x-for="(st, si) in (wk.steps || [])" :key="si"><li x-html="hl(st)"></li></template>
+                    </ol>
+                    <p class="font-medium text-teal-900"><span class="font-semibold">Đáp số:</span> <span x-html="hl(wk.answer)"></span></p>
+                    <p x-show="wk.why" class="text-xs text-slate-500 italic" x-html="hl(wk.why)"></p>
+                  </div>
+                  <template x-if="wk.image">
+                  <img @click.stop="zoom = 'study/img/' + wk.image" :src="'study/img/' + wk.image" :alt="wk.title || ''" loading="lazy"
+                       class="cursor-zoom-in w-36 sm:w-52 max-h-56 shrink-0 rounded-md border border-teal-200 bg-white object-contain">
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+          </template>
+
+          <!-- Checklist ở CẤP MỤC, cùng lý do. -->
+          <template x-if="show.list && ((sec.topics || []).length || (sec.words || []).length) && allLists(sec).length">
+          <div class="px-5 pb-1 space-y-3">
+            <template x-for="(ck, ci) in allLists(sec)" :key="'sl' + ci">
+              <div>
+                <p class="text-[13px] font-bold uppercase tracking-wider text-emerald-700 mb-1.5"><input x-show="canMark && ck.mark" x-cloak type="checkbox" title="Đã thuộc" :checked="isKnown(ck.mark)" @change="setKnown([{id: ck.mark, c: ck.concept || sec.concept}], $event.target.checked)" class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600">☑ <span x-html="hl(ck.title)"></span></p>
+                <ol class="rounded-lg border border-emerald-200 bg-emerald-50/50 divide-y divide-emerald-100 text-sm">
+                  <template x-for="(it, ii) in itemsOf(ck)" :key="ii">
+                    <li class="flex gap-2 px-3 py-1.5">
+                      <span class="font-semibold text-emerald-900 shrink-0" x-html="hl(it.sign)"></span>
+                      <span class="text-slate-700" x-html="hl(it.look_for)"></span>
+                    </li>
+                  </template>
+                </ol>
+                <p x-show="ck.note" class="mt-1.5 text-xs text-emerald-800 bg-emerald-100 rounded px-2.5 py-1" x-html="hl(ck.note)"></p>
+              </div>
+            </template>
+          </div>
+          </template>
+
           <template x-if="show.gloss && ((sec.topics || []).length || (sec.words || []).length) && secGloss(sec).length">
           <div class="px-5 pb-4">
             <p class="text-[13px] font-bold uppercase tracking-wider text-indigo-600 mb-1.5">📖 Từ vựng</p>
@@ -2063,13 +2122,22 @@
               <template x-for="(wk, wi) in works(sec, leaf.id)" :key="'w' + wi">
               <div class="px-4 pt-3">
                 <p class="text-[13px] font-bold uppercase tracking-wider text-teal-700 mb-1.5"><input x-show="canMark && wk.mark" x-cloak type="checkbox" title="Đã thuộc" :checked="isKnown(wk.mark)" @change="setKnown([{id: wk.mark, c: wk.concept || sec.concept}], $event.target.checked)" class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600">🧮 <span x-html="hl(wk.title || 'Bài mẫu')"></span><span x-show="wk.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + wk.page"></span></p>
-                <div class="rounded-lg border border-teal-200 bg-teal-50 px-3 py-2.5 text-sm space-y-1.5">
-                  <p class="font-semibold text-slate-900" x-html="hl(wk.problem)"></p>
-                  <ol class="list-decimal pl-5 text-slate-700 space-y-0.5">
-                    <template x-for="(st, si) in (wk.steps || [])" :key="si"><li x-html="hl(st)"></li></template>
-                  </ol>
-                  <p class="font-medium text-teal-900"><span class="font-semibold">Đáp số:</span> <span x-html="hl(wk.answer)"></span></p>
-                  <p x-show="wk.why" class="text-xs text-slate-500 italic" x-html="hl(wk.why)"></p>
+                <div class="rounded-lg border border-teal-200 bg-teal-50 px-3 py-2.5 flex gap-3 items-start">
+                  <div class="min-w-0 flex-1 text-sm space-y-1.5">
+                    <p class="font-semibold text-slate-900" x-html="hl(wk.problem)"></p>
+                    <ol class="list-decimal pl-5 text-slate-700 space-y-0.5">
+                      <template x-for="(st, si) in (wk.steps || [])" :key="si"><li x-html="hl(st)"></li></template>
+                    </ol>
+                    <p class="font-medium text-teal-900"><span class="font-semibold">Đáp số:</span> <span x-html="hl(wk.answer)"></span></p>
+                    <p x-show="wk.why" class="text-xs text-slate-500 italic" x-html="hl(wk.why)"></p>
+                  </div>
+                  <!-- Khung TO (w-52), không phải ô 80px của từ vựng: hình toán dày
+                       chữ số và nhãn (bảng 100 ô, tia số 0–100), ở 80px đọc không ra.
+                       x-if chứ không x-show: :src vẫn bind khi ẩn → tải "img/null". -->
+                  <template x-if="wk.image">
+                  <img @click.stop="zoom = 'study/img/' + wk.image" :src="'study/img/' + wk.image" :alt="wk.title || ''" loading="lazy"
+                       class="cursor-zoom-in w-36 sm:w-52 max-h-56 shrink-0 rounded-md border border-teal-200 bg-white object-contain">
+                  </template>
                 </div>
               </div>
               </template>
