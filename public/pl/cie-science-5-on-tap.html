@@ -885,9 +885,11 @@
       html body input, html body button, html body select { display: none !important; }
       /* Ảnh minh hoạ in ra to hơn trên màn hình: giấy không thiếu chỗ như thẻ từ */
       img[src*="study/img/"] { max-width: 120px !important; max-height: 120px !important; }
-      /* Đừng để một thẻ nội dung bị cắt đôi sang trang sau */
-      main section, main .rounded-lg, main .rounded-xl { break-inside: avoid; }
-      main section { break-before: auto; }
+      /* Chỉ giữ nguyên vẹn những khối NHỎ. Đặt break-inside:avoid lên cả mục và
+         mọi .rounded-* là sai: khối nào cao hơn phần giấy còn lại bị đẩy nguyên
+         sang trang sau, nên trang nào cũng thừa một mảng trắng. Đo được: 11
+         trang, trung bình 39% cuối trang bỏ không, riêng trang đầu trống 94%. */
+      main dl > div, main li, main tr, main figure { break-inside: avoid; }
       main { padding: 0 !important; }
       a[href]:after { content: none !important; }
       body { background: #fff !important; }
