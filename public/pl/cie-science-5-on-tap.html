@@ -7,7 +7,7 @@
   <title>Ôn tập · CIE Science 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.2f0151f9.css">
+  <link rel="stylesheet" href="../assets/tw.7c40500e.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -1850,16 +1850,8 @@
               <p x-show="tp.def" class="px-3 pt-2.5 text-sm font-medium text-slate-900" x-html="hl(tp.def)"></p>
               <p x-show="tp.def_vi" x-cloak class="px-3 pt-0.5 text-sm text-cyan-700 leading-snug" x-html="hl(tp.def_vi)"></p>
               <div class="grid sm:grid-cols-2 gap-x-4 gap-y-2 px-3 py-2.5">
-                <div class="flex gap-3 self-start">
-                <!-- Có hình sách thì dùng hình sách; không thì mới rơi về biểu tượng
-                     sprite. Sprite là nét trừu tượng chung chung, chỉ hơn không có gì. -->
-                <template x-if="tp.image">
-                  <img @click.stop="zoom = 'study/img/' + tp.image" :src="'study/img/' + tp.image" :alt="tp.title || ''" loading="lazy"
-                       class="cursor-zoom-in w-32 sm:w-44 max-h-44 shrink-0 rounded-md border border-orange-200 bg-white object-contain">
-                </template>
-                <template x-if="!tp.image && tp.figure">
-                  <svg viewBox="0 0 24 24" class="w-14 h-14 shrink-0 text-orange-400"><use :href="'#m-' + tp.figure"/></svg>
-                </template>
+                <!-- TRÁI: chỉ quy tắc. Trước đây hình nhét chung ô này với quy tắc
+                     nên ba thứ (hình, quy tắc, ví dụ) chen nhau trên một hàng. -->
                 <ul class="space-y-1 text-sm text-slate-700 self-start">
                   <template x-for="(r, ri) in (tp.rules || [])" :key="ri">
                     <li class="flex gap-2"><span class="text-orange-400 shrink-0">•</span><span>
@@ -1868,7 +1860,9 @@
                     </span></li>
                   </template>
                 </ul>
-                </div>
+                <!-- PHẢI: ví dụ ở trên, hình ở dưới. Ví dụ trước vì nó là thứ đọc
+                     cùng quy tắc; hình là chỗ đối chiếu, xuống dưới vẫn thấy ngay. -->
+                <div class="space-y-2 self-start">
                 <!-- ví dụ: 3 dạng, class viết literal để Tailwind quét thấy -->
                 <template x-if="tp.example && tp.example.kind === 'calc'">
                   <div class="rounded-lg border border-slate-200 overflow-hidden">
@@ -1914,6 +1908,16 @@
                     </template>
                   </div>
                 </template>
+                <!-- Có hình sách thì dùng hình sách; không thì mới rơi về biểu tượng
+                     sprite. Sprite là nét trừu tượng chung chung, chỉ hơn không có gì. -->
+                <template x-if="tp.image">
+                  <img @click.stop="zoom = 'study/img/' + tp.image" :src="'study/img/' + tp.image" :alt="tp.title || ''" loading="lazy"
+                       class="cursor-zoom-in block w-full max-h-52 rounded-md border border-orange-200 bg-white object-contain">
+                </template>
+                <template x-if="!tp.image && tp.figure">
+                  <svg viewBox="0 0 24 24" class="w-14 h-14 text-orange-400"><use :href="'#m-' + tp.figure"/></svg>
+                </template>
+                </div>
               </div>
             </div>
           </template>
