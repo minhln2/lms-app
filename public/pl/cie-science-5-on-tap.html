@@ -155,12 +155,26 @@
         // phần tóm tắt có item_id ổn định. Ô của LÁ và của MỤC không có trạng thái
         // riêng, luôn suy từ đám này (đúng khuôn ô tick nhóm ở trang môn): bỏ tick
         // một từ là ô cha tự về "một phần" ngay, không bao giờ lệch nhau.
+        // `card` là id thẻ ghi nhớ của một từ; `mark` là id tick của một khối nội
+        // dung (điều cần nhớ, thí nghiệm, bảng so…). Cùng đi vào một kho trạng
+        // thái, nên ô tick ở mục và ở lá gộp được cả hai loại.
         atomsOf(list, secId) {
-          return (list || []).filter(x => x && x.card)
-                             .map(x => ({ id: x.card, c: x.concept || secId }));
+          return (list || []).filter(x => x && (x.card || x.mark))
+                             .map(x => ({ id: x.card || x.mark, c: x.concept || secId }));
+        },
+        // Mọi khối nội dung của một mục, để ô tick cấp mục/lá tính cả chúng.
+        blockAtoms(sec, leafId) {
+          const out = [];
+          for (const b of ['points','topics','checklists','compares','watch_out',
+                           'experiments','worked','grammar','phrases','readings','sounds']) {
+            const items = (sec[b] || []).filter(x => !leafId || x.concept === leafId);
+            out.push(...this.atomsOf(items, sec.concept));
+          }
+          return out;
         },
         leafAtoms(sec, leafId) {
-          return this.atomsOf((sec.glossary || []).filter(g => g.concept === leafId), sec.concept);
+          return this.atomsOf((sec.glossary || []).filter(g => g.concept === leafId), sec.concept)
+                     .concat(this.blockAtoms(sec, leafId));
         },
         secAtoms(sec) {
           const out = this.atomsOf(sec.glossary, sec.concept);
@@ -168,6 +182,7 @@
             out.push(...this.atomsOf((ws.items || []).map(it => ({ ...it, concept: it.concept || ws.concept })),
                                      sec.concept));
           }
+          out.push(...this.blockAtoms(sec, null));
           return out;
         },
         // null = không có gì để tick → KHÔNG vẽ ô. Lá chỉ có "điều cần nhớ" hay
@@ -180,6 +195,10 @@
         // Ghi cả cụm bằng ĐÚNG MỘT lượt POST, hỏng thì hoàn tác toàn bộ — cùng
         // khuôn với ô tick nhóm ở trang môn. Gọi lẻ từng từ là 40 vòng mạng, mà
         // từ Việt Nam mỗi vòng ~200ms.
+        // Bản in bỏ thanh chế độ, mục lục, ô tìm, chip lọc, ô tick và nút loa —
+        // xem khối @media print ở đầu file. Ở đây chỉ cần gọi hộp thoại in; giữ
+        // nguyên bộ lọc đang bật để bản in khớp với màn hình.
+        printSheet() { window.print(); },
         async setKnown(atoms, v) {
           const list = (atoms || []).filter(a => this.isKnown(a.id) !== !!v);
           if (!list.length || !this.canMark) return;
@@ -851,6 +870,29 @@
       };
     }
   </script>
+  <style>
+    /* Chế độ IN trang tóm tắt. Bỏ mọi thứ chỉ có nghĩa khi bấm được:
+       thanh chế độ, mục lục bên trái, ô tìm, chip lọc, ô tick, nút loa.
+       Giữ đúng phần nội dung — thứ đáng dán lên tường hoặc kẹp vào vở. */
+    @media print {
+      /* `html body` để nâng độ ưu tiên: mục lục mang class `lg:!block` của
+         Tailwind, tức `display:block !important` ở mức CLASS. Luật `aside` trơn
+         (độ ưu tiên phần tử) thua nó, và thua im lặng — CSS không báo gì, chỉ là
+         bản in vẫn còn nguyên cái mục lục. */
+      html body nav, html body aside, html body .no-print { display: none !important; }
+      header { background: #fff !important; color: #000 !important; }
+      header a, header p { color: #444 !important; }
+      html body input, html body button, html body select { display: none !important; }
+      /* Ảnh minh hoạ in ra to hơn trên màn hình: giấy không thiếu chỗ như thẻ từ */
+      img[src*="study/img/"] { max-width: 120px !important; max-height: 120px !important; }
+      /* Đừng để một thẻ nội dung bị cắt đôi sang trang sau */
+      main section, main .rounded-lg, main .rounded-xl { break-inside: avoid; }
+      main section { break-before: auto; }
+      main { padding: 0 !important; }
+      a[href]:after { content: none !important; }
+      body { background: #fff !important; }
+    }
+  </style>
 </head>
 <!-- KHÔNG thêm x-init="init()": Alpine 3 TỰ gọi phương thức init() của object
      x-data. Thêm nữa là chạy hai lần — hai lượt GET và, tệ hơn, hai lượt POST
@@ -1128,7 +1170,7 @@
 
   <!-- Thanh chế độ. Mọi class Tailwind ở đây là literal — nội dung đến từ JSON
        nhưng class thì phải nằm sẵn trong HTML để Tailwind quét thấy lúc build. -->
-  <nav x-show="ready && data" x-cloak class="bg-white border-b border-slate-200 sticky top-0 z-20">
+  <nav x-show="ready && data" x-cloak class="no-print bg-white border-b border-slate-200 sticky top-0 z-20">
     <div class="max-w-5xl mx-auto px-4 py-2 flex items-center gap-1.5 overflow-x-auto">
       <!-- Tự đọc mặt trước khi hiện thẻ/câu mới. Nhớ lựa chọn trong localStorage. -->
       <label x-show="canSpeak" class="order-last ml-auto shrink-0 flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
@@ -1164,7 +1206,7 @@
          x-show: giá trị đó không phản ứng, xoay máy tính bảng là kẹt trạng thái. -->
     <aside x-show="navOpen" x-cloak
            :class="navOpen ? 'fixed inset-y-0 left-0 w-72 z-30 overflow-y-auto shadow-xl' : ''"
-           class="lg:!block lg:static lg:w-60 lg:shrink-0 lg:z-auto lg:shadow-none bg-white lg:bg-transparent p-4 lg:pl-0 lg:py-6">
+           class="no-print lg:!block lg:static lg:w-60 lg:shrink-0 lg:z-auto lg:shadow-none bg-white lg:bg-transparent p-4 lg:pl-0 lg:py-6">
       <p class="text-xs font-bold uppercase tracking-wide text-slate-400 mb-1.5">Môn học</p>
       <select onchange="if(this.value) location.href = this.value"
               class="w-full mb-4 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-sm text-slate-800">
@@ -1499,7 +1541,7 @@
     <div class="space-y-5">
       <!-- Tìm theo từ khoá. Lọc từng mẩu nội dung chứ không lọc cả mục, nên gõ
            "oxygen" là chỉ còn đúng những chỗ nhắc tới oxygen. -->
-      <div class="relative">
+      <div class="no-print relative">
         <input type="search" x-model="kw" placeholder="Tìm trong bài… (từ vựng, ý, ví dụ)"
                class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 bg-white text-sm
                       placeholder:text-slate-400 focus:outline-none focus:border-indigo-500">
@@ -1514,12 +1556,17 @@
       </p>
 
       <!-- Lọc loại nội dung + bật chi tiết. Class ở KINDS là literal để Tailwind quét thấy. -->
-      <div class="flex flex-wrap items-center gap-1.5">
+      <div class="no-print flex flex-wrap items-center gap-1.5">
         <template x-for="kd in kinds" :key="kd.k">
           <button @click="toggleShow(kd.k)" :class="filt[kd.k] ? kd.on : kd.off"
                   class="px-2.5 py-1 text-xs font-medium rounded-full border transition-colors" x-text="kd.t"></button>
         </template>
         <div class="ml-auto flex items-center gap-3">
+          <!-- In: in ĐÚNG những gì đang thấy, kể cả khi đang lọc — bấm In mà ra
+               nội dung khác trên màn hình thì khó hiểu hơn là in thiếu. Nút này
+               tự nó biến mất trên bản in (mọi <button> đều bị ẩn). -->
+          <button @click="printSheet()" type="button" title="In trang này"
+                  class="px-2.5 py-1 text-xs font-medium rounded-full border border-slate-300 bg-white text-slate-600 hover:bg-slate-50">🖨 In</button>
           <!-- Ẩn hẳn phần ĐÃ tick: từ đã thuộc biến mất, lá/mục tick đủ cả cụm thì
                biến mất luôn cả khối. Chỉ hiện khi ghi được — không ghi được thì
                chẳng có gì đã thuộc để mà lọc. -->
@@ -1645,7 +1692,7 @@
           <template x-if="show.grammar"><div class="px-5 pb-1 space-y-3">
           <template x-for="(gr, gi) in grammars(sec)" :key="'g' + gi">
             <div>
-              <p class="text-[13px] font-bold uppercase tracking-wider text-rose-700 mb-1.5">📐 <span x-html="hl(gr.title)"></span><span x-show="gr.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + gr.page"></span></p>
+              <p class="text-[13px] font-bold uppercase tracking-wider text-rose-700 mb-1.5"><input x-show="canMark && gr.mark" x-cloak type="checkbox" title="Đã thuộc" :checked="isKnown(gr.mark)" @change="setKnown([{id: gr.mark, c: gr.concept || sec.concept}], $event.target.checked)" class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600">📐 <span x-html="hl(gr.title)"></span><span x-show="gr.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + gr.page"></span></p>
               <div class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-sm space-y-1.5">
                 <p class="font-semibold text-slate-900" x-html="hl(gr.when)"></p>
                 <p x-show="gr.form" class="font-mono text-[13px] text-rose-900 bg-white rounded border border-rose-200 px-2 py-1" x-html="hl(gr.form)"></p>
@@ -1690,7 +1737,7 @@
           <template x-if="show.sounds"><div class="px-5 pb-1 space-y-3">
           <template x-for="(sd, si) in sounds(sec)" :key="'s' + si">
             <div>
-              <p class="text-[13px] font-bold uppercase tracking-wider text-amber-700 mb-1.5">🗣 <span x-html="hl(sd.title)"></span><span x-show="sd.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + sd.page"></span></p>
+              <p class="text-[13px] font-bold uppercase tracking-wider text-amber-700 mb-1.5"><input x-show="canMark && sd.mark" x-cloak type="checkbox" title="Đã thuộc" :checked="isKnown(sd.mark)" @change="setKnown([{id: sd.mark, c: sd.concept || sec.concept}], $event.target.checked)" class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600">🗣 <span x-html="hl(sd.title)"></span><span x-show="sd.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + sd.page"></span></p>
               <div class="rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2.5 text-sm space-y-1.5">
                 <p class="font-semibold text-slate-900" x-html="hl(sd.focus)"></p>
                 <div class="flex flex-wrap gap-1.5">
@@ -1712,7 +1759,7 @@
           <template x-if="show.phrases"><div class="px-5 pb-1 space-y-3">
           <template x-for="(ph, pi) in phrasesets(sec)" :key="'p' + pi">
             <div>
-              <p class="text-[13px] font-bold uppercase tracking-wider text-lime-700 mb-1.5">💬 <span x-html="hl(ph.title)"></span><span x-show="ph.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + ph.page"></span></p>
+              <p class="text-[13px] font-bold uppercase tracking-wider text-lime-700 mb-1.5"><input x-show="canMark && ph.mark" x-cloak type="checkbox" title="Đã thuộc" :checked="isKnown(ph.mark)" @change="setKnown([{id: ph.mark, c: ph.concept || sec.concept}], $event.target.checked)" class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600">💬 <span x-html="hl(ph.title)"></span><span x-show="ph.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + ph.page"></span></p>
               <div class="grid sm:grid-cols-3 gap-2">
                 <template x-for="(gp, gi) in (ph.groups || [])" :key="gi">
                   <div x-show="fq(gp.lines.map(l => ({ l })), 'l').length" class="rounded-lg border border-lime-200 bg-lime-50/50 px-3 py-2">
@@ -1732,7 +1779,7 @@
           <template x-if="show.reading"><div class="px-5 pb-1 space-y-3">
           <template x-for="(rd, ri) in reads(sec)" :key="'r' + ri">
             <div>
-              <p class="text-[13px] font-bold uppercase tracking-wider text-fuchsia-700 mb-1.5">📕 <span x-html="hl(rd.title)"></span><span x-show="rd.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + rd.page"></span></p>
+              <p class="text-[13px] font-bold uppercase tracking-wider text-fuchsia-700 mb-1.5"><input x-show="canMark && rd.mark" x-cloak type="checkbox" title="Đã thuộc" :checked="isKnown(rd.mark)" @change="setKnown([{id: rd.mark, c: rd.concept || sec.concept}], $event.target.checked)" class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600">📕 <span x-html="hl(rd.title)"></span><span x-show="rd.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + rd.page"></span></p>
               <div class="rounded-lg border border-fuchsia-200 bg-fuchsia-50/50 px-3 py-2.5 text-sm space-y-1">
                 <p x-show="rd.kind" class="text-xs uppercase tracking-wide text-fuchsia-700" x-html="hl(rd.kind)"></p>
                 <p class="text-slate-800" x-html="hl(rd.about)"></p>
@@ -1754,7 +1801,7 @@
               <div class="flex items-center gap-2 px-3 py-2 bg-orange-50 border-b border-orange-200">
                 <span class="shrink-0 w-6 h-6 rounded-full bg-orange-500 text-white text-xs font-bold grid place-items-center"
                       x-text="ti + 1"></span>
-                <h4 class="text-base font-bold text-orange-800 uppercase tracking-wide" x-html="hl(tp.title)"></h4>
+                <input x-show="canMark && tp.mark" x-cloak type="checkbox" title="Đã thuộc" :checked="isKnown(tp.mark)" @change="setKnown([{id: tp.mark, c: tp.concept || sec.concept}], $event.target.checked)" class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><h4 class="text-base font-bold text-orange-800 uppercase tracking-wide" x-html="hl(tp.title)"></h4>
                 <span x-show="tp.subtitle" class="text-xs text-orange-500 normal-case" x-html="'(' + hl(tp.subtitle) + ')'"></span>
                 <span class="ml-auto text-xs text-slate-400" x-text="tp.page ? 'p.' + tp.page : ''"></span>
               </div>
@@ -1901,7 +1948,7 @@
               <div class="grid gap-2 sm:grid-cols-2">
                 <template x-for="(pt, i) in tagged(points(sec), leaf.id)" :key="i">
                   <div class="flex gap-2.5 rounded-lg border border-sky-200 bg-sky-50/40 p-3">
-                    <div class="flex-1"><p class="text-sm text-slate-700 leading-snug"><span class="font-semibold text-slate-900" x-html="hl(lead(pt.t)[0])"></span><span x-html="hl(lead(pt.t)[1])"></span></p>
+                    <input x-show="canMark && pt.mark" x-cloak type="checkbox" title="Đã thuộc" :checked="isKnown(pt.mark)" @change="setKnown([{id: pt.mark, c: pt.concept || sec.concept}], $event.target.checked)" class="mt-1 shrink-0 w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><div class="flex-1"><p class="text-sm text-slate-700 leading-snug"><span class="font-semibold text-slate-900" x-html="hl(lead(pt.t)[0])"></span><span x-html="hl(lead(pt.t)[1])"></span></p>
                     <p x-show="pt.t_vi" x-cloak class="text-sm text-cyan-700 leading-snug" x-html="hl(pt.t_vi)"></p></div>
                     <template x-if="pt.image"><img @click.stop="zoom = 'study/img/' + pt.image" :src="'study/img/' + pt.image" alt="" class="cursor-zoom-in w-16 shrink-0 self-start rounded border border-sky-200 bg-white object-contain"></template>
                   </div>
@@ -1914,7 +1961,7 @@
               <template x-if="show.list"><div>
               <template x-for="(ck, ci) in lists(sec, leaf.id)" :key="'l' + ci">
               <div class="px-4 pt-3">
-                <p class="text-[13px] font-bold uppercase tracking-wider text-emerald-700 mb-1.5">☑ <span x-html="hl(ck.title)"></span></p>
+                <p class="text-[13px] font-bold uppercase tracking-wider text-emerald-700 mb-1.5"><input x-show="canMark && ck.mark" x-cloak type="checkbox" title="Đã thuộc" :checked="isKnown(ck.mark)" @change="setKnown([{id: ck.mark, c: ck.concept || sec.concept}], $event.target.checked)" class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600">☑ <span x-html="hl(ck.title)"></span></p>
                 <ol class="grid gap-1.5 sm:grid-cols-2">
                   <template x-for="(it, i) in itemsOf(ck)" :key="i">
                     <li class="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50/60 px-2.5 py-1.5">
@@ -1939,6 +1986,10 @@
                   <template x-for="(w, i) in tagged(sec.watch_out, leaf.id)" :key="i">
                     <div class="rounded-lg border border-amber-200 bg-amber-50 overflow-hidden">
                       <p class="flex gap-2 px-3 py-2 text-sm text-slate-600">
+                        <input x-show="canMark && w.mark" x-cloak type="checkbox" title="Đã thuộc"
+                               :checked="isKnown(w.mark)"
+                               @change="setKnown([{id: w.mark, c: w.concept || sec.concept}], $event.target.checked)"
+                               class="mt-0.5 shrink-0 w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600">
                         <span class="text-rose-500 font-bold shrink-0">✗</span>
                         <span class="line-through decoration-rose-300" x-html="hl(w.wrong)"></span>
                       </p>
@@ -1957,7 +2008,7 @@
               <template x-if="show.exp"><div>
               <template x-for="(ex, ei) in exps(sec, leaf.id)" :key="'e' + ei">
               <div class="px-4 pt-3">
-                <p class="text-[13px] font-bold uppercase tracking-wider text-violet-600 mb-1.5">🔬 <span x-html="hl(ex.title || 'Thí nghiệm trong sách')"></span><span x-show="ex.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + ex.page"></span></p>
+                <p class="text-[13px] font-bold uppercase tracking-wider text-violet-600 mb-1.5"><input x-show="canMark && ex.mark" x-cloak type="checkbox" title="Đã thuộc" :checked="isKnown(ex.mark)" @change="setKnown([{id: ex.mark, c: ex.concept || sec.concept}], $event.target.checked)" class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600">🔬 <span x-html="hl(ex.title || 'Thí nghiệm trong sách')"></span><span x-show="ex.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + ex.page"></span></p>
                 <div class="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2.5 flex gap-3 items-start">
                   <div class="min-w-0 flex-1 text-sm space-y-1.5">
                     <p x-show="ex.summary" class="text-slate-700" x-html="hl(ex.summary)"></p>
@@ -1979,7 +2030,7 @@
               <template x-if="show.worked"><div>
               <template x-for="(wk, wi) in works(sec, leaf.id)" :key="'w' + wi">
               <div class="px-4 pt-3">
-                <p class="text-[13px] font-bold uppercase tracking-wider text-teal-700 mb-1.5">🧮 <span x-html="hl(wk.title || 'Bài mẫu')"></span><span x-show="wk.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + wk.page"></span></p>
+                <p class="text-[13px] font-bold uppercase tracking-wider text-teal-700 mb-1.5"><input x-show="canMark && wk.mark" x-cloak type="checkbox" title="Đã thuộc" :checked="isKnown(wk.mark)" @change="setKnown([{id: wk.mark, c: wk.concept || sec.concept}], $event.target.checked)" class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600">🧮 <span x-html="hl(wk.title || 'Bài mẫu')"></span><span x-show="wk.page" class="font-normal normal-case text-slate-400" x-text="' · p.' + wk.page"></span></p>
                 <div class="rounded-lg border border-teal-200 bg-teal-50 px-3 py-2.5 text-sm space-y-1.5">
                   <p class="font-semibold text-slate-900" x-html="hl(wk.problem)"></p>
                   <ol class="list-decimal pl-5 text-slate-700 space-y-0.5">
@@ -1996,7 +2047,7 @@
               <template x-if="show.compare"><div>
               <template x-for="(cp, pi) in comps(sec, leaf.id)" :key="'c' + pi">
               <div class="px-4 pt-3">
-                <p class="text-[13px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">⇄ <span x-html="hl(cp.title || 'So sánh')"></span></p>
+                <p class="text-[13px] font-bold uppercase tracking-wider text-slate-600 mb-1.5"><input x-show="canMark && cp.mark" x-cloak type="checkbox" title="Đã thuộc" :checked="isKnown(cp.mark)" @change="setKnown([{id: cp.mark, c: cp.concept || sec.concept}], $event.target.checked)" class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600">⇄ <span x-html="hl(cp.title || 'So sánh')"></span></p>
                 <div class="rounded-lg border border-slate-200 overflow-hidden">
                   <div class="grid grid-cols-[6.5rem_1fr_1fr] text-sm font-semibold">
                     <div class="bg-slate-100 px-2 py-2"></div>
