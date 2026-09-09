@@ -1172,6 +1172,12 @@
        nhưng class thì phải nằm sẵn trong HTML để Tailwind quét thấy lúc build. -->
   <nav x-show="ready && data" x-cloak class="no-print bg-white border-b border-slate-200 sticky top-0 z-20">
     <div class="max-w-5xl mx-auto px-4 py-2 flex items-center gap-1.5 overflow-x-auto">
+      <!-- In: chỉ ở trang tóm tắt. `order-last ml-auto` đẩy sang phải, cùng chỗ
+           với ô Tự đọc — hai thứ này không bao giờ hiện cùng lúc vì mỗi cái thuộc
+           một mode. In ĐÚNG những gì đang thấy, kể cả khi đang lọc: bấm In mà ra
+           nội dung khác trên màn hình thì khó hiểu hơn là in thiếu. -->
+      <button x-show="mode === 'summary'" @click="printSheet()" type="button" title="In trang này"
+              class="order-last ml-auto shrink-0 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:border-indigo-400">🖨 In</button>
       <!-- Tự đọc mặt trước khi hiện thẻ/câu mới. Nhớ lựa chọn trong localStorage. -->
       <label x-show="canSpeak && (mode === 'cards' || mode === 'quiz')" class="order-last ml-auto shrink-0 flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
         <input type="checkbox" :checked="autoSpeak" @change="toggleAuto()" class="accent-indigo-600">
@@ -1562,17 +1568,12 @@
                   class="px-2.5 py-1 text-xs font-medium rounded-full border transition-colors" x-text="kd.t"></button>
         </template>
         <div class="ml-auto flex items-center gap-3">
-          <!-- In: in ĐÚNG những gì đang thấy, kể cả khi đang lọc — bấm In mà ra
-               nội dung khác trên màn hình thì khó hiểu hơn là in thiếu. Nút này
-               tự nó biến mất trên bản in (mọi <button> đều bị ẩn). -->
-          <button @click="printSheet()" type="button" title="In trang này"
-                  class="px-2.5 py-1 text-xs font-medium rounded-full border border-slate-300 bg-white text-slate-600 hover:bg-slate-50">🖨 In</button>
           <!-- Ẩn hẳn phần ĐÃ tick: từ đã thuộc biến mất, lá/mục tick đủ cả cụm thì
                biến mất luôn cả khối. Chỉ hiện khi ghi được — không ghi được thì
                chẳng có gì đã thuộc để mà lọc. -->
           <label x-show="canMark" x-cloak class="flex items-center gap-1.5 text-xs text-emerald-700 cursor-pointer select-none">
             <input type="checkbox" :checked="onlyNew" @change="toggleOnlyNew()" class="accent-emerald-600">
-            ✅ Chỉ chưa thuộc
+            🙈 Ẩn đã thuộc
           </label>
         </div>
       </div>
