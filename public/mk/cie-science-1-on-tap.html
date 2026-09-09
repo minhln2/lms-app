@@ -38,7 +38,6 @@
         // Chip lọc = LỰA CHỌN của người dùng, không phải trạng thái hiển thị.
         // Không chọn chip nào (mặc định) nghĩa là xem tất cả — xem getter `show`.
         filt: JSON.parse(localStorage.getItem('lms_pick') || 'null') || { gloss: false, facts: false, list: false, watch: false, exp: false, compare: false },
-        detail: localStorage.getItem('lms_detail') === '1',
         // Chủ đề đang học. Bỏ mục "cả môn" nên sau khi nạp xong đây LUÔN là một
         // unit cụ thể — xem pickFirstUnit(). Giữ null lúc khởi tạo vì cây chủ đề
         // chưa có gì để chọn.
@@ -459,7 +458,6 @@
             (k === 'facts' ? this.points(sec) : (sec[F[k]] || [])).length);
         },
         get kinds() { return this.KINDS.filter(kd => this.hasKind(kd.k)); },
-        toggleDetail() { this.detail = !this.detail; localStorage.setItem('lms_detail', this.detail ? '1' : '0'); },
 
         // ── Phạm vi học ───────────────────────────────────────────────────────
         // Bấm vào Unit thì học cả Unit; bấm vào một mục con thì chỉ học mục đó.
@@ -1175,7 +1173,7 @@
   <nav x-show="ready && data" x-cloak class="no-print bg-white border-b border-slate-200 sticky top-0 z-20">
     <div class="max-w-5xl mx-auto px-4 py-2 flex items-center gap-1.5 overflow-x-auto">
       <!-- Tự đọc mặt trước khi hiện thẻ/câu mới. Nhớ lựa chọn trong localStorage. -->
-      <label x-show="canSpeak" class="order-last ml-auto shrink-0 flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
+      <label x-show="canSpeak && (mode === 'cards' || mode === 'quiz')" class="order-last ml-auto shrink-0 flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
         <input type="checkbox" :checked="autoSpeak" @change="toggleAuto()" class="accent-indigo-600">
         🔊 Tự đọc
       </label>
@@ -1576,9 +1574,6 @@
             <input type="checkbox" :checked="onlyNew" @change="toggleOnlyNew()" class="accent-emerald-600">
             ✅ Chỉ chưa thuộc
           </label>
-          <label class="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
-            <input type="checkbox" :checked="detail" @change="toggleDetail()" class="accent-indigo-600"> Chi tiết
-          </label>
         </div>
       </div>
       <p x-show="!scopedSummary.length" x-cloak
@@ -1700,7 +1695,7 @@
                 <p x-show="gr.form" class="font-mono text-[13px] text-rose-900 bg-white rounded border border-rose-200 px-2 py-1" x-html="hl(gr.form)"></p>
                 <ul class="space-y-0.5 text-slate-700">
                   <template x-for="(eg, ei) in fq(gr.examples || [], 'en', 'why')" :key="ei">
-                    <li><span x-html="hl(eg.en)"></span><span x-show="detail && eg.why" class="text-xs text-slate-500 italic"> — <span x-html="hl(eg.why)"></span></span></li>
+                    <li><span x-html="hl(eg.en)"></span><span x-show="eg.why" class="text-xs text-slate-500 italic"> — <span x-html="hl(eg.why)"></span></span></li>
                   </template>
                 </ul>
                 <p x-show="gr.watch" class="text-xs text-rose-800 bg-rose-100 rounded px-2 py-1" x-html="'⚠ ' + hl(gr.watch)"></p>
@@ -1731,7 +1726,7 @@
                   </div>
                 </template>
               </div>
-              <p x-show="detail && ws.note" class="mt-1.5 text-xs text-cyan-800 bg-cyan-100 rounded px-2.5 py-1" x-html="hl(ws.note)"></p>
+              <p x-show="ws.note" class="mt-1.5 text-xs text-cyan-800 bg-cyan-100 rounded px-2.5 py-1" x-html="hl(ws.note)"></p>
             </div>
           </template>
           </div></template>
@@ -1970,12 +1965,12 @@
                       <div class="min-w-0 text-sm leading-snug">
                         <span class="font-semibold text-slate-900" x-html="hl(it.sign)"></span>
                         <template x-if="it.look_for"><span><span class="text-slate-500"> — </span><span class="text-slate-700" x-html="hl(it.look_for)"></span></span></template>
-                        <p x-show="detail && it.book_example" class="text-xs text-slate-500 italic" x-html="hl(it.book_example)"></p>
+                        <p x-show="it.book_example" class="text-xs text-slate-500 italic" x-html="hl(it.book_example)"></p>
                       </div>
                     </li>
                   </template>
                 </ol>
-                <p x-show="detail && ck.note" class="mt-1.5 text-xs text-emerald-800 bg-emerald-100 rounded px-2.5 py-1" x-html="hl(ck.note)"></p>
+                <p x-show="ck.note" class="mt-1.5 text-xs text-emerald-800 bg-emerald-100 rounded px-2.5 py-1" x-html="hl(ck.note)"></p>
               </div>
               </template>
               </div></template>
@@ -2039,7 +2034,7 @@
                     <template x-for="(st, si) in (wk.steps || [])" :key="si"><li x-html="hl(st)"></li></template>
                   </ol>
                   <p class="font-medium text-teal-900"><span class="font-semibold">Đáp số:</span> <span x-html="hl(wk.answer)"></span></p>
-                  <p x-show="detail && wk.why" class="text-xs text-slate-500 italic" x-html="hl(wk.why)"></p>
+                  <p x-show="wk.why" class="text-xs text-slate-500 italic" x-html="hl(wk.why)"></p>
                 </div>
               </div>
               </template>
