@@ -122,10 +122,18 @@
             if (!r.ok) throw new Error('HTTP ' + r.status);
             const d = await r.json();
             const items = d.items || {};
-            this.done = Object.fromEntries(Object.keys(items).map(k => [k, true]));
+            // Ba trạng thái, KHÔNG phải hai. `redo` do hệ thống đặt khi nội dung bài
+            // đổi sau lúc đánh dấu; người dùng không tự đặt được. Nó KHÔNG nằm trong
+            // `done`, nhờ vậy ô tick của nhóm và mọi phép đếm tự coi là chưa xong —
+            // không phải sửa chỗ nào khác.
+            this.redo = Object.fromEntries(Object.entries(items)
+              .filter(([, v]) => v && v.redo).map(([k]) => [k, true]));
+            this.done = Object.fromEntries(Object.keys(items)
+              .filter(k => !this.redo[k]).map(k => [k, true]));
             // Vân tay nội dung lúc đánh dấu, để phát hiện bài bị sửa sau đó
             this.hashes = Object.fromEntries(
-              Object.entries(items).filter(([, v]) => v && v.hash).map(([k, v]) => [k, v.hash]));
+              Object.entries(items).filter(([, v]) => v && v.hash && !v.redo)
+                .map(([k, v]) => [k, v.hash]));
             this.online = true;
           } catch (e) {
             this.online = false;   // không có backend → chế độ chỉ đọc
@@ -135,6 +143,8 @@
 
         // Bài đã học nhưng nội dung đổi từ sau lúc đánh dấu.
         // Mục đánh dấu trước khi có tính năng này không có hash → không báo.
+        redo: {},
+
         stale(key, hash) {
           return !!this.done[key] && !!this.hashes[key] && !!hash && this.hashes[key] !== hash;
         },
@@ -144,6 +154,11 @@
           if (!this.secret) { if (!(await this.askSecret())) return; }
           const next = !this.done[key];
           const prevHash = this.hashes[key];
+          const prevRedo = this.redo[key];
+          // Bấm vào ô "đang thực hiện" là xác nhận đã học lại → hoàn thành. Người
+          // dùng chỉ đi được giữa HOÀN THÀNH và CHƯA THỰC HIỆN; trạng thái giữa
+          // chỉ hệ thống đặt.
+          delete this.redo[key];
           if (next) { this.done[key] = true; if (hash) this.hashes[key] = hash; }
           else { delete this.done[key]; delete this.hashes[key]; }
           this.saving++; this.err = '';
@@ -159,9 +174,11 @@
             }
             if (!r.ok) throw new Error('Không lưu được (HTTP ' + r.status + ')');
           } catch (e) {
-            // hoàn tác cả trạng thái lẫn vân tay
+            // hoàn tác cả trạng thái, vân tay LẪN cờ đang-thực-hiện. Thiếu vế
+            // cuối thì ghi hỏng mạng sẽ âm thầm nuốt mất trạng thái giữa.
             if (next) { delete this.done[key]; delete this.hashes[key]; }
             else { this.done[key] = true; if (prevHash) this.hashes[key] = prevHash; }
+            if (prevRedo) { this.redo[key] = true; delete this.done[key]; }
             this.err = e.message;
             setTimeout(() => (this.err = ''), 4000);
           } finally {
@@ -428,9 +445,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8746153']"
-                     @change="await p.toggle('pl/79605/8746153', 'da39a3ee5e6b4b0d3255bfef95601890afd80709'); $el.checked = !!p.done['pl/79605/8746153']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8746153'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8746153']; $el.indeterminate = !!p.redo['pl/79605/8746153']"
+                     @change="await p.toggle('pl/79605/8746153', 'da39a3ee5e6b4b0d3255bfef95601890afd80709'); $el.checked = !!p.done['pl/79605/8746153']; $el.indeterminate = !!p.redo['pl/79605/8746153']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -526,9 +544,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8746148']"
-                     @change="await p.toggle('pl/79605/8746148', '749b9d6eb124fb9ea8a7f7bc465827d5ba3919e1'); $el.checked = !!p.done['pl/79605/8746148']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8746148'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8746148']; $el.indeterminate = !!p.redo['pl/79605/8746148']"
+                     @change="await p.toggle('pl/79605/8746148', '749b9d6eb124fb9ea8a7f7bc465827d5ba3919e1'); $el.checked = !!p.done['pl/79605/8746148']; $el.indeterminate = !!p.redo['pl/79605/8746148']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -586,9 +605,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8746149']"
-                     @change="await p.toggle('pl/79605/8746149', '596a30c616d9d70dbc3dcd2f032b3654955ff97c'); $el.checked = !!p.done['pl/79605/8746149']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8746149'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8746149']; $el.indeterminate = !!p.redo['pl/79605/8746149']"
+                     @change="await p.toggle('pl/79605/8746149', '596a30c616d9d70dbc3dcd2f032b3654955ff97c'); $el.checked = !!p.done['pl/79605/8746149']; $el.indeterminate = !!p.redo['pl/79605/8746149']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -646,9 +666,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8746184']"
-                     @change="await p.toggle('pl/79605/8746184', '60ca27bab9410b7be988340209004259079eb38b'); $el.checked = !!p.done['pl/79605/8746184']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8746184'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8746184']; $el.indeterminate = !!p.redo['pl/79605/8746184']"
+                     @change="await p.toggle('pl/79605/8746184', '60ca27bab9410b7be988340209004259079eb38b'); $el.checked = !!p.done['pl/79605/8746184']; $el.indeterminate = !!p.redo['pl/79605/8746184']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -706,9 +727,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8746192']"
-                     @change="await p.toggle('pl/79605/8746192', '7b6efc9bf1edc5ce5e99c283ad3151e42a34885b'); $el.checked = !!p.done['pl/79605/8746192']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8746192'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8746192']; $el.indeterminate = !!p.redo['pl/79605/8746192']"
+                     @change="await p.toggle('pl/79605/8746192', '7b6efc9bf1edc5ce5e99c283ad3151e42a34885b'); $el.checked = !!p.done['pl/79605/8746192']; $el.indeterminate = !!p.redo['pl/79605/8746192']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -797,9 +819,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8739720']"
-                     @change="await p.toggle('pl/79605/8739720', '378d1c33829bd010a3af625a4f7e5ded585daa20'); $el.checked = !!p.done['pl/79605/8739720']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8739720'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8739720']; $el.indeterminate = !!p.redo['pl/79605/8739720']"
+                     @change="await p.toggle('pl/79605/8739720', '378d1c33829bd010a3af625a4f7e5ded585daa20'); $el.checked = !!p.done['pl/79605/8739720']; $el.indeterminate = !!p.redo['pl/79605/8739720']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -859,9 +882,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8739721']"
-                     @change="await p.toggle('pl/79605/8739721', 'a4bbfa5c7b60a7b425e424e6114678ed33b515ee'); $el.checked = !!p.done['pl/79605/8739721']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8739721'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8739721']; $el.indeterminate = !!p.redo['pl/79605/8739721']"
+                     @change="await p.toggle('pl/79605/8739721', 'a4bbfa5c7b60a7b425e424e6114678ed33b515ee'); $el.checked = !!p.done['pl/79605/8739721']; $el.indeterminate = !!p.redo['pl/79605/8739721']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -968,9 +992,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8338872']"
-                     @change="await p.toggle('pl/79605/8338872', 'fb874a2910077d4c96ca80255262bb9c9d885542'); $el.checked = !!p.done['pl/79605/8338872']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8338872'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8338872']; $el.indeterminate = !!p.redo['pl/79605/8338872']"
+                     @change="await p.toggle('pl/79605/8338872', 'fb874a2910077d4c96ca80255262bb9c9d885542'); $el.checked = !!p.done['pl/79605/8338872']; $el.indeterminate = !!p.redo['pl/79605/8338872']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -1056,9 +1081,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8306634']"
-                     @change="await p.toggle('pl/79605/8306634', 'edd319bba0f8d4a2aee3ad30662c252ccbb8eb85'); $el.checked = !!p.done['pl/79605/8306634']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8306634'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8306634']; $el.indeterminate = !!p.redo['pl/79605/8306634']"
+                     @change="await p.toggle('pl/79605/8306634', 'edd319bba0f8d4a2aee3ad30662c252ccbb8eb85'); $el.checked = !!p.done['pl/79605/8306634']; $el.indeterminate = !!p.redo['pl/79605/8306634']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -1116,9 +1142,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8306635']"
-                     @change="await p.toggle('pl/79605/8306635', '835578e7ee5732ddc1d2b9d68b64be856eb7b97e'); $el.checked = !!p.done['pl/79605/8306635']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8306635'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8306635']; $el.indeterminate = !!p.redo['pl/79605/8306635']"
+                     @change="await p.toggle('pl/79605/8306635', '835578e7ee5732ddc1d2b9d68b64be856eb7b97e'); $el.checked = !!p.done['pl/79605/8306635']; $el.indeterminate = !!p.redo['pl/79605/8306635']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -1176,9 +1203,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8306636']"
-                     @change="await p.toggle('pl/79605/8306636', '15f54c5175f9330a78d8a86c37d7ce58c25d4e2d'); $el.checked = !!p.done['pl/79605/8306636']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8306636'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8306636']; $el.indeterminate = !!p.redo['pl/79605/8306636']"
+                     @change="await p.toggle('pl/79605/8306636', '15f54c5175f9330a78d8a86c37d7ce58c25d4e2d'); $el.checked = !!p.done['pl/79605/8306636']; $el.indeterminate = !!p.redo['pl/79605/8306636']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -1236,9 +1264,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8306637']"
-                     @change="await p.toggle('pl/79605/8306637', '2e91d1d541d29fca2b376a1a7e63f8d8e37cfff8'); $el.checked = !!p.done['pl/79605/8306637']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8306637'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8306637']; $el.indeterminate = !!p.redo['pl/79605/8306637']"
+                     @change="await p.toggle('pl/79605/8306637', '2e91d1d541d29fca2b376a1a7e63f8d8e37cfff8'); $el.checked = !!p.done['pl/79605/8306637']; $el.indeterminate = !!p.redo['pl/79605/8306637']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -1312,9 +1341,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8306641']"
-                     @change="await p.toggle('pl/79605/8306641', '4456e2f6f038ef2001671d9dabe67713ad8f206b'); $el.checked = !!p.done['pl/79605/8306641']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8306641'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8306641']; $el.indeterminate = !!p.redo['pl/79605/8306641']"
+                     @change="await p.toggle('pl/79605/8306641', '4456e2f6f038ef2001671d9dabe67713ad8f206b'); $el.checked = !!p.done['pl/79605/8306641']; $el.indeterminate = !!p.redo['pl/79605/8306641']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -1372,9 +1402,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8306745']"
-                     @change="await p.toggle('pl/79605/8306745', '87d845adb12a447987a69ba75abb1f9816248274'); $el.checked = !!p.done['pl/79605/8306745']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8306745'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8306745']; $el.indeterminate = !!p.redo['pl/79605/8306745']"
+                     @change="await p.toggle('pl/79605/8306745', '87d845adb12a447987a69ba75abb1f9816248274'); $el.checked = !!p.done['pl/79605/8306745']; $el.indeterminate = !!p.redo['pl/79605/8306745']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -1432,9 +1463,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8306746']"
-                     @change="await p.toggle('pl/79605/8306746', '0767587fa0820a608bb9e2f08197573f4381bb44'); $el.checked = !!p.done['pl/79605/8306746']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8306746'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8306746']; $el.indeterminate = !!p.redo['pl/79605/8306746']"
+                     @change="await p.toggle('pl/79605/8306746', '0767587fa0820a608bb9e2f08197573f4381bb44'); $el.checked = !!p.done['pl/79605/8306746']; $el.indeterminate = !!p.redo['pl/79605/8306746']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -1539,9 +1571,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8624634']"
-                     @change="await p.toggle('pl/79605/8624634', 'ee3144ed0611979aad466744e83aa757c0983652'); $el.checked = !!p.done['pl/79605/8624634']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8624634'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8624634']; $el.indeterminate = !!p.redo['pl/79605/8624634']"
+                     @change="await p.toggle('pl/79605/8624634', 'ee3144ed0611979aad466744e83aa757c0983652'); $el.checked = !!p.done['pl/79605/8624634']; $el.indeterminate = !!p.redo['pl/79605/8624634']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -1628,9 +1661,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8569080']"
-                     @change="await p.toggle('pl/79605/8569080', 'dc60accb40676d5b35ace2d62406f280ada898a8'); $el.checked = !!p.done['pl/79605/8569080']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8569080'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8569080']; $el.indeterminate = !!p.redo['pl/79605/8569080']"
+                     @change="await p.toggle('pl/79605/8569080', 'dc60accb40676d5b35ace2d62406f280ada898a8'); $el.checked = !!p.done['pl/79605/8569080']; $el.indeterminate = !!p.redo['pl/79605/8569080']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -1688,9 +1722,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8569081']"
-                     @change="await p.toggle('pl/79605/8569081', '42cb4f02905fd9662e4c24af861f0042c9cf1263'); $el.checked = !!p.done['pl/79605/8569081']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8569081'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8569081']; $el.indeterminate = !!p.redo['pl/79605/8569081']"
+                     @change="await p.toggle('pl/79605/8569081', '42cb4f02905fd9662e4c24af861f0042c9cf1263'); $el.checked = !!p.done['pl/79605/8569081']; $el.indeterminate = !!p.redo['pl/79605/8569081']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -1748,9 +1783,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8569082']"
-                     @change="await p.toggle('pl/79605/8569082', 'd4b3fb724ed30d91dfa8f6da5d4657f5ab8f4a02'); $el.checked = !!p.done['pl/79605/8569082']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8569082'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8569082']; $el.indeterminate = !!p.redo['pl/79605/8569082']"
+                     @change="await p.toggle('pl/79605/8569082', 'd4b3fb724ed30d91dfa8f6da5d4657f5ab8f4a02'); $el.checked = !!p.done['pl/79605/8569082']; $el.indeterminate = !!p.redo['pl/79605/8569082']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -1808,9 +1844,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8569083']"
-                     @change="await p.toggle('pl/79605/8569083', 'f5b61621ecb3420a80ef6c104f646552cd9ec1ee'); $el.checked = !!p.done['pl/79605/8569083']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8569083'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8569083']; $el.indeterminate = !!p.redo['pl/79605/8569083']"
+                     @change="await p.toggle('pl/79605/8569083', 'f5b61621ecb3420a80ef6c104f646552cd9ec1ee'); $el.checked = !!p.done['pl/79605/8569083']; $el.indeterminate = !!p.redo['pl/79605/8569083']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -1868,9 +1905,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8569084']"
-                     @change="await p.toggle('pl/79605/8569084', 'a2a863990058a63a7594096df0a47dad266aaa5e'); $el.checked = !!p.done['pl/79605/8569084']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8569084'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8569084']; $el.indeterminate = !!p.redo['pl/79605/8569084']"
+                     @change="await p.toggle('pl/79605/8569084', 'a2a863990058a63a7594096df0a47dad266aaa5e'); $el.checked = !!p.done['pl/79605/8569084']; $el.indeterminate = !!p.redo['pl/79605/8569084']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -1944,9 +1982,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8569109']"
-                     @change="await p.toggle('pl/79605/8569109', 'a08a03eae355967620fd812539bc39d2095e84ac'); $el.checked = !!p.done['pl/79605/8569109']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8569109'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8569109']; $el.indeterminate = !!p.redo['pl/79605/8569109']"
+                     @change="await p.toggle('pl/79605/8569109', 'a08a03eae355967620fd812539bc39d2095e84ac'); $el.checked = !!p.done['pl/79605/8569109']; $el.indeterminate = !!p.redo['pl/79605/8569109']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -2053,9 +2092,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8701992']"
-                     @change="await p.toggle('pl/79605/8701992', 'da39a3ee5e6b4b0d3255bfef95601890afd80709'); $el.checked = !!p.done['pl/79605/8701992']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8701992'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8701992']; $el.indeterminate = !!p.redo['pl/79605/8701992']"
+                     @change="await p.toggle('pl/79605/8701992', 'da39a3ee5e6b4b0d3255bfef95601890afd80709'); $el.checked = !!p.done['pl/79605/8701992']; $el.indeterminate = !!p.redo['pl/79605/8701992']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -2135,9 +2175,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8702090']"
-                     @change="await p.toggle('pl/79605/8702090', '346e58284b56a31d0c7a9ad159bebd3650aedd6b'); $el.checked = !!p.done['pl/79605/8702090']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8702090'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8702090']; $el.indeterminate = !!p.redo['pl/79605/8702090']"
+                     @change="await p.toggle('pl/79605/8702090', '346e58284b56a31d0c7a9ad159bebd3650aedd6b'); $el.checked = !!p.done['pl/79605/8702090']; $el.indeterminate = !!p.redo['pl/79605/8702090']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -2211,9 +2252,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8702117']"
-                     @change="await p.toggle('pl/79605/8702117', 'c6b781934e7215acd5510d3f779004d461dc6cc5'); $el.checked = !!p.done['pl/79605/8702117']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8702117'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8702117']; $el.indeterminate = !!p.redo['pl/79605/8702117']"
+                     @change="await p.toggle('pl/79605/8702117', 'c6b781934e7215acd5510d3f779004d461dc6cc5'); $el.checked = !!p.done['pl/79605/8702117']; $el.indeterminate = !!p.redo['pl/79605/8702117']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -2273,9 +2315,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8702136']"
-                     @change="await p.toggle('pl/79605/8702136', '9d4bb7a2da2a1e1b699fa5666577c4aff7382188'); $el.checked = !!p.done['pl/79605/8702136']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8702136'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8702136']; $el.indeterminate = !!p.redo['pl/79605/8702136']"
+                     @change="await p.toggle('pl/79605/8702136', '9d4bb7a2da2a1e1b699fa5666577c4aff7382188'); $el.checked = !!p.done['pl/79605/8702136']; $el.indeterminate = !!p.redo['pl/79605/8702136']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -2335,9 +2378,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8702146']"
-                     @change="await p.toggle('pl/79605/8702146', '86ebbff81879a0f921d58c385b22e062ae44b778'); $el.checked = !!p.done['pl/79605/8702146']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8702146'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8702146']; $el.indeterminate = !!p.redo['pl/79605/8702146']"
+                     @change="await p.toggle('pl/79605/8702146', '86ebbff81879a0f921d58c385b22e062ae44b778'); $el.checked = !!p.done['pl/79605/8702146']; $el.indeterminate = !!p.redo['pl/79605/8702146']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -2397,9 +2441,10 @@
               
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox" title="Đánh dấu đã học"
-                     x-effect="$el.checked = !!p.done['pl/79605/8702256']"
-                     @change="await p.toggle('pl/79605/8702256', 'd563f49e8deae2d9a9fe9d19ebf8d2c59bcff146'); $el.checked = !!p.done['pl/79605/8702256']"
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8702256'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8702256']; $el.indeterminate = !!p.redo['pl/79605/8702256']"
+                     @change="await p.toggle('pl/79605/8702256', 'd563f49e8deae2d9a9fe9d19ebf8d2c59bcff146'); $el.checked = !!p.done['pl/79605/8702256']; $el.indeterminate = !!p.redo['pl/79605/8702256']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>

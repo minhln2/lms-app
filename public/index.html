@@ -15,13 +15,13 @@
       
       <h1 class="text-2xl font-bold">📚 Góc Học Tập</h1>
       
-      <p class="mt-1 text-indigo-200 text-sm">Bản lưu offline — cập nhật lần cuối: 2026-09-11 11:45</p>
+      <p class="mt-1 text-indigo-200 text-sm">Bản lưu offline — cập nhật lần cuối: 2026-09-11 11:56</p>
     </div>
   </header>
 
   <!-- Cảnh báo dữ liệu cũ: tính ngay trên trình duyệt nên vẫn hoạt động kể cả
        khi toàn bộ hệ thống đồng bộ đã chết (lúc đó không có gì gửi báo lỗi được) -->
-  <div id="stale" data-built="2026-09-11T11:45+07:00" class="hidden max-w-4xl mx-auto px-4 pt-4"></div>
+  <div id="stale" data-built="2026-09-11T11:56+07:00" class="hidden max-w-4xl mx-auto px-4 pt-4"></div>
 
   <main class="max-w-4xl mx-auto px-4 py-8">
     <div class="grid gap-6 sm:grid-cols-2">
@@ -417,7 +417,11 @@
         var r = await fetch('/api/progress', { headers: { accept: 'application/json' } });
         if (r.ok) {
           var d = await r.json();
-          done = new Set(Object.keys(d.items || {}));
+          // `redo` = đang thực hiện (bài bị sửa sau khi đánh dấu). KHÔNG tính là
+          // hoàn thành: tỉ lệ X/Y phải phản ánh việc còn phải học lại.
+          done = new Set(Object.entries(d.items || {})
+            .filter(function (e) { return !(e[1] && e[1].redo); })
+            .map(function (e) { return e[0]; }));
           online = true;
         }
       } catch (e) { /* chế độ chỉ đọc */ }
