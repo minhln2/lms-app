@@ -42,6 +42,9 @@
         // unit cụ thể — xem pickFirstUnit(). Giữ null lúc khởi tạo vì cây chủ đề
         // chưa có gì để chọn.
         scope: null,
+        // Nhớ phạm vi đang xem, RIÊNG TỪNG MÔN. Chung một khoá thì mở môn khác lại
+        // nhảy vào một unit không thuộc môn đó, hoặc tệ hơn là trang trắng.
+        scopeKey: 'lms_scope:cie-maths-5',
         navOpen: false,         // ngăn kéo cây trên màn hình hẹp
         queue: [], at: 0, picked: null, answered: false, wrongAgain: 0,
         log: [], shownAt: 0,
@@ -495,13 +498,39 @@
           // Unit 2, mở vào Unit 1 rỗng thì trang trông như hỏng.
           const has = new Set((this.data?.summary || []).map(x => x.concept));
           const inside = (id) => has.has(id) || this.children(id).some(k => has.has(k.id));
+          // Khôi phục phạm vi lần trước — nhưng chỉ khi id đó CÒN TỒN TẠI và CÒN
+          // NỘI DUNG. Nội dung được soạn lại thường xuyên; một id cũ đã biến mất mà
+          // cứ khôi phục thì mở trang ra là trắng, không lý do, và người dùng không
+          // có cách nào đoán được vì sao.
+          const saved = localStorage.getItem(this.scopeKey);
+          if (saved && (this.data?.concepts || []).some(c => c.id === saved) && inside(saved)) {
+            this.scope = saved;
+            this.openAncestors(saved);
+            return;
+          }
           const pick = u.find(x => inside(x.id)) || u[0];
           this.scope = pick.id;
           this.openMap[pick.id] = true;
         },
+        // Bung mọi nhánh cha để mục đang chọn nhìn thấy được ở cây bên trái.
+        openAncestors(cid) {
+          const by = new Map((this.data?.concepts || []).map(c => [c.id, c]));
+          let c = by.get(cid);
+          while (c) {
+            this.openMap[c.id] = true;
+            c = c.parent ? by.get(c.parent) : null;
+          }
+        },
         setScope(cid) {
           this.scope = cid;
           this.navOpen = false;
+          // CHỈ nhớ phạm vi đang đọc ở chế độ tóm tắt. Quiz và thẻ ghi nhớ cũng
+          // dùng chung `scope`, nhưng ở đó đổi phạm vi là để chọn đề luyện, không
+          // phải để đánh dấu chỗ đang đọc — ghi đè thì lần sau mở trang lại rơi
+          // vào mục vừa luyện chứ không phải mục đang đọc dở.
+          if (this.mode === 'summary') {
+            try { localStorage.setItem(this.scopeKey, cid); } catch (e) { /* riêng tư/đầy */ }
+          }
           // Đang giữa phiên mà đổi phạm vi thì quay về màn hình bắt đầu, không
           // thì hàng đợi cũ vẫn chạy tiếp với nội dung ngoài phạm vi vừa chọn.
           if (this.screen !== 'start' && (this.mode === 'quiz' || this.mode === 'cards')) {
@@ -1189,14 +1218,16 @@
 
   <header class="no-print bg-indigo-600 text-white">
     <div class="max-w-2xl mx-auto px-4 py-5 flex items-center gap-3">
-      <a href="cie-maths-5.html" class="shrink-0 text-indigo-200 hover:text-white" title="Về trang môn học">
+      <a href="../index.html" class="shrink-0 text-indigo-200 hover:text-white" title="Về trang ngoài cùng (cả hai học sinh)">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
         </svg>
       </a>
       <div class="min-w-0">
         <h1 class="text-lg font-bold truncate">📖 Ôn tập</h1>
-        <p class="text-xs text-indigo-200 truncate">CIE Maths 5 · PL</p>
+        <p class="text-xs text-indigo-200 truncate">
+          <a href="cie-maths-5.html" class="hover:text-white hover:underline" title="Về trang môn học">CIE Maths 5</a>
+          · <a href="index.html" class="hover:text-white hover:underline" title="Về trang của PL">PL</a></p>
       </div>
     </div>
   </header>
