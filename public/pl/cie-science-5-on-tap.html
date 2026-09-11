@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -7,7 +8,7 @@
   <title>Ôn tập · CIE Science 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.7c40500e.css">
+  <link rel="stylesheet" href="../assets/tw.2db4a536.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -1216,25 +1217,29 @@
 
 
 
+  <!-- Header + thanh chế độ dính CÙNG NHAU trong một bọc `sticky`. Cho mỗi cái
+       một `sticky top-…` riêng thì phải biết trước chiều cao của header để đặt
+       offset cho thanh dưới — con số đó sai ngay khi tên môn dài xuống hai dòng
+       trên màn hẹp, và sai lặng lẽ (hai thanh chồng lên nhau). Bọc chung thì
+       trình duyệt tự tính. -->
+  <div id="hdr" class="no-print sticky top-0 z-30">
   <header class="no-print bg-indigo-600 text-white">
-    <div class="max-w-2xl mx-auto px-4 py-5 flex items-center gap-3">
-      <a href="../index.html" class="shrink-0 text-indigo-200 hover:text-white" title="Về trang ngoài cùng (cả hai học sinh)">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
-        </svg>
-      </a>
-      <div class="min-w-0">
-        <h1 class="text-lg font-bold truncate">📖 Ôn tập</h1>
-        <p class="text-xs text-indigo-200 truncate">
-          <a href="cie-science-5.html" class="hover:text-white hover:underline" title="Về trang môn học">CIE Science 5</a>
-          · <a href="index.html" class="hover:text-white hover:underline" title="Về trang của PL">PL</a></p>
-      </div>
+    <!-- Một dòng duy nhất: đường dẫn đã kết thúc bằng "📖 Ôn tập" nên tiêu đề
+         riêng chỉ là nhắc lại, mà header dính thì mỗi dòng thừa đều ăn vào phần
+         nội dung đang đọc. -->
+    <div class="max-w-5xl mx-auto px-4 py-2 min-w-0">
+      <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-indigo-200">
+  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline hover:text-white">🏠 Home</a><span class="shrink-0 text-indigo-300">›</span>
+  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline hover:text-white">PL</a><span class="shrink-0 text-indigo-300">›</span>
+  <a href="cie-science-5.html" class="shrink-0 max-w-[9rem] truncate hover:underline hover:text-white">CIE Science 5</a><span class="shrink-0 text-indigo-300">›</span>
+  <span aria-current="page" class="truncate font-medium text-white">📖 Ôn tập</span>
+</nav>
     </div>
   </header>
 
   <!-- Thanh chế độ. Mọi class Tailwind ở đây là literal — nội dung đến từ JSON
        nhưng class thì phải nằm sẵn trong HTML để Tailwind quét thấy lúc build. -->
-  <nav x-show="ready && data" x-cloak class="no-print bg-white border-b border-slate-200 sticky top-0 z-20">
+  <nav x-show="ready && data" x-cloak class="bg-white border-b border-slate-200">
     <div class="max-w-5xl mx-auto px-4 py-2 flex items-center gap-1.5 overflow-x-auto">
       <!-- In: chỉ ở trang tóm tắt. `order-last ml-auto` đẩy sang phải, cùng chỗ
            với ô Tự đọc — hai thứ này không bao giờ hiện cùng lúc vì mỗi cái thuộc
@@ -1264,6 +1269,7 @@
       </template>
     </div>
   </nav>
+  </div><!-- /bọc sticky -->
 
   <div class="max-w-5xl mx-auto lg:flex lg:gap-6 lg:px-4">
     <!-- Nền mờ khi mở ngăn kéo trên màn hẹp -->
@@ -1275,9 +1281,13 @@
          ghi đè display:none mà x-show đặt. Không dùng window.innerWidth trong
          x-show: giá trị đó không phản ứng, xoay máy tính bảng là kẹt trạng thái.
 
-         Màn rộng: cây DÍNH dưới thanh chế độ (47px) để cuộn xuống vẫn chọn được
-         mục khác. Ba mảnh phải đi cùng nhau:
-           lg:sticky lg:top-[47px]  — dính ngay dưới thanh chế độ đang sticky
+         Màn rộng: cây DÍNH ngay dưới khối header+thanh chế độ để cuộn xuống vẫn
+         chọn được mục khác. Ba mảnh phải đi cùng nhau:
+           lg:sticky lg:top-[var(--hdr)] — offset ĐO ĐƯỢC, không viết cứng. Trước
+                                      đây là 47px = chiều cao thanh chế độ; thêm
+                                      header vào khối dính là con số đó sai ngay,
+                                      và sai lặng lẽ (cây chui xuống dưới header).
+                                      `#hdr` tự phát ra --hdr, xem cuối file.
            lg:self-start            — flex item mặc định giãn cao bằng anh em, mà
                                       giãn hết thì sticky không còn chỗ để trượt
            lg:max-h + overflow-y    — cây ESL 5 cao 5121px, cao hơn màn hình thì
@@ -1285,7 +1295,7 @@
                                       cho nó thanh cuộn riêng. -->
     <aside x-show="navOpen" x-cloak
            :class="navOpen ? 'fixed inset-y-0 left-0 w-72 z-30 overflow-y-auto shadow-xl' : ''"
-           class="no-print lg:!block lg:sticky lg:top-[47px] lg:self-start lg:max-h-[calc(100vh-47px)] lg:overflow-y-auto lg:w-60 lg:shrink-0 lg:z-auto lg:shadow-none bg-white lg:bg-transparent p-4 lg:pl-0 lg:py-6">
+           class="no-print lg:!block lg:sticky lg:top-[var(--hdr)] lg:self-start lg:max-h-[calc(100vh-var(--hdr))] lg:overflow-y-auto lg:w-60 lg:shrink-0 lg:z-auto lg:shadow-none bg-white lg:bg-transparent p-4 lg:pl-0 lg:py-6">
       <p class="text-xs font-bold uppercase tracking-wide text-slate-400 mb-1.5">Môn học</p>
       <select onchange="if(this.value) location.href = this.value"
               class="w-full mb-4 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-sm text-slate-800">
@@ -2378,5 +2388,22 @@
               class="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/90 text-slate-700 text-xl leading-none hover:bg-white">✕</button>
     </div>
   </template>
+  <!-- Chiều cao khối dính ĐO bằng ResizeObserver, không viết cứng: tên môn dài
+       xuống hai dòng, hay thanh chế độ ẩn đi lúc chưa nạp xong, đều đổi con số
+       này. Viết cứng thì hỏng lặng lẽ — cây bên trái chui xuống dưới header và
+       nhìn vẫn "gần đúng". Đặt trên <html> để mọi nơi dùng được var(--hdr).
+       Mặc định 0px cho trường hợp JS chưa chạy. -->
+  <script>
+    (function () {
+      var h = document.getElementById('hdr');
+      if (!h) return;
+      var r = document.documentElement;
+      r.style.setProperty('--hdr', '0px');
+      var do_ = function () { r.style.setProperty('--hdr', h.offsetHeight + 'px'); };
+      do_();
+      if (window.ResizeObserver) new ResizeObserver(do_).observe(h);
+      else addEventListener('resize', do_);
+    })();
+  </script>
 </body>
 </html>
