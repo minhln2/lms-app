@@ -101,24 +101,35 @@ function toSessions(rows, col) {
     .filter((s) => s.groups.length);
 }
 
-/** Link của một ô, tìm ở CẢ HAI chỗ Google cất nó.
+/** Link của một ô, tìm ở CẢ BA chỗ Google cất nó.
  *
- *  Google Sheets có hai kiểu link và chúng nằm ở hai trường khác nhau:
+ *  Google Sheets có ba kiểu link, nằm ở ba trường khác nhau, và một ô chỉ dùng
+ *  đúng một kiểu:
  *    - `hyperlink`      — ô là công thức `=HYPERLINK(...)`, hoặc nội dung ô chính
  *                         là một URL trần;
  *    - `textFormatRuns` — người dùng bôi đen chữ rồi Insert → Link. Link nằm
- *                         trong `format.link.uri` của đoạn chữ, còn `hyperlink`
- *                         RỖNG.
- *  Bản đầu chỉ hỏi `hyperlink`, nên mọi ô gắn link kiểu thứ hai hiện ra thành chữ
- *  trơ — không báo lỗi, không thiếu gì trên màn hình, chỉ là bấm vào không đi đâu.
- *  Đã đo trên "Lớp Ms Dung": 79 mục mất link kiểu này (dòng 10, 11 là ví dụ).
+ *                         trong `format.link.uri` của đoạn chữ, `hyperlink` RỖNG;
+ *    - `chipRuns`       — **smart chip**: dán link YouTube/Drive rồi chọn "thay
+ *                         bằng chip". Ô hiển thị TIÊU ĐỀ video, còn địa chỉ nằm
+ *                         trong `chip.richLinkProperties.uri`; cả hai trường trên
+ *                         đều RỖNG.
  *
- *  Nhiều đoạn chữ có link khác nhau thì lấy đoạn ĐẦU: ô ở đây là một đầu mục cần
+ *  Bản đầu chỉ hỏi `hyperlink`. Mọi ô thuộc hai kiểu sau hiện ra thành chữ trơ —
+ *  không báo lỗi, không thiếu gì trên màn hình, chỉ là bấm vào không đi đâu, nên
+ *  chẳng chốt nào cũ bắt được. Đo trên "Lớp Ms Dung" (437 mục): 191 có link →
+ *  216 sau khi thêm `textFormatRuns` → xem số cuối sau khi thêm `chipRuns`.
+ *  Chip là kiểu khó thấy nhất vì nhãn của nó là một tiêu đề đọc rất tự nhiên.
+ *
+ *  Nhiều đoạn/chip có link khác nhau thì lấy cái ĐẦU: ô ở đây là một đầu mục cần
  *  làm, không phải một đoạn văn, và giao diện chỉ có chỗ cho một đích. */
 function linkCuaO(c) {
   if (c.hyperlink) return c.hyperlink;
   for (const run of c.textFormatRuns || []) {
     const uri = run.format?.link?.uri;
+    if (uri) return uri;
+  }
+  for (const run of c.chipRuns || []) {
+    const uri = run.chip?.richLinkProperties?.uri;
     if (uri) return uri;
   }
   return "";
@@ -149,7 +160,8 @@ async function readViaApi(env, col) {
     `https://sheets.googleapis.com/v4/spreadsheets/${id}` +
       `?includeGridData=true&ranges=${encodeURIComponent(`'${tab.properties.title}'!A:${lastCol}`)}` +
       `&fields=${encodeURIComponent(
-        "sheets.data.rowData.values(formattedValue,hyperlink,textFormatRuns(format.link.uri))",
+        "sheets.data.rowData.values(formattedValue,hyperlink,textFormatRuns(format.link.uri),"
+        + "chipRuns(chip.richLinkProperties.uri))",
       )}`,
     { headers: auth },
   );
