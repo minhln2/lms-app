@@ -294,7 +294,7 @@
                class="shrink-0 text-xs text-indigo-400 hover:text-indigo-600 hover:underline whitespace-nowrap">Xem trang gốc ↗</a>
             
           </div>
-          <p class="text-xs text-slate-500">6 tuần/bài · cập nhật 2026-09-11 17:32</p>
+          <p class="text-xs text-slate-500">6 tuần/bài · cập nhật 2026-09-12 08:57</p>
         </div>
         <!-- Trên màn hẹp nút này xuống HÀNG RIÊNG (`w-full`), không thì nó ăn
              bề ngang của tiêu đề và tên môn bị cắt còn "CIE ES…". -->
@@ -388,6 +388,696 @@
     
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: true }"
+             @expand-all.window="open = true"
+             @collapse-all.window="open = false"
+             x-effect="if (q || filtering) open = true"
+             data-module data-title="1.3 + 1.4: Công viên Thống Nhất+Thả diều- Trò chơi dân gian gắn với tuổi thơ"
+             x-show="moduleMatches($el, f)"
+             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <button @click="open = !open"
+              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
+        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
+             :class="open ? 'rotate-90' : ''"
+             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">1.3 + 1.4: Công viên Thống Nhất+Thả diều- Trò chơi dân gian gắn với tuổi thơ</span>
+        <template x-if="p.online">
+          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 8
+                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/8'"></span>
+        </template>
+        <span class="text-xs text-slate-400 shrink-0">8 mục</span>
+      </button>
+
+      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-sechead data-title="1.3_CÔNG VIÊN THỐNG NHẤT" data-sec="1"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>1.3_CÔNG VIÊN THỐNG NHẤT</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="Tự học - Công viên Thống Nhất" data-type="assignment" data-sec="1"
+             data-pkey="pl/80102/8489683" data-hash="959fa7d9f975169334473bc0a2aeb7e4479c16eb" data-ts="1787299463000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/80102/8489683'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80102/8489683'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80102/8489683']; $el.indeterminate = !!p.redo['pl/80102/8489683']"
+                     @change="await p.toggle('pl/80102/8489683', '959fa7d9f975169334473bc0a2aeb7e4479c16eb'); $el.checked = !!p.done['pl/80102/8489683']; $el.indeterminate = !!p.redo['pl/80102/8489683']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài tập">📝</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tự học - Công viên Thống Nhất</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài tập</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80102/8489683', '959fa7d9f975169334473bc0a2aeb7e4479c16eb')">
+                  <button @click.stop="p.seen('pl/80102/8489683', '959fa7d9f975169334473bc0a2aeb7e4479c16eb')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 21/08</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80102/assignments/2939016" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><strong>1. Mục tiêu bài học</strong></p>
+<p>MTB 1.3.a: Đọc được lưu loát, diễn cảm văn bản<br/>MTB 1.3.b: Trích dẫn được chính xác các bằng chứng trong văn bản để minh họa cho thông tin trực tiếp và suy luận<br/>MTB 1.3.c: Giải thích được nghĩa của các thuật ngữ trong văn bản<br/>MTB 1.3.d: Phân tích được mối liên hệ giữa ý chính và các chi tiết hỗ trợ trong từng đoạn hoặc toàn bài<br/>MTB 1.3.e: Giải thích được cách tác giả sử dụng bằng chứng và lập luận để làm rõ và củng cố các luận điểm cụ thể trong văn bản</p>
+<p><strong>2. Chuẩn bị</strong></p>
+<p><span>+ Chuẩn bị đầy đủ vở viết, đồ dùng<br/>+ Lưu ý tư thế khi ngồi học</span></p>
+<p><strong>3. Nhiệm vụ: </strong></p>
+<p>Đọc văn bản sau: </p>
+<p><strong>                                                           <span style="color: #000000;"><span style="color: #0e68b3;"><span style="color: #c71f23;">  CÔNG VIÊN THỐNG NHẤT</span></span></span></strong></p>
+<p><span style="color: #000000;">(1) Công viên Thống Nhất nằm giữa bốn phố: Trần Nhân Tông, Lê Duẩn, Đại Cồ Việt, Nguyễn Đình Chiểu, có diện tích trên 50 ha. Năm 1958, Uỷ ban Hành chính Thành phố quyết định xây dựng nơi này thành công viên để làm nơi giải trí cho nhân dân Thủ đô. Hồi ấy toàn thể sinh viên, học sinh, nhân dân thành phố đã lao động công ích cho công trình này. Năm 1960 công trình hoàn thành. Ngày 11/1/1960, Chủ tịch Hồ Chí Minh đã tới đây trồng một cây đa lưu niệm. Đất nước còn bị chia cắt nên công viên mang tên Thống Nhất để biểu lộ tình cảm của nhân dân Thủ đô.</span></p>
+<p><span style="color: #000000;">(2) Năm 1975, đất nước đã nối liền một dải. Ngày 19/4/1980 nhân dịp kỷ niệm 110 năm ngày sinh của Lê-nin, Uỷ ban Nhân dân Thành phố quyết định đổi tên nơi này thành công viên Lê-nin. Năm 2003, Uỷ ban Nhân dân Thành phố đổi tên công viên Chi Lăng là công viên Lê-nin, và nơi đây trở lại tên công viên Thống Nhất.</span></p>
+<p><span style="color: #000000;">(3) Công viên có hai cửa lớn, mở ra phố Trần Nhân Tông và đường Lê Duẩn, hai cửa nhỏ hơn ở đường Đại Cồ Việt và phố Nguyễn Đình Chiểu, có nhiều cây cối và bồn hoa, có hồ rộng và đảo xanh, khu vui chơi cho trẻ em, nơi yên tĩnh cho người già cả. Sáng sớm dân chúng khắp vùng xung quanh đến đây tập thể dục, hít thở khí trời trong lành. Hàng năm vào mùa xuân có mở hội Hoa Xuân, tụ hội tài hoa khắp nước. Những loài hoa cỏ đẹp, những cây cảnh uốn lượn độc đáo, những cách trình bày tinh tế đã làm cho công viên đẹp lộng lẫy và tấp nập hàng vạn người.</span></p>
+<p><span style="color: #000000;"><em>                                                                                   (Theo Hà Nội Danh thắng và Di tích tập 01)</em></span></p>
+<p><em><strong>Giải nghĩa từ:</strong></em></p>
+<p><em>ha (héc-ta): đơn vị đo diện tích</em></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Thảo luận: Công viên thống nhất" data-type="discussion" data-sec="1"
+             data-pkey="pl/80102/8489684" data-hash="f8b3aaf9712b4deaa4a529d4a1c904f84c1d9a3f" data-ts="1787668449000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/80102/8489684'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80102/8489684'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80102/8489684']; $el.indeterminate = !!p.redo['pl/80102/8489684']"
+                     @change="await p.toggle('pl/80102/8489684', 'f8b3aaf9712b4deaa4a529d4a1c904f84c1d9a3f'); $el.checked = !!p.done['pl/80102/8489684']; $el.indeterminate = !!p.redo['pl/80102/8489684']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="thảo luận">💬</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Thảo luận: Công viên thống nhất</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">thảo luận</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80102/8489684', 'f8b3aaf9712b4deaa4a529d4a1c904f84c1d9a3f')">
+                  <button @click.stop="p.seen('pl/80102/8489684', 'f8b3aaf9712b4deaa4a529d4a1c904f84c1d9a3f')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 25/08</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80102/discussion_topics/678611" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Nhiệm vụ: Trả lời câu hỏi sau:</p>
+<p>1. Hãy chia sẻ với cô và các bạn những địa điểm mà con thích hoặc có kỉ niệm ( ở đâu, cảnh vật như thế nào, có kỉ niệm gì,...)</p>
+<p>2. Công viên Thống Nhất đã trải qua mấy lần đổi tên, tính cho đến hiện tại?</p>
+<p>3. <span>Tượng đài Bác Hồ và Bác Tôn được xây dựng trang trọng tại đảo Hòa Bình trong khu vực Công viên Thống Nhất, nhân dịp nào?</span></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Đại từ_Kiến thức cần nhớ.png" data-type="file" data-sec="1"
+             data-pkey="pl/80102/8489685" data-hash="b84a7bcef003e3242acd3ce74559ccf55045994c" data-ts="1787299460000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/80102/8489685'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80102/8489685'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80102/8489685']; $el.indeterminate = !!p.redo['pl/80102/8489685']"
+                     @change="await p.toggle('pl/80102/8489685', 'b84a7bcef003e3242acd3ce74559ccf55045994c'); $el.checked = !!p.done['pl/80102/8489685']; $el.indeterminate = !!p.redo['pl/80102/8489685']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="https://minhln2.github.io/lms/pl/materials/tieng-viet-5/1-3-1-4-cong-vien-thong-nhat-tha-dieu-tro-choi-dan-gian-gan-voi-tuoi-tho/Đại từ_Kiến thức cần nhớ.png" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Đại từ_Kiến thức cần nhớ.png
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80102/8489685', 'b84a7bcef003e3242acd3ce74559ccf55045994c')">
+                  <button @click.stop="p.seen('pl/80102/8489685', 'b84a7bcef003e3242acd3ce74559ccf55045994c')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>161.9 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 21/08</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Quiz_Đại từ" data-type="quiz" data-sec="1"
+             data-pkey="pl/80102/8489686" data-hash="f845f0b0f18facabfaf4e930192159cf2b9fa38d" data-ts="1787629440000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/80102/8489686'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80102/8489686'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80102/8489686']; $el.indeterminate = !!p.redo['pl/80102/8489686']"
+                     @change="await p.toggle('pl/80102/8489686', 'f845f0b0f18facabfaf4e930192159cf2b9fa38d'); $el.checked = !!p.done['pl/80102/8489686']; $el.indeterminate = !!p.redo['pl/80102/8489686']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài kiểm tra">🧪</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Quiz_Đại từ</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài kiểm tra</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80102/8489686', 'f845f0b0f18facabfaf4e930192159cf2b9fa38d')">
+                  <button @click.stop="p.seen('pl/80102/8489686', 'f845f0b0f18facabfaf4e930192159cf2b9fa38d')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                  <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold"
+                        title="Đã chấm 2026-08-25">
+                    ★ 10/10 điểm
+                  </span>
+                
+                
+                
+                  <span>5 câu hỏi</span>
+                  <span>10 điểm</span>
+                  
+                  
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 25/08</span>
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80102/quizzes/2136495" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Đọc và chọn đáp án đúng cho các câu hỏi sau:</p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-sechead data-title="1.4_THẢ DIỀU - TRÒ CHƠI DÂN GIAN GẮN VỚI TUỔI THƠ" data-sec="2"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>1.4_THẢ DIỀU - TRÒ CHƠI DÂN GIAN GẮN VỚI TUỔI THƠ</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="Tự học - Thả diều – Trò chơi dân gian gắn với tuổi thơ" data-type="assignment" data-sec="2"
+             data-pkey="pl/80102/8489688" data-hash="9695d7f61430d66d1e1034471707bee2dd8d702f" data-ts="1787299463000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/80102/8489688'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80102/8489688'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80102/8489688']; $el.indeterminate = !!p.redo['pl/80102/8489688']"
+                     @change="await p.toggle('pl/80102/8489688', '9695d7f61430d66d1e1034471707bee2dd8d702f'); $el.checked = !!p.done['pl/80102/8489688']; $el.indeterminate = !!p.redo['pl/80102/8489688']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài tập">📝</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tự học - Thả diều – Trò chơi dân gian gắn với tuổi thơ</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài tập</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80102/8489688', '9695d7f61430d66d1e1034471707bee2dd8d702f')">
+                  <button @click.stop="p.seen('pl/80102/8489688', '9695d7f61430d66d1e1034471707bee2dd8d702f')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 21/08</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80102/assignments/2939017" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><strong>1. Mục tiêu tiết học</strong></p>
+<p>MTB 1.4.a: Đọc được lưu loát, diễn cảm văn bản<br/>MTB 1.4.b: Trích dẫn được chính xác các bằng chứng trong văn bản để minh họa cho thông tin trực tiếp và suy luận<br/>MTB 1.4.c: Giải thích được nghĩa của các thuật ngữ trong văn bản<br/>MTB 1.4.d: So sánh để chỉ ra điểm giống và khác nhau về kiểu cấu trúc tổng thể được sử dụng giữa 2 văn bản<br/>MTB 1.4.e: Giải thích được cách tác giả sử dụng bằng chứng và lập luận để làm rõ và củng cố các luận điểm cụ thể trong văn bản</p>
+<p><strong>2. Chuẩn bị</strong></p>
+<p><span>+ Chuẩn bị đầy đủ vở viết, đồ dùng<br/>+ Lưu ý tư thế khi ngồi học</span></p>
+<p><strong>3. Nhiệm vụ:</strong></p>
+<p>Đọc văn bản sau:</p>
+<p><strong>         <span style="color: #c71f23;">                          THẢ </span></strong><span style="color: #c71f23;"><strong>DIỀU – TRÒ CHƠI DÂN GIAN GẮN VỚI TUỔI THƠ</strong></span></p>
+<p>(1) Thả diều là một trong những trò chơi dân gian lâu đời và được nhiều thế hệ trẻ em Việt Nam yêu thích, đặc biệt ở những vùng quê. Những buổi chiều hè, trên cánh đồng lộng gió, hình ảnh cánh diều bay cao trên bầu trời xanh đã trở thành biểu tượng đẹp của tuổi thơ thanh bình. Trò chơi không chỉ mang lại niềm vui mà còn giúp rèn luyện sự khéo léo, kiên nhẫn và óc quan sát cho người chơi.</p>
+<p>(2) Để chơi thả diều, cần có một cánh diều làm bằng tre và giấy hoặc ni-lông, cùng với một cuộn dây chắc chắn. Người chơi chọn nơi rộng rãi, thoáng đãng như đồng ruộng, bãi đất trống hoặc công viên, tránh xa cây cao và đường điện. Khi có gió nhẹ, người chơi chạy ngược chiều gió, thả dây từ từ để diều bay lên. Khi diều đã ổn định trên cao, việc điều khiển bằng cách kéo nhẹ hoặc thả dây sẽ giúp diều giữ thăng bằng.</p>
+<p>(3) Thả diều không chỉ là trò chơi đơn thuần mà còn là nét đẹp văn hóa truyền thống. Ngày nay, dù không gian vui chơi ngoài trời bị thu hẹp, nhiều địa phương vẫn tổ chức lễ hội thả diều nhằm bảo tồn và phát huy giá trị của trò chơi này. Cánh diều bay lượn giữa trời cao như mang theo ước mơ, khát vọng và tuổi thơ của bao thế hệ, gợi nhắc mỗi người về vẻ đẹp bình dị mà sâu sắc của làng quê Việt Nam.</p>
+<p>                                                                        <em>(Trích Những trò chơi dân gian Việt Nam)</em></p>
+<ul>
+<li><strong><em>Giải nghĩa từ:</em></strong></li>
+</ul>
+<h5>-       <em>Bảo tồn: gìn giữ (cái có ý nghĩa lịch sử thuộc tài sản chung), không để bị mất mát, tổn thất</em>
+</h5>
+<h5>-       <em>Đơn thuần: hoàn toàn chỉ có một mặt nào đó</em>
+</h5>
+<h5>-       <em>Ni-lông: chất dẻo dễ kéo sợi, dùng để dệt vải, dệt lưới, làm chỉ khâu vết thương,…</em>
+</h5>
+<h5>-       <em>Bình dị: giản dị, khiêm tốn</em>
+</h5>
+<ul>
+<li>
+<strong><em>Nhiệm vụ sau khi đọc:</em></strong><em> Hãy gạch chân các từ con thấy khó hiểu và giải nghĩa chúng (có thể sử dụng 1 trong các cách sau: dùng từ điển, đặt câu, dùng từ cùng nghĩa, trái nghĩa,…)</em>
+</li>
+</ul>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Thảo luận: Thả diều – Trò chơi dân gian gắn với tuổi thơ" data-type="discussion" data-sec="2"
+             data-pkey="pl/80102/8489689" data-hash="d4cdb34bd4a403931e2c949636b57e16369e1497" data-ts="1788578923000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/80102/8489689'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80102/8489689'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80102/8489689']; $el.indeterminate = !!p.redo['pl/80102/8489689']"
+                     @change="await p.toggle('pl/80102/8489689', 'd4cdb34bd4a403931e2c949636b57e16369e1497'); $el.checked = !!p.done['pl/80102/8489689']; $el.indeterminate = !!p.redo['pl/80102/8489689']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="thảo luận">💬</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Thảo luận: Thả diều – Trò chơi dân gian gắn với tuổi thơ</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">thảo luận</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80102/8489689', 'd4cdb34bd4a403931e2c949636b57e16369e1497')">
+                  <button @click.stop="p.seen('pl/80102/8489689', 'd4cdb34bd4a403931e2c949636b57e16369e1497')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 05/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80102/discussion_topics/678612" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Thảo luận: Con hãy trả lời các câu hỏi sau:</p>
+<p>1. Con hãy chia sẻ về một trò chơi dân gian mà con biết hoặc con đã trực tiếp tham gia chơi ( trò chơi gì, cách chơi, số lượng người chơi,...)</p>
+<p>2. Trò chơi thả diều là trò chơi trong nhà hay ngoài trời?</p>
+<p>3. Có nên chơi thả diều ở những nơi đông người qua lại và có nhiều đường dây điện hay không?</p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Quiz_ Thả diều- Trò chơi dân gian gắn với tuổi thơ" data-type="quiz" data-sec="2"
+             data-pkey="pl/80102/8489690" data-hash="4419b1068478e1e874222065a74546477252cdf8" data-ts="1787629440000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/80102/8489690'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80102/8489690'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80102/8489690']; $el.indeterminate = !!p.redo['pl/80102/8489690']"
+                     @change="await p.toggle('pl/80102/8489690', '4419b1068478e1e874222065a74546477252cdf8'); $el.checked = !!p.done['pl/80102/8489690']; $el.indeterminate = !!p.redo['pl/80102/8489690']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài kiểm tra">🧪</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://lms.vinschool.edu.vn/courses/80102/quizzes/2136496" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Quiz_ Thả diều- Trò chơi dân gian gắn với tuổi thơ
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài kiểm tra</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80102/8489690', '4419b1068478e1e874222065a74546477252cdf8')">
+                  <button @click.stop="p.seen('pl/80102/8489690', '4419b1068478e1e874222065a74546477252cdf8')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                  <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold"
+                        title="Đã chấm 2026-08-31">
+                    ★ 9.33/10 điểm
+                  </span>
+                
+                
+                
+                  <span>6 câu hỏi</span>
+                  <span>10 điểm</span>
+                  <span>10 phút</span>
+                  <span>1 lượt làm</span>
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 25/08</span>
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80102/quizzes/2136496" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-sechead data-title="🏡 Nhiệm vụ sau tiết học" data-sec="3"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>🏡 Nhiệm vụ sau tiết học</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="K5_TV_PCT_Tuan_2.pdf" data-type="file" data-sec="3"
+             data-pkey="pl/80102/8646243" data-hash="81898606430919e15ed256017d0807f47f2ae9ec" data-ts="1789133788000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/80102/8646243'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80102/8646243'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80102/8646243']; $el.indeterminate = !!p.redo['pl/80102/8646243']"
+                     @change="await p.toggle('pl/80102/8646243', '81898606430919e15ed256017d0807f47f2ae9ec'); $el.checked = !!p.done['pl/80102/8646243']; $el.indeterminate = !!p.redo['pl/80102/8646243']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="https://minhln2.github.io/lms/pl/materials/tieng-viet-5/1-3-1-4-cong-vien-thong-nhat-tha-dieu-tro-choi-dan-gian-gan-voi-tuoi-tho/K5_TV_PCT_Tuan_2_HS.pdf" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                K5_TV_PCT_Tuan_2.pdf
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80102/8646243', '81898606430919e15ed256017d0807f47f2ae9ec')">
+                  <button @click.stop="p.seen('pl/80102/8646243', '81898606430919e15ed256017d0807f47f2ae9ec')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>204.0 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 11/09</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+      </div>
+    </section>
+    
+    <!-- Một Tuần học / Bài học -->
+    <section x-data="{ open: false }"
              @expand-all.window="open = true"
              @collapse-all.window="open = false"
              x-effect="if (q || filtering) open = true"
@@ -1929,696 +2619,6 @@
                 
                 <a href="https://lms.vinschool.edu.vn/courses/80102/quizzes/2172579" target="_blank" rel="noopener"
                    class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-      </div>
-    </section>
-    
-    <!-- Một Tuần học / Bài học -->
-    <section x-data="{ open: false }"
-             @expand-all.window="open = true"
-             @collapse-all.window="open = false"
-             x-effect="if (q || filtering) open = true"
-             data-module data-title="1.3 + 1.4: Công viên Thống Nhất+Thả diều- Trò chơi dân gian gắn với tuổi thơ"
-             x-show="moduleMatches($el, f)"
-             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <button @click="open = !open"
-              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
-        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
-             :class="open ? 'rotate-90' : ''"
-             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-        </svg>
-        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">1.3 + 1.4: Công viên Thống Nhất+Thả diều- Trò chơi dân gian gắn với tuổi thơ</span>
-        <template x-if="p.online">
-          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
-                :class="moduleDone($el.closest('[data-module]'), p.done) === 8
-                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
-                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/8'"></span>
-        </template>
-        <span class="text-xs text-slate-400 shrink-0">8 mục</span>
-      </button>
-
-      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
-        
-        
-        <div data-sechead data-title="1.3_CÔNG VIÊN THỐNG NHẤT" data-sec="1"
-             x-show="headingMatches($el, f)"
-             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
-             style="padding-left: 1.0rem">
-          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
-          <template x-if="p.online">
-            <input type="checkbox" title="Đánh dấu cả nhóm này"
-                   x-effect="syncSecBox($el, p.done)"
-                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
-                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-          </template>
-          <span>1.3_CÔNG VIÊN THỐNG NHẤT</span>
-        </div>
-        
-        
-        
-        <div data-item data-title="Tự học - Công viên Thống Nhất" data-type="assignment" data-sec="1"
-             data-pkey="pl/80102/8489683" data-hash="959fa7d9f975169334473bc0a2aeb7e4479c16eb" data-ts="1787299463000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80102/8489683'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/80102/8489683'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/80102/8489683']; $el.indeterminate = !!p.redo['pl/80102/8489683']"
-                     @change="await p.toggle('pl/80102/8489683', '959fa7d9f975169334473bc0a2aeb7e4479c16eb'); $el.checked = !!p.done['pl/80102/8489683']; $el.indeterminate = !!p.redo['pl/80102/8489683']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài tập">📝</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
-                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tự học - Công viên Thống Nhất</span>
-                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
-                     :class="o ? 'rotate-180' : ''"
-                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài tập</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80102/8489683', '959fa7d9f975169334473bc0a2aeb7e4479c16eb')">
-                  <button @click.stop="p.seen('pl/80102/8489683', '959fa7d9f975169334473bc0a2aeb7e4479c16eb')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 21/08</span>
-                
-                
-                <a href="https://lms.vinschool.edu.vn/courses/80102/assignments/2939016" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-              <div x-show="o" x-collapse x-cloak
-                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
-                <p><strong>1. Mục tiêu bài học</strong></p>
-<p>MTB 1.3.a: Đọc được lưu loát, diễn cảm văn bản<br/>MTB 1.3.b: Trích dẫn được chính xác các bằng chứng trong văn bản để minh họa cho thông tin trực tiếp và suy luận<br/>MTB 1.3.c: Giải thích được nghĩa của các thuật ngữ trong văn bản<br/>MTB 1.3.d: Phân tích được mối liên hệ giữa ý chính và các chi tiết hỗ trợ trong từng đoạn hoặc toàn bài<br/>MTB 1.3.e: Giải thích được cách tác giả sử dụng bằng chứng và lập luận để làm rõ và củng cố các luận điểm cụ thể trong văn bản</p>
-<p><strong>2. Chuẩn bị</strong></p>
-<p><span>+ Chuẩn bị đầy đủ vở viết, đồ dùng<br/>+ Lưu ý tư thế khi ngồi học</span></p>
-<p><strong>3. Nhiệm vụ: </strong></p>
-<p>Đọc văn bản sau: </p>
-<p><strong>                                                           <span style="color: #000000;"><span style="color: #0e68b3;"><span style="color: #c71f23;">  CÔNG VIÊN THỐNG NHẤT</span></span></span></strong></p>
-<p><span style="color: #000000;">(1) Công viên Thống Nhất nằm giữa bốn phố: Trần Nhân Tông, Lê Duẩn, Đại Cồ Việt, Nguyễn Đình Chiểu, có diện tích trên 50 ha. Năm 1958, Uỷ ban Hành chính Thành phố quyết định xây dựng nơi này thành công viên để làm nơi giải trí cho nhân dân Thủ đô. Hồi ấy toàn thể sinh viên, học sinh, nhân dân thành phố đã lao động công ích cho công trình này. Năm 1960 công trình hoàn thành. Ngày 11/1/1960, Chủ tịch Hồ Chí Minh đã tới đây trồng một cây đa lưu niệm. Đất nước còn bị chia cắt nên công viên mang tên Thống Nhất để biểu lộ tình cảm của nhân dân Thủ đô.</span></p>
-<p><span style="color: #000000;">(2) Năm 1975, đất nước đã nối liền một dải. Ngày 19/4/1980 nhân dịp kỷ niệm 110 năm ngày sinh của Lê-nin, Uỷ ban Nhân dân Thành phố quyết định đổi tên nơi này thành công viên Lê-nin. Năm 2003, Uỷ ban Nhân dân Thành phố đổi tên công viên Chi Lăng là công viên Lê-nin, và nơi đây trở lại tên công viên Thống Nhất.</span></p>
-<p><span style="color: #000000;">(3) Công viên có hai cửa lớn, mở ra phố Trần Nhân Tông và đường Lê Duẩn, hai cửa nhỏ hơn ở đường Đại Cồ Việt và phố Nguyễn Đình Chiểu, có nhiều cây cối và bồn hoa, có hồ rộng và đảo xanh, khu vui chơi cho trẻ em, nơi yên tĩnh cho người già cả. Sáng sớm dân chúng khắp vùng xung quanh đến đây tập thể dục, hít thở khí trời trong lành. Hàng năm vào mùa xuân có mở hội Hoa Xuân, tụ hội tài hoa khắp nước. Những loài hoa cỏ đẹp, những cây cảnh uốn lượn độc đáo, những cách trình bày tinh tế đã làm cho công viên đẹp lộng lẫy và tấp nập hàng vạn người.</span></p>
-<p><span style="color: #000000;"><em>                                                                                   (Theo Hà Nội Danh thắng và Di tích tập 01)</em></span></p>
-<p><em><strong>Giải nghĩa từ:</strong></em></p>
-<p><em>ha (héc-ta): đơn vị đo diện tích</em></p>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="Thảo luận: Công viên thống nhất" data-type="discussion" data-sec="1"
-             data-pkey="pl/80102/8489684" data-hash="f8b3aaf9712b4deaa4a529d4a1c904f84c1d9a3f" data-ts="1787668449000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80102/8489684'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/80102/8489684'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/80102/8489684']; $el.indeterminate = !!p.redo['pl/80102/8489684']"
-                     @change="await p.toggle('pl/80102/8489684', 'f8b3aaf9712b4deaa4a529d4a1c904f84c1d9a3f'); $el.checked = !!p.done['pl/80102/8489684']; $el.indeterminate = !!p.redo['pl/80102/8489684']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="thảo luận">💬</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
-                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Thảo luận: Công viên thống nhất</span>
-                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
-                     :class="o ? 'rotate-180' : ''"
-                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">thảo luận</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80102/8489684', 'f8b3aaf9712b4deaa4a529d4a1c904f84c1d9a3f')">
-                  <button @click.stop="p.seen('pl/80102/8489684', 'f8b3aaf9712b4deaa4a529d4a1c904f84c1d9a3f')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 25/08</span>
-                
-                
-                <a href="https://lms.vinschool.edu.vn/courses/80102/discussion_topics/678611" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-              <div x-show="o" x-collapse x-cloak
-                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
-                <p>Nhiệm vụ: Trả lời câu hỏi sau:</p>
-<p>1. Hãy chia sẻ với cô và các bạn những địa điểm mà con thích hoặc có kỉ niệm ( ở đâu, cảnh vật như thế nào, có kỉ niệm gì,...)</p>
-<p>2. Công viên Thống Nhất đã trải qua mấy lần đổi tên, tính cho đến hiện tại?</p>
-<p>3. <span>Tượng đài Bác Hồ và Bác Tôn được xây dựng trang trọng tại đảo Hòa Bình trong khu vực Công viên Thống Nhất, nhân dịp nào?</span></p>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="Đại từ_Kiến thức cần nhớ.png" data-type="file" data-sec="1"
-             data-pkey="pl/80102/8489685" data-hash="b84a7bcef003e3242acd3ce74559ccf55045994c" data-ts="1787299460000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80102/8489685'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/80102/8489685'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/80102/8489685']; $el.indeterminate = !!p.redo['pl/80102/8489685']"
-                     @change="await p.toggle('pl/80102/8489685', 'b84a7bcef003e3242acd3ce74559ccf55045994c'); $el.checked = !!p.done['pl/80102/8489685']; $el.indeterminate = !!p.redo['pl/80102/8489685']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Tài liệu đã tải về local -->
-              <a href="https://minhln2.github.io/lms/pl/materials/tieng-viet-5/1-3-1-4-cong-vien-thong-nhat-tha-dieu-tro-choi-dan-gian-gan-voi-tuoi-tho/Đại từ_Kiến thức cần nhớ.png" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                Đại từ_Kiến thức cần nhớ.png
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80102/8489685', 'b84a7bcef003e3242acd3ce74559ccf55045994c')">
-                  <button @click.stop="p.seen('pl/80102/8489685', 'b84a7bcef003e3242acd3ce74559ccf55045994c')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                <span>161.9 KB</span>
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 21/08</span>
-                
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="Quiz_Đại từ" data-type="quiz" data-sec="1"
-             data-pkey="pl/80102/8489686" data-hash="f845f0b0f18facabfaf4e930192159cf2b9fa38d" data-ts="1787629440000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80102/8489686'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/80102/8489686'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/80102/8489686']; $el.indeterminate = !!p.redo['pl/80102/8489686']"
-                     @change="await p.toggle('pl/80102/8489686', 'f845f0b0f18facabfaf4e930192159cf2b9fa38d'); $el.checked = !!p.done['pl/80102/8489686']; $el.indeterminate = !!p.redo['pl/80102/8489686']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài kiểm tra">🧪</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
-                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Quiz_Đại từ</span>
-                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
-                     :class="o ? 'rotate-180' : ''"
-                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài kiểm tra</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80102/8489686', 'f845f0b0f18facabfaf4e930192159cf2b9fa38d')">
-                  <button @click.stop="p.seen('pl/80102/8489686', 'f845f0b0f18facabfaf4e930192159cf2b9fa38d')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                  <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold"
-                        title="Đã chấm 2026-08-25">
-                    ★ 10/10 điểm
-                  </span>
-                
-                
-                
-                  <span>5 câu hỏi</span>
-                  <span>10 điểm</span>
-                  
-                  
-                
-                
-                
-                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 25/08</span>
-                
-                <a href="https://lms.vinschool.edu.vn/courses/80102/quizzes/2136495" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-              <div x-show="o" x-collapse x-cloak
-                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
-                <p>Đọc và chọn đáp án đúng cho các câu hỏi sau:</p>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-sechead data-title="1.4_THẢ DIỀU - TRÒ CHƠI DÂN GIAN GẮN VỚI TUỔI THƠ" data-sec="2"
-             x-show="headingMatches($el, f)"
-             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
-             style="padding-left: 1.0rem">
-          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
-          <template x-if="p.online">
-            <input type="checkbox" title="Đánh dấu cả nhóm này"
-                   x-effect="syncSecBox($el, p.done)"
-                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
-                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-          </template>
-          <span>1.4_THẢ DIỀU - TRÒ CHƠI DÂN GIAN GẮN VỚI TUỔI THƠ</span>
-        </div>
-        
-        
-        
-        <div data-item data-title="Tự học - Thả diều – Trò chơi dân gian gắn với tuổi thơ" data-type="assignment" data-sec="2"
-             data-pkey="pl/80102/8489688" data-hash="9695d7f61430d66d1e1034471707bee2dd8d702f" data-ts="1787299463000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80102/8489688'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/80102/8489688'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/80102/8489688']; $el.indeterminate = !!p.redo['pl/80102/8489688']"
-                     @change="await p.toggle('pl/80102/8489688', '9695d7f61430d66d1e1034471707bee2dd8d702f'); $el.checked = !!p.done['pl/80102/8489688']; $el.indeterminate = !!p.redo['pl/80102/8489688']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài tập">📝</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
-                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tự học - Thả diều – Trò chơi dân gian gắn với tuổi thơ</span>
-                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
-                     :class="o ? 'rotate-180' : ''"
-                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài tập</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80102/8489688', '9695d7f61430d66d1e1034471707bee2dd8d702f')">
-                  <button @click.stop="p.seen('pl/80102/8489688', '9695d7f61430d66d1e1034471707bee2dd8d702f')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 21/08</span>
-                
-                
-                <a href="https://lms.vinschool.edu.vn/courses/80102/assignments/2939017" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-              <div x-show="o" x-collapse x-cloak
-                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
-                <p><strong>1. Mục tiêu tiết học</strong></p>
-<p>MTB 1.4.a: Đọc được lưu loát, diễn cảm văn bản<br/>MTB 1.4.b: Trích dẫn được chính xác các bằng chứng trong văn bản để minh họa cho thông tin trực tiếp và suy luận<br/>MTB 1.4.c: Giải thích được nghĩa của các thuật ngữ trong văn bản<br/>MTB 1.4.d: So sánh để chỉ ra điểm giống và khác nhau về kiểu cấu trúc tổng thể được sử dụng giữa 2 văn bản<br/>MTB 1.4.e: Giải thích được cách tác giả sử dụng bằng chứng và lập luận để làm rõ và củng cố các luận điểm cụ thể trong văn bản</p>
-<p><strong>2. Chuẩn bị</strong></p>
-<p><span>+ Chuẩn bị đầy đủ vở viết, đồ dùng<br/>+ Lưu ý tư thế khi ngồi học</span></p>
-<p><strong>3. Nhiệm vụ:</strong></p>
-<p>Đọc văn bản sau:</p>
-<p><strong>         <span style="color: #c71f23;">                          THẢ </span></strong><span style="color: #c71f23;"><strong>DIỀU – TRÒ CHƠI DÂN GIAN GẮN VỚI TUỔI THƠ</strong></span></p>
-<p>(1) Thả diều là một trong những trò chơi dân gian lâu đời và được nhiều thế hệ trẻ em Việt Nam yêu thích, đặc biệt ở những vùng quê. Những buổi chiều hè, trên cánh đồng lộng gió, hình ảnh cánh diều bay cao trên bầu trời xanh đã trở thành biểu tượng đẹp của tuổi thơ thanh bình. Trò chơi không chỉ mang lại niềm vui mà còn giúp rèn luyện sự khéo léo, kiên nhẫn và óc quan sát cho người chơi.</p>
-<p>(2) Để chơi thả diều, cần có một cánh diều làm bằng tre và giấy hoặc ni-lông, cùng với một cuộn dây chắc chắn. Người chơi chọn nơi rộng rãi, thoáng đãng như đồng ruộng, bãi đất trống hoặc công viên, tránh xa cây cao và đường điện. Khi có gió nhẹ, người chơi chạy ngược chiều gió, thả dây từ từ để diều bay lên. Khi diều đã ổn định trên cao, việc điều khiển bằng cách kéo nhẹ hoặc thả dây sẽ giúp diều giữ thăng bằng.</p>
-<p>(3) Thả diều không chỉ là trò chơi đơn thuần mà còn là nét đẹp văn hóa truyền thống. Ngày nay, dù không gian vui chơi ngoài trời bị thu hẹp, nhiều địa phương vẫn tổ chức lễ hội thả diều nhằm bảo tồn và phát huy giá trị của trò chơi này. Cánh diều bay lượn giữa trời cao như mang theo ước mơ, khát vọng và tuổi thơ của bao thế hệ, gợi nhắc mỗi người về vẻ đẹp bình dị mà sâu sắc của làng quê Việt Nam.</p>
-<p>                                                                        <em>(Trích Những trò chơi dân gian Việt Nam)</em></p>
-<ul>
-<li><strong><em>Giải nghĩa từ:</em></strong></li>
-</ul>
-<h5>-       <em>Bảo tồn: gìn giữ (cái có ý nghĩa lịch sử thuộc tài sản chung), không để bị mất mát, tổn thất</em>
-</h5>
-<h5>-       <em>Đơn thuần: hoàn toàn chỉ có một mặt nào đó</em>
-</h5>
-<h5>-       <em>Ni-lông: chất dẻo dễ kéo sợi, dùng để dệt vải, dệt lưới, làm chỉ khâu vết thương,…</em>
-</h5>
-<h5>-       <em>Bình dị: giản dị, khiêm tốn</em>
-</h5>
-<ul>
-<li>
-<strong><em>Nhiệm vụ sau khi đọc:</em></strong><em> Hãy gạch chân các từ con thấy khó hiểu và giải nghĩa chúng (có thể sử dụng 1 trong các cách sau: dùng từ điển, đặt câu, dùng từ cùng nghĩa, trái nghĩa,…)</em>
-</li>
-</ul>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="Thảo luận: Thả diều – Trò chơi dân gian gắn với tuổi thơ" data-type="discussion" data-sec="2"
-             data-pkey="pl/80102/8489689" data-hash="d4cdb34bd4a403931e2c949636b57e16369e1497" data-ts="1788578923000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80102/8489689'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/80102/8489689'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/80102/8489689']; $el.indeterminate = !!p.redo['pl/80102/8489689']"
-                     @change="await p.toggle('pl/80102/8489689', 'd4cdb34bd4a403931e2c949636b57e16369e1497'); $el.checked = !!p.done['pl/80102/8489689']; $el.indeterminate = !!p.redo['pl/80102/8489689']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="thảo luận">💬</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
-                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Thảo luận: Thả diều – Trò chơi dân gian gắn với tuổi thơ</span>
-                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
-                     :class="o ? 'rotate-180' : ''"
-                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">thảo luận</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80102/8489689', 'd4cdb34bd4a403931e2c949636b57e16369e1497')">
-                  <button @click.stop="p.seen('pl/80102/8489689', 'd4cdb34bd4a403931e2c949636b57e16369e1497')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 05/09</span>
-                
-                
-                <a href="https://lms.vinschool.edu.vn/courses/80102/discussion_topics/678612" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-              <div x-show="o" x-collapse x-cloak
-                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
-                <p>Thảo luận: Con hãy trả lời các câu hỏi sau:</p>
-<p>1. Con hãy chia sẻ về một trò chơi dân gian mà con biết hoặc con đã trực tiếp tham gia chơi ( trò chơi gì, cách chơi, số lượng người chơi,...)</p>
-<p>2. Trò chơi thả diều là trò chơi trong nhà hay ngoài trời?</p>
-<p>3. Có nên chơi thả diều ở những nơi đông người qua lại và có nhiều đường dây điện hay không?</p>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="Quiz_ Thả diều- Trò chơi dân gian gắn với tuổi thơ" data-type="quiz" data-sec="2"
-             data-pkey="pl/80102/8489690" data-hash="4419b1068478e1e874222065a74546477252cdf8" data-ts="1787629440000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80102/8489690'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/80102/8489690'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/80102/8489690']; $el.indeterminate = !!p.redo['pl/80102/8489690']"
-                     @change="await p.toggle('pl/80102/8489690', '4419b1068478e1e874222065a74546477252cdf8'); $el.checked = !!p.done['pl/80102/8489690']; $el.indeterminate = !!p.redo['pl/80102/8489690']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài kiểm tra">🧪</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
-              <a href="https://lms.vinschool.edu.vn/courses/80102/quizzes/2136496" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                Quiz_ Thả diều- Trò chơi dân gian gắn với tuổi thơ
-                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                </svg>
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài kiểm tra</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80102/8489690', '4419b1068478e1e874222065a74546477252cdf8')">
-                  <button @click.stop="p.seen('pl/80102/8489690', '4419b1068478e1e874222065a74546477252cdf8')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                  <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold"
-                        title="Đã chấm 2026-08-31">
-                    ★ 9.33/10 điểm
-                  </span>
-                
-                
-                
-                  <span>6 câu hỏi</span>
-                  <span>10 điểm</span>
-                  <span>10 phút</span>
-                  <span>1 lượt làm</span>
-                
-                
-                
-                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 25/08</span>
-                
-                <a href="https://lms.vinschool.edu.vn/courses/80102/quizzes/2136496" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-sechead data-title="🏡 Nhiệm vụ sau tiết học" data-sec="3"
-             x-show="headingMatches($el, f)"
-             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
-             style="padding-left: 1.0rem">
-          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
-          <template x-if="p.online">
-            <input type="checkbox" title="Đánh dấu cả nhóm này"
-                   x-effect="syncSecBox($el, p.done)"
-                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
-                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-          </template>
-          <span>🏡 Nhiệm vụ sau tiết học</span>
-        </div>
-        
-        
-        
-        <div data-item data-title="K5_TV_PCT_Tuan_2.pdf" data-type="file" data-sec="3"
-             data-pkey="pl/80102/8646243" data-hash="81898606430919e15ed256017d0807f47f2ae9ec" data-ts="1787925732000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80102/8646243'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/80102/8646243'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/80102/8646243']; $el.indeterminate = !!p.redo['pl/80102/8646243']"
-                     @change="await p.toggle('pl/80102/8646243', '81898606430919e15ed256017d0807f47f2ae9ec'); $el.checked = !!p.done['pl/80102/8646243']; $el.indeterminate = !!p.redo['pl/80102/8646243']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Tài liệu đã tải về local -->
-              <a href="https://minhln2.github.io/lms/pl/materials/tieng-viet-5/1-3-1-4-cong-vien-thong-nhat-tha-dieu-tro-choi-dan-gian-gan-voi-tuoi-tho/K5_TV_PCT_Tuan_2_HS.pdf" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                K5_TV_PCT_Tuan_2.pdf
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80102/8646243', '81898606430919e15ed256017d0807f47f2ae9ec')">
-                  <button @click.stop="p.seen('pl/80102/8646243', '81898606430919e15ed256017d0807f47f2ae9ec')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                <span>204.0 KB</span>
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 28/08</span>
-                
                 
               </div>
 
