@@ -101,6 +101,29 @@ function toSessions(rows, col) {
     .filter((s) => s.groups.length);
 }
 
+/** Link của một ô, tìm ở CẢ HAI chỗ Google cất nó.
+ *
+ *  Google Sheets có hai kiểu link và chúng nằm ở hai trường khác nhau:
+ *    - `hyperlink`      — ô là công thức `=HYPERLINK(...)`, hoặc nội dung ô chính
+ *                         là một URL trần;
+ *    - `textFormatRuns` — người dùng bôi đen chữ rồi Insert → Link. Link nằm
+ *                         trong `format.link.uri` của đoạn chữ, còn `hyperlink`
+ *                         RỖNG.
+ *  Bản đầu chỉ hỏi `hyperlink`, nên mọi ô gắn link kiểu thứ hai hiện ra thành chữ
+ *  trơ — không báo lỗi, không thiếu gì trên màn hình, chỉ là bấm vào không đi đâu.
+ *  Đã đo trên "Lớp Ms Dung": 79 mục mất link kiểu này (dòng 10, 11 là ví dụ).
+ *
+ *  Nhiều đoạn chữ có link khác nhau thì lấy đoạn ĐẦU: ô ở đây là một đầu mục cần
+ *  làm, không phải một đoạn văn, và giao diện chỉ có chỗ cho một đích. */
+function linkCuaO(c) {
+  if (c.hyperlink) return c.hyperlink;
+  for (const run of c.textFormatRuns || []) {
+    const uri = run.format?.link?.uri;
+    if (uri) return uri;
+  }
+  return "";
+}
+
 /** Đọc qua Sheets API — cách DUY NHẤT lấy được hyperlink gắn trong ô.
  *  Bản xuất CSV/gviz chỉ có text hiển thị, nên ô kiểu "Can You Name the baby
  *  Animals" gắn link sẽ mất link nếu đọc bằng CSV. */
@@ -125,13 +148,15 @@ async function readViaApi(env, col) {
   const r = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${id}` +
       `?includeGridData=true&ranges=${encodeURIComponent(`'${tab.properties.title}'!A:${lastCol}`)}` +
-      `&fields=${encodeURIComponent("sheets.data.rowData.values(formattedValue,hyperlink)")}`,
+      `&fields=${encodeURIComponent(
+        "sheets.data.rowData.values(formattedValue,hyperlink,textFormatRuns(format.link.uri))",
+      )}`,
     { headers: auth },
   );
   if (!r.ok) throw new Error(`Sheets API ${r.status} khi đọc dữ liệu`);
   const grid = (await r.json()).sheets?.[0]?.data?.[0]?.rowData || [];
   return grid.map((row) =>
-    (row.values || []).map((c) => ({ text: c.formattedValue || "", link: c.hyperlink || "" })),
+    (row.values || []).map((c) => ({ text: c.formattedValue || "", link: linkCuaO(c) })),
   );
 }
 
