@@ -3,12 +3,14 @@
  *
  * Định tuyến:
  *   /api/progress  → API tiến độ học tập (đọc/ghi Workers KV)
+ *   /api/heartbeat → lần đồng bộ gần nhất + môn đang đóng băng (đọc KV)
  *   /api/study     → lịch ôn, kết quả làm bài, cờ "đã thuộc" (đọc/ghi D1)
  *   /api/tts       → đọc to bằng Google TTS, sinh lúc bấm, cache ở edge
  *   còn lại        → trả file tĩnh từ binding ASSETS (thư mục dist/)
  *
  * API:
  *   GET  /api/progress          → toàn bộ tiến độ đã lưu (không cần xác thực)
+ *   GET  /api/heartbeat         → {checked_at, changed_at, warnings}; 204 nếu chưa có
  *   POST /api/progress          → cập nhật, cần header x-progress-key
  *   POST /api/progress?check=1  → chỉ kiểm tra mã bí mật
  *
@@ -28,6 +30,10 @@ import { readCards, writeSession, writeKnown, readStats } from "./study.js";
 import { handleTts } from "./tts.js";
 
 const KEY = "progress";
+// Nhịp tim nằm ở khoá RIÊNG, không nhét chung vào `progress`. Tiến độ học là thứ
+// trình duyệt cũng ghi bằng đọc–sửa–ghi và KV không có CAS; gộp vào là mỗi lượt
+// đồng bộ lại mở thêm một cửa sổ đè mất lượt tick của trẻ.
+const HEARTBEAT_KEY = "heartbeat";
 const MAX_ITEMS = 5000; // chặn ghi phình vô hạn
 const KEY_RE = /^[\w-]+\/\d+\/[\w-]+$/;
 
@@ -47,6 +53,18 @@ async function readAll(env) {
 async function handleGet(env) {
   if (!env.PROGRESS_KV) return json({ error: "Chưa cấu hình PROGRESS_KV" }, 503);
   return json({ items: await readAll(env) });
+}
+
+// Nhịp tim: crawler ghi thẳng vào KV mỗi lượt chạy, KỂ CẢ khi không có dữ liệu
+// mới. Đọc công khai như /api/progress — nó chỉ nói hệ thống có còn chạy không và
+// môn nào đang không lấy được dữ liệu, mà tên môn thì vốn đã hiện trên trang chủ.
+// Không có nhịp tim (chưa lượt sync nào chạy từ khi thêm tính năng) thì trả 204
+// để trang chủ biết mà lùi về mốc nhúng sẵn, thay vì tưởng hệ thống đã chết.
+async function handleHeartbeat(env) {
+  if (!env.PROGRESS_KV) return json({ error: "Chưa cấu hình PROGRESS_KV" }, 503);
+  const hb = await env.PROGRESS_KV.get(HEARTBEAT_KEY, { type: "json" });
+  if (!hb) return new Response(null, { status: 204 });
+  return json(hb);
 }
 
 async function handlePost(request, env) {
@@ -108,6 +126,11 @@ export default {
     if (pathname === "/api/progress") {
       if (request.method === "GET") return handleGet(env);
       if (request.method === "POST") return handlePost(request, env);
+      return json({ error: "Method không hỗ trợ" }, 405);
+    }
+
+    if (pathname === "/api/heartbeat") {
+      if (request.method === "GET") return handleHeartbeat(env);
       return json({ error: "Method không hỗ trợ" }, 405);
     }
 
