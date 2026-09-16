@@ -8,7 +8,7 @@
   <title>Ôn tập · CIE ESL 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.7aeb1b95.css">
+  <link rel="stylesheet" href="../assets/tw.55691828.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -76,6 +76,16 @@
             }
           } catch (e) { /* chế độ chỉ đọc */ }
           this.flushBuffer();
+          // Bôi đen để tra cứu. Đăng ký ở đây chứ không dùng @selectionchange.window:
+          // sự kiện này bắn trên `document` và KHÔNG nổi lên window ở mọi trình duyệt.
+          // Gộp nhịp 120ms vì kéo chọn trên điện thoại bắn hàng chục lượt mỗi giây.
+          if (typeof document !== 'undefined') {
+            let hen = null;
+            document.addEventListener('selectionchange', () => {
+              clearTimeout(hen);
+              hen = setTimeout(() => this.chonDoi(), 120);
+            });
+          }
           this.ready = true;
         },
 
@@ -814,6 +824,139 @@
         // Tự đọc mặt trước khi hiện thẻ/câu mới. Gọi sau khi state đã đổi.
         autoRead(text) { if (this.autoSpeak) setTimeout(() => this.speak(text), 50); },
 
+        // ── Tra cứu: bôi đen → nút 🔎 → popup ─────────────────────────────────
+        // Nghĩa của một từ phụ thuộc CÂU chứa nó và BÀI đang học, nên không dựng
+        // sẵn được: `sedimentary` trong bài về đá không giống ở chỗ khác. Vì vậy
+        // gọi Gemini lúc bấm, kèm thuật ngữ của mục đang mở.
+        tra: { btn: null, show: false, mode: 'word', text: '', sent: '',
+               loading: false, err: '', data: null },
+
+        /** Nới vùng chọn ra nguyên từ: kéo lệch nửa chữ vẫn tra đúng từ. */
+        _noRong(r) {
+          const W = /[A-Za-z0-9'’-]/;
+          try {
+            let n = r.startContainer, o = r.startOffset;
+            if (n.nodeType === 3) { while (o > 0 && W.test(n.data[o - 1])) o--; r.setStart(n, o); }
+            n = r.endContainer; o = r.endOffset;
+            if (n.nodeType === 3) { while (o < n.data.length && W.test(n.data[o])) o++; r.setEnd(n, o); }
+          } catch (e) { /* vùng chọn xuyên nhiều thẻ: giữ nguyên */ }
+          return r;
+        },
+
+        /** Câu chứa vùng chọn — để Gemini biết từ đó đang mang nghĩa nào. */
+        _cauChua(r, text) {
+          const h = r.commonAncestorContainer;
+          const t = ((h.nodeType === 3 ? h.parentElement : h)?.textContent || '').replace(/\s+/g, ' ');
+          const i = t.indexOf(text);
+          if (i < 0) return '';
+          let a = i, b = i + text.length;
+          while (a > 0 && !/[.!?]/.test(t[a - 1])) a--;
+          while (b < t.length && !/[.!?]/.test(t[b])) b++;
+          return t.slice(a, b + 1).trim().slice(0, 300);
+        },
+
+        /** Thuật ngữ của PHẠM VI đang mở. Đây là toàn bộ lý do dùng Gemini thay
+            vì một máy dịch thường: thiếu nó thì `igneous rock` ra "đá nham thạch"
+            chứ không phải "đá mácma" — vẫn trôi chảy, vẫn không ai thấy sai.
+
+            Dùng `scopedSummary` chứ KHÔNG so `x.concept === this.scope`: `scope`
+            là một UNIT, còn các mục tóm tắt là CON của unit đó. So bằng thì không
+            khớp mục nào, `ctx` còn trơ mỗi dòng tiêu đề, và tính năng lặng lẽ tụt
+            xuống đúng bằng một máy dịch thường. */
+        _traCtx() {
+          if (!this.data) return '';
+          const tat = [];
+          for (const s of this.scopedSummary || []) {
+            for (const g of s.glossary || []) tat.push([g.term, g.def || '']);
+            for (const w of s.words || []) for (const it of w.items || [])
+              tat.push([it.word, it.def || '']);
+          }
+          // Ưu tiên thuật ngữ CÓ MẶT ngay trong chỗ đang tra. Một unit có thể có
+          // hàng trăm thuật ngữ mà chỉ 20 dòng đầu lọt vào ctx; cắt theo thứ tự
+          // gốc thì đúng cái từ đang hỏi lại hay bị cắt mất.
+          const cho = (this.tra.sent + ' ' + this.tra.text).toLowerCase();
+          const hop = [], con = [];
+          for (const x of tat) (cho.includes((x[0] || '').toLowerCase()) ? hop : con).push(x);
+          const ds = [...hop, ...con].slice(0, 20).map((x) => x[0] + ' = ' + x[1]);
+          const dau = 'Môn: CIE ESL 5. Mục đang học: ' + (this.conceptName(this.scope) || '—') + '.';
+          return (dau + (ds.length ? '\nThuật ngữ trong mục:\n' + ds.join('\n') : '')).slice(0, 1200);
+        },
+
+        /** Không có mạng / không có mã: vẫn tra được nếu từ đó là thuật ngữ của
+            bài. Lùi thầm, không báo lỗi — đúng nếp của cả dự án. */
+        _traOffline() {
+          const k = (this.tra.text || '').toLowerCase();
+          for (const s of this.data?.summary || []) {
+            for (const g of s.glossary || []) if ((g.term || '').toLowerCase() === k)
+              return { tu: g.term, giai_thich: g.def || '', vi_du: g.example || '', _offline: true };
+            for (const w of s.words || []) for (const it of w.items || [])
+              if ((it.word || '').toLowerCase() === k)
+                return { tu: it.word, loai: it.pos || '', ipa: it.ipa || '', giai_thich: it.def || '',
+                         vi_du: it.example || '', vi_du_vi: it.example_vi || '', _offline: true };
+          }
+          return null;
+        },
+
+        /** Chạy mỗi lần vùng chọn đổi. Quyết định CÓ hiện nút hay không. */
+        chonDoi() {
+          const sel = window.getSelection();
+          this.tra.btn = null;
+          if (this.tra.show || !sel || sel.isCollapsed || !sel.rangeCount) return;
+          const r0 = sel.getRangeAt(0);
+          const h = r0.commonAncestorContainer;
+          const el = h.nodeType === 3 ? h.parentElement : h;
+          // Chỉ bắt trong vùng nội dung: bôi đen ở ô tìm kiếm hay thanh chế độ
+          // mà cũng hiện nút thì nút chắn mất đúng thứ người ta đang gõ.
+          if (!el || !el.closest || !el.closest('[data-tra]')) return;
+          const r = this._noRong(r0);
+          const text = (r.toString() || '').replace(/\s+/g, ' ').trim();
+          if (!text || !/[A-Za-z]/.test(text) || text.length > 600) return;
+          const b = r.getBoundingClientRect();
+          if (!b.width && !b.height) return;
+          this.tra.text = text;
+          this.tra.sent = this._cauChua(r, text);
+          this.tra.mode = text.split(/\s+/).length <= 3 ? 'word' : 'text';
+          // Không có mã bí mật thì chỉ hiện nút khi tra offline ra được cái gì.
+          if (!this.secret && !this._traOffline()) return;
+          this.tra.btn = { x: Math.min(Math.max(b.left + b.width / 2, 60), innerWidth - 60),
+                           y: Math.min(b.bottom + 8, innerHeight - 44) };
+        },
+
+        async traMo(mode) {
+          if (mode) this.tra.mode = mode;
+          this.tra.show = true; this.tra.btn = null;
+          this.tra.err = ''; this.tra.data = null; this.tra.loading = true;
+          if (!this.secret) {                      // chế độ chỉ đọc, không gọi API
+            this.tra.data = this._traOffline(); this.tra.loading = false; return;
+          }
+          try {
+            const r = await fetch('/api/lookup', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'x-progress-key': this.secret },
+              body: JSON.stringify({ mode: this.tra.mode, text: this.tra.text,
+                                     sent: this.tra.sent, ctx: this._traCtx() }),
+            });
+            const b = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(b.error || ('HTTP ' + r.status));
+            this.tra.data = b.data;
+          } catch (e) {
+            // Lùi về glossary có sẵn. Chỉ báo lỗi khi lùi cũng không ra gì.
+            this.tra.data = this._traOffline();
+            if (!this.tra.data) this.tra.err = String(e.message || e);
+          }
+          this.tra.loading = false;
+        },
+
+        /** Đang có chữ được bôi đen? Thẻ ghi nhớ và ô đáp án là thẻ BẤM ĐƯỢC
+            bọc quanh chính phần chữ, nên kéo chọn trên đó sẽ lật thẻ lộ đáp án —
+            tức bôi đen để tra từ lại phá mất bài đang làm. */
+        dangBoiDen() {
+          const s = window.getSelection();
+          return !!(s && !s.isCollapsed && (s.toString() || '').trim());
+        },
+
+        traDong() { this.tra.show = false; this.tra.btn = null; this.tra.data = null; this.tra.err = ''; },
+
         // ── Thẻ ghi nhớ: HỌC ───────────────────────────────────────────────────
         // Xem lần lượt, hiện cả hai mặt, không chấm. Thứ tự XÁO NGẪU NHIÊN mỗi lần
         // vào (không cố định theo cây, kẻo học thuộc theo vị trí), nhưng giữ nguyên
@@ -1354,7 +1497,7 @@
       </ul>
     </aside>
 
-  <main class="flex-1 min-w-0 px-4 lg:px-0 py-6">
+  <main data-tra class="flex-1 min-w-0 px-4 lg:px-0 py-6">
     <!-- Tiêu đề CHỈ có trên giấy: trên màn hình thanh chế độ và cây bên trái đã
          nói rõ đang xem gì, còn tờ giấy rời khỏi màn hình thì không còn ngữ cảnh
          nào — cầm lên phải biết ngay đây là bài gì, môn gì. -->
@@ -1519,7 +1662,7 @@
 
         <div class="mt-4 space-y-2">
           <template x-for="c in choices" :key="c.key">
-            <button @click="pick(c)" :disabled="answered"
+            <button @click="if (!dangBoiDen()) pick(c)" :disabled="answered"
                     class="w-full text-left px-4 py-3 rounded-lg border transition-colors"
                     :class="!answered ? 'bg-white border-slate-300 hover:border-indigo-500 hover:bg-indigo-50'
                             : (isCorrect(c) ? 'bg-emerald-50 border-emerald-400'
@@ -1602,7 +1745,7 @@
       <!-- Bấm vào thẻ để lật -->
       <!-- Bấm vào thẻ = "Xem đáp án" (chấm 0, lật). div role=button chứ không
            phải <button>: bên trong có nút loa, <button> lồng nhau là HTML sai. -->
-      <div role="button" tabindex="0" @click="reveal()" @keydown.enter="reveal()"
+      <div role="button" tabindex="0" @click="if (dangBoiDen()) return; reveal()" @keydown.enter="reveal()"
            class="w-full text-left bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-44 flex flex-col transition-colors"
            :class="revealed ? 'border-rose-200 cursor-default' : 'cursor-pointer hover:border-indigo-400'">
         <p class="text-xs text-slate-400" x-text="conceptName(q.concept)"></p>
@@ -2378,6 +2521,99 @@
     </div>
   </main>
   </div>
+
+  <!-- ── Tra cứu: nút nổi + popup ──────────────────────────────────────────
+       Nút nổi chứ không tự bung popup: iOS dựng thanh Copy/Look Up của riêng nó
+       ngay dưới vùng chọn, hai thứ đè lên nhau và trẻ bấm nhầm liên tục.
+       @mousedown.prevent là BẮT BUỘC — thiếu nó thì cú nhấn vào nút tự xoá vùng
+       chọn trước khi @click chạy, và nút mở ra một popup rỗng. -->
+  <template x-if="tra.btn && !tra.show">
+    <button @mousedown.prevent @click="traMo()" type="button"
+            :style="'left:' + tra.btn.x + 'px; top:' + tra.btn.y + 'px'"
+            class="fixed z-40 -translate-x-1/2 px-3 py-1.5 rounded-full bg-indigo-600 text-white text-xs font-medium shadow-lg hover:bg-indigo-700">
+      🔎 <span x-text="tra.mode === 'word' ? 'Tra từ' : 'Dịch'"></span>
+    </button>
+  </template>
+
+  <!-- Tấm trượt từ dưới lên trên điện thoại, hộp giữa màn hình trên máy tính.
+       Không neo popup vào vùng chọn: chữ nằm sát đáy màn hình thì popup neo theo
+       sẽ tràn ra ngoài, mà đó lại là chỗ trẻ hay bôi đen nhất. -->
+  <template x-if="tra.show">
+    <div @click="traDong()" @keydown.escape.window="traDong()"
+         class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 sm:p-4">
+      <div @click.stop
+           class="w-full sm:max-w-lg max-h-[82vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl">
+
+        <div class="sticky top-0 flex items-start gap-2 px-4 py-3 border-b border-slate-100 bg-white">
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-slate-900 break-words" x-text="tra.text"></p>
+            <p x-show="tra.mode === 'word' && tra.sent" x-cloak
+               class="mt-0.5 text-xs text-slate-400 line-clamp-2" x-text="tra.sent"></p>
+          </div>
+          <button x-show="canSpeak" @click="speak(tra.text)" type="button" title="Đọc to"
+                  class="shrink-0 w-8 h-8 rounded-full text-indigo-500 hover:bg-indigo-50">🔊</button>
+          <button @click="traDong()" type="button" title="Đóng"
+                  class="shrink-0 w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 text-lg leading-none">✕</button>
+        </div>
+
+        <!-- Khung xương chờ ~1,6s. Đo được: p50 1,56s cho từ, 1,85s cho đoạn. -->
+        <div x-show="tra.loading" class="px-4 py-5 space-y-2.5">
+          <div class="h-3 w-1/3 rounded bg-slate-200 animate-pulse"></div>
+          <div class="h-3 w-full rounded bg-slate-100 animate-pulse"></div>
+          <div class="h-3 w-5/6 rounded bg-slate-100 animate-pulse"></div>
+        </div>
+
+        <template x-if="!tra.loading && tra.data && tra.mode === 'word'">
+          <div class="px-4 py-4 space-y-3">
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <span x-show="tra.data.loai" x-cloak class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600" x-text="tra.data.loai"></span>
+              <span x-show="tra.data.ipa" x-cloak class="font-mono text-slate-400" x-text="tra.data.ipa"></span>
+            </div>
+            <p x-show="tra.data.nghia" x-cloak class="text-lg font-semibold text-cyan-700" x-text="tra.data.nghia"></p>
+            <p x-show="tra.data.giai_thich" x-cloak class="text-slate-700 leading-relaxed" x-text="tra.data.giai_thich"></p>
+            <div x-show="tra.data.vi_du" x-cloak class="rounded-lg bg-slate-50 px-3 py-2">
+              <p class="text-sm text-slate-600 italic" x-text="tra.data.vi_du"></p>
+              <p x-show="tra.data.vi_du_vi" x-cloak class="text-sm text-cyan-700" x-text="tra.data.vi_du_vi"></p>
+            </div>
+          </div>
+        </template>
+
+        <template x-if="!tra.loading && tra.data && tra.mode === 'text'">
+          <div class="px-4 py-4 space-y-3">
+            <p class="text-slate-900 leading-relaxed" x-text="tra.data.dich"></p>
+            <div x-show="tra.data.giai_thich" x-cloak class="rounded-lg bg-indigo-50 px-3 py-2">
+              <p class="text-xs font-medium text-indigo-500 uppercase tracking-wide">Giảng lại</p>
+              <p class="mt-1 text-slate-700 leading-relaxed" x-text="tra.data.giai_thich"></p>
+            </div>
+            <template x-if="(tra.data.tu_kho || []).length">
+              <div class="flex flex-wrap gap-1.5">
+                <template x-for="(w, i) in tra.data.tu_kho" :key="i">
+                  <span class="px-2 py-1 rounded-lg bg-slate-100 text-xs">
+                    <span class="font-medium text-slate-700" x-text="w.en"></span>
+                    <span class="text-cyan-700" x-text="' · ' + w.vi"></span>
+                  </span>
+                </template>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <!-- Chỉ có glossary của bài, không gọi được Gemini. Nói ra, nhưng nói
+             nhẹ: đây là suy giảm mềm, không phải hỏng. -->
+        <p x-show="!tra.loading && tra.data && tra.data._offline" x-cloak
+           class="px-4 pb-3 text-xs text-slate-400">Nghĩa lấy từ học liệu của bài (không có mạng).</p>
+
+        <p x-show="!tra.loading && !tra.data" x-cloak class="px-4 py-5 text-sm text-slate-500"
+           x-text="tra.err || 'Không tìm thấy nghĩa của mục này.'"></p>
+
+        <div x-show="!tra.loading && secret" x-cloak class="px-4 pb-4">
+          <button @click="traMo(tra.mode === 'word' ? 'text' : 'word')" type="button"
+                  class="w-full px-3 py-2 text-sm rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  x-text="tra.mode === 'word' ? 'Dịch cả cụm này' : 'Giải nghĩa như một từ'"></button>
+        </div>
+      </div>
+    </div>
+  </template>
 
   <!-- ── Xem ảnh phóng to ────────────────────────────────────────────────────
        Bấm ảnh bất kỳ để phóng, bấm lần nữa (hoặc Esc, hoặc nút ✕) để bỏ. Phủ kín
