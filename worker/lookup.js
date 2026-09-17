@@ -179,7 +179,26 @@ async function tieuThu(env, day) {
     "INSERT INTO lookup_budget (day, n) VALUES (?1, 1) " +
     "ON CONFLICT(day) DO UPDATE SET n = n + 1 RETURNING n"
   ).bind(day).first();
-  return Number(r?.n || 0);
+  const n = Number(r?.n || 0);
+
+  // Dọn dòng cũ, nhưng CHỈ ở lượt đầu tiên của ngày (`n === 1`, tức dòng hôm nay
+  // vừa được tạo). Tự lên lịch: đúng một lần mỗi ngày, không thêm câu lệnh nào
+  // cho 299 lượt còn lại. Chạy mỗi lượt là trả phí cho một việc mỗi năm mới có
+  // ích một lần.
+  //
+  // Giữ 400 ngày chứ không phải 30: bảng này là thứ DUY NHẤT trả lời được "trần
+  // 300 rộng hay chật", và câu đó cần nhìn trọn một năm học. 400 dòng × ~20 byte
+  // là 8KB — rẻ hơn hẳn việc mất dữ liệu rồi phải đoán.
+  if (n === 1) {
+    try {
+      const moc = new Date(Date.now() - 400 * 86400000).toISOString().slice(0, 10);
+      await env.STUDY_DB.prepare("DELETE FROM lookup_budget WHERE day < ?1").bind(moc).run();
+    } catch (e) {
+      // Dọn hỏng không được làm hỏng lượt tra — cùng lý do với ghiLichSu().
+      console.warn("dọn lookup_budget hỏng:", String(e.message || e));
+    }
+  }
+  return n;
 }
 
 export async function handleLookup(request, env) {

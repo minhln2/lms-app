@@ -799,7 +799,27 @@
         // Mở file:// hoặc bản GitHub Pages thì không có /api → luôn Web Speech.
         get canSpeak() { return typeof window !== 'undefined' && ('speechSynthesis' in window || 'Audio' in window); },
         autoSpeak: localStorage.getItem('lms_autospeak') === '1',
-        _player: null, _blobs: {},
+        _player: null,
+        // Kho blob MP3. CÓ TRẦN và CÓ revoke: `URL.createObjectURL()` ghim blob
+        // trong bộ nhớ tới khi trang đóng, nên bản đầu (giữ mọi blob, không bao
+        // giờ revoke) là một buổi học dài nghe 100 từ = vài MB không nhả ra.
+        // Không chết ai, nhưng trên điện thoại cũ thì thấy. Đuổi theo LRU, và
+        // mục vừa dùng luôn được đẩy về cuối nên KHÔNG bao giờ đuổi nhầm cái
+        // đang phát dở.
+        _blobs: {}, _blobKeys: [], _BLOB_MAX: 50,
+        _chamBlob(text) {
+          const i = this._blobKeys.indexOf(text);
+          if (i >= 0) { this._blobKeys.splice(i, 1); this._blobKeys.push(text); }
+        },
+        _nhoBlob(text, src) {
+          this._blobs[text] = src;
+          this._blobKeys.push(text);
+          while (this._blobKeys.length > this._BLOB_MAX) {
+            const cu = this._blobKeys.shift();
+            URL.revokeObjectURL(this._blobs[cu]);
+            delete this._blobs[cu];
+          }
+        },
         // `tinCay`: gửi kèm mã bí mật để đọc chuỗi NGOÀI học liệu (popup tra cứu
         // đọc từ trẻ vừa bôi đen — theo định nghĩa không nằm trong danh sách
         // trắng nào được). Chỉ popup truyền cờ này. Bật cho MỌI nút loa thì danh
@@ -811,11 +831,14 @@
           if ('speechSynthesis' in window) window.speechSynthesis.cancel();
           try {
             let src = this._blobs[text];
-            if (!src) {
+            if (src) {
+              this._chamBlob(text);
+            } else {
               const h = (tinCay && this.secret) ? { headers: { 'x-progress-key': this.secret } } : undefined;
               const r = await fetch(`/api/tts?user=${this.user}&course=${this.course}&text=${encodeURIComponent(text)}`, h);
               if (!r.ok) throw new Error('HTTP ' + r.status);
-              src = this._blobs[text] = URL.createObjectURL(await r.blob());
+              src = URL.createObjectURL(await r.blob());
+              this._nhoBlob(text, src);
             }
             this._player = new Audio(src);
             await this._player.play();
