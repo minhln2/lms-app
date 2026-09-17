@@ -54,9 +54,20 @@ const json = (d, s = 200) =>
     headers: { "content-type": "application/json; charset=utf-8" },
   });
 
+/**
+ * ⚠️ Dòng "sách giáo khoa Việt Nam" KHÔNG phải câu chữ cho đẹp — nó sửa một lỗi
+ * đo được. Glossary của bài chỉ có định nghĩa TIẾNG ANH (các môn dạy bằng tiếng
+ * Anh build với `--no-gloss`), nên `ctx` không có từ tiếng Việt nào để bám vào.
+ * Thiếu dòng này, `igneous rock` ra "đá núi lửa" — 3/3 lượt; thêm vào thì ra
+ * "đá mác-ma" — cũng 3/3. "Đá núi lửa" đọc rất xuôi tai và không ai thấy sai,
+ * nhưng nó là tên của đá phun trào, không phải của cả nhóm đá mácma.
+ * `test_lookup_route.mjs` canh dòng này còn nằm trong thân yêu cầu gửi đi.
+ */
 const HE = "Bạn là gia sư cho học sinh Việt Nam đang học môn này bằng tiếng Anh.\n" +
   "Viết như đang nói với một đứa trẻ: câu ngắn, từ dễ, không dùng từ Hán-Việt khó.\n" +
-  "Bám đúng thuật ngữ đã cho bên dưới, đừng tự đặt cách gọi khác.";
+  "Bám đúng thuật ngữ đã cho bên dưới, đừng tự đặt cách gọi khác.\n" +
+  "Với thuật ngữ khoa học, dùng ĐÚNG từ mà sách giáo khoa Việt Nam dùng cho khái " +
+  "niệm đó, kể cả khi có cách gọi dân dã quen tai hơn.";
 
 /** Hai chế độ khác nhau ở ĐẦU RA, nên tách hẳn schema chứ đừng nhồi vào một. */
 const SHAPE = {
