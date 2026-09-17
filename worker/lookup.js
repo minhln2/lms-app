@@ -118,6 +118,52 @@ const SHAPE = {
 const cut = (v, n) => (typeof v === "string" ? v.trim().slice(0, n) : "");
 
 /**
+ * Ghi từ vừa tra vào lịch sử. CHỈ chế độ tra từ.
+ *
+ * ⚠️ Hỏng ở đây KHÔNG được làm hỏng lượt tra. Đứa trẻ đang chờ nghĩa của một từ;
+ * mất một dòng lịch sử là chuyện nhỏ, mất câu trả lời mới là chuyện lớn. Vì vậy
+ * bọc try/catch và nuốt lỗi — đây là một trong rất ít chỗ trong dự án được phép
+ * nuốt, và được phép vì thứ bị mất có thể dựng lại bằng cách tra lần nữa.
+ */
+async function ghiLichSu(env, user, course, term, sec, data) {
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    await env.STUDY_DB.prepare(
+      "INSERT INTO lookup_hist (user_id, course, term, tu, nghia, sec, n, first_ts, last_ts) " +
+      "VALUES (?1, ?2, ?3, ?4, ?5, ?6, 1, ?7, ?7) " +
+      "ON CONFLICT(user_id, course, term) DO UPDATE SET " +
+      "  n = n + 1, last_ts = ?7, " +
+      "  tu = COALESCE(excluded.tu, tu), nghia = COALESCE(excluded.nghia, nghia)"
+    ).bind(user, course, term.toLowerCase().slice(0, 80),
+           cut(data?.tu, 80) || null, cut(data?.nghia, 160) || null,
+           sec || null, now).run();
+  } catch (e) {
+    console.warn("lookup_hist hỏng:", String(e.message || e));
+  }
+}
+
+/** Đọc lịch sử. Chặn bằng mã bí mật — đây là hồ sơ những chỗ trẻ chưa hiểu. */
+export async function handleLookupHistory(request, env, url) {
+  if (request.method !== "GET") return json({ error: "Method không hỗ trợ" }, 405);
+  const secret = env.LMS_SECRET || "";
+  if (!secret) return json({ error: "Chưa cấu hình LMS_SECRET" }, 503);
+  if ((request.headers.get("x-progress-key") || "") !== secret) {
+    return json({ error: "Mã bí mật không đúng" }, 401);
+  }
+  if (!env.STUDY_DB) return json({ error: "Chưa cấu hình STUDY_DB" }, 503);
+  const user = url.searchParams.get("user") || "";
+  const course = url.searchParams.get("course") || "";
+  if (!/^[\w-]{1,32}$/.test(user) || !/^[\w-]{1,64}$/.test(course)) {
+    return json({ error: "Thiếu hoặc sai 'user'/'course'" }, 400);
+  }
+  const r = await env.STUDY_DB.prepare(
+    "SELECT term, tu, nghia, sec, n, first_ts, last_ts FROM lookup_hist " +
+    "WHERE user_id = ?1 AND course = ?2 ORDER BY last_ts DESC LIMIT 500"
+  ).bind(user, course).all();
+  return json({ rows: r.results || [] });
+}
+
+/**
  * Tăng bộ đếm của NGÀY HÔM NAY và trả về số lượt sau khi tăng.
  *
  * Tăng TRƯỚC khi gọi Gemini, không phải sau. Gọi hỏng thì Google vẫn có thể đã
@@ -151,6 +197,9 @@ export async function handleLookup(request, env) {
   let b;
   try { b = await request.json(); } catch { return json({ error: "Body không hợp lệ" }, 400); }
 
+  const user = cut(b?.user, 32);
+  const course = cut(b?.course, 64);
+  const sec = cut(b?.sec, 64);
   const mode = b?.mode === "text" ? "text" : "word";
   const text = cut(b?.text, mode === "word" ? MAX.word : MAX.text);
   const sent = cut(b?.sent, MAX.sent);
@@ -212,6 +261,12 @@ export async function handleLookup(request, env) {
     data = JSON.parse(raw);
   } catch {
     return json({ error: "Gemini trả về không phải JSON", chi_tiet: raw.slice(0, 300) }, 502);
+  }
+
+  // Lịch sử: chỉ chế độ tra TỪ, và chỉ khi biết là của ai. `user`/`course` KHÔNG
+  // đi vào prompt — chúng chỉ dùng cho dòng D1 này.
+  if (mode === "word" && /^[\w-]{1,32}$/.test(user) && /^[\w-]{1,64}$/.test(course)) {
+    await ghiLichSu(env, user, course, text, sec, data);
   }
 
   const u = d.usageMetadata || {};

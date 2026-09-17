@@ -7,6 +7,7 @@
  *   /api/study     → lịch ôn, kết quả làm bài, cờ "đã thuộc" (đọc/ghi D1)
  *   /api/tts       → đọc to bằng Google TTS, sinh lúc bấm, cache ở edge
  *   /api/lookup    → tra nghĩa 1 từ / dịch 1 đoạn bằng Gemini (cần mã bí mật)
+ *   /api/lookup/history → từ đã tra, gộp theo từ + số lần (cần mã bí mật)
  *   còn lại        → trả file tĩnh từ binding ASSETS (thư mục dist/)
  *
  * API:
@@ -29,7 +30,7 @@
 import { readSheet, writeCell } from "./sheet.js";
 import { readCards, writeSession, writeKnown, readStats } from "./study.js";
 import { handleTts } from "./tts.js";
-import { handleLookup } from "./lookup.js";
+import { handleLookup, handleLookupHistory } from "./lookup.js";
 
 const KEY = "progress";
 // Nhịp tim nằm ở khoá RIÊNG, không nhét chung vào `progress`. Tiến độ học là thứ
@@ -180,6 +181,7 @@ export default {
 
     if (pathname === "/api/tts") return handleTts(request, env, url);
 
+    if (pathname === "/api/lookup/history") return handleLookupHistory(request, env, url);
     if (pathname === "/api/lookup") return handleLookup(request, env);
 
     if (pathname === "/api/study/stats") {

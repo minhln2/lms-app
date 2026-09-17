@@ -16,6 +16,20 @@
  * và tối đa 200 ký tự. Ai đó muốn đốt hạn mức thì chỉ đốt được đúng ~100 câu
  * mà cache đã giữ sẵn.
  *
+ * ── Đường TIN CẬY, cho popup tra cứu ────────────────────────────────────────
+ * Từ trẻ bôi đen là từ BẤT KỲ, không nằm trong danh sách trắng nào được. Nên có
+ * đường thứ hai: gửi kèm `x-progress-key` thì bỏ qua đối chiếu học liệu, đọc
+ * chuỗi nào cũng được (vẫn ≤200 ký tự). Cùng mã bí mật với /api/lookup, mà
+ * popup vốn đã cầm sẵn.
+ *
+ * ⚠️ Đường tin cậy dùng KHÔNG GIAN CACHE RIÊNG (`/__tts/k/…`), không dùng chung
+ * với đường công khai. Lý do không phải gọn gàng: hàm này tra cache TRƯỚC khi
+ * đối chiếu học liệu (cố ý, để câu đã có không phải parse JSON). Nếu hai đường
+ * chung khoá thì một từ do trẻ tra sẽ nằm sẵn trong cache công khai, và người
+ * lạ đoán đúng từ đó sẽ nhận 200 thay vì 403 — tức endpoint thành máy trả lời
+ * "từ này có được tra chưa?". Một oracle yếu, nhưng nó tiết lộ đúng thứ dự án
+ * đã cố tình khoá ở /api/study/stats: chỗ đứa trẻ chưa hiểu.
+ *
  * Secret: GOOGLE_TTS_API_KEY (API key chỉ bật Cloud Text-to-Speech):
  *     npx wrangler secret put GOOGLE_TTS_API_KEY
  */
@@ -90,15 +104,24 @@ export async function handleTts(request, env, url) {
   const voice = url.searchParams.get("voice") || VOICE;
   if (!VOICES.has(voice)) return new Response("Giọng không hỗ trợ", { status: 400 });
 
+  // Có mã bí mật thì đây là popup tra cứu: đọc từ BẤT KỲ, không đối chiếu học
+  // liệu. Không gian cache tách hẳn — xem ghi chú đầu file, đây là chỗ chặn
+  // oracle "từ này có được tra chưa".
+  const secret = env.LMS_SECRET || "";
+  const tinCay = !!secret && (request.headers.get("x-progress-key") || "") === secret;
+
   // Cache TRƯỚC khi đối chiếu học liệu: câu đã có thì không parse JSON, không gọi Google.
   const cache = caches.default;
-  const ckey = new Request(new URL(`/__tts/${await sha1(voice + "|" + user + "|" + course + "|" + text)}`, url).toString());
+  const ns = tinCay ? "/__tts/k/" : "/__tts/";
+  const ckey = new Request(new URL(ns + await sha1(voice + "|" + user + "|" + course + "|" + text), url).toString());
   const hit = await cache.match(ckey);
   if (hit) return hit;
 
-  const ok = await allowed(env, request, user, course);
-  if (!ok) return new Response("Không có học liệu", { status: 404 });
-  if (!ok.has(text)) return new Response("Chuỗi không thuộc học liệu", { status: 403 });
+  if (!tinCay) {
+    const ok = await allowed(env, request, user, course);
+    if (!ok) return new Response("Không có học liệu", { status: 404 });
+    if (!ok.has(text)) return new Response("Chuỗi không thuộc học liệu", { status: 403 });
+  }
 
   const g = await fetch(`${ENDPOINT}?key=${encodeURIComponent(key)}`, {
     method: "POST",

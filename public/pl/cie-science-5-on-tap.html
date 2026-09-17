@@ -693,7 +693,13 @@
           const c = (this.data?.concepts || []).find(x => x.id === id);
           return this.label(c) || id;
         },
-        go(m) { this.mode = m; this.screen = m === 'quiz' || m === 'cards' ? 'start' : m; },
+        go(m) {
+          this.mode = m; this.screen = m === 'quiz' || m === 'cards' ? 'start' : m;
+          // Nạp mỗi lần MỞ tab, không nạp một lần rồi thôi: trẻ vừa tra thêm vài
+          // từ ở tab tóm tắt xong quay lại đây mà thấy danh sách cũ thì trông
+          // như tính năng không ghi gì.
+          if (m === 'hist') this.loadHist();
+        },
         start(n) {
           this._cerr = {};                       // xoá bộ nhớ đệm mỗi phiên
           const now = Math.floor(Date.now() / 1000);
@@ -794,14 +800,20 @@
         get canSpeak() { return typeof window !== 'undefined' && ('speechSynthesis' in window || 'Audio' in window); },
         autoSpeak: localStorage.getItem('lms_autospeak') === '1',
         _player: null, _blobs: {},
-        async speak(text) {
+        // `tinCay`: gửi kèm mã bí mật để đọc chuỗi NGOÀI học liệu (popup tra cứu
+        // đọc từ trẻ vừa bôi đen — theo định nghĩa không nằm trong danh sách
+        // trắng nào được). Chỉ popup truyền cờ này. Bật cho MỌI nút loa thì danh
+        // sách trắng không bao giờ được dùng tới nữa, và nó sẽ mục ruỗng mà
+        // không ai biết — đúng kiểu hỏng mà `tts.js` đã dặn.
+        async speak(text, tinCay) {
           text = (text || '').trim(); if (!text) return;
           if (this._player) { this._player.pause(); this._player = null; }
           if ('speechSynthesis' in window) window.speechSynthesis.cancel();
           try {
             let src = this._blobs[text];
             if (!src) {
-              const r = await fetch(`/api/tts?user=${this.user}&course=${this.course}&text=${encodeURIComponent(text)}`);
+              const h = (tinCay && this.secret) ? { headers: { 'x-progress-key': this.secret } } : undefined;
+              const r = await fetch(`/api/tts?user=${this.user}&course=${this.course}&text=${encodeURIComponent(text)}`, h);
               if (!r.ok) throw new Error('HTTP ' + r.status);
               src = this._blobs[text] = URL.createObjectURL(await r.blob());
             }
@@ -952,8 +964,11 @@
             const r = await fetch('/api/lookup', {
               method: 'POST',
               headers: { 'content-type': 'application/json', 'x-progress-key': this.secret },
+              // `user`/`course`/`sec` chỉ để ghi dòng lịch sử trong D1 — Worker
+              // KHÔNG đưa chúng vào prompt gửi Google (test_lookup_route chốt).
               body: JSON.stringify({ mode: this.tra.mode, text: this.tra.text,
-                                     sent: this.tra.sent, ctx: this._traCtx() }),
+                                     sent: this.tra.sent, ctx: this._traCtx(),
+                                     user: this.user, course: this.course, sec: this.scope || '' }),
             });
             const b = await r.json().catch(() => ({}));
             if (!r.ok) throw new Error(b.error || ('HTTP ' + r.status));
@@ -972,6 +987,35 @@
         dangBoiDen() {
           const s = window.getSelection();
           return !!(s && !s.isCollapsed && (s.toString() || '').trim());
+        },
+
+        // ── Từ đã tra ────────────────────────────────────────────────────────
+        // Gộp theo TỪ chứ không phải nhật ký từng lượt: câu đáng trả lời là "con
+        // hay phải tra lại từ nào", và từ tra đi tra lại chính là từ chưa thuộc.
+        hist: { rows: [], loading: false, err: '', sort: 'n' },
+        async loadHist() {
+          if (!this.secret) { this.hist.err = 'Cần mã bí mật để xem.'; return; }
+          this.hist.loading = true; this.hist.err = '';
+          try {
+            const r = await fetch(`/api/lookup/history?user=${this.user}&course=${this.course}`,
+                                  { headers: { 'x-progress-key': this.secret } });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            this.hist.rows = (await r.json()).rows || [];
+          } catch (e) { this.hist.err = String(e.message || e); }
+          this.hist.loading = false;
+        },
+        get histRows() {
+          const r = [...this.hist.rows];
+          // Mặc định xếp theo SỐ LẦN TRA giảm dần — đó mới là thứ đáng nhìn
+          // trước. Xếp theo thời gian thì từ vừa tra xong luôn đứng đầu, mà từ
+          // vừa tra xong là từ ít thông tin nhất.
+          return this.hist.sort === 'n'
+            ? r.sort((a, b) => b.n - a.n || b.last_ts - a.last_ts)
+            : r.sort((a, b) => b.last_ts - a.last_ts);
+        },
+        ngayGon(ts) {
+          const d = Math.floor((Date.now() / 1000 - ts) / 86400);
+          return d <= 0 ? 'hôm nay' : d === 1 ? 'hôm qua' : d + ' ngày trước';
         },
 
         traDong() { this.tra.show = false; this.tra.btn = null; this.tra.data = null; this.tra.err = ''; },
@@ -1428,7 +1472,8 @@
       <span class="lg:hidden w-px h-4 bg-slate-200 shrink-0"></span>
       <template x-for="m in [
           {k:'summary', t:'📄 Tóm tắt'},
-          {k:'cards',   t:'🃏 Thẻ ghi nhớ'}, {k:'quiz', t:'✍️ Trắc nghiệm'}]" :key="m.k">
+          {k:'cards',   t:'🃏 Thẻ ghi nhớ'}, {k:'quiz', t:'✍️ Trắc nghiệm'},
+                    {k:'hist',    t:'📒 Từ đã tra'}]" :key="m.k">
         <button @click="go(m.k)"
                 :class="mode === m.k ? 'bg-indigo-600 text-white border-indigo-600'
                                      : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
@@ -2538,6 +2583,55 @@
         </a>
       </div>
     </div>
+
+    <!-- ── Từ đã tra ─────────────────────────────────────────────────────────
+         Danh sách này chính là hồ sơ những chỗ chưa hiểu, nên /api/lookup/history
+         chặn bằng mã bí mật — cùng luật với /api/study/stats. Không có mã thì nói
+         thẳng, đừng hiện bảng rỗng: bảng rỗng đọc ra là "chưa tra từ nào". -->
+    <div x-show="mode === 'hist'" x-cloak class="space-y-3">
+      <div class="flex items-center gap-2">
+        <p class="text-sm text-slate-500 flex-1">
+          <span class="font-semibold text-slate-700" x-text="hist.rows.length"></span> từ đã tra
+        </p>
+        <button @click="hist.sort = hist.sort === 'n' ? 'ts' : 'n'" type="button"
+                class="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:border-indigo-400"
+                x-text="hist.sort === 'n' ? '↓ Tra nhiều nhất' : '↓ Mới nhất'"></button>
+        <button @click="loadHist()" type="button" title="Tải lại"
+                class="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:border-indigo-400">⟳</button>
+      </div>
+
+      <div x-show="hist.loading" class="space-y-2">
+        <div class="h-10 rounded-lg bg-slate-100 animate-pulse"></div>
+        <div class="h-10 rounded-lg bg-slate-100 animate-pulse"></div>
+      </div>
+
+      <p x-show="!hist.loading && hist.err" x-cloak
+         class="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-900"
+         x-text="hist.err"></p>
+
+      <p x-show="!hist.loading && !hist.err && !hist.rows.length" x-cloak
+         class="text-sm text-slate-500">Chưa tra từ nào. Bôi đen một từ trong bài để tra.</p>
+
+      <template x-for="r in histRows" :key="r.term">
+        <div class="rounded-lg border border-slate-200 bg-white px-3 py-2 flex items-start gap-3">
+          <div class="min-w-0 flex-1">
+            <p class="font-medium text-slate-900 break-words">
+              <span x-text="r.tu || r.term"></span>
+              <button x-show="canSpeak" @click="speak(r.tu || r.term, true)" type="button" title="Đọc to"
+                      class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button>
+            </p>
+            <p x-show="r.nghia" x-cloak class="text-sm text-cyan-700" x-text="r.nghia"></p>
+            <p class="text-xs text-slate-400" x-text="ngayGon(r.last_ts)"></p>
+          </div>
+          <!-- Số lần tra nổi bật khi ≥2: tra lại nghĩa là chưa nhớ, và đó mới là
+               thông tin. Tra đúng một lần thì con số không nói lên điều gì. -->
+          <span class="shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold"
+                :class="r.n >= 2 ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-500'"
+                x-text="r.n + '×'"></span>
+        </div>
+      </template>
+    </div>
+
   </main>
   </div>
 
@@ -2569,7 +2663,11 @@
             <p x-show="tra.mode === 'word' && tra.sent" x-cloak
                class="mt-0.5 text-xs text-slate-400 line-clamp-2" x-text="tra.sent"></p>
           </div>
-          <button x-show="canSpeak" @click="speak(tra.text)" type="button" title="Đọc to"
+          <!-- Trần 200 ký tự là của /api/tts. Ẩn nút khi vượt, thay vì để bấm rồi
+               lặng lẽ rơi về giọng hệ điều hành — im lặng kiểu đó nhìn y hệt như
+               đang chạy bình thường, chỉ khác giọng. -->
+          <button x-show="canSpeak && tra.text.length <= 200" x-cloak
+                  @click="speak(tra.text, true)" type="button" title="Đọc to"
                   class="shrink-0 w-8 h-8 rounded-full text-indigo-500 hover:bg-indigo-50">🔊</button>
           <button @click="traDong()" type="button" title="Đóng"
                   class="shrink-0 w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 text-lg leading-none">✕</button>
