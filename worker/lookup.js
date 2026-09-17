@@ -67,22 +67,49 @@ const HE = "Bạn là gia sư cho học sinh Việt Nam đang học môn này b�
   "Viết như đang nói với một đứa trẻ: câu ngắn, từ dễ, không dùng từ Hán-Việt khó.\n" +
   "Bám đúng thuật ngữ đã cho bên dưới, đừng tự đặt cách gọi khác.\n" +
   "Với thuật ngữ khoa học, dùng ĐÚNG từ mà sách giáo khoa Việt Nam dùng cho khái " +
-  "niệm đó, kể cả khi có cách gọi dân dã quen tai hơn.";
+  "niệm đó, kể cả khi có cách gọi dân dã quen tai hơn. Điều này áp cho MỌI trường " +
+  "— cả ví dụ lẫn phần lưu ý — không riêng trường nghĩa.";
 
-/** Hai chế độ khác nhau ở ĐẦU RA, nên tách hẳn schema chứ đừng nhồi vào một. */
+/**
+ * Hai chế độ khác nhau ở ĐẦU RA, nên tách hẳn schema chứ đừng nhồi vào một.
+ *
+ * Cả hai cùng trả `phan[]` — một mảng khối `{tieu_de, noi_dung, vi_du[]}` — vì
+ * một schema PHẲNG không chứa nổi cả hai thứ người ta sẽ bôi đen. `beach` cần
+ * đúng một dòng; `present perfect` cần công thức, từng trường hợp dùng, và phần
+ * phân biệt với thì gần giống. Nhồi cả hai vào `giai_thich` thì hoặc từ đơn giản
+ * bị viết lê thê, hoặc điểm ngữ pháp bị cắt cụt thành một câu vô dụng.
+ *
+ * Độ sâu do MODEL tự co giãn theo thứ được hỏi, không phải ta tự đoán loại rồi
+ * đổi prompt: đoán "đây là điểm ngữ pháp" bằng luật thì hỏng ngay ở những thứ
+ * nằm giữa (`used to`, `photosynthesis`, `a lot of`). Đo được: `beach` ra 221
+ * token/1 phần, `present perfect` ra 255 token/3 phần — cùng một prompt.
+ */
 const SHAPE = {
   word:
     'Trả về JSON thuần, không rào đầu, đúng các khoá sau:\n' +
-    '{"tu":"từ gốc","loai":"danh từ|động từ|tính từ|trạng từ|cụm từ",' +
-    '"ipa":"phiên âm IPA","nghia":"nghĩa tiếng Việt, ngắn gọn",' +
-    '"giai_thich":"1-2 câu giải thích nghĩa NÀY trong bài đang học",' +
-    '"vi_du":"1 câu tiếng Anh ngắn dùng từ này","vi_du_vi":"bản dịch câu ví dụ"}\n' +
-    "Giải nghĩa theo đúng nghĩa từ đó mang TRONG CÂU đã cho, không liệt kê nghĩa khác.",
+    '{"tu":"từ gốc","loai":"","ipa":"phiên âm IPA","nghia":"nghĩa tiếng Việt, ngắn gọn",' +
+    '"phan":[{"tieu_de":"","noi_dung":"","vi_du":[{"en":"","vi":""}]}],"luu_y":""}\n' +
+    'loai: viết BẰNG TIẾNG VIỆT (danh từ · động từ · tính từ · trạng từ · cụm từ · ' +
+    'thì trong ngữ pháp · cấu trúc câu). Không dùng tiếng Anh ở trường này.\n\n' +
+    'Độ sâu phải VỪA VỚI THỨ ĐƯỢC HỎI, đừng viết dài đều nhau:\n' +
+    "· Từ vựng thường: một phần 'Cách dùng', 1–2 ví dụ. Ngắn thôi.\n" +
+    "· Điểm NGỮ PHÁP (thì, cấu trúc câu, loại từ): tách 'Công thức', 'Dùng khi nào' " +
+    "(liệt kê từng trường hợp, mỗi trường hợp một ví dụ), 'Dễ nhầm với' (so với " +
+    'cấu trúc gần giống, kèm ví dụ đối chiếu).\n' +
+    "· KHÁI NIỆM khoa học: 'Là gì', 'Gặp ở đâu trong đời thường', và thêm 'Biết thêm' " +
+    'nếu có một chi tiết thú vị — 1–2 câu, CHỈ nêu điều chắc chắn đúng, không đoán.\n' +
+    'luu_y: chỗ dễ nhầm lẫn; để trống nếu không có gì đáng nói.\n\n' +
+    'Giải nghĩa theo đúng nghĩa từ đó mang TRONG CÂU đã cho, không liệt kê nghĩa khác.',
   text:
     'Trả về JSON thuần, không rào đầu, đúng các khoá sau:\n' +
-    '{"dich":"bản dịch tiếng Việt sát nghĩa","giai_thich":"2-3 câu giảng lại ý chính cho dễ hiểu",' +
-    '"tu_kho":[{"en":"từ khó","vi":"nghĩa"}]}\n' +
-    "tu_kho: tối đa 4 từ khó nhất trong đoạn; không có từ nào khó thì để mảng rỗng.",
+    '{"dich":"bản dịch tiếng Việt sát nghĩa",' +
+    '"phan":[{"tieu_de":"","noi_dung":"","vi_du":[{"en":"","vi":""}]}],' +
+    '"tu_kho":[{"en":"từ khó","vi":"nghĩa"}],"luu_y":""}\n' +
+    "phan: một khối 'Giảng lại' (2–3 câu diễn giải ý chính cho dễ hiểu, được phép ví von), " +
+    "và thêm khối 'Biết thêm' nếu đoạn này gắn với một điều thú vị ngoài sách — 1–2 câu, " +
+    'CHỈ nêu điều chắc chắn đúng.\n' +
+    'tu_kho: tối đa 4 từ khó nhất; không có từ nào khó thì để mảng rỗng.\n' +
+    'luu_y: chỗ dễ hiểu sai; để trống nếu không có.',
 };
 
 const cut = (v, n) => (typeof v === "string" ? v.trim().slice(0, n) : "");
@@ -152,6 +179,11 @@ export async function handleLookup(request, env) {
           temperature: 0.3,
           responseMimeType: "application/json",
           thinkingConfig: { thinkingBudget: 0 },
+          // Chặn trên cho MỘT lượt. Đo được: dài nhất là điểm ngữ pháp, ~420
+          // token; 1500 là gấp hơn ba lần chỗ đó, nên không cắt vào bài thật,
+          // mà vẫn ghìm một lượt trả lời chạy loạn ở ~47đ thay vì không trần.
+          // Bị cắt thì JSON hỏng → 502, tức lộ ra chứ không âm thầm cụt.
+          maxOutputTokens: 1500,
         },
       }),
     });
