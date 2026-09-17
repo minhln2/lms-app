@@ -877,9 +877,18 @@
           const cho = (this.tra.sent + ' ' + this.tra.text).toLowerCase();
           const hop = [], con = [];
           for (const x of tat) (cho.includes((x[0] || '').toLowerCase()) ? hop : con).push(x);
-          const ds = [...hop, ...con].slice(0, 20).map((x) => x[0] + ' = ' + x[1]);
+          // Dấu hai chấm, KHÔNG phải dấu bằng — và nhãn nói thẳng đây là ĐỊNH
+          // NGHĨA TIẾNG ANH. Bản đầu viết `crystal = The particular shaped
+          // structure of a mineral.` và trong một danh sách thuật ngữ thì `=`
+          // đọc ra là "dịch thành", nên Gemini dịch nguyên câu định nghĩa vào ô
+          // nghĩa: `crystal` ra "cấu trúc hình dạng đặc biệt của một loại khoáng
+          // vật" thay vì "tinh thể". Bỏ hẳn ctx đi thì lại ra đúng — tức ngữ
+          // cảnh đang LÀM HỎNG chính thứ nó sinh ra để cứu.
+          const ds = [...hop, ...con].slice(0, 20).map((x) => x[0] + ': ' + x[1]);
           const dau = 'Môn: CIE ESL 5. Mục đang học: ' + (this.conceptName(this.scope) || '—') + '.';
-          return (dau + (ds.length ? '\nThuật ngữ trong mục:\n' + ds.join('\n') : '')).slice(0, 1200);
+          return (dau + (ds.length
+            ? '\nĐịnh nghĩa TIẾNG ANH của các thuật ngữ trong mục (KHÔNG phải bản dịch):\n' + ds.join('\n')
+            : '')).slice(0, 1200);
         },
 
         /** Không có mạng / không có mã: vẫn tra được nếu từ đó là thuật ngữ của

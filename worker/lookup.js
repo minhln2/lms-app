@@ -87,10 +87,13 @@ const HE = "Bạn là gia sư cho học sinh Việt Nam đang học môn này b�
 const SHAPE = {
   word:
     'Trả về JSON thuần, không rào đầu, đúng các khoá sau:\n' +
-    '{"tu":"từ gốc","loai":"","ipa":"phiên âm IPA","nghia":"nghĩa tiếng Việt, ngắn gọn",' +
+    '{"tu":"từ gốc","loai":"","ipa":"phiên âm IPA","nghia":"",' +
     '"phan":[{"tieu_de":"","noi_dung":"","vi_du":[{"en":"","vi":""}]}],"luu_y":""}\n' +
     'loai: viết BẰNG TIẾNG VIỆT (danh từ · động từ · tính từ · trạng từ · cụm từ · ' +
-    'thì trong ngữ pháp · cấu trúc câu). Không dùng tiếng Anh ở trường này.\n\n' +
+    'thì trong ngữ pháp · cấu trúc câu). Không dùng tiếng Anh ở trường này.\n' +
+    'nghia: TỪ tiếng Việt tương đương, NGẮN — thường 1–4 chữ ("tinh thể", "đá mác-ma", ' +
+    '"sự bay hơi"). Tuyệt đối KHÔNG chép hay dịch lại câu định nghĩa ở phần Ngữ cảnh ' +
+    'vào đây; định nghĩa dài thuộc về phần "Là gì" bên dưới.\n\n' +
     'Độ sâu phải VỪA VỚI THỨ ĐƯỢC HỎI, đừng viết dài đều nhau:\n' +
     "· Từ vựng thường: một phần 'Cách dùng', 1–2 ví dụ. Ngắn thôi.\n" +
     "· Điểm NGỮ PHÁP (thì, cấu trúc câu, loại từ): tách 'Công thức', 'Dùng khi nào' " +
@@ -162,7 +165,11 @@ export async function handleLookup(request, env) {
     return json({ error: "Hôm nay đã tra nhiều rồi, mai nhé", cap: CAP, used: n }, 429);
   }
 
-  const he = [HE, ctx && "Ngữ cảnh:\n" + ctx, SHAPE[mode]].filter(Boolean).join("\n\n");
+  // Nói rõ ctx là ĐỊNH NGHĨA, không phải bản dịch. Thiếu câu này thì model coi
+  // vế phải của mỗi dòng là cách gọi tiếng Việt bắt buộc và chép nó vào `nghia`.
+  const he = [HE, ctx && "Ngữ cảnh — định nghĩa TIẾNG ANH lấy từ sách, chỉ dùng để " +
+    "biết từ đang mang nghĩa NÀO. Đây KHÔNG phải bản dịch, đừng chép lại:\n" + ctx,
+    SHAPE[mode]].filter(Boolean).join("\n\n");
   const nguoi = mode === "word"
     ? `Từ cần giải nghĩa: "${text}"` + (sent ? `\nCâu chứa từ đó: "${sent}"` : "")
     : text;
