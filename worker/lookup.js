@@ -201,6 +201,38 @@ async function tieuThu(env, day) {
   return n;
 }
 
+/** Mã lỗi ĐÁNG thử lại. 412 nằm đây vì một lý do cụ thể, xem ghi chú dưới. */
+const THU_LAI = new Set([412, 429, 500, 502, 503, 504]);
+
+/**
+ * Gọi Gemini, thử lại ĐÚNG MỘT LẦN khi gặp lỗi thoáng qua.
+ *
+ * ⚠️ 412 `FAILED_PRECONDITION` của API này nghĩa là "User location is not
+ * supported" — chặn theo NƠI GỌI. Worker chạy ở colo Cloudflare và đi ra bằng IP
+ * dùng chung của họ, mà IP đó định vị sang nước nào là chuyện Cloudflare quyết
+ * theo từng lượt. Hệ quả đã gặp: hôm trước chạy bình thường, hôm sau 412, rồi tự
+ * hết — cùng một khoá, cùng một mã, cùng một colo SIN.
+ *
+ * Giãn cách NGẮN (400ms) và chỉ MỘT lần: đứa trẻ đang chờ, tổng đã là ~1,6s rồi.
+ * Thử lại lâu hơn thì cứu được thêm vài phần trăm số lượt nhưng đổi lấy một
+ * khoảng chờ mà trẻ sẽ bỏ đi trước khi nó xong.
+ *
+ * KHÔNG thử lại 400/401/403: sai yêu cầu hay sai khoá thì gọi lại vẫn sai, chỉ
+ * tốn thêm một khoảng chờ.
+ */
+async function goiLai(uri, colo, body) {
+  const gui = () => fetch(uri, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const r = await gui();
+  if (r.ok || !THU_LAI.has(r.status)) return r;
+  console.warn(`Gemini ${r.status} @colo=${colo} — thử lại lần 2`);
+  await new Promise((k) => setTimeout(k, 400));
+  return gui();
+}
+
 export async function handleLookup(request, env) {
   if (request.method !== "POST") return json({ error: "Method không hỗ trợ" }, 405);
 
@@ -242,25 +274,23 @@ export async function handleLookup(request, env) {
     ? `Từ cần giải nghĩa: "${text}"` + (sent ? `\nCâu chứa từ đó: "${sent}"` : "")
     : text;
 
+  const uri = `${ENDPOINT}?key=${encodeURIComponent(key)}`;
+  const colo = (request.cf && request.cf.colo) || "?";
   let g;
   try {
-    g = await fetch(`${ENDPOINT}?key=${encodeURIComponent(key)}`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: nguoi }] }],
-        systemInstruction: { parts: [{ text: he }] },
-        generationConfig: {
-          temperature: 0.3,
-          responseMimeType: "application/json",
-          thinkingConfig: { thinkingBudget: 0 },
+    g = await goiLai(uri, colo, {
+    contents: [{ role: "user", parts: [{ text: nguoi }] }],
+    systemInstruction: { parts: [{ text: he }] },
+    generationConfig: {
+      temperature: 0.3,
+      responseMimeType: "application/json",
+      thinkingConfig: { thinkingBudget: 0 },
           // Chặn trên cho MỘT lượt. Đo được: dài nhất là điểm ngữ pháp, ~420
           // token; 1500 là gấp hơn ba lần chỗ đó, nên không cắt vào bài thật,
           // mà vẫn ghìm một lượt trả lời chạy loạn ở ~47đ thay vì không trần.
           // Bị cắt thì JSON hỏng → 502, tức lộ ra chứ không âm thầm cụt.
-          maxOutputTokens: 1500,
-        },
-      }),
+      maxOutputTokens: 1500,
+    },
     });
   } catch (e) {
     return json({ error: "Không gọi được Gemini: " + String(e.message || e) }, 502);
@@ -273,7 +303,6 @@ export async function handleLookup(request, env) {
     // location is not supported", tức chặn theo NƠI GỌI — mà Worker chạy ở colo
     // Cloudflare gần người dùng nhất, và colo đó đổi giữa các ngày. Không ghi
     // colo thì cùng một mã lỗi lúc xảy ra lúc không, không cách nào đối chiếu.
-    const colo = (request.cf && request.cf.colo) || "?";
     console.warn(`Gemini ${g.status} @colo=${colo}: ${t.slice(0, 400)}`);
     return json({ error: `Gemini lỗi ${g.status}`, chi_tiet: t.slice(0, 300), colo }, 502);
   }

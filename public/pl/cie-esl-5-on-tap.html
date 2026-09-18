@@ -983,6 +983,9 @@
           if (!this.secret) {                      // chế độ chỉ đọc, không gọi API
             this.tra.data = this._traOffline(); this.tra.loading = false; return;
           }
+          // Có nhận được phản hồi HTTP hay không — dùng để nói ĐÚNG LOẠI trục
+          // trặc. Ném từ `fetch` là hỏng mạng; phản hồi không ok là dịch vụ lỗi.
+          let coPhanHoi = false;
           try {
             const r = await fetch('/api/lookup', {
               method: 'POST',
@@ -993,17 +996,22 @@
                                      sent: this.tra.sent, ctx: this._traCtx(),
                                      user: this.user, course: this.course, sec: this.scope || '' }),
             });
+            coPhanHoi = true;
             const b = await r.json().catch(() => ({}));
             if (!r.ok) throw new Error(b.error || ('HTTP ' + r.status));
             this.tra.data = b.data;
           } catch (e) {
             // Lùi về glossary có sẵn. Chỉ báo lỗi khi lùi cũng không ra gì.
             this.tra.data = this._traOffline();
-            // GIỮ lại lý do thật. Dòng ghi chú cũ nói cứng "không có mạng", mà
-            // một lượt 412 hay 502 thì mạng vẫn tốt — nói sai lý do còn tệ hơn
-            // không nói, vì người ta đi kiểm wifi thay vì kiểm dịch vụ.
-            this.tra.ly_do = String(e.message || e);
-            if (!this.tra.data) this.tra.err = this.tra.ly_do;
+            // Hai yêu cầu kéo ngược nhau, và cả hai đều đúng:
+            //  · đừng chìa câu lỗi kỹ thuật ("Gemini lỗi 412") ra cho một đứa trẻ;
+            //  · đừng nói cứng "không có mạng" khi mạng vẫn tốt — nói sai lý do
+            //    còn tệ hơn không nói, vì người ta đi kiểm wifi thay vì kiểm dịch vụ.
+            // Giải bằng cách tách: hiện đúng LOẠI trục trặc bằng lời thường, còn
+            // nguyên văn thì đẩy ra console cho người lớn soi.
+            this.tra.ly_do = coPhanHoi ? 'tra cứu đang bận' : 'chưa có mạng';
+            console.warn('tra cứu hỏng:', String(e.message || e));
+            if (!this.tra.data) this.tra.err = 'Chưa tra được lúc này, thử lại sau nhé.';
           }
           this.tra.loading = false;
         },
