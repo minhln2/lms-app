@@ -1,6 +1,7 @@
 
 
 
+
 <!doctype html>
 <html lang="vi">
 <head>
@@ -8,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>G5 2.3 Reversible Change.docx · CIE Science 5</title>
-<link rel="stylesheet" href="../../../../assets/tw.b53f1cf6.css">
+<link rel="stylesheet" href="../../../../assets/tw.0998fed0.css">
 <style>
   [x-cloak] { display: none !important; }
   #pdf { width:100%; height:calc(100vh - 8.5rem); border:0; }
@@ -43,6 +44,9 @@
   
   @page { size: 612pt 792pt; margin: 0; }
 
+  /* Thanh nav dính cao ~3rem; không chừa thì mục lục nhảy tới trang nào là
+     đầu trang đó chui xuống dưới nav. */
+  .trang, #pdfjs > [data-trang] { scroll-margin-top: 3.6rem; }
   @media print {
     header, nav, .no-print { display: none !important; }
     body { background: #fff; }
@@ -94,11 +98,14 @@
   </div>
 </nav>
 
+<div class="max-w-5xl mx-auto lg:flex lg:gap-5 lg:items-start">
 
-<main data-tra x-show="che === 'doc'" class="max-w-5xl mx-auto px-4 py-4">
+<div class="min-w-0 lg:flex-1">
 
-<section class="trang"><p class="stt">Trang 1/2</p><div class="khung"><img src="anh/trang-1.webp" width="1020" height="1320" alt="" loading="lazy"><div class="chu"></div></div></section>
-<section class="trang"><p class="stt">Trang 2/2</p><div class="khung"><img src="anh/trang-2.webp" width="1020" height="1320" alt="" loading="lazy"><div class="chu"></div></div></section>
+<main data-tra x-show="che === 'doc'" class="px-4 py-4">
+
+<section class="trang" id="tr-1" data-tr="1"><p class="stt">Trang 1/2</p><div class="khung"><img src="anh/trang-1.webp" width="1020" height="1320" alt="" loading="lazy"><div class="chu"></div></div></section>
+<section class="trang" id="tr-2" data-tr="2"><p class="stt">Trang 2/2</p><div class="khung"><img src="anh/trang-2.webp" width="1020" height="1320" alt="" loading="lazy"><div class="chu"></div></div></section>
 </main>
 
 
@@ -110,7 +117,7 @@
      Đây cũng là cách Canvas/Canvadocs làm.
 
      PDF.js (0,51 MB sau gzip) chỉ tải khi bấm 📄. -->
-<main x-show="che === 'pdf'" x-cloak class="max-w-5xl mx-auto px-4 py-4">
+<main x-show="che === 'pdf'" x-cloak class="px-4 py-4">
 
   <div class="no-print sticky top-[3.1rem] z-10 mb-3 flex items-center gap-2 flex-wrap
               bg-white/95 backdrop-blur border border-slate-200 rounded-lg px-2 py-1.5">
@@ -138,6 +145,8 @@
   <div id="pdfjs" class="space-y-3"></div>
 
 </main>
+</div>
+</div>
 
 
   <!-- ── Tra cứu: nút nổi + popup ──────────────────────────────────────────
@@ -269,7 +278,7 @@
     // "Cannot read private member #qs from an object whose class did not
     // declare it" và trang chỉ hiện "Chưa mở được bản PDF". Để trong closure
     // thì Alpine không với tới. Cùng lý do cho IntersectionObserver.
-    let _pdf = null, _oq = null;
+    let _pdf = null, _oq = null, _kho = null;
     return {
       
       che: null,
@@ -280,6 +289,7 @@
       pdfJsUrl: "../../../../assets/pdf.e73f3ce5.mjs",
       pdfWorkerUrl: "../../../../assets/pdf.worker.490b29ce.mjs",
       tiLe: 1.2, soTrang: 0, pdfLoi: '', srcNang: '',
+      mlMo: false, trangDang: 0,
       user: "pl", course: "cie-science-5",
       secret: localStorage.getItem('lms_key') || '',
 
@@ -325,7 +335,7 @@
           this.che = nho === 'pdf' ? 'pdf' : 'doc';
         }
         if (this.che === 'pdf') this.moPdf();
-        this.$nextTick(() => this.canhChu());
+        this.$nextTick(() => { this.canhChu(); this.theoDoiTrang(); });
         addEventListener('resize', () => { clearTimeout(this._h); this._h = setTimeout(() => this.canhChu(), 150); });
         if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => this.canhChu());
       },
@@ -334,6 +344,33 @@
         if (c === 'pdf') this.moPdf();
         if (luu) { try { localStorage.setItem('lms_doc_mode', c); } catch (e) {} }
         if (c === 'doc') this.$nextTick(() => this.canhChu());
+      },
+
+      /** Mục lục → nhảy tới trang N, chạy ở CẢ hai chế độ.
+       *  Ở 📄 phải chờ PDF.js dựng xong khung, không thì chưa có gì để nhảy tới. */
+      async toiTrang(p) {
+        this.mlMo = false;
+        this.trangDang = p;
+        if (this.che === 'pdf') {
+          await this.moPdf();
+          await this.$nextTick();
+        }
+        const el = this.che === 'pdf'
+          ? document.querySelector('#pdfjs [data-trang="' + p + '"]')
+          : document.getElementById('tr-' + p);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      },
+
+      /** Tô đậm mục đang xem. Không có thì cây mục lục chỉ là danh sách link,
+       *  cuộn một lúc là không biết mình đang ở đâu. */
+      theoDoiTrang() {
+        const q = new IntersectionObserver((muc) => {
+          const thay = muc.filter((m) => m.isIntersecting)
+                          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+          if (thay) this.trangDang = Number(thay.target.dataset.tr || thay.target.dataset.trang);
+        }, { rootMargin: '-10% 0px -80% 0px' });
+        document.querySelectorAll('.trang[data-tr], #pdfjs [data-trang]')
+                .forEach((e) => q.observe(e));
       },
 
       /** Nạp PDF.js và dựng khung trang. Chỉ chạy MỘT lần, lúc bấm 📄. */
@@ -346,7 +383,12 @@
           pdfjs.GlobalWorkerOptions.workerSrc = this.pdfWorkerUrl;
           _pdf = await pdfjs.getDocument({ url: this.pdfGoc }).promise;
           this.soTrang = _pdf.numPages;
-          this.$nextTick(() => this.dungKhung());
+          // `await` chứ không phải $nextTick rồi bỏ đó: `toiTrang()` gọi
+          // `moPdf()` xong là đi tìm khung trang ngay, mà `dungKhung()` còn
+          // phải chờ `getPage(1)`. Không chờ thì mục lục bấm vào không nhảy đi
+          // đâu cả — đo được ở tài liệu 18 trang.
+          await this.$nextTick();
+          await this.dungKhung();
         } catch (e) {
           // Nói đúng loại trục trặc, đừng chìa nguyên văn lỗi thư viện ra cho trẻ.
           console.warn('PDF.js hỏng:', e);
@@ -356,7 +398,7 @@
 
       /** Một khung trống cho mỗi trang; VẼ khi cuộn tới.
        *  Vẽ hết ngay thì một cuốn 192 trang là 192 canvas trong bộ nhớ. */
-      dungKhung() {
+      async dungKhung() {
         const ct = document.getElementById('pdfjs');
         if (!ct || !_pdf) return;
         ct.innerHTML = '';
@@ -364,6 +406,13 @@
         _oq = new IntersectionObserver((muc) => {
           muc.forEach((m) => { if (m.isIntersecting) this.veTrang(m.target); });
         }, { rootMargin: '800px 0px' });
+        // ⚠ Ô giữ chỗ phải mang sẵn TỈ LỆ KHUNG. Để rỗng thì mọi ô cao 0px,
+        // cả tài liệu 96 trang dồn thành một vệt, và mục lục nhảy tới trang 40
+        // sẽ trượt sang chỗ khác — thanh cuộn còn giật mỗi lần vẽ xong một
+        // trang. Lấy khổ trang ĐẦU: một tài liệu hiếm khi trộn nhiều khổ, và
+        // lệch chút thì cũng chỉ lệch trước khi trang đó kịp vẽ.
+        const vp1 = (await _pdf.getPage(1)).getViewport({ scale: 1 });
+        _kho = [vp1.width, vp1.height];
         for (let i = 1; i <= _pdf.numPages; i++) {
           const d = document.createElement('div');
           d.className = 'bg-white border border-slate-200 rounded-lg overflow-hidden mx-auto';
@@ -371,6 +420,26 @@
           ct.appendChild(d);
           _oq.observe(d);
         }
+        this.coKhung();
+        this.theoDoiTrang();   // khung 📄 dựng sau init, phải đăng ký lại
+      },
+
+      /** Đặt kích thước ô giữ chỗ.
+       *
+       * ⚠ Phải rộng ĐÚNG bằng canvas sẽ vẽ ra, không phải rộng bằng cả cột.
+       * Canvas hiển thị ở `khổ trang × tiLe`, còn ô rỗng thì giãn hết cột — nên
+       * mỗi trang vẽ xong LẠI CO LẠI, đẩy mọi trang dưới nó lên. Đo được: mục
+       * lục nhảy tới trang 5 thì trượt 429px, trang 7 trượt 915px, và càng
+       * nhiều trang đã vẽ thì càng lệch. Thanh cuộn cũng giật theo.
+       */
+      coKhung() {
+        if (!_kho) return;
+        document.querySelectorAll('#pdfjs [data-trang]').forEach((e) => {
+          if (e.firstChild) return;             // đã vẽ, canvas tự quyết
+          e.style.width = (_kho[0] * this.tiLe) + 'px';
+          e.style.maxWidth = '100%';
+          e.style.aspectRatio = _kho[0] + ' / ' + _kho[1];
+        });
       },
 
       async veTrang(el) {
@@ -387,6 +456,7 @@
         cv.style.display = 'block';
         cv.style.maxWidth = '100%';
         await tr.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+        el.style.aspectRatio = ''; el.style.width = '';   // canvas tự quyết
         el.replaceChildren(cv);
       },
 
@@ -397,13 +467,14 @@
           if (r.top < innerHeight * 2 && r.bottom > -innerHeight) this.veTrang(e);
         });
       },
-      phongTo()   { this.tiLe = Math.min(4, +(this.tiLe + 0.25).toFixed(2)); this._veLai(); },
-      thuNho()    { this.tiLe = Math.max(0.5, +(this.tiLe - 0.25).toFixed(2)); this._veLai(); },
+      phongTo()   { this.tiLe = Math.min(4, +(this.tiLe + 0.25).toFixed(2)); this.coKhung(); this._veLai(); },
+      thuNho()    { this.tiLe = Math.max(0.5, +(this.tiLe - 0.25).toFixed(2)); this.coKhung(); this._veLai(); },
       async vuaBeRong() {
         if (!_pdf) return;
         const w = (document.getElementById('pdfjs') || {}).clientWidth || 800;
         const vp = (await _pdf.getPage(1)).getViewport({ scale: 1 });
         this.tiLe = +(w / vp.width).toFixed(2);
+        this.coKhung();
         this._veLai();
       },
       /* Kéo giãn từng đoạn cho khớp đúng bề rộng của nó trong ảnh. Cỡ chữ suy từ
