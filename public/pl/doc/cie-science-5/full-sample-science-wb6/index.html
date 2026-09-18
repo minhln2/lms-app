@@ -107,7 +107,8 @@
     Không xem được thì <a :href="pdfGoc" target="_blank" rel="noopener"
        class="underline font-medium text-indigo-700">mở ở tab mới ↗</a>.
   </p>
-  <iframe :src="pdfGoc" title="Bản PDF" loading="lazy"
+  
+  <iframe :src="srcNang" title="Bản PDF"
           class="w-full h-[80vh] border border-slate-200 rounded-lg bg-white"></iframe>
 
 </main>
@@ -252,7 +253,7 @@
       pdfGoc: "https://minhln2.github.io/lms/pl/materials/cie-science-5/books-grade-5/FULL_SAMPLE_Science_WB6.pdf",
       pdfJsUrl: "../../../../assets/pdf.e73f3ce5.mjs",
       pdfWorkerUrl: "../../../../assets/pdf.worker.490b29ce.mjs",
-      tiLe: 1.2, soTrang: 0, pdfLoi: '',
+      tiLe: 1.2, soTrang: 0, pdfLoi: '', srcNang: '',
       user: "pl", course: "cie-science-5",
       secret: localStorage.getItem('lms_key') || '',
 
@@ -311,7 +312,9 @@
 
       /** Nạp PDF.js và dựng khung trang. Chỉ chạy MỘT lần, lúc bấm 📄. */
       async moPdf() {
-        if (_pdf || this.pdfLoi || !document.getElementById('pdfjs')) return;
+        // Nhánh file nặng: không có #pdfjs, chỉ gắn src cho iframe rồi thôi.
+        if (!document.getElementById('pdfjs')) { this.srcNang = this.pdfGoc; return; }
+        if (_pdf || this.pdfLoi) return;
         try {
           const pdfjs = await import(this.pdfJsUrl);
           pdfjs.GlobalWorkerOptions.workerSrc = this.pdfWorkerUrl;
