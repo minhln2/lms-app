@@ -8,7 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>grade 6 activity 1.pdf · CIE Science 5</title>
-<link rel="stylesheet" href="../../../../assets/tw.d0ff20b5.css">
+<link rel="stylesheet" href="../../../../assets/tw.b53f1cf6.css">
 <style>
   [x-cloak] { display: none !important; }
   #pdf { width:100%; height:calc(100vh - 8.5rem); border:0; }
@@ -101,18 +101,41 @@
 </main>
 
 
-<!-- iframe dựng LÚC BẤM, không nhúng sẵn: bản PDF của một bộ slide tới ~9MB,
-     nhúng sẵn là ai mở trang cũng tải chừng ấy dù chỉ định đọc. -->
-<main x-show="che === 'pdf'" x-cloak class="max-w-5xl mx-auto px-4 py-4 space-y-2">
-  
-  <p class="text-xs text-slate-500">
-    Không thấy nội dung hiện ra?
-    <a :href="srcPdf || pdfGoc" target="_blank" rel="noopener"
-       class="text-indigo-600 hover:underline font-medium">Mở bản PDF ở tab mới ↗</a>
-    — một số trình duyệt, nhất là trên điện thoại, không hiển thị PDF nhúng trong trang.
+<!-- ── Chế độ 📄: TỰ VẼ bằng PDF.js ────────────────────────────────────────
+     KHÔNG dùng <iframe src="*.pdf">: Chrome có tuỳ chọn "Download PDFs instead
+     of automatically opening them", bật lên thì khung nhúng chỉ hiện một ô đen
+     kèm nút Open — và KHÔNG header nào đè được lựa chọn đó. Tự vẽ ra canvas thì
+     trình xem PDF của trình duyệt không tham gia, nên thiết lập kia vô hiệu.
+     Đây cũng là cách Canvas/Canvadocs làm.
+
+     PDF.js (0,51 MB sau gzip) chỉ tải khi bấm 📄. -->
+<main x-show="che === 'pdf'" x-cloak class="max-w-5xl mx-auto px-4 py-4">
+
+  <div class="no-print sticky top-[3.1rem] z-10 mb-3 flex items-center gap-2 flex-wrap
+              bg-white/95 backdrop-blur border border-slate-200 rounded-lg px-2 py-1.5">
+    <button @click="thuNho()" :disabled="tiLe <= 0.5" type="button" title="Thu nhỏ"
+            class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700 disabled:opacity-40">−</button>
+    <span class="text-xs text-slate-600 tabular-nums w-14 text-center"
+          x-text="Math.round(tiLe * 100) + '%'"></span>
+    <button @click="phongTo()" :disabled="tiLe >= 4" type="button" title="Phóng to"
+            class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700 disabled:opacity-40">+</button>
+    <button @click="vuaBeRong()" type="button"
+            class="px-3 py-2 text-xs font-medium rounded-lg border border-slate-300 text-slate-700">Vừa bề rộng</button>
+    <span x-show="soTrang" x-cloak class="ml-auto text-xs text-slate-500 tabular-nums"
+          x-text="soTrang + ' trang'"></span>
+    <a :href="pdfGoc" target="_blank" rel="noopener"
+       class="px-3 py-2 text-xs font-medium rounded-lg border border-slate-300 text-slate-700">Mở ở tab mới ↗</a>
+  </div>
+
+  <p x-show="pdfLoi" x-cloak
+     class="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-900">
+    <span x-text="pdfLoi"></span>
+    — <a :href="pdfGoc" target="_blank" rel="noopener" class="underline font-medium">mở bản PDF ở tab mới</a>.
   </p>
-  <iframe id="pdf" :src="srcPdf" title="Bản PDF của grade 6 activity 1.pdf"
-          class="rounded-lg border border-slate-200 bg-white"></iframe>
+  <p x-show="!pdfLoi && !soTrang" x-cloak class="text-sm text-slate-500">Đang mở bản PDF…</p>
+
+  <div id="pdfjs" class="space-y-3"></div>
+
 </main>
 
 
@@ -239,14 +262,23 @@
 
 <script>
   function docStore() {
+    // ⚠ Tài liệu PDF.js phải nằm NGOÀI state của Alpine. Alpine 3 bọc mọi thứ
+    // trong `x-data` bằng Proxy phản ứng, còn `PDFDocumentProxy` đọc trường
+    // riêng tư `#…` của chính nó — qua một Proxy thì JS ném
+    // "Cannot read private member #qs from an object whose class did not
+    // declare it" và trang chỉ hiện "Chưa mở được bản PDF". Để trong closure
+    // thì Alpine không với tới. Cùng lý do cho IntersectionObserver.
+    let _pdf = null, _oq = null;
     return {
       
       che: null,
-      srcPdf: '',
       // Giá trị đi vào STATE, không nhúng thẳng `|tojson` vào thuộc tính HTML:
       // `tojson` sinh chuỗi bọc nháy kép, mà thuộc tính cũng đóng bằng nháy kép
       // → đứt thuộc tính và chết cả Alpine. Đã dính BA lần trong dự án này.
       pdfGoc: "https://minhln2.github.io/lms/pl/materials/cie-science-5/unit-2-materials-properties-and-changes-grade-5/grade 6 activity 1.pdf",
+      pdfJsUrl: "../../../../assets/pdf.e73f3ce5.mjs",
+      pdfWorkerUrl: "../../../../assets/pdf.worker.490b29ce.mjs",
+      tiLe: 1.2, soTrang: 0, pdfLoi: '',
       user: "pl", course: "cie-science-5",
       secret: localStorage.getItem('lms_key') || '',
 
@@ -291,16 +323,85 @@
           try { nho = localStorage.getItem('lms_doc_mode'); } catch (e) {}
           this.che = nho === 'pdf' ? 'pdf' : 'doc';
         }
-        if (this.che === 'pdf') this.srcPdf = "https://minhln2.github.io/lms/pl/materials/cie-science-5/unit-2-materials-properties-and-changes-grade-5/grade 6 activity 1.pdf";
+        if (this.che === 'pdf') this.moPdf();
         this.$nextTick(() => this.canhChu());
         addEventListener('resize', () => { clearTimeout(this._h); this._h = setTimeout(() => this.canhChu(), 150); });
         if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => this.canhChu());
       },
       doiCheDo(c, luu) {
         this.che = c;
-        if (c === 'pdf' && !this.srcPdf) this.srcPdf = "https://minhln2.github.io/lms/pl/materials/cie-science-5/unit-2-materials-properties-and-changes-grade-5/grade 6 activity 1.pdf";
+        if (c === 'pdf') this.moPdf();
         if (luu) { try { localStorage.setItem('lms_doc_mode', c); } catch (e) {} }
         if (c === 'doc') this.$nextTick(() => this.canhChu());
+      },
+
+      /** Nạp PDF.js và dựng khung trang. Chỉ chạy MỘT lần, lúc bấm 📄. */
+      async moPdf() {
+        if (_pdf || this.pdfLoi || !document.getElementById('pdfjs')) return;
+        try {
+          const pdfjs = await import(this.pdfJsUrl);
+          pdfjs.GlobalWorkerOptions.workerSrc = this.pdfWorkerUrl;
+          _pdf = await pdfjs.getDocument({ url: this.pdfGoc }).promise;
+          this.soTrang = _pdf.numPages;
+          this.$nextTick(() => this.dungKhung());
+        } catch (e) {
+          // Nói đúng loại trục trặc, đừng chìa nguyên văn lỗi thư viện ra cho trẻ.
+          console.warn('PDF.js hỏng:', e);
+          this.pdfLoi = 'Chưa mở được bản PDF ngay trong trang';
+        }
+      },
+
+      /** Một khung trống cho mỗi trang; VẼ khi cuộn tới.
+       *  Vẽ hết ngay thì một cuốn 192 trang là 192 canvas trong bộ nhớ. */
+      dungKhung() {
+        const ct = document.getElementById('pdfjs');
+        if (!ct || !_pdf) return;
+        ct.innerHTML = '';
+        if (_oq) _oq.disconnect();
+        _oq = new IntersectionObserver((muc) => {
+          muc.forEach((m) => { if (m.isIntersecting) this.veTrang(m.target); });
+        }, { rootMargin: '800px 0px' });
+        for (let i = 1; i <= _pdf.numPages; i++) {
+          const d = document.createElement('div');
+          d.className = 'bg-white border border-slate-200 rounded-lg overflow-hidden mx-auto';
+          d.dataset.trang = String(i);
+          ct.appendChild(d);
+          _oq.observe(d);
+        }
+      },
+
+      async veTrang(el) {
+        if (el.dataset.xong === '1' && el.dataset.tiLe === String(this.tiLe)) return;
+        el.dataset.xong = '1'; el.dataset.tiLe = String(this.tiLe);
+        const tr = await _pdf.getPage(Number(el.dataset.trang));
+        // Nhân theo devicePixelRatio để chữ không rỗ trên màn hình nét cao.
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const vp = tr.getViewport({ scale: this.tiLe * dpr });
+        const cv = document.createElement('canvas');
+        cv.width = vp.width; cv.height = vp.height;
+        cv.style.width = (vp.width / dpr) + 'px';
+        cv.style.height = 'auto';
+        cv.style.display = 'block';
+        cv.style.maxWidth = '100%';
+        await tr.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+        el.replaceChildren(cv);
+      },
+
+      _veLai() {
+        document.querySelectorAll('#pdfjs [data-trang]').forEach((e) => {
+          e.dataset.xong = '';
+          const r = e.getBoundingClientRect();
+          if (r.top < innerHeight * 2 && r.bottom > -innerHeight) this.veTrang(e);
+        });
+      },
+      phongTo()   { this.tiLe = Math.min(4, +(this.tiLe + 0.25).toFixed(2)); this._veLai(); },
+      thuNho()    { this.tiLe = Math.max(0.5, +(this.tiLe - 0.25).toFixed(2)); this._veLai(); },
+      async vuaBeRong() {
+        if (!_pdf) return;
+        const w = (document.getElementById('pdfjs') || {}).clientWidth || 800;
+        const vp = (await _pdf.getPage(1)).getViewport({ scale: 1 });
+        this.tiLe = +(w / vp.width).toFixed(2);
+        this._veLai();
       },
       /* Kéo giãn từng đoạn cho khớp đúng bề rộng của nó trong ảnh. Cỡ chữ suy từ
          PDF không bao giờ ra đúng bề rộng (font trong PDF khác font máy); không
