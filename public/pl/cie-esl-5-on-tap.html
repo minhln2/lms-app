@@ -864,7 +864,7 @@
         // sẵn được: `sedimentary` trong bài về đá không giống ở chỗ khác. Vì vậy
         // gọi Gemini lúc bấm, kèm thuật ngữ của mục đang mở.
         tra: { btn: null, show: false, mode: 'word', text: '', sent: '',
-               loading: false, err: '', data: null },
+               loading: false, err: '', ly_do: '', data: null },
 
         /** Nới vùng chọn ra nguyên từ: kéo lệch nửa chữ vẫn tra đúng từ. */
         _noRong(r) {
@@ -979,7 +979,7 @@
         async traMo(mode) {
           if (mode) this.tra.mode = mode;
           this.tra.show = true; this.tra.btn = null;
-          this.tra.err = ''; this.tra.data = null; this.tra.loading = true;
+          this.tra.err = ''; this.tra.ly_do = ''; this.tra.data = null; this.tra.loading = true;
           if (!this.secret) {                      // chế độ chỉ đọc, không gọi API
             this.tra.data = this._traOffline(); this.tra.loading = false; return;
           }
@@ -999,7 +999,11 @@
           } catch (e) {
             // Lùi về glossary có sẵn. Chỉ báo lỗi khi lùi cũng không ra gì.
             this.tra.data = this._traOffline();
-            if (!this.tra.data) this.tra.err = String(e.message || e);
+            // GIỮ lại lý do thật. Dòng ghi chú cũ nói cứng "không có mạng", mà
+            // một lượt 412 hay 502 thì mạng vẫn tốt — nói sai lý do còn tệ hơn
+            // không nói, vì người ta đi kiểm wifi thay vì kiểm dịch vụ.
+            this.tra.ly_do = String(e.message || e);
+            if (!this.tra.data) this.tra.err = this.tra.ly_do;
           }
           this.tra.loading = false;
         },
@@ -1041,7 +1045,8 @@
           return d <= 0 ? 'hôm nay' : d === 1 ? 'hôm qua' : d + ' ngày trước';
         },
 
-        traDong() { this.tra.show = false; this.tra.btn = null; this.tra.data = null; this.tra.err = ''; },
+        traDong() { this.tra.show = false; this.tra.btn = null; this.tra.data = null;
+                    this.tra.err = ''; this.tra.ly_do = ''; },
 
         // ── Thẻ ghi nhớ: HỌC ───────────────────────────────────────────────────
         // Xem lần lượt, hiện cả hai mặt, không chấm. Thứ tự XÁO NGẪU NHIÊN mỗi lần
@@ -2763,7 +2768,8 @@
         <!-- Chỉ có glossary của bài, không gọi được Gemini. Nói ra, nhưng nói
              nhẹ: đây là suy giảm mềm, không phải hỏng. -->
         <p x-show="!tra.loading && tra.data && tra.data._offline" x-cloak
-           class="px-4 pb-3 text-xs text-slate-400">Nghĩa lấy từ học liệu của bài (không có mạng).</p>
+           class="px-4 pb-3 text-xs text-slate-400"
+           x-text="'Nghĩa lấy từ học liệu của bài' + (tra.ly_do ? ' — ' + tra.ly_do : '.')"></p>
 
         <p x-show="!tra.loading && !tra.data" x-cloak class="px-4 py-5 text-sm text-slate-500"
            x-text="tra.err || 'Không tìm thấy nghĩa của mục này.'"></p>

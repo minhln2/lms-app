@@ -269,7 +269,13 @@ export async function handleLookup(request, env) {
     // In CÂU LỖI THẬT, đừng nuốt thành một mã trống. Cùng bài học với lượt sync
     // 2026-09-12: wrangler in dòng khác đè lên, câu 401 bị che, và mất nửa ngày.
     const t = await g.text().catch(() => "");
-    return json({ error: `Gemini lỗi ${g.status}`, chi_tiet: t.slice(0, 300) }, 502);
+    // Ghi kèm COLO. Lỗi 412 `FAILED_PRECONDITION` của API này nghĩa là "User
+    // location is not supported", tức chặn theo NƠI GỌI — mà Worker chạy ở colo
+    // Cloudflare gần người dùng nhất, và colo đó đổi giữa các ngày. Không ghi
+    // colo thì cùng một mã lỗi lúc xảy ra lúc không, không cách nào đối chiếu.
+    const colo = (request.cf && request.cf.colo) || "?";
+    console.warn(`Gemini ${g.status} @colo=${colo}: ${t.slice(0, 400)}`);
+    return json({ error: `Gemini lỗi ${g.status}`, chi_tiet: t.slice(0, 300), colo }, 502);
   }
 
   const d = await g.json();
