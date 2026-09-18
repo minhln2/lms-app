@@ -8,7 +8,7 @@
   <title>CIE ESL 5 — PL</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.d0482e9b.css">
+  <link rel="stylesheet" href="../assets/tw.ca9fa3ed.css">
   <script defer src="../assets/collapse.d0a27f2d.js"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>
@@ -112,6 +112,13 @@
     // Mã bí mật chỉ cần khi GHI, lưu trong localStorage của trình duyệt.
     // Nếu không có backend (mở file cục bộ, hoặc bản trên GitHub Pages) thì
     // trang vẫn xem được bình thường, chỉ tắt phần đánh dấu.
+
+    /* ── Tra cứu khi bôi đen ────────────────────────────────────────────────
+       Phải là HÀM trong <script>, không được nhét thẳng vào thuộc tính `x-data`:
+       `x-data` là một thuộc tính HTML, mà phần logic dùng chung dài ~160 dòng và
+       có cả dấu nháy kép — nhét vào là vỡ cú pháp HTML và TOÀN BỘ Alpine của
+       trang chết theo (đã dính: 70 lỗi "p is not defined"). `study.html` không
+       gặp vì logic của nó vốn nằm trong `studyStore()`. */
     function progressStore() {
       return {
         done: {}, hashes: {}, ready: false, online: false, saving: 0, err: '',
@@ -277,8 +284,8 @@
   <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
     <div class="max-w-4xl mx-auto px-4 py-3">
       <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-slate-500">
-  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
-  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline hover:text-indigo-600">PL</a><span class="shrink-0 text-slate-300">›</span>
+  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
+  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">PL</a><span class="shrink-0 text-slate-300">›</span>
   <span aria-current="page" class="truncate font-medium text-slate-700">CIE ESL 5</span>
 </nav>
       <div class="mt-1.5 flex items-center gap-3 flex-wrap">
@@ -291,7 +298,7 @@
             
             <a href="https://lms.vinschool.edu.vn/courses/79605/modules" target="_blank" rel="noopener noreferrer"
                title="Mở trang Các học phần của môn này trên LMS (cần đăng nhập)"
-               class="shrink-0 text-xs text-indigo-400 hover:text-indigo-600 hover:underline whitespace-nowrap">Xem trang gốc ↗</a>
+               class="shrink-0 text-xs text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2 whitespace-nowrap">Xem trang gốc ↗</a>
             
           </div>
           <p class="text-xs text-slate-500">6 tuần/bài · cập nhật 2026-09-18 08:11</p>
@@ -301,7 +308,7 @@
         
         <div class="w-full sm:w-auto shrink-0">
           <a href="cie-esl-5-on-tap.html"
-             class="inline-block px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
+             class="inline-block px-3 py-2 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
             📖 Ôn tập
           </a>
         </div>
@@ -316,11 +323,11 @@
                  class="w-full pl-9 pr-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-400">
         </div>
         <button @click="$dispatch('expand-all')"
-                class="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
+                class="px-3 py-2 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
           Mở rộng hết
         </button>
         <button @click="$dispatch('collapse-all')"
-                class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 whitespace-nowrap">
+                class="px-3 py-2 text-xs font-medium rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 whitespace-nowrap">
           Thu gọn hết
         </button>
       </div>
@@ -330,7 +337,7 @@
         
         <button @click="hw = !hw"
                 :class="hw ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-rose-600 border-rose-300 hover:border-rose-500'"
-                class="px-2 py-1 text-xs font-medium rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs font-medium rounded-full border transition-colors">
           🏠 Homework
         </button>
         <span class="w-px h-4 bg-slate-300 mx-0.5"></span>
@@ -338,31 +345,31 @@
         
         <button @click="toggle('page')"
                 :class="types.includes('page') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
-                class="px-2 py-1 text-xs rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs rounded-full border transition-colors">
           📄 văn bản
         </button>
         
         <button @click="toggle('file')"
                 :class="types.includes('file') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
-                class="px-2 py-1 text-xs rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs rounded-full border transition-colors">
           📎 tài liệu
         </button>
         
         <button @click="toggle('external')"
                 :class="types.includes('external') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
-                class="px-2 py-1 text-xs rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs rounded-full border transition-colors">
           🔗 liên kết ngoài
         </button>
         
         <button @click="recent7 = !recent7"
                 :class="recent7 ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-700 border-amber-300 hover:border-amber-500'"
-                class="px-2 py-1 text-xs font-medium rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs font-medium rounded-full border transition-colors">
           🕓 7 ngày
         </button>
         <template x-if="p.online">
           <button @click="todo = !todo"
                   :class="todo ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-700 border-emerald-300 hover:border-emerald-500'"
-                  class="px-2 py-1 text-xs font-medium rounded-full border transition-colors">
+                  class="px-2.5 py-2 text-xs font-medium rounded-full border transition-colors">
             ○ Chưa học
           </button>
         </template>
@@ -458,7 +465,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://lms.vinschool.edu.vn/courses/79605/pages/complete-workbook-2-dot-1-+-2-dot-2" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Complete Workbook 2.1 + 2.2
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -488,7 +495,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/79605/pages/complete-workbook-2-dot-1-+-2-dot-2" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -541,7 +548,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-5-unit-1-revision-2-1-2-2/Changing Nouns to Adjectives.docx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Changing Nouns to Adjectives.docx
               </a>
@@ -602,7 +609,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-5-unit-1-revision-2-1-2-2/1. 6Lm.01 – Understand, with support, most of the main points of short and extended talk..pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 1. 6Lm.01 – Understand, with support, most of the main points of short and extended talk..pptx
               </a>
@@ -663,7 +670,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-5-unit-1-revision-2-1-2-2/2. 6Sc.03 - Ask questions to find out information and to clarify meaning on a range of topics and respond accordingly..pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 2. 6Sc.03 - Ask questions to find out information and to clarify meaning on a range of topics and respond accordingly..pptx
               </a>
@@ -724,7 +731,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-5-unit-1-revision-2-1-2-2/3. 6Rd.01 - Understand, with support, most of the main points of short and extended text..pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 3. 6Rd.01 - Understand, with support, most of the main points of short and extended text..pptx
               </a>
@@ -801,7 +808,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://englishpracticetest.net/practice-listening-test-for-b1-with-answer-and-audioscript-test-18/" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Listening Practise
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -864,7 +871,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-5-unit-1-revision-2-1-2-2/LMS Reading Comprehension.docx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Reading Comprehension.docx
               </a>
@@ -925,7 +932,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://learnenglish.britishcouncil.org/free-resources/reading/b1/flyer-gym" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Reading Comprehension 2
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1035,7 +1042,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://lms.vinschool.edu.vn/courses/79605/pages/complete-workbook-sections-1-dot-4-+-1-dot-6" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Complete Workbook sections 1.4 + 1.6
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1065,7 +1072,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/79605/pages/complete-workbook-sections-1-dot-4-+-1-dot-6" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -1102,7 +1109,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://lms.vinschool.edu.vn/courses/79605/pages/complete-worksheets-on-lms-as-revision" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Complete Worksheets on LMS as Revision
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1132,7 +1139,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/79605/pages/complete-worksheets-on-lms-as-revision" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -1201,7 +1208,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-4-1-4-1-6/LMS verb direct and indirect object WS.docx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 verb direct and indirect object WS.docx
               </a>
@@ -1262,7 +1269,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-4-1-4-1-6/LMS verb object infinitive.docx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 verb object infinitive WS.docx
               </a>
@@ -1323,7 +1330,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-4-1-4-1-6/LMS Present Perfect Tense WS.docx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Present Perfect Tense WS.docx
               </a>
@@ -1384,7 +1391,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-4-1-4-1-6/LMS preposition.docx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Prepositions before nouns WS.docx
               </a>
@@ -1476,7 +1483,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://drive.google.com/open?id=1uEyiCCOtdjiAvJjd_gaGn3DPFPEKfIiq&amp;usp=drive_copy" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 ESL Learner&#39;s Book
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1539,7 +1546,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://drive.google.com/open?id=1pM9cdyV9F3xcIw_Y4eHNE0scd9J7azgO&amp;usp=drive_copy" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 ESL Workbook
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1648,7 +1655,7 @@
             <div class="min-w-0 flex-1">
               
               <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
                 <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Workbook pages 8 - 11</span>
                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
                      :class="o ? 'rotate-180' : ''"
@@ -1679,7 +1686,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/79605/pages/workbook-pages-8-11" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -1738,7 +1745,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-1-1-1-1-2/3. 6Ld.04 Understand, with support, most specific information and detail of short and extended talk.pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 3. 6Ld.04 Understand, with support, most specific information and detail of short and extended talk.pptx
               </a>
@@ -1799,7 +1806,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-1-1-1-1-2/4. 6So.01 - Express opinions, feelings and reactions..pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 4. 6So.01 - Express opinions, feelings and reactions..pptx
               </a>
@@ -1860,7 +1867,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-1-1-1-1-2/5-6. 6Ug.07 – Use present perfect forms to express recent, indefinite and unfinished past..pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 5-6. 6Ug.07 – Use present perfect forms to express recent, indefinite and unfinished past..pptx
               </a>
@@ -1921,7 +1928,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-1-1-1-1-2/7. 6Rd.03 - Understand, with support, most of the detail of an argument in short and extended texts..pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 7. 6Rd.03 - Understand, with support, most of the detail of an argument in short and extended texts..pptx
               </a>
@@ -1998,7 +2005,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-1-1-1-1-2/Present Perfect Tense practice.pdf" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Present Perfect Tense practice.pdf
               </a>
@@ -2059,7 +2066,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-1-1-1-1-2/Positive Present Perfect Tense Practise.pdf" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Positive Present Perfect Tense Practise.pdf
               </a>
@@ -2120,7 +2127,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-1-1-1-1-2/Negative Present Perfect Tense Practise.pdf" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Negative Present Perfect Tense Practise.pdf
               </a>
@@ -2227,7 +2234,7 @@
             <div class="min-w-0 flex-1">
               
               <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
                 <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Complete the booklet on the past tense</span>
                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
                      :class="o ? 'rotate-180' : ''"
@@ -2258,7 +2265,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/79605/pages/complete-the-booklet-on-the-past-tense" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -2318,7 +2325,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-2-1-3/1. 6Uv.02 - Use an increasing range of prepositions preceding nouns and adjectives in prepositional phrases..pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 1. 6Uv.02 - Use an increasing range of prepositions preceding nouns and adjectives in prepositional phrases..pptx
               </a>
@@ -2379,7 +2386,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-2-1-3/2. 6Sor.01 - Link sentences using an increased range of connectives..pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 2. 6Sor.01 - Link sentences using an increased range of connectives..pptx
               </a>
@@ -2440,7 +2447,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-2-1-3/3. Understand, with support most of the main points of short and extended texts.pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 3. Understand, with support most of the main points of short and extended texts.pptx
               </a>
@@ -2501,7 +2508,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-2-1-3/4. To plan a piece on an inpsirational person.pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 4. To plan a piece on an inpsirational person.pptx
               </a>
@@ -2562,7 +2569,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-2-1-3/5-6. To write an explanation text on an inspirational person.pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 5-6. To write an explanation text on an inspirational person.pptx
               </a>
@@ -2639,7 +2646,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://www.english-grammar.at/online_exercises/prepositions/prep033.htm" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Preposition Practise
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -2749,7 +2756,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://lms.vinschool.edu.vn/courses/79605/pages/complete-workbook-sections-1-dot-3-+-1-dot-5" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Complete Workbook sections 1.3 + 1.5
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -2779,7 +2786,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/79605/pages/complete-workbook-sections-1-dot-3-+-1-dot-5" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -2832,7 +2839,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-3-1-5/1-2. 6Rm.01 6Rm.02 Understand, with support, most of the main points of short and extended texts.pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 1-2. 6Rm.01 6Rm.02 Understand, with support, most of the main points of short and extended texts.pptx
               </a>
@@ -2909,7 +2916,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://englishpracticetest.net/beaches-b1-english-reading-test/" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Reading Practice
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -2972,7 +2979,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://englishpracticetest.net/b1-use-of-english-test-1-multiple-choice-gaps/" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Use of English Practice
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -3035,7 +3042,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://englishpracticetest.net/present-perfect-and-past-simple-how-long-and-for-since-b1-english-grammar-test/" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Present Perfect and Past Simple Practice
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -3098,7 +3105,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://englishpracticetest.net/practice-listening-test-for-b1-with-answer-and-audioscript-test-32/" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Listening Practice
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

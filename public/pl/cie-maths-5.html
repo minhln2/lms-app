@@ -8,7 +8,7 @@
   <title>CIE Maths 5 — PL</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.d0482e9b.css">
+  <link rel="stylesheet" href="../assets/tw.ca9fa3ed.css">
   <script defer src="../assets/collapse.d0a27f2d.js"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>
@@ -112,6 +112,13 @@
     // Mã bí mật chỉ cần khi GHI, lưu trong localStorage của trình duyệt.
     // Nếu không có backend (mở file cục bộ, hoặc bản trên GitHub Pages) thì
     // trang vẫn xem được bình thường, chỉ tắt phần đánh dấu.
+
+    /* ── Tra cứu khi bôi đen ────────────────────────────────────────────────
+       Phải là HÀM trong <script>, không được nhét thẳng vào thuộc tính `x-data`:
+       `x-data` là một thuộc tính HTML, mà phần logic dùng chung dài ~160 dòng và
+       có cả dấu nháy kép — nhét vào là vỡ cú pháp HTML và TOÀN BỘ Alpine của
+       trang chết theo (đã dính: 70 lỗi "p is not defined"). `study.html` không
+       gặp vì logic của nó vốn nằm trong `studyStore()`. */
     function progressStore() {
       return {
         done: {}, hashes: {}, ready: false, online: false, saving: 0, err: '',
@@ -277,8 +284,8 @@
   <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
     <div class="max-w-4xl mx-auto px-4 py-3">
       <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-slate-500">
-  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
-  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline hover:text-indigo-600">PL</a><span class="shrink-0 text-slate-300">›</span>
+  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
+  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">PL</a><span class="shrink-0 text-slate-300">›</span>
   <span aria-current="page" class="truncate font-medium text-slate-700">CIE Maths 5</span>
 </nav>
       <div class="mt-1.5 flex items-center gap-3 flex-wrap">
@@ -291,7 +298,7 @@
             
             <a href="https://lms.vinschool.edu.vn/courses/79608/modules" target="_blank" rel="noopener noreferrer"
                title="Mở trang Các học phần của môn này trên LMS (cần đăng nhập)"
-               class="shrink-0 text-xs text-indigo-400 hover:text-indigo-600 hover:underline whitespace-nowrap">Xem trang gốc ↗</a>
+               class="shrink-0 text-xs text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2 whitespace-nowrap">Xem trang gốc ↗</a>
             
           </div>
           <p class="text-xs text-slate-500">6 tuần/bài · cập nhật 2026-09-14 17:32</p>
@@ -301,7 +308,7 @@
         
         <div class="w-full sm:w-auto shrink-0">
           <a href="cie-maths-5-on-tap.html"
-             class="inline-block px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
+             class="inline-block px-3 py-2 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
             📖 Ôn tập
           </a>
         </div>
@@ -316,11 +323,11 @@
                  class="w-full pl-9 pr-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-400">
         </div>
         <button @click="$dispatch('expand-all')"
-                class="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
+                class="px-3 py-2 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
           Mở rộng hết
         </button>
         <button @click="$dispatch('collapse-all')"
-                class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 whitespace-nowrap">
+                class="px-3 py-2 text-xs font-medium rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 whitespace-nowrap">
           Thu gọn hết
         </button>
       </div>
@@ -330,7 +337,7 @@
         
         <button @click="hw = !hw"
                 :class="hw ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-rose-600 border-rose-300 hover:border-rose-500'"
-                class="px-2 py-1 text-xs font-medium rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs font-medium rounded-full border transition-colors">
           🏠 Homework
         </button>
         <span class="w-px h-4 bg-slate-300 mx-0.5"></span>
@@ -338,31 +345,31 @@
         
         <button @click="toggle('page')"
                 :class="types.includes('page') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
-                class="px-2 py-1 text-xs rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs rounded-full border transition-colors">
           📄 văn bản
         </button>
         
         <button @click="toggle('file')"
                 :class="types.includes('file') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
-                class="px-2 py-1 text-xs rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs rounded-full border transition-colors">
           📎 tài liệu
         </button>
         
         <button @click="toggle('external')"
                 :class="types.includes('external') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
-                class="px-2 py-1 text-xs rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs rounded-full border transition-colors">
           🔗 liên kết ngoài
         </button>
         
         <button @click="recent7 = !recent7"
                 :class="recent7 ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-700 border-amber-300 hover:border-amber-500'"
-                class="px-2 py-1 text-xs font-medium rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs font-medium rounded-full border transition-colors">
           🕓 7 ngày
         </button>
         <template x-if="p.online">
           <button @click="todo = !todo"
                   :class="todo ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-700 border-emerald-300 hover:border-emerald-500'"
-                  class="px-2 py-1 text-xs font-medium rounded-full border transition-colors">
+                  class="px-2.5 py-2 text-xs font-medium rounded-full border transition-colors">
             ○ Chưa học
           </button>
         </template>
@@ -490,7 +497,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-5-unit-4-2-representing-letters-as-quantities/LMS Finding Pairs.pdf" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Finding Pairs.pdf
               </a>
@@ -551,7 +558,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-5-unit-4-2-representing-letters-as-quantities/LMS Form equations.pdf" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Form equations.pdf
               </a>
@@ -612,7 +619,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-5-unit-4-2-representing-letters-as-quantities/LMS Substitution.pdf" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Substitution.pdf
               </a>
@@ -673,7 +680,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-5-unit-4-2-representing-letters-as-quantities/LMS add-and-subtract-negative-numbers-2.pdf" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 LMS add-and-subtract-negative-numbers-2.pdf
               </a>
@@ -781,7 +788,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://lms.vinschool.edu.vn/courses/79608/pages/complete-workbook-pages-44-48" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Complete Workbook pages 44 - 48.
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -811,7 +818,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/79608/pages/complete-workbook-pages-44-48" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -864,7 +871,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-4-unit-4-1-adding-and-subtracting-positive-and-negative-integers/1. 6Ni.01 – Estimate, add and subtract integers.pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 1. 6Ni.01 – Estimate, add and subtract integers.pptx
               </a>
@@ -941,7 +948,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://www.youtube.com/watch?v=186wdnoAYJc" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Adding and Subtracting Large Numbers - Video
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1004,7 +1011,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://www.youtube.com/watch?v=3LUTYhmltQY" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Adding Integers - Video
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1067,7 +1074,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://www.youtube.com/watch?v=Dfytkh_lYME" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Subtracting Integers - Video
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1130,7 +1137,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://drive.google.com/open?id=1rlu0XDhEUHJ1HW357IQUvjT3sc14-7Hw&amp;usp=drive_copy" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Addition and Subtraction Mastery Questions (With Answers)
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1193,7 +1200,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://drive.google.com/file/d/1fPRhqpPPO7YOJO78Q65cdP8dqFboIvJo/view?usp=drive_link" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Addition and Subtraction Worded Questions (With Answers)
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1256,7 +1263,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://drive.google.com/open?id=1eNgVZKb24SlenO2G40cZ0t2nnKNE3t5_&amp;usp=drive_copy" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Adding and Subtracting Positive and Negative Numbers - Worksheet-Answers
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1319,7 +1326,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://drive.google.com/file/d/1kmYy19NQ2Tzqrv5uV1jEpsPrwyvcQA7X/view?usp=drive_link" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Adding and Subtracting Positive and Negative Numbers - Worksheet
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1429,7 +1436,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-4-unit-1-2-revision/1. Unit 1 revision.docx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 1. Unit 1 revision.docx
               </a>
@@ -1490,7 +1497,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-4-unit-1-2-revision/2. Unit 2 revision.docx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 2. Unit 2 revision.docx
               </a>
@@ -1567,7 +1574,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-4-unit-1-2-revision/Unit 1 - The Number System content poster.pdf" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Unit 1 - The Number System content poster.pdf
               </a>
@@ -1628,7 +1635,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-4-unit-1-2-revision/Unit 2 - Number Sequences Content poster.pdf" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Unit 2 - Number Sequences Content poster.pdf
               </a>
@@ -1736,7 +1743,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://lms.vinschool.edu.vn/courses/79608/pages/complete-workbook-pages-27-35" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Complete Workbook pages 27 - 35
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1766,7 +1773,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/79608/pages/complete-workbook-pages-27-35" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -1819,7 +1826,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-3-unit-2-2-special-numbers-unit-2-3-common-multiples-and-factors/6. 6Ni.08 – Use knowledge of multiplication and square numbers to recognise cube numbers..pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 1. 6Ni.08 – Use knowledge of multiplication and square numbers to recognise cube numbers..pptx
               </a>
@@ -1880,7 +1887,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-3-unit-2-2-special-numbers-unit-2-3-common-multiples-and-factors/1. 6Nc.04 6Ni.08 Use knowledge of square numbers to generate terms in a sequence given it’s position.pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 2. 6Nc.04 6Ni.08 Use knowledge of square numbers to generate terms in a sequence given it’s position.pptx
               </a>
@@ -1941,7 +1948,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-3-unit-2-2-special-numbers-unit-2-3-common-multiples-and-factors/2-3. 6Ni.06 – Understand common multiples and common factors..pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 3-4. 6Ni.06 – Understand common multiples and common factors..pptx
               </a>
@@ -2018,7 +2025,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://www.youtube.com/watch?v=2u-vI3eeyqc" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Cube Numbers - Video
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -2081,7 +2088,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://drive.google.com/open?id=1RCq0Lf2gzSYozR9o25hw4AxAHOldLqTY&amp;usp=drive_copy" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Cube Numbers - Differentiated Activity Sheets
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -2144,7 +2151,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://drive.google.com/file/d/1KzCtFs_hyCklh5rZiDEY52__HZLfgZr5/view?usp=drive_link" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Using Square and Cubed Numbers - Worksheet
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -2207,7 +2214,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://www.sheppardsoftware.com/math/numbers/fruit-splat-squares-cubes/" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Square and Cube Numbers - Game
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -2270,7 +2277,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://www.youtube.com/watch?v=N_S_wrN8ue8" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Common Factors and Mutliples - Youtube Video
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -2333,7 +2340,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://docs.google.com/presentation/d/1BsRxF5wfSbGyVqzsSBDWy1wvzmVcIZbO/edit?usp=drive_link&amp;ouid=111965366477095862136&amp;rtpof=true&amp;sd=true" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Common Factors - Alternative PPT
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -2396,7 +2403,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://drive.google.com/open?id=11zM7LB3INbR90IzuKmDCVN-iRaUkvpe8&amp;usp=drive_copy" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Common Multiples - Alternative PPT
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -2459,7 +2466,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://drive.google.com/file/d/1AcUEwzaUpTiaDiucMslpOkPLtZvjBJ11/view?usp=drive_link" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Multiples and Factors - Worksheet with answers
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -2522,7 +2529,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://www.topmarks.co.uk/maths-games/multiples-and-factors" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Common Multiples and Factors - Game
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -2632,7 +2639,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://lms.vinschool.edu.vn/courses/79608/pages/complete-workbook-pages-15-25" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Complete Workbook pages 15-25
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -2662,7 +2669,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/79608/pages/complete-workbook-pages-15-25" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -2715,7 +2722,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-2-unit-1-2-rounding-decimal-numbers-unit-2-number-sequences/1. 6Np.04 – Round numbers with two decimal places to the nearest tenth or whole number..pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 1. 6Np.04 – Round numbers with two decimal places to the nearest tenth or whole number..pptx
               </a>
@@ -2776,7 +2783,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-2-unit-1-2-rounding-decimal-numbers-unit-2-number-sequences/3. 6Nc.01 – Count on and count back in numbers of constant size.pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 3. 6Nc.01 – Count on and count back in numbers of constant size.pptx
               </a>
@@ -2837,7 +2844,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-2-unit-1-2-rounding-decimal-numbers-unit-2-number-sequences/4. 6Nc.03 – Use the relationship between repeated addition of a constant and multiplication to find and use a position to term rule..pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 4. 6Nc.03 – Use the relationship between repeated addition of a constant and multiplication to find and use a position to term rule..pptx
               </a>
@@ -2898,7 +2905,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-2-unit-1-2-rounding-decimal-numbers-unit-2-number-sequences/5. 6Nc.04 – Use knowledge of square numbers to generate terms in a sequence given it’s position..pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 5. 6Nc.04 – Use knowledge of square numbers to generate terms in a sequence given it’s position..pptx
               </a>
@@ -2975,7 +2982,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://www.youtube.com/watch?v=lw-z4AGhzgU" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Rounding Decimals - Youtube Video
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -3038,7 +3045,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://drive.google.com/open?id=1glbL52GB1KG5Z-T7Fr-HHNQ9CBiTvA2j&amp;usp=drive_copy" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Rounding to the nearest whole number - Practice
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -3101,7 +3108,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://drive.google.com/open?id=1uvoRzYvMqwmPL3u3V5X6PichPzJkyKkS&amp;usp=drive_copy" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Rounding to the nearest tenth - Practice
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -3164,7 +3171,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://www.sheppardsoftware.com/math/decimals/scooter-quest/rounding/" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Rounding Decimals - Game
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -3227,7 +3234,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-2-unit-1-2-rounding-decimal-numbers-unit-2-number-sequences/Complete the sequences.pdf" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Complete the sequences.pdf
               </a>
@@ -3288,7 +3295,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-2-unit-1-2-rounding-decimal-numbers-unit-2-number-sequences/tp2-m-161-super-sequences-activity-sheet_ver_6.pdf" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Super Sequences!
               </a>
@@ -3349,7 +3356,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-2-unit-1-2-rounding-decimal-numbers-unit-2-number-sequences/Y5 Summer Block 4 WO2 Count through zero in 1s 2022.pdf" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Y5 Summer Block 4 WO2 Count through zero in 1s 2022.pdf
               </a>
@@ -3456,7 +3463,7 @@
             <div class="min-w-0 flex-1">
               
               <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
                 <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Workbook pages 8-13</span>
                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
                      :class="o ? 'rotate-180' : ''"
@@ -3487,7 +3494,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/79608/pages/workbook-pages-8-13" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -3546,7 +3553,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-1-unit-1-1-place-value/3. 6Np01 - Understand and explain the value of each digit in decimals.pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 3.  6Np01 - Understand and explain the value of each digit in decimals.pptx
               </a>
@@ -3607,7 +3614,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-1-unit-1-1-place-value/4. 6Np.02 – Use knowledge of place value to multiply and divide whole numbers by 10, 100 and 1,000..pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 4.  6Np.02 – Use knowledge of place value to multiply and divide whole numbers by 10, 100 and 1,000..pptx
               </a>
@@ -3668,7 +3675,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-1-unit-1-1-place-value/6. 6Np.03 – Compose, decompose and regroup numbers including decimals..pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 6.  6Np.03 – Compose, decompose and regroup numbers including decimals..pptx
               </a>
@@ -3745,7 +3752,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://www.youtube.com/watch?v=KG6ILNOiMgM" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Decimal Place Value - Youtube Video
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -3808,7 +3815,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://www.youtube.com/watch?v=GfL0s6tCNV4" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Multiplying Decimals by 10, 100 and 1,000 - Youtube Video
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -3871,7 +3878,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://www.youtube.com/watch?v=GfL0s6tCNV4" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Dividing Decimals by 10, 100 and 1,000 - Youtube Video
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -3934,7 +3941,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://drive.google.com/file/d/1F9UoZ7-vECM_v6NTJxncjAvzI2f0sbGn/view?usp=drive_link" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Decimal Place Value Challenge - Worksheet with answers
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -3997,7 +4004,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://drive.google.com/open?id=1o__fto7LFEXJ0pGh5OPzb7VkVkv7tgNb&amp;usp=drive_copy" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Multiplying and dividing decimals by 10, 100 and 1,000 - Worksheet with answers
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -4060,7 +4067,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://docs.google.com/presentation/d/10xJCe3nURMINf-mq55pXcJNqUU_gniSJ/edit?usp=sharing&amp;ouid=111965366477095862136&amp;rtpof=true&amp;sd=true" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Decimals - Reasoning and Problem Solving
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -4123,7 +4130,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://docs.google.com/presentation/d/1AwFVGRaLt0unnEtqGP3PpJaqq1KaFOev/edit?usp=sharing&amp;ouid=111965366477095862136&amp;rtpof=true&amp;sd=true" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Place Value - Reasoning and Problem Solving
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

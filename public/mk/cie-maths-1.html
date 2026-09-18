@@ -8,7 +8,7 @@
   <title>CIE Maths 1 — MK</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.d0482e9b.css">
+  <link rel="stylesheet" href="../assets/tw.ca9fa3ed.css">
   <script defer src="../assets/collapse.d0a27f2d.js"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>
@@ -112,6 +112,13 @@
     // Mã bí mật chỉ cần khi GHI, lưu trong localStorage của trình duyệt.
     // Nếu không có backend (mở file cục bộ, hoặc bản trên GitHub Pages) thì
     // trang vẫn xem được bình thường, chỉ tắt phần đánh dấu.
+
+    /* ── Tra cứu khi bôi đen ────────────────────────────────────────────────
+       Phải là HÀM trong <script>, không được nhét thẳng vào thuộc tính `x-data`:
+       `x-data` là một thuộc tính HTML, mà phần logic dùng chung dài ~160 dòng và
+       có cả dấu nháy kép — nhét vào là vỡ cú pháp HTML và TOÀN BỘ Alpine của
+       trang chết theo (đã dính: 70 lỗi "p is not defined"). `study.html` không
+       gặp vì logic của nó vốn nằm trong `studyStore()`. */
     function progressStore() {
       return {
         done: {}, hashes: {}, ready: false, online: false, saving: 0, err: '',
@@ -277,8 +284,8 @@
   <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
     <div class="max-w-4xl mx-auto px-4 py-3">
       <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-slate-500">
-  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
-  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline hover:text-indigo-600">MK</a><span class="shrink-0 text-slate-300">›</span>
+  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
+  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">MK</a><span class="shrink-0 text-slate-300">›</span>
   <span aria-current="page" class="truncate font-medium text-slate-700">CIE Maths 1</span>
 </nav>
       <div class="mt-1.5 flex items-center gap-3 flex-wrap">
@@ -291,7 +298,7 @@
             
             <a href="https://lms.vinschool.edu.vn/courses/80353/modules" target="_blank" rel="noopener noreferrer"
                title="Mở trang Các học phần của môn này trên LMS (cần đăng nhập)"
-               class="shrink-0 text-xs text-indigo-400 hover:text-indigo-600 hover:underline whitespace-nowrap">Xem trang gốc ↗</a>
+               class="shrink-0 text-xs text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2 whitespace-nowrap">Xem trang gốc ↗</a>
             
           </div>
           <p class="text-xs text-slate-500">4 tuần/bài · cập nhật 2026-09-14 08:25</p>
@@ -301,7 +308,7 @@
         
         <div class="w-full sm:w-auto shrink-0">
           <a href="cie-maths-1-on-tap.html"
-             class="inline-block px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
+             class="inline-block px-3 py-2 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
             📖 Ôn tập
           </a>
         </div>
@@ -316,11 +323,11 @@
                  class="w-full pl-9 pr-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-400">
         </div>
         <button @click="$dispatch('expand-all')"
-                class="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
+                class="px-3 py-2 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
           Mở rộng hết
         </button>
         <button @click="$dispatch('collapse-all')"
-                class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 whitespace-nowrap">
+                class="px-3 py-2 text-xs font-medium rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 whitespace-nowrap">
           Thu gọn hết
         </button>
       </div>
@@ -330,7 +337,7 @@
         
         <button @click="hw = !hw"
                 :class="hw ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-rose-600 border-rose-300 hover:border-rose-500'"
-                class="px-2 py-1 text-xs font-medium rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs font-medium rounded-full border transition-colors">
           🏠 Homework
         </button>
         <span class="w-px h-4 bg-slate-300 mx-0.5"></span>
@@ -338,19 +345,19 @@
         
         <button @click="toggle('file')"
                 :class="types.includes('file') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
-                class="px-2 py-1 text-xs rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs rounded-full border transition-colors">
           📎 tài liệu
         </button>
         
         <button @click="recent7 = !recent7"
                 :class="recent7 ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-700 border-amber-300 hover:border-amber-500'"
-                class="px-2 py-1 text-xs font-medium rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs font-medium rounded-full border transition-colors">
           🕓 7 ngày
         </button>
         <template x-if="p.online">
           <button @click="todo = !todo"
                   :class="todo ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-700 border-emerald-300 hover:border-emerald-500'"
-                  class="px-2 py-1 text-xs font-medium rounded-full border transition-colors">
+                  class="px-2.5 py-2 text-xs font-medium rounded-full border transition-colors">
             ○ Chưa học
           </button>
         </template>
@@ -462,7 +469,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/mk/materials/cie-maths-1/week-5-14-09-26-18-09-26-unit-5-1-addition/Maths Daily Practice Grade 1 - Week 5.pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Maths Daily Practice Grade 1 - Week 5.pptx
               </a>
@@ -570,7 +577,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/mk/materials/cie-maths-1/weeks-3-4-03-09-26-11-09-26-unit-1-numbers-to-100/G1 Maths Homework Week 3.docx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 G1 Maths Homework Week 3.docx
               </a>
@@ -647,7 +654,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/mk/materials/cie-maths-1/weeks-3-4-03-09-26-11-09-26-unit-1-numbers-to-100/G1 Maths Daily Practice Weeks 3&amp;4.pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Maths Daily Practice Grade 1 - Weeks 3&amp;4.pptx
               </a>
@@ -755,7 +762,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/mk/materials/cie-maths-1/week-2-24-08-26-28-08-26-unit-1-numbers-to-100/G1 Maths Homework Wk2.docx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 G1 Maths Homework Wk2.docx
               </a>
@@ -832,7 +839,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/mk/materials/cie-maths-1/week-2-24-08-26-28-08-26-unit-1-numbers-to-100/Maths Daily Practice Grade 1 - Week 2.pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Maths Daily Practice Grade 1 - Week 2.pptx
               </a>
@@ -940,7 +947,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/mk/materials/cie-maths-1/week-1-17-08-26-21-08-26-unit-1-numbers-to-100/G1 Maths Homework Wk1.docx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 G1 Maths Homework Wk1.docx
               </a>
@@ -1017,7 +1024,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/mk/materials/cie-maths-1/week-1-17-08-26-21-08-26-unit-1-numbers-to-100/Maths Daily Practice Grade 1 - Week 1.pptx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Maths Daily Practice Grade 1 - Week 1.pptx
               </a>

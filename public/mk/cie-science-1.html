@@ -8,7 +8,7 @@
   <title>CIE Science 1 — MK</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.d0482e9b.css">
+  <link rel="stylesheet" href="../assets/tw.ca9fa3ed.css">
   <script defer src="../assets/collapse.d0a27f2d.js"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>
@@ -112,6 +112,13 @@
     // Mã bí mật chỉ cần khi GHI, lưu trong localStorage của trình duyệt.
     // Nếu không có backend (mở file cục bộ, hoặc bản trên GitHub Pages) thì
     // trang vẫn xem được bình thường, chỉ tắt phần đánh dấu.
+
+    /* ── Tra cứu khi bôi đen ────────────────────────────────────────────────
+       Phải là HÀM trong <script>, không được nhét thẳng vào thuộc tính `x-data`:
+       `x-data` là một thuộc tính HTML, mà phần logic dùng chung dài ~160 dòng và
+       có cả dấu nháy kép — nhét vào là vỡ cú pháp HTML và TOÀN BỘ Alpine của
+       trang chết theo (đã dính: 70 lỗi "p is not defined"). `study.html` không
+       gặp vì logic của nó vốn nằm trong `studyStore()`. */
     function progressStore() {
       return {
         done: {}, hashes: {}, ready: false, online: false, saving: 0, err: '',
@@ -277,8 +284,8 @@
   <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
     <div class="max-w-4xl mx-auto px-4 py-3">
       <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-slate-500">
-  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
-  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline hover:text-indigo-600">MK</a><span class="shrink-0 text-slate-300">›</span>
+  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
+  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">MK</a><span class="shrink-0 text-slate-300">›</span>
   <span aria-current="page" class="truncate font-medium text-slate-700">CIE Science 1</span>
 </nav>
       <div class="mt-1.5 flex items-center gap-3 flex-wrap">
@@ -291,17 +298,17 @@
             
             <a href="https://lms.vinschool.edu.vn/courses/145788/modules" target="_blank" rel="noopener noreferrer"
                title="Mở trang Các học phần của môn này trên LMS (cần đăng nhập)"
-               class="shrink-0 text-xs text-indigo-400 hover:text-indigo-600 hover:underline whitespace-nowrap">Xem trang gốc ↗</a>
+               class="shrink-0 text-xs text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2 whitespace-nowrap">Xem trang gốc ↗</a>
             
           </div>
-          <p class="text-xs text-slate-500">1 tuần/bài · cập nhật 2026-09-16 09:17</p>
+          <p class="text-xs text-slate-500">1 tuần/bài · cập nhật 2026-09-18 14:02</p>
         </div>
         <!-- Trên màn hẹp nút này xuống HÀNG RIÊNG (`w-full`), không thì nó ăn
              bề ngang của tiêu đề và tên môn bị cắt còn "CIE ES…". -->
         
         <div class="w-full sm:w-auto shrink-0">
           <a href="cie-science-1-on-tap.html"
-             class="inline-block px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
+             class="inline-block px-3 py-2 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
             📖 Ôn tập
           </a>
         </div>
@@ -316,11 +323,11 @@
                  class="w-full pl-9 pr-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-400">
         </div>
         <button @click="$dispatch('expand-all')"
-                class="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
+                class="px-3 py-2 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
           Mở rộng hết
         </button>
         <button @click="$dispatch('collapse-all')"
-                class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 whitespace-nowrap">
+                class="px-3 py-2 text-xs font-medium rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 whitespace-nowrap">
           Thu gọn hết
         </button>
       </div>
@@ -328,28 +335,35 @@
       <!-- Bộ lọc: Homework (lọc riêng) + loại nội dung -->
       <div class="mt-2 flex items-center gap-1.5 flex-wrap">
         
+        <button @click="hw = !hw"
+                :class="hw ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-rose-600 border-rose-300 hover:border-rose-500'"
+                class="px-2.5 py-2 text-xs font-medium rounded-full border transition-colors">
+          🏠 Homework
+        </button>
+        <span class="w-px h-4 bg-slate-300 mx-0.5"></span>
+        
         
         <button @click="toggle('file')"
                 :class="types.includes('file') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
-                class="px-2 py-1 text-xs rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs rounded-full border transition-colors">
           📎 tài liệu
         </button>
         
         <button @click="toggle('external')"
                 :class="types.includes('external') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
-                class="px-2 py-1 text-xs rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs rounded-full border transition-colors">
           🔗 liên kết ngoài
         </button>
         
         <button @click="recent7 = !recent7"
                 :class="recent7 ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-700 border-amber-300 hover:border-amber-500'"
-                class="px-2 py-1 text-xs font-medium rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs font-medium rounded-full border transition-colors">
           🕓 7 ngày
         </button>
         <template x-if="p.online">
           <button @click="todo = !todo"
                   :class="todo ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-700 border-emerald-300 hover:border-emerald-500'"
-                  class="px-2 py-1 text-xs font-medium rounded-full border transition-colors">
+                  class="px-2.5 py-2 text-xs font-medium rounded-full border transition-colors">
             ○ Chưa học
           </button>
         </template>
@@ -363,10 +377,10 @@
       <div x-show="p.ready && p.online" x-cloak class="mt-2 flex items-center gap-2 text-xs">
         <div class="flex-1 h-1.5 rounded-full bg-slate-200 overflow-hidden">
           <div class="h-full bg-emerald-500 transition-all duration-300"
-               :style="'width: ' + (recent7 ? recentPct(p.done) : Math.round(Object.keys(p.done).filter(k => k.startsWith('mk/145788/')).length / 4 * 100)) + '%'"></div>
+               :style="'width: ' + (recent7 ? recentPct(p.done) : Math.round(Object.keys(p.done).filter(k => k.startsWith('mk/145788/')).length / 5 * 100)) + '%'"></div>
         </div>
         <span class="text-slate-500 whitespace-nowrap"
-              x-text="recent7 ? (recentStats(p.done).done + '/' + recentStats(p.done).total + ' trong 7 ngày') : (Object.keys(p.done).filter(k => k.startsWith('mk/145788/')).length + '/4 đã học')"></span>
+              x-text="recent7 ? (recentStats(p.done).done + '/' + recentStats(p.done).total + ' trong 7 ngày') : (Object.keys(p.done).filter(k => k.startsWith('mk/145788/')).length + '/5 đã học')"></span>
         <span x-show="p.saving" x-cloak class="text-indigo-500">đang lưu…</span>
         <span x-show="p.err" x-cloak class="text-rose-600" x-text="p.err"></span>
       </div>
@@ -393,11 +407,11 @@
         <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">Week 5 (14.09.26-18.09.26) Unit 4.4 Keeping Healthy</span>
         <template x-if="p.online">
           <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
-                :class="moduleDone($el.closest('[data-module]'), p.done) === 4
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 5
                         ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
-                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/4'"></span>
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/5'"></span>
         </template>
-        <span class="text-xs text-slate-400 shrink-0">4 mục</span>
+        <span class="text-xs text-slate-400 shrink-0">5 mục</span>
       </button>
 
       <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
@@ -415,6 +429,67 @@
                    class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
           </template>
           <span>Homework</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="G1 Science HW - Week 5.docx" data-type="file" data-sec="1"
+             data-pkey="mk/145788/8799107" data-hash="0d0a624c848fba7d5aa2d40d28a194a78eae9339" data-ts="1789698771000"
+             
+             data-hw="1"
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['mk/145788/8799107'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/145788/8799107'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/145788/8799107']; $el.indeterminate = !!p.redo['mk/145788/8799107']"
+                     @change="await p.toggle('mk/145788/8799107', '0d0a624c848fba7d5aa2d40d28a194a78eae9339'); $el.checked = !!p.done['mk/145788/8799107']; $el.indeterminate = !!p.redo['mk/145788/8799107']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="https://minhln2.github.io/lms/mk/materials/cie-science-1/week-5-14-09-26-18-09-26-unit-4-4-keeping-healthy/G1 Science HW - Week 5.docx" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                G1 Science HW - Week 5.docx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/145788/8799107', '0d0a624c848fba7d5aa2d40d28a194a78eae9339')">
+                  <button @click.stop="p.seen('mk/145788/8799107', '0d0a624c848fba7d5aa2d40d28a194a78eae9339')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>290.5 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 18/09</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
         </div>
         
         
@@ -461,7 +536,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/mk/materials/cie-science-1/week-5-14-09-26-18-09-26-unit-4-4-keeping-healthy/LMS Unit 4.4 Daily Practice.docx" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 LMS Unit 4.4 Daily Practice.docx
               </a>
@@ -538,7 +613,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://www.youtube.com/watch?v=dhpCdqOtuj0" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Healthy Habits - Video
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -601,7 +676,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://wordwall.net/resource/27005426/english/healthy-habits" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Healthy Habits - Sorting Quiz
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -664,7 +739,7 @@
               
               <!-- Tài liệu đã tải về local -->
               <a href="https://minhln2.github.io/lms/mk/materials/cie-science-1/week-5-14-09-26-18-09-26-unit-4-4-keeping-healthy/4.4 Key Words.pdf" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Topic 4.4 Keeping Healthy - Key Words.pdf
               </a>

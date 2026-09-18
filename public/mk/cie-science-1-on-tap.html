@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -8,7 +9,7 @@
   <title>Ôn tập · CIE Science 1</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.d0482e9b.css">
+  <link rel="stylesheet" href="../assets/tw.ca9fa3ed.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -76,16 +77,7 @@
             }
           } catch (e) { /* chế độ chỉ đọc */ }
           this.flushBuffer();
-          // Bôi đen để tra cứu. Đăng ký ở đây chứ không dùng @selectionchange.window:
-          // sự kiện này bắn trên `document` và KHÔNG nổi lên window ở mọi trình duyệt.
-          // Gộp nhịp 120ms vì kéo chọn trên điện thoại bắn hàng chục lượt mỗi giây.
-          if (typeof document !== 'undefined') {
-            let hen = null;
-            document.addEventListener('selectionchange', () => {
-              clearTimeout(hen);
-              hen = setTimeout(() => this.chonDoi(), 120);
-            });
-          }
+          this.traGan();
           this.ready = true;
         },
 
@@ -859,6 +851,15 @@
         // Tự đọc mặt trước khi hiện thẻ/câu mới. Gọi sau khi state đã đổi.
         autoRead(text) { if (this.autoSpeak) setTimeout(() => this.speak(text), 50); },
 
+        // ── Bốn hàm móc của `_tracuu.html` ───────────────────────────────────
+        traTen()    { return 'Môn: CIE Science 1. Mục đang học: '
+                             + (this.conceptName(this.scope) || '—') + '.'; },
+        traMucCtx() { return this.scopedSummary || []; },
+        traDoc()    { return this.data; },
+        traSec()    { return this.scope || ''; },
+        traKhoa()   { return this.secret; },
+
+
         // ── Tra cứu: bôi đen → nút 🔎 → popup ─────────────────────────────────
         // Nghĩa của một từ phụ thuộc CÂU chứa nó và BÀI đang học, nên không dựng
         // sẵn được: `sedimentary` trong bài về đá không giống ở chỗ khác. Vì vậy
@@ -899,9 +900,12 @@
             khớp mục nào, `ctx` còn trơ mỗi dòng tiêu đề, và tính năng lặng lẽ tụt
             xuống đúng bằng một máy dịch thường. */
         _traCtx() {
-          if (!this.data) return '';
+          // Tên môn LUÔN có, kể cả khi chưa có học liệu ôn tập. Bản đầu thoát
+          // sớm khi thiếu học liệu và trả về ctx RỖNG — 11/17 môn rơi vào đó, và
+          // Gemini không biết đang học môn gì. Chỉ phần glossary mới phụ thuộc
+          // vào học liệu.
           const tat = [];
-          for (const s of this.scopedSummary || []) {
+          for (const s of this.traMucCtx()) {
             for (const g of s.glossary || []) tat.push([g.term, g.def || '']);
             for (const w of s.words || []) for (const it of w.items || [])
               tat.push([it.word, it.def || '']);
@@ -920,7 +924,7 @@
           // vật" thay vì "tinh thể". Bỏ hẳn ctx đi thì lại ra đúng — tức ngữ
           // cảnh đang LÀM HỎNG chính thứ nó sinh ra để cứu.
           const ds = [...hop, ...con].slice(0, 20).map((x) => x[0] + ': ' + x[1]);
-          const dau = 'Môn: CIE Science 1. Mục đang học: ' + (this.conceptName(this.scope) || '—') + '.';
+          const dau = this.traTen();
           return (dau + (ds.length
             ? '\nĐịnh nghĩa TIẾNG ANH của các thuật ngữ trong mục (KHÔNG phải bản dịch):\n' + ds.join('\n')
             : '')).slice(0, 1200);
@@ -938,7 +942,7 @@
             tieu_de: td, noi_dung: nd || '',
             vi_du: en ? [{ en: en, vi: vi || '' }] : [],
           });
-          for (const s of this.data?.summary || []) {
+          for (const s of (this.traDoc()?.summary || [])) {
             for (const g of s.glossary || []) if ((g.term || '').toLowerCase() === k)
               return { tu: g.term, phan: [khoi('Trong học liệu', g.def, g.example, '')],
                        _offline: true };
@@ -971,7 +975,7 @@
           this.tra.sent = this._cauChua(r, text);
           this.tra.mode = text.split(/\s+/).length <= 3 ? 'word' : 'text';
           // Không có mã bí mật thì chỉ hiện nút khi tra offline ra được cái gì.
-          if (!this.secret && !this._traOffline()) return;
+          if (!this.traKhoa() && !this._traOffline()) return;
           this.tra.btn = { x: Math.min(Math.max(b.left + b.width / 2, 60), innerWidth - 60),
                            y: Math.min(b.bottom + 8, innerHeight - 44) };
         },
@@ -980,7 +984,10 @@
           if (mode) this.tra.mode = mode;
           this.tra.show = true; this.tra.btn = null;
           this.tra.err = ''; this.tra.ly_do = ''; this.tra.data = null; this.tra.loading = true;
-          if (!this.secret) {                      // chế độ chỉ đọc, không gọi API
+          // Trang có thể cần nạp học liệu trước (trang môn nạp LƯỜI, vì file
+          // study JSON tới ~200KB và phần lớn lượt vào trang môn không tra từ nào).
+          if (this.traSanSang) { try { await this.traSanSang(); } catch (e) {} }
+          if (!this.traKhoa()) {                      // chế độ chỉ đọc, không gọi API
             this.tra.data = this._traOffline(); this.tra.loading = false; return;
           }
           // Có nhận được phản hồi HTTP hay không — dùng để nói ĐÚNG LOẠI trục
@@ -989,12 +996,12 @@
           try {
             const r = await fetch('/api/lookup', {
               method: 'POST',
-              headers: { 'content-type': 'application/json', 'x-progress-key': this.secret },
+              headers: { 'content-type': 'application/json', 'x-progress-key': this.traKhoa() },
               // `user`/`course`/`sec` chỉ để ghi dòng lịch sử trong D1 — Worker
               // KHÔNG đưa chúng vào prompt gửi Google (test_lookup_route chốt).
               body: JSON.stringify({ mode: this.tra.mode, text: this.tra.text,
                                      sent: this.tra.sent, ctx: this._traCtx(),
-                                     user: this.user, course: this.course, sec: this.scope || '' }),
+                                     user: this.user, course: this.course, sec: this.traSec() }),
             });
             coPhanHoi = true;
             const b = await r.json().catch(() => ({}));
@@ -1023,6 +1030,26 @@
           const s = window.getSelection();
           return !!(s && !s.isCollapsed && (s.toString() || '').trim());
         },
+
+        /** Đăng ký nghe vùng chọn. Trang phải TỰ GỌI (trong `init()` hoặc
+            `x-init`) — để trong macro mà không gọi thì mọi thứ khác đều dựng
+            đúng, nút chỉ đơn giản không bao giờ hiện, và không có lỗi nào. */
+        traGan() {
+          if (typeof document === 'undefined' || this._traDaGan) return;
+          this._traDaGan = true;
+          let hen = null;
+          // Gộp nhịp 120ms: kéo chọn trên điện thoại bắn hàng chục lượt mỗi giây.
+          // `selectionchange` bắn trên `document` và KHÔNG nổi lên window ở mọi
+          // trình duyệt, nên đừng thay bằng @selectionchange.window.
+          document.addEventListener('selectionchange', () => {
+            clearTimeout(hen);
+            hen = setTimeout(() => this.chonDoi(), 120);
+          });
+        },
+
+        traDong() { this.tra.show = false; this.tra.btn = null; this.tra.data = null;
+                    this.tra.err = ''; this.tra.ly_do = ''; },
+
 
         // ── Từ đã tra ────────────────────────────────────────────────────────
         // Gộp theo TỪ chứ không phải nhật ký từng lượt: câu đáng trả lời là "con
@@ -1053,8 +1080,6 @@
           return d <= 0 ? 'hôm nay' : d === 1 ? 'hôm qua' : d + ' ngày trước';
         },
 
-        traDong() { this.tra.show = false; this.tra.btn = null; this.tra.data = null;
-                    this.tra.err = ''; this.tra.ly_do = ''; },
 
         // ── Thẻ ghi nhớ: HỌC ───────────────────────────────────────────────────
         // Xem lần lượt, hiện cả hai mặt, không chấm. Thứ tự XÁO NGẪU NHIÊN mỗi lần
@@ -1477,9 +1502,9 @@
          nội dung đang đọc. -->
     <div class="max-w-5xl mx-auto px-4 py-2 min-w-0">
       <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-indigo-200">
-  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline hover:text-white">🏠 Home</a><span class="shrink-0 text-indigo-300">›</span>
-  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline hover:text-white">MK</a><span class="shrink-0 text-indigo-300">›</span>
-  <a href="cie-science-1.html" class="shrink-0 max-w-[9rem] truncate hover:underline hover:text-white">CIE Science 1</a><span class="shrink-0 text-indigo-300">›</span>
+  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">🏠 Home</a><span class="shrink-0 text-indigo-300">›</span>
+  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">MK</a><span class="shrink-0 text-indigo-300">›</span>
+  <a href="cie-science-1.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">CIE Science 1</a><span class="shrink-0 text-indigo-300">›</span>
   <span aria-current="page" class="truncate font-medium text-white">📖 Ôn tập</span>
 </nav>
     </div>
@@ -1494,7 +1519,7 @@
            một mode. In ĐÚNG những gì đang thấy, kể cả khi đang lọc: bấm In mà ra
            nội dung khác trên màn hình thì khó hiểu hơn là in thiếu. -->
       <button x-show="mode === 'summary'" @click="printSheet()" type="button" title="In trang này"
-              class="order-last ml-auto shrink-0 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:border-indigo-400">🖨 In</button>
+              class="order-last ml-auto shrink-0 px-2.5 py-2 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:border-indigo-400">🖨 In</button>
       <!-- Tự đọc mặt trước khi hiện thẻ/câu mới. Nhớ lựa chọn trong localStorage. -->
       <label x-show="canSpeak && (mode === 'cards' || mode === 'quiz')" class="order-last ml-auto shrink-0 flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
         <input type="checkbox" :checked="autoSpeak" @change="toggleAuto()" class="accent-indigo-600">
@@ -1502,7 +1527,7 @@
       </label>
       <!-- Màn hẹp: nút mở cây. Màn rộng: cây đã hiện sẵn nên ẩn nút đi. -->
       <button @click="navOpen = !navOpen"
-              class="lg:hidden shrink-0 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:border-indigo-400">
+              class="lg:hidden shrink-0 px-2.5 py-2 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:border-indigo-400">
         ☰ <span x-text="scopeName"></span>
       </button>
       <span class="lg:hidden w-px h-4 bg-slate-200 shrink-0"></span>
@@ -1513,7 +1538,7 @@
         <button @click="go(m.k)"
                 :class="mode === m.k ? 'bg-indigo-600 text-white border-indigo-600'
                                      : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
-                class="px-3 py-1.5 text-xs font-medium rounded-full border whitespace-nowrap transition-colors"
+                class="px-3 py-2 text-xs font-medium rounded-full border whitespace-nowrap transition-colors"
                 x-text="m.t"></button>
       </template>
     </div>
@@ -1757,7 +1782,7 @@
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
         <p class="text-xs text-slate-400" x-text="conceptName(q.concept)"></p>
         <p class="mt-1 font-medium text-slate-900"><span x-text="q.stem_en"></span><button x-show="canSpeak" @click.stop="speak(q.stem_en)" type="button" title="Đọc to"
-                        class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></p>
+                        class="ml-1 inline-flex items-center justify-center w-8 h-8 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></p>
         <p x-show="q.stem_vi" class="mt-1 text-sm text-slate-500" x-text="q.stem_vi"></p>
 
         <div class="mt-4 space-y-2">
@@ -1809,7 +1834,7 @@
                   x-text="isKnown(learnCard.id) ? '✓ Đã thuộc' : 'Đánh dấu đã thuộc'"></button>
         </div>
         <p class="mt-2 text-lg font-medium text-slate-900"><span x-text="learnCard.front_en"></span><button x-show="canSpeak" @click.stop="speak(learnCard.front_en)" type="button" title="Đọc to"
-                        class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></p>
+                        class="ml-1 inline-flex items-center justify-center w-8 h-8 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></p>
         <p x-show="learnCard.ipa" x-cloak class="text-sm text-slate-400 font-mono" x-text="learnCard.ipa"></p>
         <template x-if="learnCard.image">
           <img @click="if (revealed) { zoom = 'study/img/cie-science-1/' + learnCard.image; $event.stopPropagation() }" :src="'study/img/cie-science-1/' + learnCard.image" alt="" loading="lazy"
@@ -1850,7 +1875,7 @@
            :class="revealed ? 'border-rose-200 cursor-default' : 'cursor-pointer hover:border-indigo-400'">
         <p class="text-xs text-slate-400" x-text="conceptName(q.concept)"></p>
         <p class="mt-2 text-lg font-medium text-slate-900"><span x-text="q.front_en"></span><button x-show="canSpeak" @click.stop="speak(q.front_en)" type="button" title="Đọc to"
-                        class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></p>
+                        class="ml-1 inline-flex items-center justify-center w-8 h-8 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></p>
         <p x-show="q.ipa" x-cloak class="text-sm text-slate-400 font-mono" x-text="q.ipa"></p>
         <template x-if="q.image">
           <img @click="if (revealed) { zoom = 'study/img/cie-science-1/' + q.image; $event.stopPropagation() }" :src="'study/img/cie-science-1/' + q.image" alt="" loading="lazy"
@@ -1904,7 +1929,7 @@
       <div class="no-print flex flex-wrap items-center gap-1.5">
         <template x-for="kd in kinds" :key="kd.k">
           <button @click="toggleShow(kd.k)" :class="filt[kd.k] ? kd.on : kd.off"
-                  class="px-2.5 py-1 text-xs font-medium rounded-full border transition-colors" x-text="kd.t"></button>
+                  class="px-2.5 py-2 text-xs font-medium rounded-full border transition-colors" x-text="kd.t"></button>
         </template>
         <div class="ml-auto flex items-center gap-3">
           <!-- Ẩn hẳn phần ĐÃ tick: từ đã thuộc biến mất, lá/mục tick đủ cả cụm thì
@@ -2056,7 +2081,7 @@
                     :checked="isKnown(w.card)"
                     @change="setKnown([{id: w.card, c: w.concept || ws.concept || sec.concept}], $event.target.checked)"
                     class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><template x-if="w.image"><img @click.stop="zoom = 'study/img/cie-science-1/' + w.image" :src="'study/img/cie-science-1/' + w.image" alt="" loading="lazy" class="cursor-zoom-in float-right ml-2 -mt-0.5 max-w-[80px] max-h-[80px] w-auto h-auto rounded border border-cyan-200 bg-white object-contain"></template><span class="font-semibold text-cyan-900" x-html="hl(w.word)"></span><button x-show="canSpeak" @click.stop="speak(w.word)" type="button" title="Đọc to"
-                        class="ml-1 align-middle text-cyan-500 hover:text-cyan-800">🔊</button>
+                        class="ml-1 align-middle text-cyan-500 hover:text-cyan-800 p-1.5 -m-1.5">🔊</button>
                       <span x-show="w.ipa" class="ml-1 text-[12px] text-slate-400 font-mono" x-text="w.ipa"></span>
                       <span x-show="w.pos" class="ml-1 text-[11px] italic text-slate-400" x-text="w.pos"></span>
                     </p>
@@ -2083,7 +2108,7 @@
                       <span class="font-medium text-slate-800" x-html="hl(wd.en)"></span>
                       <span x-show="wd.ipa" class="text-xs text-slate-400 font-mono" x-text="wd.ipa"></span>
                       <button x-show="canSpeak" @click.stop="speak(wd.en)" type="button" title="Đọc to"
-                              class="text-amber-500 hover:text-amber-800">🔊</button>
+                              class="text-amber-500 hover:text-amber-800 p-1.5 -m-1.5">🔊</button>
                     </span>
                   </template>
                 </div>
@@ -2136,7 +2161,7 @@
           <template x-for="(tp, ti) in tops(sec)" :key="'t' + ti">
             <div class="rounded-xl border border-orange-200 overflow-hidden">
               <div class="flex items-center gap-2 px-3 py-2 bg-orange-50 border-b border-orange-200">
-                <span class="shrink-0 w-6 h-6 rounded-full bg-orange-500 text-white text-xs font-bold grid place-items-center"
+                <span class="shrink-0 w-8 h-8 rounded-full bg-orange-500 text-white text-xs font-bold grid place-items-center"
                       x-text="ti + 1"></span>
                 <input x-show="canMark && tp.mark" x-cloak type="checkbox" title="Đã thuộc" :checked="isKnown(tp.mark)" @change="setKnown([{id: tp.mark, c: tp.concept || sec.concept}], $event.target.checked)" class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><h4 class="text-base font-bold text-orange-800 uppercase tracking-wide" x-html="hl(tp.title)"></h4>
                 <span x-show="tp.subtitle" class="text-xs text-orange-500 normal-case" x-html="'(' + hl(tp.subtitle) + ')'"></span>
@@ -2282,7 +2307,7 @@
                     :checked="isKnown(g.card)"
                     @change="setKnown([{id: g.card, c: g.concept || sec.concept}], $event.target.checked)"
                     class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><template x-if="g.image"><img @click.stop="zoom = 'study/img/cie-science-1/' + g.image" :src="'study/img/cie-science-1/' + g.image" alt="" loading="lazy" class="cursor-zoom-in float-right ml-2 -mt-0.5 max-w-[80px] max-h-[80px] w-auto h-auto rounded border border-indigo-200 bg-white object-contain"></template><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
-                      class="ml-1 align-middle text-indigo-400 hover:text-indigo-700">🔊</button></dt>
+                      class="ml-1 align-middle text-indigo-400 p-1.5 -m-1.5 hover:text-indigo-700">🔊</button></dt>
                   <dd class="text-sm text-slate-700 leading-snug" x-html="hl(g.def)"></dd>
                   <dd x-show="g.def_vi" x-cloak class="text-sm text-cyan-700 leading-snug" x-html="hl(g.def_vi)"></dd>
                   <dd x-show="g.example" class="mt-0.5 text-xs text-slate-500 italic" x-html="hl(g.example)"></dd>
@@ -2323,7 +2348,7 @@
                     :checked="isKnown(g.card)"
                     @change="setKnown([{id: g.card, c: g.concept || sec.concept}], $event.target.checked)"
                     class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><template x-if="g.image"><img @click.stop="zoom = 'study/img/cie-science-1/' + g.image" :src="'study/img/cie-science-1/' + g.image" alt="" loading="lazy" class="cursor-zoom-in float-right ml-2 -mt-0.5 max-w-[80px] max-h-[80px] w-auto h-auto rounded border border-indigo-200 bg-white object-contain"></template><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
-                        class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></dt>
+                        class="ml-1 inline-flex items-center justify-center w-8 h-8 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></dt>
                     <dd class="text-sm text-slate-700 leading-snug" x-html="hl(g.def)"></dd>
                     <dd x-show="g.def_vi" x-cloak class="text-sm text-cyan-700 leading-snug" x-html="hl(g.def_vi)"></dd>
                     <dd x-show="g.example" class="mt-0.5 text-xs text-slate-500 italic" x-html="hl(g.example)"></dd>
@@ -2504,7 +2529,7 @@
                     :checked="isKnown(g.card)"
                     @change="setKnown([{id: g.card, c: g.concept || sec.concept}], $event.target.checked)"
                     class="mr-1 align-middle w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><template x-if="g.image"><img @click.stop="zoom = 'study/img/cie-science-1/' + g.image" :src="'study/img/cie-science-1/' + g.image" alt="" loading="lazy" class="cursor-zoom-in float-right ml-2 -mt-0.5 max-w-[80px] max-h-[80px] w-auto h-auto rounded border border-indigo-200 bg-white object-contain"></template><span x-html="hl(g.term)"></span><button x-show="canSpeak" @click.stop="speak(g.term)" type="button" title="Đọc to"
-                        class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></dt>
+                        class="ml-1 inline-flex items-center justify-center w-8 h-8 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button></dt>
                   <dd class="text-sm text-slate-700 leading-snug" x-html="hl(g.def)"></dd>
                   <dd x-show="g.def_vi" x-cloak class="text-sm text-cyan-700 leading-snug" x-html="hl(g.def_vi)"></dd>
                   <dd x-show="g.example" class="mt-0.5 text-xs text-slate-500 italic" x-html="hl(g.example)"></dd>
@@ -2654,7 +2679,7 @@
             <p class="font-medium text-slate-900 break-words">
               <span x-text="r.tu || r.term"></span>
               <button x-show="canSpeak" @click="speak(r.tu || r.term, true)" type="button" title="Đọc to"
-                      class="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button>
+                      class="ml-1 inline-flex items-center justify-center w-8 h-8 rounded-full text-indigo-500 hover:bg-indigo-100 align-middle">🔊</button>
             </p>
             <p x-show="r.nghia" x-cloak class="text-sm text-cyan-700" x-text="r.nghia"></p>
             <p class="text-xs text-slate-400" x-text="ngayGon(r.last_ts)"></p>
@@ -2671,6 +2696,7 @@
   </main>
   </div>
 
+
   <!-- ── Tra cứu: nút nổi + popup ──────────────────────────────────────────
        Nút nổi chứ không tự bung popup: iOS dựng thanh Copy/Look Up của riêng nó
        ngay dưới vùng chọn, hai thứ đè lên nhau và trẻ bấm nhầm liên tục.
@@ -2680,7 +2706,7 @@
     <button @mousedown.prevent @click="traMo()" type="button"
             :style="'left:' + tra.btn.x + 'px; top:' + tra.btn.y + 'px'"
             class="fixed z-40 -translate-x-1/2 px-3 py-1.5 rounded-full bg-indigo-600 text-white text-xs font-medium shadow-lg hover:bg-indigo-700">
-      🔎 <span x-text="tra.mode === 'word' ? 'Tra từ' : 'Dịch'"></span>
+      🔎 Giải thích
     </button>
   </template>
 
@@ -2782,7 +2808,7 @@
         <p x-show="!tra.loading && !tra.data" x-cloak class="px-4 py-5 text-sm text-slate-500"
            x-text="tra.err || 'Không tìm thấy nghĩa của mục này.'"></p>
 
-        <div x-show="!tra.loading && secret" x-cloak class="px-4 pb-4">
+        <div x-show="!tra.loading && traKhoa()" x-cloak class="px-4 pb-4">
           <button @click="traMo(tra.mode === 'word' ? 'text' : 'word')" type="button"
                   class="w-full px-3 py-2 text-sm rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200"
                   x-text="tra.mode === 'word' ? 'Dịch cả cụm này' : 'Giải nghĩa như một từ'"></button>
@@ -2790,6 +2816,7 @@
       </div>
     </div>
   </template>
+
 
   <!-- ── Xem ảnh phóng to ────────────────────────────────────────────────────
        Bấm ảnh bất kỳ để phóng, bấm lần nữa (hoặc Esc, hoặc nút ✕) để bỏ. Phủ kín

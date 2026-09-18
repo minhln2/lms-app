@@ -8,7 +8,7 @@
   <title>Lịch Sử và Địa Lý 5 — PL</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.d0482e9b.css">
+  <link rel="stylesheet" href="../assets/tw.ca9fa3ed.css">
   <script defer src="../assets/collapse.d0a27f2d.js"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>
@@ -112,6 +112,13 @@
     // Mã bí mật chỉ cần khi GHI, lưu trong localStorage của trình duyệt.
     // Nếu không có backend (mở file cục bộ, hoặc bản trên GitHub Pages) thì
     // trang vẫn xem được bình thường, chỉ tắt phần đánh dấu.
+
+    /* ── Tra cứu khi bôi đen ────────────────────────────────────────────────
+       Phải là HÀM trong <script>, không được nhét thẳng vào thuộc tính `x-data`:
+       `x-data` là một thuộc tính HTML, mà phần logic dùng chung dài ~160 dòng và
+       có cả dấu nháy kép — nhét vào là vỡ cú pháp HTML và TOÀN BỘ Alpine của
+       trang chết theo (đã dính: 70 lỗi "p is not defined"). `study.html` không
+       gặp vì logic của nó vốn nằm trong `studyStore()`. */
     function progressStore() {
       return {
         done: {}, hashes: {}, ready: false, online: false, saving: 0, err: '',
@@ -277,8 +284,8 @@
   <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
     <div class="max-w-4xl mx-auto px-4 py-3">
       <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-slate-500">
-  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
-  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline hover:text-indigo-600">PL</a><span class="shrink-0 text-slate-300">›</span>
+  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
+  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">PL</a><span class="shrink-0 text-slate-300">›</span>
   <span aria-current="page" class="truncate font-medium text-slate-700">Lịch Sử và Địa Lý 5</span>
 </nav>
       <div class="mt-1.5 flex items-center gap-3 flex-wrap">
@@ -291,7 +298,7 @@
             
             <a href="https://lms.vinschool.edu.vn/courses/80101/modules" target="_blank" rel="noopener noreferrer"
                title="Mở trang Các học phần của môn này trên LMS (cần đăng nhập)"
-               class="shrink-0 text-xs text-indigo-400 hover:text-indigo-600 hover:underline whitespace-nowrap">Xem trang gốc ↗</a>
+               class="shrink-0 text-xs text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2 whitespace-nowrap">Xem trang gốc ↗</a>
             
           </div>
           <p class="text-xs text-slate-500">2 tuần/bài · cập nhật 2026-09-11 17:32</p>
@@ -309,11 +316,11 @@
                  class="w-full pl-9 pr-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-400">
         </div>
         <button @click="$dispatch('expand-all')"
-                class="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
+                class="px-3 py-2 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
           Mở rộng hết
         </button>
         <button @click="$dispatch('collapse-all')"
-                class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 whitespace-nowrap">
+                class="px-3 py-2 text-xs font-medium rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 whitespace-nowrap">
           Thu gọn hết
         </button>
       </div>
@@ -324,31 +331,31 @@
         
         <button @click="toggle('page')"
                 :class="types.includes('page') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
-                class="px-2 py-1 text-xs rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs rounded-full border transition-colors">
           📄 văn bản
         </button>
         
         <button @click="toggle('quiz')"
                 :class="types.includes('quiz') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
-                class="px-2 py-1 text-xs rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs rounded-full border transition-colors">
           🧪 bài kiểm tra
         </button>
         
         <button @click="toggle('discussion')"
                 :class="types.includes('discussion') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
-                class="px-2 py-1 text-xs rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs rounded-full border transition-colors">
           💬 thảo luận
         </button>
         
         <button @click="recent7 = !recent7"
                 :class="recent7 ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-700 border-amber-300 hover:border-amber-500'"
-                class="px-2 py-1 text-xs font-medium rounded-full border transition-colors">
+                class="px-2.5 py-2 text-xs font-medium rounded-full border transition-colors">
           🕓 7 ngày
         </button>
         <template x-if="p.online">
           <button @click="todo = !todo"
                   :class="todo ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-700 border-emerald-300 hover:border-emerald-500'"
-                  class="px-2 py-1 text-xs font-medium rounded-full border transition-colors">
+                  class="px-2.5 py-2 text-xs font-medium rounded-full border transition-colors">
             ○ Chưa học
           </button>
         </template>
@@ -427,7 +434,7 @@
             <div class="min-w-0 flex-1">
               
               <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
                 <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">THẢO LUẬN TRƯỚC CHỦ ĐỀ</span>
                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
                      :class="o ? 'rotate-180' : ''"
@@ -457,7 +464,7 @@
                 <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 11/09</span>
                 
                 <a href="https://lms.vinschool.edu.vn/courses/80101/discussion_topics/697438" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -498,7 +505,7 @@
             <div class="min-w-0 flex-1">
               
               <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
                 <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tự học: Nhà nước Văn Lang, Âu Lạc</span>
                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
                      :class="o ? 'rotate-180' : ''"
@@ -529,7 +536,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/80101/pages/tu-hoc-nha-nuoc-van-lang-au-lac" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -579,7 +586,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/2203529" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Quiz 1: Nhà nước Văn Lang, Âu Lạc
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -613,7 +620,7 @@
                 <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 11/09</span>
                 
                 <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/2203529" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -648,7 +655,7 @@
             <div class="min-w-0 flex-1">
               
               <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
                 <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tự học: Nhà nước Phù Nam</span>
                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
                      :class="o ? 'rotate-180' : ''"
@@ -679,7 +686,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/80101/pages/tu-hoc-nha-nuoc-phu-nam" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -725,7 +732,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/2203528" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Quiz 2: Nhà nước Phù Nam
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -759,7 +766,7 @@
                 <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 11/09</span>
                 
                 <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/2203528" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -794,7 +801,7 @@
             <div class="min-w-0 flex-1">
               
               <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
                 <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tự học: Vương quốc Champa</span>
                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
                      :class="o ? 'rotate-180' : ''"
@@ -825,7 +832,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/80101/pages/tu-hoc-vuong-quoc-champa" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -872,7 +879,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/2203527" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Quiz 3: Vương quốc Champa
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -906,7 +913,7 @@
                 <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 11/09</span>
                 
                 <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/2203527" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -972,7 +979,7 @@
             <div class="min-w-0 flex-1">
               
               <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
                 <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">1.1_Tiết 1: Vị trí địa lí, lãnh thổ và biểu tượng của Việt Nam</span>
                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
                      :class="o ? 'rotate-180' : ''"
@@ -1003,7 +1010,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/80101/pages/1-dot-1-tiet-1-vi-tri-dia-li-lanh-tho-va-bieu-tuong-cua-viet-nam" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -1048,7 +1055,7 @@
             <div class="min-w-0 flex-1">
               
               <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
                 <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Thảo luận: Vị trí địa lý, lãnh thổ và biểu tượng của Việt Nam</span>
                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
                      :class="o ? 'rotate-180' : ''"
@@ -1079,7 +1086,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/80101/discussion_topics/618071" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -1134,7 +1141,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/1933455" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Quiz luyện tập 1
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1168,7 +1175,7 @@
                 <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 25/08</span>
                 
                 <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/1933455" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -1203,7 +1210,7 @@
             <div class="min-w-0 flex-1">
               
               <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
                 <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">1.1_Tiết 2: Thiên nhiên Việt Nam</span>
                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
                      :class="o ? 'rotate-180' : ''"
@@ -1234,7 +1241,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/80101/pages/1-dot-1-tiet-2-thien-nhien-viet-nam" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -1279,7 +1286,7 @@
             <div class="min-w-0 flex-1">
               
               <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
                 <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Thảo luận: Thiên nhiên Việt Nam</span>
                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
                      :class="o ? 'rotate-180' : ''"
@@ -1310,7 +1317,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/80101/discussion_topics/618072" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -1365,7 +1372,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/1933457" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Quiz luyện tập 2
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1399,7 +1406,7 @@
                 <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 25/08</span>
                 
                 <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/1933457" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -1434,7 +1441,7 @@
             <div class="min-w-0 flex-1">
               
               <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
                 <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">1.1_Tiết 3: Biển, đảo Việt Nam</span>
                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
                      :class="o ? 'rotate-180' : ''"
@@ -1465,7 +1472,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/80101/pages/1-dot-1-tiet-3-bien-dao-viet-nam" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -1510,7 +1517,7 @@
             <div class="min-w-0 flex-1">
               
               <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
                 <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Thảo luận: Biển, đảo Việt Nam</span>
                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
                      :class="o ? 'rotate-180' : ''"
@@ -1541,7 +1548,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/80101/discussion_topics/618073" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -1597,7 +1604,7 @@
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
               <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/1933459" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
                 Quiz_Chương 1_Biển, đảo Việt Nam
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -1631,7 +1638,7 @@
                 <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 25/08</span>
                 
                 <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/1933459" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -1666,7 +1673,7 @@
             <div class="min-w-0 flex-1">
               
               <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
                 <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tự học_1.2_Tiết 1: Dân cư và dân tộc ở Việt Nam</span>
                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
                      :class="o ? 'rotate-180' : ''"
@@ -1697,7 +1704,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/80101/pages/tu-hoc-1-dot-2-tiet-1-dan-cu-va-dan-toc-o-viet-nam" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
@@ -1742,7 +1749,7 @@
             <div class="min-w-0 flex-1">
               
               <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2">
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
                 <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">1.2_Tiết 1: Dân cư và dân tộc ở Việt Nam</span>
                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
                      :class="o ? 'rotate-180' : ''"
@@ -1773,7 +1780,7 @@
                 
                 
                 <a href="https://lms.vinschool.edu.vn/courses/80101/discussion_topics/618074" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline">Xem trang gốc ↗</a>
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
