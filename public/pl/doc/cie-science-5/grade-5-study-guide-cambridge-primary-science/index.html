@@ -31,6 +31,35 @@
   .lk.nho { width:32px; height:32px; border-radius:50%; font-size:.72em; margin-left:4px; }
   .lk:hover { background:#dc2626; }
   .khung .yt { position:absolute; z-index:4; border:0; border-radius:6px; }
+  /* ── In từ chế độ 📖 ──────────────────────────────────────────────────────
+     Để chế độ đọc TỰ IN ĐƯỢC, không phải nhờ trình xem PDF. Cần vậy vì Chrome
+     trên Windows có tuỳ chọn "Download PDFs instead of automatically opening
+     them"; bật lên thì khung PDF nhúng chỉ tải file về, và nút In của chế độ 📄
+     thành ngõ cụt đúng lúc cần nhất.
+     `size` phải khớp hướng giấy THẬT của tài liệu — CSS không trộn hướng giấy
+     giữa chừng được, nhưng mỗi trang đọc chỉ có một tài liệu nên một giá trị đủ.
+     Đo được khi chưa có phần này: PPTX 28 slide in ra 14 tờ vì slide ngang lọt
+     hai cái một tờ A4 dọc. */
+  
+  @page { size: 612pt 792pt; margin: 0; }
+
+  @media print {
+    header, nav, .no-print { display: none !important; }
+    body { background: #fff; }
+    main { max-width: none !important; padding: 0 !important; }
+    .stt { display: none; }
+    /* Ép ảnh vừa ĐÚNG chiều cao tờ giấy. Để `width:100%` thôi thì tỉ lệ
+       khớp về lý thuyết nhưng làm tròn dưới một pixel vẫn đẩy sang tờ thứ hai —
+       đo được: 8 trang in ra 16 tờ, 18 trang ra 36, tức MỖI trang thừa một tờ
+       trắng. `height:100vh` + `overflow:hidden` cắt đúng chỗ đó. */
+    .trang { margin: 0; height: 100vh; overflow: hidden;
+             break-after: page; break-inside: avoid; }
+    .trang:last-child { break-after: auto; }
+    .khung { border: 0; border-radius: 0; height: 100vh; }
+    .khung > img { border-radius: 0; height: 100vh; width: auto;
+                   max-width: 100vw; margin: 0 auto; }
+    .lk { display: none !important; }   /* nút ▶ không có nghĩa trên giấy */
+  }
 </style>
 <script defer src="../../../../assets/collapse.d0a27f2d.js"></script>
 <script defer src="../../../../assets/alpine.63d2636a.js"></script>
@@ -86,7 +115,14 @@
 
 <!-- iframe dựng LÚC BẤM, không nhúng sẵn: bản PDF của một bộ slide tới ~9MB,
      nhúng sẵn là ai mở trang cũng tải chừng ấy dù chỉ định đọc. -->
-<main x-show="che === 'pdf'" x-cloak class="max-w-5xl mx-auto px-4 py-4">
+<main x-show="che === 'pdf'" x-cloak class="max-w-5xl mx-auto px-4 py-4 space-y-2">
+  
+  <p class="text-xs text-slate-500">
+    Không thấy nội dung hiện ra?
+    <a :href="srcPdf || pdfGoc" target="_blank" rel="noopener"
+       class="text-indigo-600 hover:underline font-medium">Mở bản PDF ở tab mới ↗</a>
+    — một số trình duyệt, nhất là trên điện thoại, không hiển thị PDF nhúng trong trang.
+  </p>
   <iframe id="pdf" :src="srcPdf" title="Bản PDF của Grade 5 Study guide Cambridge Primary Science.docx"
           class="rounded-lg border border-slate-200 bg-white"></iframe>
 </main>
@@ -219,6 +255,10 @@
       
       che: null,
       srcPdf: '',
+      // Giá trị đi vào STATE, không nhúng thẳng `|tojson` vào thuộc tính HTML:
+      // `tojson` sinh chuỗi bọc nháy kép, mà thuộc tính cũng đóng bằng nháy kép
+      // → đứt thuộc tính và chết cả Alpine. Đã dính BA lần trong dự án này.
+      pdfGoc: "ban.pdf",
       user: "pl", course: "cie-science-5",
       secret: localStorage.getItem('lms_key') || '',
 

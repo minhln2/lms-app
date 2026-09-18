@@ -304,6 +304,16 @@ export async function handleLookup(request, env) {
     // Cloudflare gần người dùng nhất, và colo đó đổi giữa các ngày. Không ghi
     // colo thì cùng một mã lỗi lúc xảy ra lúc không, không cách nào đối chiếu.
     console.warn(`Gemini ${g.status} @colo=${colo}: ${t.slice(0, 400)}`);
+    // Ghi xuống D1 chứ không chỉ console: lỗi này phụ thuộc COLO nên lúc có lúc
+    // không, và chỉ xảy ra khi TRẺ bấm. `wrangler tail` chỉ bắt được nếu đúng lúc
+    // mình ngồi xem — đã hai lần thu log 4–5 phút mà không lượt nào đi qua.
+    // Hỏng ở đây KHÔNG được che mất lỗi gốc, nên nuốt riêng.
+    try {
+      await env.STUDY_DB.prepare(
+        "INSERT INTO lookup_loi (day, colo, ma, n, cuoi) VALUES (?1, ?2, ?3, 1, ?4) " +
+        "ON CONFLICT(day, colo, ma) DO UPDATE SET n = n + 1, cuoi = ?4"
+      ).bind(day, colo, g.status, t.slice(0, 200)).run();
+    } catch (e) { /* sổ ghi lỗi hỏng thì thôi, đừng che lỗi gốc */ }
     return json({ error: `Gemini lỗi ${g.status}`, chi_tiet: t.slice(0, 300), colo }, 502);
   }
 

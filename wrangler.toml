@@ -12,7 +12,29 @@
 
 name = "lms"
 main = "worker/index.js"
+
+# Ghim nơi Worker CHẠY về Singapore.
+#
+# Vì sao: `generativelanguage.googleapis.com` (Gemini) CHẶN THEO VỊ TRÍ NGƯỜI GỌI,
+# và Google không hỗ trợ Hong Kong. Cloudflare chọn colo theo từng lượt, nên cùng
+# một khoá lúc chạy lúc không — đã đo: colo SIN thì 200, colo HKG thì 400
+# "User location is not supported for the API use". Việc thử-lại không cứu được vì
+# colo ổn định suốt phiên (đo 10/10 lượt đều HKG).
+#
+# Chọn `asia-southeast1` chứ không phải vùng Mỹ: Gemini hỗ trợ Singapore, mà
+# Singapore cũng chính là colo vốn đang phục vụ người dùng ở Việt Nam — nên gần
+# như không đổi độ trễ. Ghim sang Mỹ thì mọi lượt /api/progress cũng chậm theo.
+#
+# Tệp tĩnh KHÔNG bị ảnh hưởng: Cloudflare luôn phục vụ chúng từ colo gần người
+# dùng nhất, bất kể ghim ở đâu.
 compatibility_date = "2026-08-20"
+
+[placement]
+# mode "targeted" = ghim vùng cụ thể. Không dùng "smart" (chế độ tự chọn theo
+# độ trễ): ta cần CHẮC CHẮN không rơi vào Hong Kong, chứ không phải tối ưu tốc độ.
+mode = "targeted"
+region = "gcp:asia-southeast1"
+
 
 [vars]
 # Cột trạng thái trong bảng của lớp, đánh số từ 0 (E = 4).
