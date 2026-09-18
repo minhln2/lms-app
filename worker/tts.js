@@ -36,6 +36,18 @@
 
 const ENDPOINT = "https://texttospeech.googleapis.com/v1/text:synthesize";
 const AUDIO = { audioEncoding: "MP3", speakingRate: 0.92 };
+/**
+ * NÚM TẠM để đo chất lượng mã hoá, cùng khuôn với `?voice=`. Đo được trên bản
+ * đang chạy: MP3 của Google ra **32 kbps / 24 kHz mono**, và năng lượng trên
+ * 8kHz thấp hơn 35 dB — đó là trần chất lượng, nghe bí ở phụ âm xát.
+ * Bỏ núm này đi sau khi chốt.
+ */
+const MAHOA = {
+  MP3:          "audio/mpeg",
+  MP3_64_KBPS:  "audio/mpeg",
+  OGG_OPUS:     "audio/ogg",
+  LINEAR16:     "audio/wav",
+};
 const MAX_LEN = 200;
 
 /** Giọng đang dùng. Chirp 3: HD — thế hệ mới hơn Neural2, cùng hạn mức free. */
@@ -103,6 +115,8 @@ export async function handleTts(request, env, url) {
   if (!text || text.length > MAX_LEN) return new Response("Thiếu hoặc quá dài", { status: 400 });
   const voice = url.searchParams.get("voice") || VOICE;
   if (!VOICES.has(voice)) return new Response("Giọng không hỗ trợ", { status: 400 });
+  const enc = url.searchParams.get("enc") || "MP3";
+  if (!MAHOA[enc]) return new Response("Mã hoá không hỗ trợ", { status: 400 });
 
   // Có mã bí mật thì đây là popup tra cứu: đọc từ BẤT KỲ, không đối chiếu học
   // liệu. Không gian cache tách hẳn — xem ghi chú đầu file, đây là chỗ chặn
@@ -113,7 +127,7 @@ export async function handleTts(request, env, url) {
   // Cache TRƯỚC khi đối chiếu học liệu: câu đã có thì không parse JSON, không gọi Google.
   const cache = caches.default;
   const ns = tinCay ? "/__tts/k/" : "/__tts/";
-  const ckey = new Request(new URL(ns + await sha1(voice + "|" + user + "|" + course + "|" + text), url).toString());
+  const ckey = new Request(new URL(ns + await sha1(voice + "|" + enc + "|" + user + "|" + course + "|" + text), url).toString());
   const hit = await cache.match(ckey);
   if (hit) return hit;
 
@@ -129,14 +143,14 @@ export async function handleTts(request, env, url) {
     body: JSON.stringify({
       input: { text },
       voice: { languageCode: "en-US", name: voice },
-      audioConfig: AUDIO,
+      audioConfig: { ...AUDIO, audioEncoding: enc },
     }),
   });
   if (!g.ok) return new Response("Google TTS lỗi " + g.status, { status: 502 });
   const { audioContent } = await g.json();
   const bytes = Uint8Array.from(atob(audioContent), (c) => c.charCodeAt(0));
   const res = new Response(bytes, {
-    headers: { "content-type": "audio/mpeg", "cache-control": "public, max-age=31536000, immutable" },
+    headers: { "content-type": MAHOA[enc], "cache-control": "public, max-age=31536000, immutable" },
   });
   await cache.put(ckey, res.clone());
   return res;
