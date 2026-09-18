@@ -1009,7 +1009,18 @@
             let n = r.startContainer, o = r.startOffset;
             if (n.nodeType === 3) { while (o > 0 && W.test(n.data[o - 1])) o--; r.setStart(n, o); }
             n = r.endContainer; o = r.endOffset;
-            if (n.nodeType === 3) { while (o < n.data.length && W.test(n.data[o])) o++; r.setEnd(n, o); }
+            if (n.nodeType === 3) {
+              // ⚠ Chrome trên WINDOWS gộp luôn KHOẢNG TRẮNG CUỐI vào vùng chọn
+              // khi nháy đúp — đó là quy ước chọn chữ của Windows; Chrome trên
+              // Linux/macOS thì không. Không cắt nó đi trước khi nới thì phép
+              // nới thấy ký tự kế tiếp là chữ và nuốt luôn từ sau: nháy đúp
+              // `Properties` trong "2.1 Properties of substances" ra
+              // **"Properties of"**. Người dùng báo; chạy trên Linux KHÔNG tái
+              // hiện được, phải tự đặt vùng chọn có kèm dấu cách mới thấy.
+              while (o > r.startOffset && /\s/.test(n.data[o - 1])) o--;
+              while (o < n.data.length && W.test(n.data[o])) o++;
+              r.setEnd(n, o);
+            }
           } catch (e) { /* vùng chọn xuyên nhiều thẻ: giữ nguyên */ }
           return r;
         },
