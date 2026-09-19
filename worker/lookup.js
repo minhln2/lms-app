@@ -111,6 +111,26 @@ const SHAPE = {
     "phan: một khối 'Giảng lại' (2–3 câu diễn giải ý chính cho dễ hiểu, được phép ví von), " +
     "và thêm khối 'Biết thêm' nếu đoạn này gắn với một điều thú vị ngoài sách — 1–2 câu, " +
     'CHỈ nêu điều chắc chắn đúng.\n' +
+    // ── Đoạn được bôi đen là một CÂU HỎI / ĐỀ BÀI ──────────────────────────
+    // Không thêm trường mới vào schema: `phan[]` vốn là mảng khối tự do và
+    // popup đã vẽ được mọi tiêu đề khối, nên "trả lời câu hỏi" chỉ là hai khối
+    // nữa. Thêm trường riêng thì phải sửa cả bộ vẽ lẫn nhánh offline, mà nhánh
+    // offline là nhánh ít ai mở ra xem nhất nên nó sẽ lệch trước.
+    //
+    // ⚠ 'Vì sao' đứng SAU 'Trả lời' nhưng mới là phần chính. Chỉ đưa đáp án
+    // thì trẻ chép xong là xong, và công cụ tra cứu biến thành máy làm hộ bài.
+    'NẾU đoạn được hỏi là một CÂU HỎI hoặc ĐỀ BÀI (có dấu hỏi, hoặc mở đầu bằng ' +
+    'Which/What/Why/How/Explain/Describe/Calculate/Circle/Tick/Name…), thì THAY ' +
+    "khối 'Giảng lại' bằng hai khối theo đúng thứ tự:\n" +
+    "· 'Trả lời' — đáp án, ngắn gọn, đi thẳng vào việc. Trắc nghiệm thì nêu rõ " +
+    'phương án nào và nội dung của nó.\n' +
+    "· 'Vì sao' — LÝ DO, 2–4 câu, dẫn từ kiến thức trong bài ra đáp án. Đây mới " +
+    'là phần chính: nói rõ căn cứ để lần sau tự làm được, đừng chỉ khẳng định.\n' +
+    '⚠ Câu hỏi trắc nghiệm mà đoạn được bôi đen KHÔNG kèm các phương án, hoặc câu ' +
+    'hỏi cần số liệu/hình/bảng không có trong đoạn: ĐỪNG đoán. Nói rõ còn thiếu gì ' +
+    "trong khối 'Trả lời' và giảng phần kiến thức liên quan ở khối 'Vì sao'.\n" +
+    '⚠ Câu hỏi hỏi ý kiến riêng hoặc trải nghiệm của người học (What do you think…, ' +
+    'Describe your…): KHÔNG trả lời thay, mà gợi ý cách nghĩ và một ví dụ mẫu.\n' +
     'tu_kho: tối đa 4 từ khó nhất; không có từ nào khó thì để mảng rỗng.\n' +
     'luu_y: chỗ dễ hiểu sai; để trống nếu không có.',
 };
