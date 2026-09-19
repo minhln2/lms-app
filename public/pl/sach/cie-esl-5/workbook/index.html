@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>CIE ESL 5 — Workbook · CIE ESL 5</title>
-<link rel="stylesheet" href="../../../../assets/tw.1b910832.css">
+<link rel="stylesheet" href="../../../../assets/tw.4432dbec.css">
 <style>
   [x-cloak] { display: none !important; }
   #pdf { width:100%; height:calc(100vh - 8.5rem); border:0; }
@@ -435,7 +435,9 @@
       pdfJsUrl: "../../../../assets/pdf.e73f3ce5.mjs",
       pdfWorkerUrl: "../../../../assets/pdf.worker.490b29ce.mjs",
       tiLe: 1.2, soTrang: 0, pdfLoi: '', srcNang: '',
-      mlMo: false, trangDang: 0,
+      mlMo: false, trangDang: 0, moUnit: {},
+      // Trang bắt đầu của từng unit — để tự mở đúng unit đang đọc.
+      unitTr: [],
       tim: '', soKq: 0, viTri: 0,
       user: "pl", course: "cie-esl-5",
       secret: localStorage.getItem('lms_key') || '',
@@ -574,7 +576,15 @@
         const q = new IntersectionObserver((muc) => {
           const thay = muc.filter((m) => m.isIntersecting)
                           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-          if (thay) this.trangDang = Number(thay.target.dataset.tr || thay.target.dataset.trang);
+          if (!thay) return;
+          this.trangDang = Number(thay.target.dataset.tr || thay.target.dataset.trang);
+          // Mở sẵn unit chứa trang đang đọc. Không làm thì cuộn tới unit 5 mà
+          // cột mục lục vẫn đang mở unit 1 — cây nói một đằng, trang đi một nẻo.
+          let u = 0;
+          for (let i = 0; i < this.unitTr.length; i++) {
+            if (this.unitTr[i] <= this.trangDang) u = i + 1;
+          }
+          if (u && !this.moUnit[u]) this.moUnit[u] = true;
         }, { rootMargin: '-10% 0px -80% 0px' });
         document.querySelectorAll('.trang[data-tr], #pdfjs [data-trang]')
                 .forEach((e) => q.observe(e));
