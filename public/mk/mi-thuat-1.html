@@ -8,7 +8,7 @@
   <title>Mĩ Thuật 1 — MK</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.e9344bf8.css">
+  <link rel="stylesheet" href="../assets/tw.70807652.css">
   <script defer src="../assets/collapse.d0a27f2d.js"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>
@@ -82,6 +82,45 @@
       if (vnorm(el.dataset.title).includes(vnorm(f.q))) return true;
       return pass.some(c => vnorm(c.dataset.title).includes(vnorm(f.q)));
     }
+    // ---- Menu bên trái -------------------------------------------------------
+    /** Mục menu có hiện không. Dùng CHÍNH `moduleMatches` mà thân trang dùng —
+        chép lại luật lọc sang đây là tạo hai bản sẽ lệch nhau, và lệch theo
+        hướng menu chỉ tới một học phần đang bị ẩn. */
+    function mucHien(i, f) {
+      const el = document.getElementById('mod-' + i);
+      return !el || moduleMatches(el, f);
+    }
+    /** Nhảy tới học phần: phải MỞ nó ra trước, không thì cuộn tới một cái hộp
+        đang gập và người dùng tưởng bấm hụt. */
+    function toiMuc(i) {
+      const el = document.getElementById('mod-' + i);
+      if (!el) return;
+      try { Alpine.$data(el).open = true; } catch (e) {}
+      // ⚠ Phải chờ khối GIÃN RA XONG rồi mới cuộn. Lúc bấm thì mọi khối còn
+      // gập nên trang ngắn, `scrollTo` bị kẹp vào đáy trang và dừng giữa chừng
+      // — đo được hụt 471px. Khối mở ra làm trang cao thêm, nhưng lúc đó đã
+      // cuộn rồi, và không có gì cuộn tiếp.
+      //
+      // ⚠ Cũng KHÔNG dùng `scroll-margin-top` cố định: header dính cao khác
+      // nhau theo bề rộng (đo: 175px ở 1280px, 259px ở 390px vì chip lọc xuống
+      // dòng). Một con số CSS thì hoặc thừa chỗ, hoặc để tiêu đề chui xuống
+      // dưới header — mà cái sau trông y như bấm hụt.
+      const han = performance.now() + 800;      // trần, để không chờ mãi
+      let truoc = -1;
+      const thu = () => {
+        const cao = document.body.scrollHeight;
+        if (cao !== truoc && performance.now() < han) {
+          truoc = cao;
+          return requestAnimationFrame(thu);
+        }
+        const h = document.querySelector('header');
+        const off = h ? h.getBoundingClientRect().height : 0;
+        const y = el.getBoundingClientRect().top + window.scrollY - off - 8;
+        window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+      };
+      requestAnimationFrame(thu);
+    }
+
     // ---- Checkbox của tiêu đề nhóm ------------------------------------------
     // Mọi mục con thuộc cùng data-sec trong cùng tuần/bài. Tiêu đề kiểu Page CÓ
     // nội dung cũng là một mục nên tự nằm trong danh sách — tick nhóm là tick cả
@@ -274,7 +313,7 @@
   </script>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen"
-      x-data="{ q: '', types: [], hw: false, todo: false, recent7: false, p: progressStore(),
+      x-data="{ q: '', types: [], hw: false, todo: false, recent7: false, menuMo: false, p: progressStore(),
                 toggle(t) { this.types.includes(t) ? this.types.splice(this.types.indexOf(t), 1) : this.types.push(t) },
                 get filtering() { return this.types.length > 0 || this.hw || this.todo || this.recent7 },
                 get f() { return { q: this.q, types: this.types, hw: this.hw, todo: this.todo, recent7: this.recent7, done: this.p.done } } }"
@@ -282,7 +321,7 @@
 
   <!-- Header dính, chứa tìm kiếm + Expand/Collapse All -->
   <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
-    <div class="max-w-4xl mx-auto px-4 py-3">
+    <div class="max-w-[72rem] mx-auto px-4 py-3">
       <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-slate-500">
   <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
   <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">MK</a><span class="shrink-0 text-slate-300">›</span>
@@ -367,14 +406,45 @@
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto px-4 py-6 space-y-4">
+  <div class="max-w-[72rem] mx-auto lg:flex lg:gap-5 lg:items-start">
+
+  
+  <aside class="no-print px-4 pt-6 lg:w-64 lg:shrink-0 lg:sticky lg:top-[4.5rem] lg:pr-0">
+    <button @click="menuMo = !menuMo" type="button" :aria-expanded="String(menuMo)"
+            class="lg:hidden w-full px-3 py-2 text-sm font-medium rounded-lg border border-slate-300 bg-white text-slate-700 text-left">
+      <span x-text="menuMo ? '▾' : '▸'"></span> Mục lục (1 phần)
+    </button>
+    <div :class="menuMo ? 'block' : 'hidden lg:block'"
+         class="mt-2 lg:mt-0 rounded-xl border border-slate-200 bg-white p-2 shadow-sm lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+      <p class="px-2 pb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Mục lục</p>
+      <ol class="space-y-0.5">
+        
+        <li x-show="mucHien(1, f)">
+          <button type="button" @click="toiMuc(1); menuMo = false"
+                  class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
+            <span class="min-w-0 flex-1">Unit 1: Mỹ thuật cơ bản (13/8 - 16/10)</span>
+            <template x-if="p.online">
+              <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
+                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/1'"></span>
+            </template>
+          </button>
+        </li>
+        
+      </ol>
+    </div>
+  </aside>
+
+  <main class="min-w-0 lg:flex-1 px-4 py-6 space-y-4">
+
+    
+
     
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: true }"
              @expand-all.window="open = true"
              @collapse-all.window="open = false"
              x-effect="if (q || filtering) open = true"
-             data-module data-title="Unit 1: Mỹ thuật cơ bản (13/8 - 16/10)"
+             id="mod-1" data-module data-title="Unit 1: Mỹ thuật cơ bản (13/8 - 16/10)"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -490,8 +560,9 @@
     
 
   </main>
+  </div>
 
-  <footer class="max-w-4xl mx-auto px-4 pb-8 text-center text-xs text-slate-400">
+  <footer class="max-w-[72rem] mx-auto px-4 pb-8 text-center text-xs text-slate-400">
     Cập nhật tự động · bản lưu offline
   </footer>
 </body>

@@ -8,7 +8,7 @@
   <title>Việt Nam Học 5 — PL</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.e9344bf8.css">
+  <link rel="stylesheet" href="../assets/tw.70807652.css">
   <script defer src="../assets/collapse.d0a27f2d.js"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>
@@ -82,6 +82,45 @@
       if (vnorm(el.dataset.title).includes(vnorm(f.q))) return true;
       return pass.some(c => vnorm(c.dataset.title).includes(vnorm(f.q)));
     }
+    // ---- Menu bên trái -------------------------------------------------------
+    /** Mục menu có hiện không. Dùng CHÍNH `moduleMatches` mà thân trang dùng —
+        chép lại luật lọc sang đây là tạo hai bản sẽ lệch nhau, và lệch theo
+        hướng menu chỉ tới một học phần đang bị ẩn. */
+    function mucHien(i, f) {
+      const el = document.getElementById('mod-' + i);
+      return !el || moduleMatches(el, f);
+    }
+    /** Nhảy tới học phần: phải MỞ nó ra trước, không thì cuộn tới một cái hộp
+        đang gập và người dùng tưởng bấm hụt. */
+    function toiMuc(i) {
+      const el = document.getElementById('mod-' + i);
+      if (!el) return;
+      try { Alpine.$data(el).open = true; } catch (e) {}
+      // ⚠ Phải chờ khối GIÃN RA XONG rồi mới cuộn. Lúc bấm thì mọi khối còn
+      // gập nên trang ngắn, `scrollTo` bị kẹp vào đáy trang và dừng giữa chừng
+      // — đo được hụt 471px. Khối mở ra làm trang cao thêm, nhưng lúc đó đã
+      // cuộn rồi, và không có gì cuộn tiếp.
+      //
+      // ⚠ Cũng KHÔNG dùng `scroll-margin-top` cố định: header dính cao khác
+      // nhau theo bề rộng (đo: 175px ở 1280px, 259px ở 390px vì chip lọc xuống
+      // dòng). Một con số CSS thì hoặc thừa chỗ, hoặc để tiêu đề chui xuống
+      // dưới header — mà cái sau trông y như bấm hụt.
+      const han = performance.now() + 800;      // trần, để không chờ mãi
+      let truoc = -1;
+      const thu = () => {
+        const cao = document.body.scrollHeight;
+        if (cao !== truoc && performance.now() < han) {
+          truoc = cao;
+          return requestAnimationFrame(thu);
+        }
+        const h = document.querySelector('header');
+        const off = h ? h.getBoundingClientRect().height : 0;
+        const y = el.getBoundingClientRect().top + window.scrollY - off - 8;
+        window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+      };
+      requestAnimationFrame(thu);
+    }
+
     // ---- Checkbox của tiêu đề nhóm ------------------------------------------
     // Mọi mục con thuộc cùng data-sec trong cùng tuần/bài. Tiêu đề kiểu Page CÓ
     // nội dung cũng là một mục nên tự nằm trong danh sách — tick nhóm là tick cả
@@ -274,7 +313,7 @@
   </script>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen"
-      x-data="{ q: '', types: [], hw: false, todo: false, recent7: false, p: progressStore(),
+      x-data="{ q: '', types: [], hw: false, todo: false, recent7: false, menuMo: false, p: progressStore(),
                 toggle(t) { this.types.includes(t) ? this.types.splice(this.types.indexOf(t), 1) : this.types.push(t) },
                 get filtering() { return this.types.length > 0 || this.hw || this.todo || this.recent7 },
                 get f() { return { q: this.q, types: this.types, hw: this.hw, todo: this.todo, recent7: this.recent7, done: this.p.done } } }"
@@ -282,7 +321,7 @@
 
   <!-- Header dính, chứa tìm kiếm + Expand/Collapse All -->
   <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
-    <div class="max-w-4xl mx-auto px-4 py-3">
+    <div class="max-w-[72rem] mx-auto px-4 py-3">
       <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-slate-500">
   <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
   <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">PL</a><span class="shrink-0 text-slate-300">›</span>
@@ -397,14 +436,56 @@
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto px-4 py-6 space-y-4">
+  <div class="max-w-[72rem] mx-auto lg:flex lg:gap-5 lg:items-start">
+
+  
+  <aside class="no-print px-4 pt-6 lg:w-64 lg:shrink-0 lg:sticky lg:top-[4.5rem] lg:pr-0">
+    <button @click="menuMo = !menuMo" type="button" :aria-expanded="String(menuMo)"
+            class="lg:hidden w-full px-3 py-2 text-sm font-medium rounded-lg border border-slate-300 bg-white text-slate-700 text-left">
+      <span x-text="menuMo ? '▾' : '▸'"></span> Mục lục (2 phần)
+    </button>
+    <div :class="menuMo ? 'block' : 'hidden lg:block'"
+         class="mt-2 lg:mt-0 rounded-xl border border-slate-200 bg-white p-2 shadow-sm lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+      <p class="px-2 pb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Mục lục</p>
+      <ol class="space-y-0.5">
+        
+        <li x-show="mucHien(1, f)">
+          <button type="button" @click="toiMuc(1); menuMo = false"
+                  class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
+            <span class="min-w-0 flex-1">Chủ đề 2: Sân khấu dân gian: Từ văn học đến diễn xướng </span>
+            <template x-if="p.online">
+              <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
+                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/9'"></span>
+            </template>
+          </button>
+        </li>
+        
+        <li x-show="mucHien(2, f)">
+          <button type="button" @click="toiMuc(2); menuMo = false"
+                  class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
+            <span class="min-w-0 flex-1">Chủ đề 1: Hoa văn đình, đền, chùa</span>
+            <template x-if="p.online">
+              <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
+                    x-text="moduleDone(document.getElementById('mod-2'), p.done) + '/12'"></span>
+            </template>
+          </button>
+        </li>
+        
+      </ol>
+    </div>
+  </aside>
+
+  <main class="min-w-0 lg:flex-1 px-4 py-6 space-y-4">
+
+    
+
     
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: true }"
              @expand-all.window="open = true"
              @collapse-all.window="open = false"
              x-effect="if (q || filtering) open = true"
-             data-module data-title="Chủ đề 2: Sân khấu dân gian: Từ văn học đến diễn xướng "
+             id="mod-1" data-module data-title="Chủ đề 2: Sân khấu dân gian: Từ văn học đến diễn xướng "
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -1119,7 +1200,7 @@
              @expand-all.window="open = true"
              @collapse-all.window="open = false"
              x-effect="if (q || filtering) open = true"
-             data-module data-title="Chủ đề 1: Hoa văn đình, đền, chùa"
+             id="mod-2" data-module data-title="Chủ đề 1: Hoa văn đình, đền, chùa"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -1295,276 +1376,6 @@
                 <p><span>Hoa văn đình, đền, chùa là một trong những nét nghệ thuật cổ điển còn lưu giữ đến ngày nay. Các họa tiết thường sẽ liên quan đến những thứ gần gũi với chúng ta và thiên nhiên như lá hoa sen, lá đề, rùa,… hay những hình ảnh đầy sáng tạo nhưng không khỏi thân quen như là: Rồng, phượng, kỳ lân. Chính những họa tiết được chạm khắc đầy tinh xảo ấy đã giúp cho đình, chùa có một dấu ấn riêng dễ nhận biết.</span></p>
 <p><span>Trong chương này, học sinh sẽ phân biệt sự khác nhau giữa đình, đền, chùa ở Việt Nam; trình bày được định nghĩa, phân loại và giá trị của hoa văn đình, đền, chùa và vận dụng thực hiện sản phẩm trải nghiệm lại quá trình tạo hình hoa văn. Học sinh được kì vọng sẽ giải thích được lý do vì sao những hoa văn này đóng vai trò quan trọng trong đời sống con người Việt; so sánh được điểm tương đồng và khác biệt để thấy được sự đa dạng, phong phú trong việc thể hiện các hoa văn qua từng triều đại. Suy ngẫm được điều gì sẽ xảy ra nếu những thế hệ mai sau không gìn giữ được nét giá trị văn hóa này từ đó đưa ra được những giải pháp và hướng hành động để giữ gìn, lan tỏa giá trị của những hoa văn.</span></p>
 <p> </p>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-sechead data-title="Nhiệm vụ tự học" data-sec="1"
-             x-show="headingMatches($el, f)"
-             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
-             style="padding-left: 1.0rem">
-          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
-          <template x-if="p.online">
-            <input type="checkbox" title="Đánh dấu cả nhóm này"
-                   x-effect="syncSecBox($el, p.done)"
-                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
-                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-          </template>
-          <span>Nhiệm vụ tự học</span>
-        </div>
-        
-        
-        
-        <div data-item data-title="Tự học_Chủ đề 1_Tìm hiểu hoa văn đình, đền, chùa" data-type="page" data-sec="1"
-             data-pkey="pl/80104/7772441" data-hash="d489d6703bb9ab83e9bb04d6408c2e388d318c6b" data-ts="1786527489000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80104/7772441'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/80104/7772441'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/80104/7772441']; $el.indeterminate = !!p.redo['pl/80104/7772441']"
-                     @change="await p.toggle('pl/80104/7772441', 'd489d6703bb9ab83e9bb04d6408c2e388d318c6b'); $el.checked = !!p.done['pl/80104/7772441']; $el.indeterminate = !!p.redo['pl/80104/7772441']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
-                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tự học_Chủ đề 1_Tìm hiểu hoa văn đình, đền, chùa</span>
-                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
-                     :class="o ? 'rotate-180' : ''"
-                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80104/7772441', 'd489d6703bb9ab83e9bb04d6408c2e388d318c6b')">
-                  <button @click.stop="p.seen('pl/80104/7772441', 'd489d6703bb9ab83e9bb04d6408c2e388d318c6b')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 12/08</span>
-                
-                
-                <a href="https://lms.vinschool.edu.vn/courses/80104/pages/tu-hoc-chu-de-1-tim-hieu-hoa-van-dinh-den-chua" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-              <div x-show="o" x-collapse x-cloak
-                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
-                <p>Các con thân mến! Đây là bài học đầu tiên của chủ đề Hoa văn đình, đền, chùa trong môn Việt Nam học. </p>
-<p><strong> Mục tiêu bài học:</strong></p>
-<ul>
-<li>Ghi nhớ được một số đặc điểm cơ bản của hoa văn đình, đền, chùa.</li>
-<li><span style="font-size: 1rem;">Trình bày được chủ đề Hoa văn đình, đền, chùa.</span></li>
-</ul>
-<p><strong>Video</strong></p>
-<p><span>Con hãy chuẩn bị vở ghi bài, bút viết. Con hãy chọn không gian ngồi học yên tĩnh, thoải mái để tập trung vào bài học nhé!<iframe allowfullscreen="allowfullscreen" height="713" loading="lazy" src="https://h5p.org/h5p/embed/997661" width="1090"></iframe> </span></p>
-<p> </p>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-sechead data-title="Sản phẩm học tập" data-sec="2"
-             x-show="headingMatches($el, f)"
-             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
-             style="padding-left: 1.0rem">
-          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
-          <template x-if="p.online">
-            <input type="checkbox" title="Đánh dấu cả nhóm này"
-                   x-effect="syncSecBox($el, p.done)"
-                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
-                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-          </template>
-          <span>Sản phẩm học tập</span>
-        </div>
-        
-        
-        
-        <div data-item data-title="Tìm hiểu về các nhóm hoa văn" data-type="discussion" data-sec="2"
-             data-pkey="pl/80104/7772445" data-hash="e4a5c946de466ca3817e6ceea92da10eccc5589d" data-ts="1786527489000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80104/7772445'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/80104/7772445'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/80104/7772445']; $el.indeterminate = !!p.redo['pl/80104/7772445']"
-                     @change="await p.toggle('pl/80104/7772445', 'e4a5c946de466ca3817e6ceea92da10eccc5589d'); $el.checked = !!p.done['pl/80104/7772445']; $el.indeterminate = !!p.redo['pl/80104/7772445']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="thảo luận">💬</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
-                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tìm hiểu về các nhóm hoa văn</span>
-                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
-                     :class="o ? 'rotate-180' : ''"
-                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">thảo luận</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80104/7772445', 'e4a5c946de466ca3817e6ceea92da10eccc5589d')">
-                  <button @click.stop="p.seen('pl/80104/7772445', 'e4a5c946de466ca3817e6ceea92da10eccc5589d')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 12/08</span>
-                
-                
-                <a href="https://lms.vinschool.edu.vn/courses/80104/discussion_topics/618878" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-              <div x-show="o" x-collapse x-cloak
-                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
-                <p>Các nhóm sử dụng tư liệu dưới đây để theo dõi và tìm hiểu theo yêu cầu bên dưới:</p>
-<p><strong>Tư liệu: </strong></p>
-<p>1. Hoa văn xi vẫn </p>
-<p><a href="https://lms.vinschool.edu.vn/courses/80104/pages/tai-lieu-tham-khao-chu-de-1-hoa-van-xi-van?module_item_id=g97f01f6b441ad463f48fb0258259c5b9" rel="noopener" target="_blank">$WIKI_REFERENCE$/pages/tai-lieu-tham-khao-chu-de-1-hoa-van-xi-van?module_item_id=1535234</a></p>
-<p>2. Đình làng Đình Bảng</p>
-<p><a href="https://senvietdecor.com/tin-tuc/kien-truc-co-xua-cua-dinh-lang-dinh-bang-tu-son-bac-ninh.html" rel="noopener" target="_blank">https://senvietdecor.com/tin-tuc/kien-truc-co-xua-cua-dinh-lang-dinh-bang-tu-son-bac-ninh.html</a></p>
-<p><a href="https://vov.vn/du-lich/dinh-lang-dinh-bang-tuyet-tac-kien-truc-co-xu-kinh-bac-823157.vov" rel="noopener" target="_blank">https://vov.vn/du-lich/dinh-lang-dinh-bang-tuyet-tac-kien-truc-co-xu-kinh-bac-823157.vov</a></p>
-<p>3. Chùa Dâu </p>
-<p><a class="" data-ytt-failcnt="3" href="https://www.youtube.com/watch?v=bIt0uYKVqmE" rel="noopener" target="_blank">https://www.youtube.com/watch?v=bIt0uYKVqmE</a></p>
-<p><strong>Nội dung cần tìm hiểu</strong></p>
-<p>-Hình ảnh hoa văn các loại</p>
-<p>-Vị trí xuất hiện hoa văn</p>
-<p>-Không gian tổng quan, kiến trúc tổng quan của đình/đền/chùa.</p>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="Tìm hiểu về hoa văn đình làng Đình Bảng" data-type="assignment" data-sec="2"
-             data-pkey="pl/80104/7772449" data-hash="0f76e3d4b0c0725c3559b0ad927e0276263c9dc8" data-ts="1786527489000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80104/7772449'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/80104/7772449'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/80104/7772449']; $el.indeterminate = !!p.redo['pl/80104/7772449']"
-                     @change="await p.toggle('pl/80104/7772449', '0f76e3d4b0c0725c3559b0ad927e0276263c9dc8'); $el.checked = !!p.done['pl/80104/7772449']; $el.indeterminate = !!p.redo['pl/80104/7772449']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài tập">📝</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
-                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tìm hiểu về hoa văn đình làng Đình Bảng</span>
-                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
-                     :class="o ? 'rotate-180' : ''"
-                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài tập</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80104/7772449', '0f76e3d4b0c0725c3559b0ad927e0276263c9dc8')">
-                  <button @click.stop="p.seen('pl/80104/7772449', '0f76e3d4b0c0725c3559b0ad927e0276263c9dc8')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 12/08</span>
-                
-                
-                <a href="https://lms.vinschool.edu.vn/courses/80104/assignments/2654679" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-              <div x-show="o" x-collapse x-cloak
-                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
-                <p>Con hãy tìm hiểu về đình làng Đình Bảng và trả lời các câu hỏi dưới đây:</p>
-<p><span>1. Đình làng Đình Bảng ở đâu? Được hình thành từ năm nào? </span><br/><span>2. Quan sát hình ảnh về đình làng Đình Bảng và phát hiện một loại hoa văn được trang trí tại đình. </span></p>
-<p><span>Ghi chép nội dung tìm hiểu vào <a class="inline_disabled" href="https://padlet.com/vhangntt139/t-m-hi-u-v-nh-l-ng-nh-b-ng-5n7eoacoe4mx7vgj" rel="noopener" target="_blank">PADLET</a>.</span></p>
               </div>
               
             </div>
@@ -1846,77 +1657,6 @@
         
         
         
-        <div data-item data-title="Quiz_Phân loại hoa văn" data-type="quiz" data-sec="3"
-             data-pkey="pl/80104/7772463" data-hash="c0b910a94e29e6405b8322dfdd4b41acd760d3f6" data-ts="1787629440000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80104/7772463'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/80104/7772463'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/80104/7772463']; $el.indeterminate = !!p.redo['pl/80104/7772463']"
-                     @change="await p.toggle('pl/80104/7772463', 'c0b910a94e29e6405b8322dfdd4b41acd760d3f6'); $el.checked = !!p.done['pl/80104/7772463']; $el.indeterminate = !!p.redo['pl/80104/7772463']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài kiểm tra">🧪</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
-              <a href="https://lms.vinschool.edu.vn/courses/80104/quizzes/1935577" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                Quiz_Phân loại hoa văn
-                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                </svg>
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài kiểm tra</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80104/7772463', 'c0b910a94e29e6405b8322dfdd4b41acd760d3f6')">
-                  <button @click.stop="p.seen('pl/80104/7772463', 'c0b910a94e29e6405b8322dfdd4b41acd760d3f6')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                  <span>10 câu hỏi</span>
-                  <span>10 điểm</span>
-                  <span>600 phút</span>
-                  <span>2 lượt làm</span>
-                
-                
-                
-                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 25/08</span>
-                
-                <a href="https://lms.vinschool.edu.vn/courses/80104/quizzes/1935577" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
         <div data-item data-title="Bài tập tìm hiểu_Chủ đề 1" data-type="assignment" data-sec="3"
              data-pkey="pl/80104/7772467" data-hash="348778780a425da0f93f541db04efb863b6d9af0" data-ts="1786527490000"
              
@@ -2050,13 +1790,355 @@
         
         
         
+        <div data-item data-title="Quiz_Phân loại hoa văn" data-type="quiz" data-sec="3"
+             data-pkey="pl/80104/7772463" data-hash="c0b910a94e29e6405b8322dfdd4b41acd760d3f6" data-ts="1787629440000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/80104/7772463'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80104/7772463'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80104/7772463']; $el.indeterminate = !!p.redo['pl/80104/7772463']"
+                     @change="await p.toggle('pl/80104/7772463', 'c0b910a94e29e6405b8322dfdd4b41acd760d3f6'); $el.checked = !!p.done['pl/80104/7772463']; $el.indeterminate = !!p.redo['pl/80104/7772463']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài kiểm tra">🧪</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://lms.vinschool.edu.vn/courses/80104/quizzes/1935577" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Quiz_Phân loại hoa văn
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài kiểm tra</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80104/7772463', 'c0b910a94e29e6405b8322dfdd4b41acd760d3f6')">
+                  <button @click.stop="p.seen('pl/80104/7772463', 'c0b910a94e29e6405b8322dfdd4b41acd760d3f6')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                  <span>10 câu hỏi</span>
+                  <span>10 điểm</span>
+                  <span>600 phút</span>
+                  <span>2 lượt làm</span>
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 25/08</span>
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80104/quizzes/1935577" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-sechead data-title="Nhiệm vụ tự học" data-sec="1"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>Nhiệm vụ tự học</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="Tự học_Chủ đề 1_Tìm hiểu hoa văn đình, đền, chùa" data-type="page" data-sec="1"
+             data-pkey="pl/80104/7772441" data-hash="d489d6703bb9ab83e9bb04d6408c2e388d318c6b" data-ts="1786527489000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/80104/7772441'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80104/7772441'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80104/7772441']; $el.indeterminate = !!p.redo['pl/80104/7772441']"
+                     @change="await p.toggle('pl/80104/7772441', 'd489d6703bb9ab83e9bb04d6408c2e388d318c6b'); $el.checked = !!p.done['pl/80104/7772441']; $el.indeterminate = !!p.redo['pl/80104/7772441']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tự học_Chủ đề 1_Tìm hiểu hoa văn đình, đền, chùa</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80104/7772441', 'd489d6703bb9ab83e9bb04d6408c2e388d318c6b')">
+                  <button @click.stop="p.seen('pl/80104/7772441', 'd489d6703bb9ab83e9bb04d6408c2e388d318c6b')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 12/08</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80104/pages/tu-hoc-chu-de-1-tim-hieu-hoa-van-dinh-den-chua" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Các con thân mến! Đây là bài học đầu tiên của chủ đề Hoa văn đình, đền, chùa trong môn Việt Nam học. </p>
+<p><strong> Mục tiêu bài học:</strong></p>
+<ul>
+<li>Ghi nhớ được một số đặc điểm cơ bản của hoa văn đình, đền, chùa.</li>
+<li><span style="font-size: 1rem;">Trình bày được chủ đề Hoa văn đình, đền, chùa.</span></li>
+</ul>
+<p><strong>Video</strong></p>
+<p><span>Con hãy chuẩn bị vở ghi bài, bút viết. Con hãy chọn không gian ngồi học yên tĩnh, thoải mái để tập trung vào bài học nhé!<iframe allowfullscreen="allowfullscreen" height="713" loading="lazy" src="https://h5p.org/h5p/embed/997661" width="1090"></iframe> </span></p>
+<p> </p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-sechead data-title="Sản phẩm học tập" data-sec="2"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>Sản phẩm học tập</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="Tìm hiểu về các nhóm hoa văn" data-type="discussion" data-sec="2"
+             data-pkey="pl/80104/7772445" data-hash="e4a5c946de466ca3817e6ceea92da10eccc5589d" data-ts="1786527489000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/80104/7772445'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80104/7772445'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80104/7772445']; $el.indeterminate = !!p.redo['pl/80104/7772445']"
+                     @change="await p.toggle('pl/80104/7772445', 'e4a5c946de466ca3817e6ceea92da10eccc5589d'); $el.checked = !!p.done['pl/80104/7772445']; $el.indeterminate = !!p.redo['pl/80104/7772445']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="thảo luận">💬</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tìm hiểu về các nhóm hoa văn</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">thảo luận</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80104/7772445', 'e4a5c946de466ca3817e6ceea92da10eccc5589d')">
+                  <button @click.stop="p.seen('pl/80104/7772445', 'e4a5c946de466ca3817e6ceea92da10eccc5589d')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 12/08</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80104/discussion_topics/618878" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Các nhóm sử dụng tư liệu dưới đây để theo dõi và tìm hiểu theo yêu cầu bên dưới:</p>
+<p><strong>Tư liệu: </strong></p>
+<p>1. Hoa văn xi vẫn </p>
+<p><a href="https://lms.vinschool.edu.vn/courses/80104/pages/tai-lieu-tham-khao-chu-de-1-hoa-van-xi-van?module_item_id=g97f01f6b441ad463f48fb0258259c5b9" rel="noopener" target="_blank">$WIKI_REFERENCE$/pages/tai-lieu-tham-khao-chu-de-1-hoa-van-xi-van?module_item_id=1535234</a></p>
+<p>2. Đình làng Đình Bảng</p>
+<p><a href="https://senvietdecor.com/tin-tuc/kien-truc-co-xua-cua-dinh-lang-dinh-bang-tu-son-bac-ninh.html" rel="noopener" target="_blank">https://senvietdecor.com/tin-tuc/kien-truc-co-xua-cua-dinh-lang-dinh-bang-tu-son-bac-ninh.html</a></p>
+<p><a href="https://vov.vn/du-lich/dinh-lang-dinh-bang-tuyet-tac-kien-truc-co-xu-kinh-bac-823157.vov" rel="noopener" target="_blank">https://vov.vn/du-lich/dinh-lang-dinh-bang-tuyet-tac-kien-truc-co-xu-kinh-bac-823157.vov</a></p>
+<p>3. Chùa Dâu </p>
+<p><a class="" data-ytt-failcnt="3" href="https://www.youtube.com/watch?v=bIt0uYKVqmE" rel="noopener" target="_blank">https://www.youtube.com/watch?v=bIt0uYKVqmE</a></p>
+<p><strong>Nội dung cần tìm hiểu</strong></p>
+<p>-Hình ảnh hoa văn các loại</p>
+<p>-Vị trí xuất hiện hoa văn</p>
+<p>-Không gian tổng quan, kiến trúc tổng quan của đình/đền/chùa.</p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Tìm hiểu về hoa văn đình làng Đình Bảng" data-type="assignment" data-sec="2"
+             data-pkey="pl/80104/7772449" data-hash="0f76e3d4b0c0725c3559b0ad927e0276263c9dc8" data-ts="1786527489000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/80104/7772449'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80104/7772449'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80104/7772449']; $el.indeterminate = !!p.redo['pl/80104/7772449']"
+                     @change="await p.toggle('pl/80104/7772449', '0f76e3d4b0c0725c3559b0ad927e0276263c9dc8'); $el.checked = !!p.done['pl/80104/7772449']; $el.indeterminate = !!p.redo['pl/80104/7772449']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài tập">📝</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tìm hiểu về hoa văn đình làng Đình Bảng</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài tập</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80104/7772449', '0f76e3d4b0c0725c3559b0ad927e0276263c9dc8')">
+                  <button @click.stop="p.seen('pl/80104/7772449', '0f76e3d4b0c0725c3559b0ad927e0276263c9dc8')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 12/08</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80104/assignments/2654679" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Con hãy tìm hiểu về đình làng Đình Bảng và trả lời các câu hỏi dưới đây:</p>
+<p><span>1. Đình làng Đình Bảng ở đâu? Được hình thành từ năm nào? </span><br/><span>2. Quan sát hình ảnh về đình làng Đình Bảng và phát hiện một loại hoa văn được trang trí tại đình. </span></p>
+<p><span>Ghi chép nội dung tìm hiểu vào <a class="inline_disabled" href="https://padlet.com/vhangntt139/t-m-hi-u-v-nh-l-ng-nh-b-ng-5n7eoacoe4mx7vgj" rel="noopener" target="_blank">PADLET</a>.</span></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
       </div>
     </section>
     
 
   </main>
+  </div>
 
-  <footer class="max-w-4xl mx-auto px-4 pb-8 text-center text-xs text-slate-400">
+  <footer class="max-w-[72rem] mx-auto px-4 pb-8 text-center text-xs text-slate-400">
     Cập nhật tự động · bản lưu offline
   </footer>
 </body>

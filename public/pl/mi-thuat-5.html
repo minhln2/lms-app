@@ -8,7 +8,7 @@
   <title>Mĩ Thuật 5 — PL</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.e9344bf8.css">
+  <link rel="stylesheet" href="../assets/tw.70807652.css">
   <script defer src="../assets/collapse.d0a27f2d.js"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>
@@ -82,6 +82,45 @@
       if (vnorm(el.dataset.title).includes(vnorm(f.q))) return true;
       return pass.some(c => vnorm(c.dataset.title).includes(vnorm(f.q)));
     }
+    // ---- Menu bên trái -------------------------------------------------------
+    /** Mục menu có hiện không. Dùng CHÍNH `moduleMatches` mà thân trang dùng —
+        chép lại luật lọc sang đây là tạo hai bản sẽ lệch nhau, và lệch theo
+        hướng menu chỉ tới một học phần đang bị ẩn. */
+    function mucHien(i, f) {
+      const el = document.getElementById('mod-' + i);
+      return !el || moduleMatches(el, f);
+    }
+    /** Nhảy tới học phần: phải MỞ nó ra trước, không thì cuộn tới một cái hộp
+        đang gập và người dùng tưởng bấm hụt. */
+    function toiMuc(i) {
+      const el = document.getElementById('mod-' + i);
+      if (!el) return;
+      try { Alpine.$data(el).open = true; } catch (e) {}
+      // ⚠ Phải chờ khối GIÃN RA XONG rồi mới cuộn. Lúc bấm thì mọi khối còn
+      // gập nên trang ngắn, `scrollTo` bị kẹp vào đáy trang và dừng giữa chừng
+      // — đo được hụt 471px. Khối mở ra làm trang cao thêm, nhưng lúc đó đã
+      // cuộn rồi, và không có gì cuộn tiếp.
+      //
+      // ⚠ Cũng KHÔNG dùng `scroll-margin-top` cố định: header dính cao khác
+      // nhau theo bề rộng (đo: 175px ở 1280px, 259px ở 390px vì chip lọc xuống
+      // dòng). Một con số CSS thì hoặc thừa chỗ, hoặc để tiêu đề chui xuống
+      // dưới header — mà cái sau trông y như bấm hụt.
+      const han = performance.now() + 800;      // trần, để không chờ mãi
+      let truoc = -1;
+      const thu = () => {
+        const cao = document.body.scrollHeight;
+        if (cao !== truoc && performance.now() < han) {
+          truoc = cao;
+          return requestAnimationFrame(thu);
+        }
+        const h = document.querySelector('header');
+        const off = h ? h.getBoundingClientRect().height : 0;
+        const y = el.getBoundingClientRect().top + window.scrollY - off - 8;
+        window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+      };
+      requestAnimationFrame(thu);
+    }
+
     // ---- Checkbox của tiêu đề nhóm ------------------------------------------
     // Mọi mục con thuộc cùng data-sec trong cùng tuần/bài. Tiêu đề kiểu Page CÓ
     // nội dung cũng là một mục nên tự nằm trong danh sách — tick nhóm là tick cả
@@ -274,7 +313,7 @@
   </script>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen"
-      x-data="{ q: '', types: [], hw: false, todo: false, recent7: false, p: progressStore(),
+      x-data="{ q: '', types: [], hw: false, todo: false, recent7: false, menuMo: false, p: progressStore(),
                 toggle(t) { this.types.includes(t) ? this.types.splice(this.types.indexOf(t), 1) : this.types.push(t) },
                 get filtering() { return this.types.length > 0 || this.hw || this.todo || this.recent7 },
                 get f() { return { q: this.q, types: this.types, hw: this.hw, todo: this.todo, recent7: this.recent7, done: this.p.done } } }"
@@ -282,7 +321,7 @@
 
   <!-- Header dính, chứa tìm kiếm + Expand/Collapse All -->
   <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
-    <div class="max-w-4xl mx-auto px-4 py-3">
+    <div class="max-w-[72rem] mx-auto px-4 py-3">
       <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-slate-500">
   <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
   <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">PL</a><span class="shrink-0 text-slate-300">›</span>
@@ -373,14 +412,45 @@
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto px-4 py-6 space-y-4">
+  <div class="max-w-[72rem] mx-auto lg:flex lg:gap-5 lg:items-start">
+
+  
+  <aside class="no-print px-4 pt-6 lg:w-64 lg:shrink-0 lg:sticky lg:top-[4.5rem] lg:pr-0">
+    <button @click="menuMo = !menuMo" type="button" :aria-expanded="String(menuMo)"
+            class="lg:hidden w-full px-3 py-2 text-sm font-medium rounded-lg border border-slate-300 bg-white text-slate-700 text-left">
+      <span x-text="menuMo ? '▾' : '▸'"></span> Mục lục (1 phần)
+    </button>
+    <div :class="menuMo ? 'block' : 'hidden lg:block'"
+         class="mt-2 lg:mt-0 rounded-xl border border-slate-200 bg-white p-2 shadow-sm lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+      <p class="px-2 pb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Mục lục</p>
+      <ol class="space-y-0.5">
+        
+        <li x-show="mucHien(1, f)">
+          <button type="button" @click="toiMuc(1); menuMo = false"
+                  class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
+            <span class="min-w-0 flex-1">UNIT 1 - MĨ THUẬT CƠ BẢN (13/8 đến 16/10)</span>
+            <template x-if="p.online">
+              <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
+                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/8'"></span>
+            </template>
+          </button>
+        </li>
+        
+      </ol>
+    </div>
+  </aside>
+
+  <main class="min-w-0 lg:flex-1 px-4 py-6 space-y-4">
+
+    
+
     
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: true }"
              @expand-all.window="open = true"
              @collapse-all.window="open = false"
              x-effect="if (q || filtering) open = true"
-             data-module data-title="UNIT 1 - MĨ THUẬT CƠ BẢN (13/8 đến 16/10)"
+             id="mod-1" data-module data-title="UNIT 1 - MĨ THUẬT CƠ BẢN (13/8 đến 16/10)"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -401,334 +471,6 @@
       </button>
 
       <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
-        
-        
-        <div data-sechead data-title="Lesson 1.1. Bố cục trong tranh (Từ ngày 13/8 - 11/9)" data-sec="1"
-             x-show="headingMatches($el, f)"
-             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
-             style="padding-left: 1.0rem">
-          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
-          <template x-if="p.online">
-            <input type="checkbox" title="Đánh dấu cả nhóm này"
-                   x-effect="syncSecBox($el, p.done)"
-                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
-                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-          </template>
-          <span>Lesson 1.1. Bố cục trong tranh (Từ ngày 13/8 - 11/9)</span>
-        </div>
-        
-        
-        
-        <div data-item data-title="Tìm hiểu về bố cục trong tranh" data-type="page" data-sec="1"
-             data-pkey="pl/79997/8392279" data-hash="7c28a6abbd94b9dcb12812ac0a8176fad2f355af" data-ts="1787130635000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/79997/8392279'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79997/8392279'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79997/8392279']; $el.indeterminate = !!p.redo['pl/79997/8392279']"
-                     @change="await p.toggle('pl/79997/8392279', '7c28a6abbd94b9dcb12812ac0a8176fad2f355af'); $el.checked = !!p.done['pl/79997/8392279']; $el.indeterminate = !!p.redo['pl/79997/8392279']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
-                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tìm hiểu về bố cục trong tranh</span>
-                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
-                     :class="o ? 'rotate-180' : ''"
-                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79997/8392279', '7c28a6abbd94b9dcb12812ac0a8176fad2f355af')">
-                  <button @click.stop="p.seen('pl/79997/8392279', '7c28a6abbd94b9dcb12812ac0a8176fad2f355af')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 19/08</span>
-                
-                
-                <a href="https://lms.vinschool.edu.vn/courses/79997/pages/tim-hieu-ve-bo-cuc-trong-tranh" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-              <div x-show="o" x-collapse x-cloak
-                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
-                <p><span><strong>Chào mừng các con đến với lớp học Mĩ thuật! </strong></span></p>
-<p>Ở mục này các con đọc mục tiêu bài học và tìm hiểu về bố cục trong tranh nhé!</p>
-<p><span><strong>Bài:  Bố cục trong tranh</strong></span></p>
-<p><span><strong><img alt="" height="36" loading="lazy" src="https://i.pinimg.com/564x/9f/07/bd/9f07bd65bda276ac3be50d499c6eb8c7.jpg" width="35"/> Hướng dẫn các bước vẽ tranh bố cục.</strong></span></p>
-<p><img alt="Bo_cuc_trong_tranh_Lop_5_trang_1.png" loading="lazy" src="https://minhln2.github.io/lms/pl/materials/mi-thuat-5/unit-1-mi-thuat-co-ban-13-8-den-16-10/Bo_cuc_trong_tranh_Lop_5_trang_1.png"/></p>
-<p><img alt="Bo_cuc_trong_tranh_Lop_5_trang_2.png" loading="lazy" src="https://minhln2.github.io/lms/pl/materials/mi-thuat-5/unit-1-mi-thuat-co-ban-13-8-den-16-10/Bo_cuc_trong_tranh_Lop_5_trang_2.png"/></p>
-<p><img alt="Bo_cuc_trong_tranh_Lop_5_trang_3.png" loading="lazy" src="https://minhln2.github.io/lms/pl/materials/mi-thuat-5/unit-1-mi-thuat-co-ban-13-8-den-16-10/Bo_cuc_trong_tranh_Lop_5_trang_3.png"/></p>
-<p><img alt="Bo_cuc_trong_tranh_Lop_5_trang_4.png" loading="lazy" src="https://minhln2.github.io/lms/pl/materials/mi-thuat-5/unit-1-mi-thuat-co-ban-13-8-den-16-10/Bo_cuc_trong_tranh_Lop_5_trang_4.png"/></p>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="Bài tập thực hành bài bố cục trong tranh" data-type="page" data-sec="1"
-             data-pkey="pl/79997/8392271" data-hash="2cd13e6895d31c0b0cb35bd7753698fbf832e225" data-ts="1787130637000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/79997/8392271'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79997/8392271'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79997/8392271']; $el.indeterminate = !!p.redo['pl/79997/8392271']"
-                     @change="await p.toggle('pl/79997/8392271', '2cd13e6895d31c0b0cb35bd7753698fbf832e225'); $el.checked = !!p.done['pl/79997/8392271']; $el.indeterminate = !!p.redo['pl/79997/8392271']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
-                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Bài tập thực hành bài bố cục trong tranh</span>
-                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
-                     :class="o ? 'rotate-180' : ''"
-                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79997/8392271', '2cd13e6895d31c0b0cb35bd7753698fbf832e225')">
-                  <button @click.stop="p.seen('pl/79997/8392271', '2cd13e6895d31c0b0cb35bd7753698fbf832e225')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 19/08</span>
-                
-                
-                <a href="https://lms.vinschool.edu.vn/courses/79997/pages/bai-tap-thuc-hanh" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-              <div x-show="o" x-collapse x-cloak
-                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
-                <p><span><strong>Cô chào các con! </strong></span></p>
-<p><span><strong>Ở mục này các con hãy xem đoạn video hướng dẫn cách vẽ và lựa chọn cách vẽ để thực hành vẽ một bức tranh bằng phách thảo chì nhé! </strong></span></p>
-<p style="text-align: center;"><span><strong> HƯỚNG DẪN CÁCH VẼ KHÔNG GIAN VÀ ĐỘ ĐẬM NHẠT TRONG TRANH</strong></span></p>
-<p><iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" data-mce-fragment="1" height="315" loading="lazy" src="https://www.youtube.com/embed/MHHqivyIKSY?si=Y2GRYJlMmOMY2iSS" title="YouTube video player" width="800"></iframe></p>
-<p> </p>
-<p><span><strong>C. BÀI TẬP THỰC HÀNH.</strong></span></p>
-<p><span><strong>Lựa chọn 1:</strong> Vẽ không gian độ đậm nhạt vào tranh có sẵn</span></p>
-<p><span><i>Tiêu chí:</i></span></p>
-<p><span>+ Sử dụng được 3 đến 4 màu để tô vào tranh</span></p>
-<p><span>+ Sử dụng màu có sẵn tô vào tranh</span></p>
-<p><span>+ Tô màu đều, kín tranh. </span></p>
-<p><span><strong>Lựa chọn 2:</strong> Vẽ tranh tĩnh vật hoặc tranh theo đề tài. </span></p>
-<p><span><i>Tiêu chí:</i> </span></p>
-<p><span>+ Sử dụng phối kết hợp được 2 loại màu với nhau. </span></p>
-<p><span>+ Tô màu kín hình ảnh.</span></p>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="Kiến thức mở rộng bố cục trong tranh" data-type="assignment" data-sec="1"
-             data-pkey="pl/79997/8392272" data-hash="bb03f1f1108ac05db3fc852df42f880d50a2e3b4" data-ts="1787130638000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/79997/8392272'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79997/8392272'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79997/8392272']; $el.indeterminate = !!p.redo['pl/79997/8392272']"
-                     @change="await p.toggle('pl/79997/8392272', 'bb03f1f1108ac05db3fc852df42f880d50a2e3b4'); $el.checked = !!p.done['pl/79997/8392272']; $el.indeterminate = !!p.redo['pl/79997/8392272']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài tập">📝</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
-                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Kiến thức mở rộng bố cục trong tranh</span>
-                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
-                     :class="o ? 'rotate-180' : ''"
-                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài tập</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79997/8392272', 'bb03f1f1108ac05db3fc852df42f880d50a2e3b4')">
-                  <button @click.stop="p.seen('pl/79997/8392272', 'bb03f1f1108ac05db3fc852df42f880d50a2e3b4')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 19/08</span>
-                
-                
-                <a href="https://lms.vinschool.edu.vn/courses/79997/assignments/2898783" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-              <div x-show="o" x-collapse x-cloak
-                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
-                <p><strong><span>Kiến thức mở rộng </span></strong></p>
-<p><strong><span>Em hãy truy cập link và tham khảo tranh vẽ bố cục để hoàn thành bài vẽ của mình nhé!</span></strong></p>
-<p><a class="inline_disabled external" href="https://www.pinterest.com/pin/810085051740720105/" rel="noopener" target="_blank"><span>https://www.pinterest.com/pin/810085051740720105/</span><span class="ui-icon ui-icon-extlink ui-icon-inline" title="Links to an external site."><span class="screenreader-only">Links to an external site.</span></span></a></p>
-<p><span><strong>Chúc các con hoàn thành bài vẽ của mình hiệu quả.</strong></span></p>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="Nộp sản phẩm học tập" data-type="page" data-sec="1"
-             data-pkey="pl/79997/8733133" data-hash="fdb73f9f9e132a647f502bceecbade0eae34ee77" data-ts="1788773336000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/79997/8733133'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79997/8733133'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79997/8733133']; $el.indeterminate = !!p.redo['pl/79997/8733133']"
-                     @change="await p.toggle('pl/79997/8733133', 'fdb73f9f9e132a647f502bceecbade0eae34ee77'); $el.checked = !!p.done['pl/79997/8733133']; $el.indeterminate = !!p.redo['pl/79997/8733133']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
-                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Nộp sản phẩm học tập</span>
-                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
-                     :class="o ? 'rotate-180' : ''"
-                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79997/8733133', 'fdb73f9f9e132a647f502bceecbade0eae34ee77')">
-                  <button @click.stop="p.seen('pl/79997/8733133', 'fdb73f9f9e132a647f502bceecbade0eae34ee77')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 07/09</span>
-                
-                
-                <a href="https://lms.vinschool.edu.vn/courses/79997/pages/nop-san-pham-hoc-tap" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-              <div x-show="o" x-collapse x-cloak
-                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
-                <p>Link nộp sản phẩm học tập: <span style="font-size: 18pt;"><a class="inline_disabled" href="https://padlet.com/vhiendt37/nop-tranh-ve-online-khoi-5-s023cmuotjqmxuxg3r6l" rel="noopener" target="_blank" title="Link">TẠI ĐÂY</a></span></p>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-        
         
         
         <div data-sechead data-title="Lesson 1.2. Họa tiết Zentangle (Tuần 4+5+6) Từ ngày 14/09 - 2/10. " data-sec="2"
@@ -1058,13 +800,342 @@
         
         
         
+        <div data-sechead data-title="Lesson 1.1. Bố cục trong tranh (Từ ngày 13/8 - 11/9)" data-sec="1"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>Lesson 1.1. Bố cục trong tranh (Từ ngày 13/8 - 11/9)</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="Nộp sản phẩm học tập" data-type="page" data-sec="1"
+             data-pkey="pl/79997/8733133" data-hash="fdb73f9f9e132a647f502bceecbade0eae34ee77" data-ts="1788773336000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/79997/8733133'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79997/8733133'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79997/8733133']; $el.indeterminate = !!p.redo['pl/79997/8733133']"
+                     @change="await p.toggle('pl/79997/8733133', 'fdb73f9f9e132a647f502bceecbade0eae34ee77'); $el.checked = !!p.done['pl/79997/8733133']; $el.indeterminate = !!p.redo['pl/79997/8733133']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Nộp sản phẩm học tập</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79997/8733133', 'fdb73f9f9e132a647f502bceecbade0eae34ee77')">
+                  <button @click.stop="p.seen('pl/79997/8733133', 'fdb73f9f9e132a647f502bceecbade0eae34ee77')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 07/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/79997/pages/nop-san-pham-hoc-tap" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Link nộp sản phẩm học tập: <span style="font-size: 18pt;"><a class="inline_disabled" href="https://padlet.com/vhiendt37/nop-tranh-ve-online-khoi-5-s023cmuotjqmxuxg3r6l" rel="noopener" target="_blank" title="Link">TẠI ĐÂY</a></span></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Tìm hiểu về bố cục trong tranh" data-type="page" data-sec="1"
+             data-pkey="pl/79997/8392279" data-hash="7c28a6abbd94b9dcb12812ac0a8176fad2f355af" data-ts="1787130635000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/79997/8392279'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79997/8392279'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79997/8392279']; $el.indeterminate = !!p.redo['pl/79997/8392279']"
+                     @change="await p.toggle('pl/79997/8392279', '7c28a6abbd94b9dcb12812ac0a8176fad2f355af'); $el.checked = !!p.done['pl/79997/8392279']; $el.indeterminate = !!p.redo['pl/79997/8392279']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tìm hiểu về bố cục trong tranh</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79997/8392279', '7c28a6abbd94b9dcb12812ac0a8176fad2f355af')">
+                  <button @click.stop="p.seen('pl/79997/8392279', '7c28a6abbd94b9dcb12812ac0a8176fad2f355af')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/08</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/79997/pages/tim-hieu-ve-bo-cuc-trong-tranh" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><span><strong>Chào mừng các con đến với lớp học Mĩ thuật! </strong></span></p>
+<p>Ở mục này các con đọc mục tiêu bài học và tìm hiểu về bố cục trong tranh nhé!</p>
+<p><span><strong>Bài:  Bố cục trong tranh</strong></span></p>
+<p><span><strong><img alt="" height="36" loading="lazy" src="https://i.pinimg.com/564x/9f/07/bd/9f07bd65bda276ac3be50d499c6eb8c7.jpg" width="35"/> Hướng dẫn các bước vẽ tranh bố cục.</strong></span></p>
+<p><img alt="Bo_cuc_trong_tranh_Lop_5_trang_1.png" loading="lazy" src="https://minhln2.github.io/lms/pl/materials/mi-thuat-5/unit-1-mi-thuat-co-ban-13-8-den-16-10/Bo_cuc_trong_tranh_Lop_5_trang_1.png"/></p>
+<p><img alt="Bo_cuc_trong_tranh_Lop_5_trang_2.png" loading="lazy" src="https://minhln2.github.io/lms/pl/materials/mi-thuat-5/unit-1-mi-thuat-co-ban-13-8-den-16-10/Bo_cuc_trong_tranh_Lop_5_trang_2.png"/></p>
+<p><img alt="Bo_cuc_trong_tranh_Lop_5_trang_3.png" loading="lazy" src="https://minhln2.github.io/lms/pl/materials/mi-thuat-5/unit-1-mi-thuat-co-ban-13-8-den-16-10/Bo_cuc_trong_tranh_Lop_5_trang_3.png"/></p>
+<p><img alt="Bo_cuc_trong_tranh_Lop_5_trang_4.png" loading="lazy" src="https://minhln2.github.io/lms/pl/materials/mi-thuat-5/unit-1-mi-thuat-co-ban-13-8-den-16-10/Bo_cuc_trong_tranh_Lop_5_trang_4.png"/></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Bài tập thực hành bài bố cục trong tranh" data-type="page" data-sec="1"
+             data-pkey="pl/79997/8392271" data-hash="2cd13e6895d31c0b0cb35bd7753698fbf832e225" data-ts="1787130637000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/79997/8392271'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79997/8392271'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79997/8392271']; $el.indeterminate = !!p.redo['pl/79997/8392271']"
+                     @change="await p.toggle('pl/79997/8392271', '2cd13e6895d31c0b0cb35bd7753698fbf832e225'); $el.checked = !!p.done['pl/79997/8392271']; $el.indeterminate = !!p.redo['pl/79997/8392271']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Bài tập thực hành bài bố cục trong tranh</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79997/8392271', '2cd13e6895d31c0b0cb35bd7753698fbf832e225')">
+                  <button @click.stop="p.seen('pl/79997/8392271', '2cd13e6895d31c0b0cb35bd7753698fbf832e225')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/08</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/79997/pages/bai-tap-thuc-hanh" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><span><strong>Cô chào các con! </strong></span></p>
+<p><span><strong>Ở mục này các con hãy xem đoạn video hướng dẫn cách vẽ và lựa chọn cách vẽ để thực hành vẽ một bức tranh bằng phách thảo chì nhé! </strong></span></p>
+<p style="text-align: center;"><span><strong> HƯỚNG DẪN CÁCH VẼ KHÔNG GIAN VÀ ĐỘ ĐẬM NHẠT TRONG TRANH</strong></span></p>
+<p><iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" data-mce-fragment="1" height="315" loading="lazy" src="https://www.youtube.com/embed/MHHqivyIKSY?si=Y2GRYJlMmOMY2iSS" title="YouTube video player" width="800"></iframe></p>
+<p> </p>
+<p><span><strong>C. BÀI TẬP THỰC HÀNH.</strong></span></p>
+<p><span><strong>Lựa chọn 1:</strong> Vẽ không gian độ đậm nhạt vào tranh có sẵn</span></p>
+<p><span><i>Tiêu chí:</i></span></p>
+<p><span>+ Sử dụng được 3 đến 4 màu để tô vào tranh</span></p>
+<p><span>+ Sử dụng màu có sẵn tô vào tranh</span></p>
+<p><span>+ Tô màu đều, kín tranh. </span></p>
+<p><span><strong>Lựa chọn 2:</strong> Vẽ tranh tĩnh vật hoặc tranh theo đề tài. </span></p>
+<p><span><i>Tiêu chí:</i> </span></p>
+<p><span>+ Sử dụng phối kết hợp được 2 loại màu với nhau. </span></p>
+<p><span>+ Tô màu kín hình ảnh.</span></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Kiến thức mở rộng bố cục trong tranh" data-type="assignment" data-sec="1"
+             data-pkey="pl/79997/8392272" data-hash="bb03f1f1108ac05db3fc852df42f880d50a2e3b4" data-ts="1787130638000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/79997/8392272'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79997/8392272'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79997/8392272']; $el.indeterminate = !!p.redo['pl/79997/8392272']"
+                     @change="await p.toggle('pl/79997/8392272', 'bb03f1f1108ac05db3fc852df42f880d50a2e3b4'); $el.checked = !!p.done['pl/79997/8392272']; $el.indeterminate = !!p.redo['pl/79997/8392272']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài tập">📝</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Kiến thức mở rộng bố cục trong tranh</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài tập</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79997/8392272', 'bb03f1f1108ac05db3fc852df42f880d50a2e3b4')">
+                  <button @click.stop="p.seen('pl/79997/8392272', 'bb03f1f1108ac05db3fc852df42f880d50a2e3b4')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/08</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/79997/assignments/2898783" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><strong><span>Kiến thức mở rộng </span></strong></p>
+<p><strong><span>Em hãy truy cập link và tham khảo tranh vẽ bố cục để hoàn thành bài vẽ của mình nhé!</span></strong></p>
+<p><a class="inline_disabled external" href="https://www.pinterest.com/pin/810085051740720105/" rel="noopener" target="_blank"><span>https://www.pinterest.com/pin/810085051740720105/</span><span class="ui-icon ui-icon-extlink ui-icon-inline" title="Links to an external site."><span class="screenreader-only">Links to an external site.</span></span></a></p>
+<p><span><strong>Chúc các con hoàn thành bài vẽ của mình hiệu quả.</strong></span></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
       </div>
     </section>
     
 
   </main>
+  </div>
 
-  <footer class="max-w-4xl mx-auto px-4 pb-8 text-center text-xs text-slate-400">
+  <footer class="max-w-[72rem] mx-auto px-4 pb-8 text-center text-xs text-slate-400">
     Cập nhật tự động · bản lưu offline
   </footer>
 </body>

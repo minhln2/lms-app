@@ -8,7 +8,7 @@
   <title>Lịch Sử và Địa Lý 5 — PL</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.e9344bf8.css">
+  <link rel="stylesheet" href="../assets/tw.70807652.css">
   <script defer src="../assets/collapse.d0a27f2d.js"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>
@@ -82,6 +82,45 @@
       if (vnorm(el.dataset.title).includes(vnorm(f.q))) return true;
       return pass.some(c => vnorm(c.dataset.title).includes(vnorm(f.q)));
     }
+    // ---- Menu bên trái -------------------------------------------------------
+    /** Mục menu có hiện không. Dùng CHÍNH `moduleMatches` mà thân trang dùng —
+        chép lại luật lọc sang đây là tạo hai bản sẽ lệch nhau, và lệch theo
+        hướng menu chỉ tới một học phần đang bị ẩn. */
+    function mucHien(i, f) {
+      const el = document.getElementById('mod-' + i);
+      return !el || moduleMatches(el, f);
+    }
+    /** Nhảy tới học phần: phải MỞ nó ra trước, không thì cuộn tới một cái hộp
+        đang gập và người dùng tưởng bấm hụt. */
+    function toiMuc(i) {
+      const el = document.getElementById('mod-' + i);
+      if (!el) return;
+      try { Alpine.$data(el).open = true; } catch (e) {}
+      // ⚠ Phải chờ khối GIÃN RA XONG rồi mới cuộn. Lúc bấm thì mọi khối còn
+      // gập nên trang ngắn, `scrollTo` bị kẹp vào đáy trang và dừng giữa chừng
+      // — đo được hụt 471px. Khối mở ra làm trang cao thêm, nhưng lúc đó đã
+      // cuộn rồi, và không có gì cuộn tiếp.
+      //
+      // ⚠ Cũng KHÔNG dùng `scroll-margin-top` cố định: header dính cao khác
+      // nhau theo bề rộng (đo: 175px ở 1280px, 259px ở 390px vì chip lọc xuống
+      // dòng). Một con số CSS thì hoặc thừa chỗ, hoặc để tiêu đề chui xuống
+      // dưới header — mà cái sau trông y như bấm hụt.
+      const han = performance.now() + 800;      // trần, để không chờ mãi
+      let truoc = -1;
+      const thu = () => {
+        const cao = document.body.scrollHeight;
+        if (cao !== truoc && performance.now() < han) {
+          truoc = cao;
+          return requestAnimationFrame(thu);
+        }
+        const h = document.querySelector('header');
+        const off = h ? h.getBoundingClientRect().height : 0;
+        const y = el.getBoundingClientRect().top + window.scrollY - off - 8;
+        window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+      };
+      requestAnimationFrame(thu);
+    }
+
     // ---- Checkbox của tiêu đề nhóm ------------------------------------------
     // Mọi mục con thuộc cùng data-sec trong cùng tuần/bài. Tiêu đề kiểu Page CÓ
     // nội dung cũng là một mục nên tự nằm trong danh sách — tick nhóm là tick cả
@@ -274,7 +313,7 @@
   </script>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen"
-      x-data="{ q: '', types: [], hw: false, todo: false, recent7: false, p: progressStore(),
+      x-data="{ q: '', types: [], hw: false, todo: false, recent7: false, menuMo: false, p: progressStore(),
                 toggle(t) { this.types.includes(t) ? this.types.splice(this.types.indexOf(t), 1) : this.types.push(t) },
                 get filtering() { return this.types.length > 0 || this.hw || this.todo || this.recent7 },
                 get f() { return { q: this.q, types: this.types, hw: this.hw, todo: this.todo, recent7: this.recent7, done: this.p.done } } }"
@@ -282,7 +321,7 @@
 
   <!-- Header dính, chứa tìm kiếm + Expand/Collapse All -->
   <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
-    <div class="max-w-4xl mx-auto px-4 py-3">
+    <div class="max-w-[72rem] mx-auto px-4 py-3">
       <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-slate-500">
   <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
   <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">PL</a><span class="shrink-0 text-slate-300">›</span>
@@ -379,14 +418,56 @@
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto px-4 py-6 space-y-4">
+  <div class="max-w-[72rem] mx-auto lg:flex lg:gap-5 lg:items-start">
+
+  
+  <aside class="no-print px-4 pt-6 lg:w-64 lg:shrink-0 lg:sticky lg:top-[4.5rem] lg:pr-0">
+    <button @click="menuMo = !menuMo" type="button" :aria-expanded="String(menuMo)"
+            class="lg:hidden w-full px-3 py-2 text-sm font-medium rounded-lg border border-slate-300 bg-white text-slate-700 text-left">
+      <span x-text="menuMo ? '▾' : '▸'"></span> Mục lục (2 phần)
+    </button>
+    <div :class="menuMo ? 'block' : 'hidden lg:block'"
+         class="mt-2 lg:mt-0 rounded-xl border border-slate-200 bg-white p-2 shadow-sm lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+      <p class="px-2 pb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Mục lục</p>
+      <ol class="space-y-0.5">
+        
+        <li x-show="mucHien(1, f)">
+          <button type="button" @click="toiMuc(1); menuMo = false"
+                  class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
+            <span class="min-w-0 flex-1">Chủ đề 2: Những quốc gia đầu tiên trên lãnh thổ Việt Nam (14/09/2026 - 02/10/2026)</span>
+            <template x-if="p.online">
+              <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
+                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/7'"></span>
+            </template>
+          </button>
+        </li>
+        
+        <li x-show="mucHien(2, f)">
+          <button type="button" @click="toiMuc(2); menuMo = false"
+                  class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
+            <span class="min-w-0 flex-1">🔔 Chủ đề 1: Đất nước và con người Việt Nam (13/08/2026 - 04/09/2026)</span>
+            <template x-if="p.online">
+              <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
+                    x-text="moduleDone(document.getElementById('mod-2'), p.done) + '/11'"></span>
+            </template>
+          </button>
+        </li>
+        
+      </ol>
+    </div>
+  </aside>
+
+  <main class="min-w-0 lg:flex-1 px-4 py-6 space-y-4">
+
+    
+
     
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: true }"
              @expand-all.window="open = true"
              @collapse-all.window="open = false"
              x-effect="if (q || filtering) open = true"
-             data-module data-title="Chủ đề 2: Những quốc gia đầu tiên trên lãnh thổ Việt Nam (14/09/2026 - 02/10/2026)"
+             id="mod-1" data-module data-title="Chủ đề 2: Những quốc gia đầu tiên trên lãnh thổ Việt Nam (14/09/2026 - 02/10/2026)"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -409,86 +490,14 @@
       <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
         
         
-        <div data-item data-title="THẢO LUẬN TRƯỚC CHỦ ĐỀ" data-type="discussion" data-sec="0"
-             data-pkey="pl/80101/8772551" data-hash="3c41db54ce8193efa95927d9290d5e1620d5df21" data-ts="1789122720000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80101/8772551'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/80101/8772551'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/80101/8772551']; $el.indeterminate = !!p.redo['pl/80101/8772551']"
-                     @change="await p.toggle('pl/80101/8772551', '3c41db54ce8193efa95927d9290d5e1620d5df21'); $el.checked = !!p.done['pl/80101/8772551']; $el.indeterminate = !!p.redo['pl/80101/8772551']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="thảo luận">💬</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
-                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">THẢO LUẬN TRƯỚC CHỦ ĐỀ</span>
-                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
-                     :class="o ? 'rotate-180' : ''"
-                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">thảo luận</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80101/8772551', '3c41db54ce8193efa95927d9290d5e1620d5df21')">
-                  <button @click.stop="p.seen('pl/80101/8772551', '3c41db54ce8193efa95927d9290d5e1620d5df21')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 11/09</span>
-                
-                <a href="https://lms.vinschool.edu.vn/courses/80101/discussion_topics/697438" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-              <div x-show="o" x-collapse x-cloak
-                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
-                <p><strong><span style="font-size: 14pt;">Tìm hiểu thông tin qua sách báo hoặc internet và chi sẻ những điều con biết:</span></strong></p>
-<p><span style="font-size: 14pt;">Theo con, những dấu ấn nào của quốc gia cổ Văn Lang, Âu lạc còn đọng lại trong văn hóa Việt Nam ngày nay?</span></p>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="Tự học: Nhà nước Văn Lang, Âu Lạc" data-type="page" data-sec="1"
-             data-pkey="pl/80101/8772552" data-hash="f67dfd60bed23ab0ed9e56f7c38980e57f556225" data-ts="1789117600000"
+        <div data-item data-title="Tự học: Vương quốc Champa" data-type="page" data-sec="3"
+             data-pkey="pl/80101/8772556" data-hash="e84cabe2c85237aa67eb6b94262c85178d8249b7" data-ts="1789117687000"
              data-sechead
              
              x-show="itemMatches($el, f)"
              x-data="{ o: false }"
              @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80101/8772552'] ? 'bg-emerald-50/60' : ''">
+             class="group" :class="p.done['pl/80101/8772556'] ? 'bg-emerald-50/60' : ''">
           <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
             <!-- Đánh dấu đã học -->
             <template x-if="p.online">
@@ -506,7 +515,7 @@
               
               <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
               <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
-                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tự học: Nhà nước Văn Lang, Âu Lạc</span>
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tự học: Vương quốc Champa</span>
                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
                      :class="o ? 'rotate-180' : ''"
                      fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -519,8 +528,8 @@
                 <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
                 <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
                      KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80101/8772552', 'f67dfd60bed23ab0ed9e56f7c38980e57f556225')">
-                  <button @click.stop="p.seen('pl/80101/8772552', 'f67dfd60bed23ab0ed9e56f7c38980e57f556225')"
+                <template x-if="p.stale('pl/80101/8772556', 'e84cabe2c85237aa67eb6b94262c85178d8249b7')">
+                  <button @click.stop="p.seen('pl/80101/8772556', 'e84cabe2c85237aa67eb6b94262c85178d8249b7')"
                           title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
                           class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
                     ⟳ có cập nhật mới
@@ -535,7 +544,7 @@
                 <span title="Cập nhật lần cuối tại nguồn">🕓 11/09</span>
                 
                 
-                <a href="https://lms.vinschool.edu.vn/courses/80101/pages/tu-hoc-nha-nuoc-van-lang-au-lac" target="_blank" rel="noopener"
+                <a href="https://lms.vinschool.edu.vn/courses/80101/pages/tu-hoc-vuong-quoc-champa" target="_blank" rel="noopener"
                    class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
@@ -543,15 +552,12 @@
               
               <div x-show="o" x-collapse x-cloak
                    class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
-                <p><em><strong>Lúc sinh thời, Bác Hồ đã từng nhắc nhở:</strong></em></p>
-<p><em><strong>"Dân ta phải biết sử ta</strong></em></p>
-<p><em><strong>Cho tường gốc tích nước nhà Việt Nam"</strong></em></p>
-<p><em><strong>Vì thế, bài học ngày hôm nay sẽ đưa chúng ta ngược dòng về quá khứ , tìm hiểu những quốc gia đầu tiên trên lãnh thổ Việt Nam, đó chính là Văn Lang, Âu Lạc.</strong></em></p>
-<p><strong><span style="font-size: 18pt;">🎯</span>Mục tiêu: </strong></p>
-<p><span>- Biết về đặc điểm của nhà nước Văn Lang </span></p>
-<p><span>- Biết về đặc điểm của nhà nước Âu Lạc</span></p>
-<p><span><span style="font-size: 18pt;">📝</span>Để học tập hiệu quả, các con hãy chuẩn bị đầy đủ tập và bút viết; tập trung lắng nghe; chủ động ghi chép và thực hành theo yêu cầu trong bài học nhé.</span></p>
-<p><span><iframe allow="geolocation *; microphone *; camera *; midi *; encrypted-media *" allowfullscreen="allowfullscreen" height="637" loading="lazy" src="https://onlinevinschooleduvn.h5p.com/content/1291128190738720598/embed" width="1088"></iframe> </span></p>
+                <p>Bài học tuần 6 đã đưa các con về với quốc gia cổ Phù Nam. Tuần này, chúng ta cùng tìm hiểu một vương quốc cổ khác. Đó chính là vương quốc Champa.</p>
+<p>Mục tiêu:</p>
+<p>- Biết tên và vị trí một số đền tháp Champa còn lại cho đến ngày nay</p>
+<p>- Biết nội dung một số câu chuyện về đền tháp Champa</p>
+<p><span>Để học tập hiệu quả, các con hãy chuẩn bị đầy đủ tập và bút viết; tập trung lắng nghe; chủ động ghi chép và thực hành theo yêu cầu trong bài học nhé.</span></p>
+<p><iframe allow="geolocation *; microphone *; camera *; midi *; encrypted-media *" allowfullscreen="allowfullscreen" height="637" loading="lazy" src="https://onlinevinschooleduvn.h5p.com/content/1291140864953525848/embed" width="1088"></iframe></p>
               </div>
               
             </div>
@@ -560,14 +566,14 @@
         
         
         
-        <div data-item data-title="Quiz 1: Nhà nước Văn Lang, Âu Lạc" data-type="quiz" data-sec="1"
-             data-pkey="pl/80101/8772553" data-hash="513e2c5d2604def4f7c052441b792f9d9115cc23" data-ts="1789122720000"
+        <div data-item data-title="Quiz 3: Vương quốc Champa" data-type="quiz" data-sec="3"
+             data-pkey="pl/80101/8772557" data-hash="7b7d0d3f5e0fcece3884bfbc32baf4e83d91b3a8" data-ts="1789122720000"
              
              
              x-show="itemMatches($el, f)"
              x-data="{ o: false }"
              @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80101/8772553'] ? 'bg-emerald-50/60' : ''">
+             class="group" :class="p.done['pl/80101/8772557'] ? 'bg-emerald-50/60' : ''">
           <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
             <!-- Đánh dấu đã học -->
             <template x-if="p.online">
@@ -575,9 +581,9 @@
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
               <input type="checkbox"
-                     :title="p.redo['pl/80101/8772553'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/80101/8772553']; $el.indeterminate = !!p.redo['pl/80101/8772553']"
-                     @change="await p.toggle('pl/80101/8772553', '513e2c5d2604def4f7c052441b792f9d9115cc23'); $el.checked = !!p.done['pl/80101/8772553']; $el.indeterminate = !!p.redo['pl/80101/8772553']"
+                     :title="p.redo['pl/80101/8772557'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80101/8772557']; $el.indeterminate = !!p.redo['pl/80101/8772557']"
+                     @change="await p.toggle('pl/80101/8772557', '7b7d0d3f5e0fcece3884bfbc32baf4e83d91b3a8'); $el.checked = !!p.done['pl/80101/8772557']; $el.indeterminate = !!p.redo['pl/80101/8772557']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -585,10 +591,10 @@
             <div class="min-w-0 flex-1">
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
-              <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/2203529" target="_blank" rel="noopener"
+              <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/2203527" target="_blank" rel="noopener"
                  class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                Quiz 1: Nhà nước Văn Lang, Âu Lạc
+                Quiz 3: Vương quốc Champa
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                 </svg>
@@ -599,8 +605,8 @@
                 <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài kiểm tra</span>
                 <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
                      KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80101/8772553', '513e2c5d2604def4f7c052441b792f9d9115cc23')">
-                  <button @click.stop="p.seen('pl/80101/8772553', '513e2c5d2604def4f7c052441b792f9d9115cc23')"
+                <template x-if="p.stale('pl/80101/8772557', '7b7d0d3f5e0fcece3884bfbc32baf4e83d91b3a8')">
+                  <button @click.stop="p.seen('pl/80101/8772557', '7b7d0d3f5e0fcece3884bfbc32baf4e83d91b3a8')"
                           title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
                           class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
                     ⟳ có cập nhật mới
@@ -610,8 +616,8 @@
                 
                 
                 
-                  <span>9 câu hỏi</span>
-                  <span>20 điểm</span>
+                  <span>5 câu hỏi</span>
+                  <span>10 điểm</span>
                   
                   <span>3 lượt làm</span>
                 
@@ -619,7 +625,7 @@
                 
                 <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 11/09</span>
                 
-                <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/2203529" target="_blank" rel="noopener"
+                <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/2203527" target="_blank" rel="noopener"
                    class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
@@ -777,14 +783,14 @@
         
         
         
-        <div data-item data-title="Tự học: Vương quốc Champa" data-type="page" data-sec="3"
-             data-pkey="pl/80101/8772556" data-hash="e84cabe2c85237aa67eb6b94262c85178d8249b7" data-ts="1789117687000"
+        <div data-item data-title="Tự học: Nhà nước Văn Lang, Âu Lạc" data-type="page" data-sec="1"
+             data-pkey="pl/80101/8772552" data-hash="f67dfd60bed23ab0ed9e56f7c38980e57f556225" data-ts="1789117600000"
              data-sechead
              
              x-show="itemMatches($el, f)"
              x-data="{ o: false }"
              @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80101/8772556'] ? 'bg-emerald-50/60' : ''">
+             class="group" :class="p.done['pl/80101/8772552'] ? 'bg-emerald-50/60' : ''">
           <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
             <!-- Đánh dấu đã học -->
             <template x-if="p.online">
@@ -802,7 +808,7 @@
               
               <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
               <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
-                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tự học: Vương quốc Champa</span>
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tự học: Nhà nước Văn Lang, Âu Lạc</span>
                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
                      :class="o ? 'rotate-180' : ''"
                      fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -815,8 +821,8 @@
                 <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
                 <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
                      KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80101/8772556', 'e84cabe2c85237aa67eb6b94262c85178d8249b7')">
-                  <button @click.stop="p.seen('pl/80101/8772556', 'e84cabe2c85237aa67eb6b94262c85178d8249b7')"
+                <template x-if="p.stale('pl/80101/8772552', 'f67dfd60bed23ab0ed9e56f7c38980e57f556225')">
+                  <button @click.stop="p.seen('pl/80101/8772552', 'f67dfd60bed23ab0ed9e56f7c38980e57f556225')"
                           title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
                           class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
                     ⟳ có cập nhật mới
@@ -831,7 +837,7 @@
                 <span title="Cập nhật lần cuối tại nguồn">🕓 11/09</span>
                 
                 
-                <a href="https://lms.vinschool.edu.vn/courses/80101/pages/tu-hoc-vuong-quoc-champa" target="_blank" rel="noopener"
+                <a href="https://lms.vinschool.edu.vn/courses/80101/pages/tu-hoc-nha-nuoc-van-lang-au-lac" target="_blank" rel="noopener"
                    class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
@@ -839,12 +845,15 @@
               
               <div x-show="o" x-collapse x-cloak
                    class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
-                <p>Bài học tuần 6 đã đưa các con về với quốc gia cổ Phù Nam. Tuần này, chúng ta cùng tìm hiểu một vương quốc cổ khác. Đó chính là vương quốc Champa.</p>
-<p>Mục tiêu:</p>
-<p>- Biết tên và vị trí một số đền tháp Champa còn lại cho đến ngày nay</p>
-<p>- Biết nội dung một số câu chuyện về đền tháp Champa</p>
-<p><span>Để học tập hiệu quả, các con hãy chuẩn bị đầy đủ tập và bút viết; tập trung lắng nghe; chủ động ghi chép và thực hành theo yêu cầu trong bài học nhé.</span></p>
-<p><iframe allow="geolocation *; microphone *; camera *; midi *; encrypted-media *" allowfullscreen="allowfullscreen" height="637" loading="lazy" src="https://onlinevinschooleduvn.h5p.com/content/1291140864953525848/embed" width="1088"></iframe></p>
+                <p><em><strong>Lúc sinh thời, Bác Hồ đã từng nhắc nhở:</strong></em></p>
+<p><em><strong>"Dân ta phải biết sử ta</strong></em></p>
+<p><em><strong>Cho tường gốc tích nước nhà Việt Nam"</strong></em></p>
+<p><em><strong>Vì thế, bài học ngày hôm nay sẽ đưa chúng ta ngược dòng về quá khứ , tìm hiểu những quốc gia đầu tiên trên lãnh thổ Việt Nam, đó chính là Văn Lang, Âu Lạc.</strong></em></p>
+<p><strong><span style="font-size: 18pt;">🎯</span>Mục tiêu: </strong></p>
+<p><span>- Biết về đặc điểm của nhà nước Văn Lang </span></p>
+<p><span>- Biết về đặc điểm của nhà nước Âu Lạc</span></p>
+<p><span><span style="font-size: 18pt;">📝</span>Để học tập hiệu quả, các con hãy chuẩn bị đầy đủ tập và bút viết; tập trung lắng nghe; chủ động ghi chép và thực hành theo yêu cầu trong bài học nhé.</span></p>
+<p><span><iframe allow="geolocation *; microphone *; camera *; midi *; encrypted-media *" allowfullscreen="allowfullscreen" height="637" loading="lazy" src="https://onlinevinschooleduvn.h5p.com/content/1291128190738720598/embed" width="1088"></iframe> </span></p>
               </div>
               
             </div>
@@ -853,14 +862,14 @@
         
         
         
-        <div data-item data-title="Quiz 3: Vương quốc Champa" data-type="quiz" data-sec="3"
-             data-pkey="pl/80101/8772557" data-hash="7b7d0d3f5e0fcece3884bfbc32baf4e83d91b3a8" data-ts="1789122720000"
+        <div data-item data-title="Quiz 1: Nhà nước Văn Lang, Âu Lạc" data-type="quiz" data-sec="1"
+             data-pkey="pl/80101/8772553" data-hash="513e2c5d2604def4f7c052441b792f9d9115cc23" data-ts="1789122720000"
              
              
              x-show="itemMatches($el, f)"
              x-data="{ o: false }"
              @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80101/8772557'] ? 'bg-emerald-50/60' : ''">
+             class="group" :class="p.done['pl/80101/8772553'] ? 'bg-emerald-50/60' : ''">
           <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
             <!-- Đánh dấu đã học -->
             <template x-if="p.online">
@@ -868,9 +877,9 @@
               <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
                    thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
               <input type="checkbox"
-                     :title="p.redo['pl/80101/8772557'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/80101/8772557']; $el.indeterminate = !!p.redo['pl/80101/8772557']"
-                     @change="await p.toggle('pl/80101/8772557', '7b7d0d3f5e0fcece3884bfbc32baf4e83d91b3a8'); $el.checked = !!p.done['pl/80101/8772557']; $el.indeterminate = !!p.redo['pl/80101/8772557']"
+                     :title="p.redo['pl/80101/8772553'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80101/8772553']; $el.indeterminate = !!p.redo['pl/80101/8772553']"
+                     @change="await p.toggle('pl/80101/8772553', '513e2c5d2604def4f7c052441b792f9d9115cc23'); $el.checked = !!p.done['pl/80101/8772553']; $el.indeterminate = !!p.redo['pl/80101/8772553']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -878,10 +887,10 @@
             <div class="min-w-0 flex-1">
               
               <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
-              <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/2203527" target="_blank" rel="noopener"
+              <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/2203529" target="_blank" rel="noopener"
                  class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
                  :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                Quiz 3: Vương quốc Champa
+                Quiz 1: Nhà nước Văn Lang, Âu Lạc
                 <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                 </svg>
@@ -892,8 +901,8 @@
                 <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài kiểm tra</span>
                 <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
                      KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80101/8772557', '7b7d0d3f5e0fcece3884bfbc32baf4e83d91b3a8')">
-                  <button @click.stop="p.seen('pl/80101/8772557', '7b7d0d3f5e0fcece3884bfbc32baf4e83d91b3a8')"
+                <template x-if="p.stale('pl/80101/8772553', '513e2c5d2604def4f7c052441b792f9d9115cc23')">
+                  <button @click.stop="p.seen('pl/80101/8772553', '513e2c5d2604def4f7c052441b792f9d9115cc23')"
                           title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
                           class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
                     ⟳ có cập nhật mới
@@ -903,8 +912,8 @@
                 
                 
                 
-                  <span>5 câu hỏi</span>
-                  <span>10 điểm</span>
+                  <span>9 câu hỏi</span>
+                  <span>20 điểm</span>
                   
                   <span>3 lượt làm</span>
                 
@@ -912,11 +921,83 @@
                 
                 <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 11/09</span>
                 
-                <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/2203527" target="_blank" rel="noopener"
+                <a href="https://lms.vinschool.edu.vn/courses/80101/quizzes/2203529" target="_blank" rel="noopener"
                    class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
 
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="THẢO LUẬN TRƯỚC CHỦ ĐỀ" data-type="discussion" data-sec="0"
+             data-pkey="pl/80101/8772551" data-hash="3c41db54ce8193efa95927d9290d5e1620d5df21" data-ts="1789122720000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/80101/8772551'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80101/8772551'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80101/8772551']; $el.indeterminate = !!p.redo['pl/80101/8772551']"
+                     @change="await p.toggle('pl/80101/8772551', '3c41db54ce8193efa95927d9290d5e1620d5df21'); $el.checked = !!p.done['pl/80101/8772551']; $el.indeterminate = !!p.redo['pl/80101/8772551']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="thảo luận">💬</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">THẢO LUẬN TRƯỚC CHỦ ĐỀ</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">thảo luận</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80101/8772551', '3c41db54ce8193efa95927d9290d5e1620d5df21')">
+                  <button @click.stop="p.seen('pl/80101/8772551', '3c41db54ce8193efa95927d9290d5e1620d5df21')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 11/09</span>
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80101/discussion_topics/697438" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><strong><span style="font-size: 14pt;">Tìm hiểu thông tin qua sách báo hoặc internet và chi sẻ những điều con biết:</span></strong></p>
+<p><span style="font-size: 14pt;">Theo con, những dấu ấn nào của quốc gia cổ Văn Lang, Âu lạc còn đọng lại trong văn hóa Việt Nam ngày nay?</span></p>
+              </div>
               
             </div>
           </div>
@@ -932,7 +1013,7 @@
              @expand-all.window="open = true"
              @collapse-all.window="open = false"
              x-effect="if (q || filtering) open = true"
-             data-module data-title="🔔 Chủ đề 1: Đất nước và con người Việt Nam (13/08/2026 - 04/09/2026)"
+             id="mod-2" data-module data-title="🔔 Chủ đề 1: Đất nước và con người Việt Nam (13/08/2026 - 04/09/2026)"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -1179,6 +1260,166 @@
                 
               </div>
 
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Tự học_1.2_Tiết 1: Dân cư và dân tộc ở Việt Nam" data-type="page" data-sec="4"
+             data-pkey="pl/80101/7762752" data-hash="32b186791df240683b9924c5bada97e02cbd3954" data-ts="1786526830000"
+             data-sechead
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/80101/7762752'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Mục này vừa là nội dung vừa là tiêu đề nhóm → checkbox của nó
+                   điều khiển cả nhóm (gồm chính nó) -->
+              <input type="checkbox" title="Đánh dấu cả nhóm này"
+                     x-effect="syncSecBox($el, p.done)"
+                     @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tự học_1.2_Tiết 1: Dân cư và dân tộc ở Việt Nam</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80101/7762752', '32b186791df240683b9924c5bada97e02cbd3954')">
+                  <button @click.stop="p.seen('pl/80101/7762752', '32b186791df240683b9924c5bada97e02cbd3954')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 12/08</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80101/pages/tu-hoc-1-dot-2-tiet-1-dan-cu-va-dan-toc-o-viet-nam" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><span data-sheets-userformat='{"2":15293,"3":{"1":0},"5":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"6":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"7":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"8":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"10":1,"11":4,"12":0,"14":{"1":3,"3":1},"15":"Cambria","16":12}' data-sheets-value='{"1":2,"2":"Ở những bài học trước, các em đã biết được vị trí địa lí, lãnh thổ, biểu tượng cùng đặc điểm tự nhiên của thiên nhiên Việt Nam. Thế con người Việt nam thì sao? Cùng đến với bài học hôm nay, chúng ta sẽ cùng nhau tìm hiểu những nét cơ bản về dân cư và dân tộc ở nước ta. "}'>Ở những bài học trước, các em đã biết được vị trí địa lí, lãnh thổ, biểu tượng cùng đặc điểm tự nhiên của đất nước Việt Nam. Vậy con người Việt Nam thì sao? Cùng đến với bài học hôm nay, chúng ta sẽ cùng nhau tìm hiểu những nét cơ bản về dân cư và dân tộc ở nước ta. </span></p>
+<p><span data-sheets-userformat='{"2":15293,"3":{"1":0},"5":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"6":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"7":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"8":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"10":1,"11":4,"12":0,"14":{"1":3,"3":1},"15":"Cambria","16":12}' data-sheets-value='{"1":2,"2":"Ở những bài học trước, các em đã biết được vị trí địa lí, lãnh thổ, biểu tượng cùng đặc điểm tự nhiên của thiên nhiên Việt Nam. Thế con người Việt nam thì sao? Cùng đến với bài học hôm nay, chúng ta sẽ cùng nhau tìm hiểu những nét cơ bản về dân cư và dân tộc ở nước ta. "}'>1. Mục tiêu: </span></p>
+<p><span data-sheets-userformat='{"2":15293,"3":{"1":0},"5":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"6":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"7":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"8":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"10":1,"11":4,"12":0,"14":{"1":3,"3":1},"15":"Cambria","16":12}' data-sheets-value='{"1":2,"2":"Ở những bài học trước, các em đã biết được vị trí địa lí, lãnh thổ, biểu tượng cùng đặc điểm tự nhiên của thiên nhiên Việt Nam. Thế con người Việt nam thì sao? Cùng đến với bài học hôm nay, chúng ta sẽ cùng nhau tìm hiểu những nét cơ bản về dân cư và dân tộc ở nước ta. "}'>– Biết sơ nét đặc điểm dân cư Việt Nam và so sánh được quy mô dân số Việt Nam với một số nước trong khu vực Đông Nam Á<br/>– Biết tên một số dân tộc ở Việt Nam và hiểu được sự đa dạng văn hoá của các dân tộc Việt Nam</span></p>
+<p><span data-sheets-userformat='{"2":15293,"3":{"1":0},"5":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"6":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"7":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"8":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"10":1,"11":4,"12":0,"14":{"1":3,"3":1},"15":"Cambria","16":12}' data-sheets-value='{"1":2,"2":"Ở những bài học trước, các em đã biết được vị trí địa lí, lãnh thổ, biểu tượng cùng đặc điểm tự nhiên của thiên nhiên Việt Nam. Thế con người Việt nam thì sao? Cùng đến với bài học hôm nay, chúng ta sẽ cùng nhau tìm hiểu những nét cơ bản về dân cư và dân tộc ở nước ta. "}'>2. Để học tập hiệu quả, các con hãy chuẩn bị đầy đủ tập và bút viết; tập trung lắng nghe; chủ động ghi chép và thực hành theo yêu cầu trong bài học nhé.</span></p>
+<p><span data-sheets-userformat='{"2":15293,"3":{"1":0},"5":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"6":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"7":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"8":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"10":1,"11":4,"12":0,"14":{"1":3,"3":1},"15":"Cambria","16":12}' data-sheets-value='{"1":2,"2":"Ở những bài học trước, các em đã biết được vị trí địa lí, lãnh thổ, biểu tượng cùng đặc điểm tự nhiên của thiên nhiên Việt Nam. Thế con người Việt nam thì sao? Cùng đến với bài học hôm nay, chúng ta sẽ cùng nhau tìm hiểu những nét cơ bản về dân cư và dân tộc ở nước ta. "}'> </span></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="1.2_Tiết 1: Dân cư và dân tộc ở Việt Nam" data-type="discussion" data-sec="4"
+             data-pkey="pl/80101/7762753" data-hash="24fd807b164efd12765bbdd7078d18ab49cfb565" data-ts="1786526830000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             @expand-all.window="o = true" @collapse-all.window="o = false"
+             class="group" :class="p.done['pl/80101/7762753'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80101/7762753'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80101/7762753']; $el.indeterminate = !!p.redo['pl/80101/7762753']"
+                     @change="await p.toggle('pl/80101/7762753', '24fd807b164efd12765bbdd7078d18ab49cfb565'); $el.checked = !!p.done['pl/80101/7762753']; $el.indeterminate = !!p.redo['pl/80101/7762753']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="thảo luận">💬</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">1.2_Tiết 1: Dân cư và dân tộc ở Việt Nam</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">thảo luận</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80101/7762753', '24fd807b164efd12765bbdd7078d18ab49cfb565')">
+                  <button @click.stop="p.seen('pl/80101/7762753', '24fd807b164efd12765bbdd7078d18ab49cfb565')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 12/08</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80101/discussion_topics/618074" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><strong><span style="font-size: 14pt;">🧩 Nhiệm vụ:</span></strong></p>
+<p><span style="font-size: 14pt;"><strong>Các con hãy tìm hiểu thông tin và trình bày ý kiến của mình về các nội dung sau.</strong></span></p>
+<p><span style="font-size: 14pt;"><strong>🔍</strong> Câu 1: Dân số nước ta là bao nhiêu (tính đến năm 2026)? Xếp thứ mấy trong khu vực Đông Nam Á?</span></p>
+<p><span style="font-size: 14pt;"><strong>🔍</strong> Câu 2: <em>Dân cư nước ta tập trung ở đâu? </em></span></p>
+<p><span style="font-size: 14pt;"><strong>🔍</strong> Câu 3: <em>Nêu 1-2 ảnh hưởng của sự phân bố dân cư ở nước ta.</em></span></p>
+<p> </p>
+<p><span style="font-size: 14pt;">✅ Lưu ý:</span></p>
+<ul>
+<li><span style="font-size: 14pt;">Mỗi câu hỏi, HS trình bày ít nhất 1-2 ý thể hiện phần tìm hiểu của bản thân.</span></li>
+<li><span style="font-size: 14pt;">HS trình bày thông tin tóm tắt, ngắn gọn, thể hiện sự đọc - tìm hiểu của bản thân.</span></li>
+<li><span style="font-size: 14pt;">HS sử dụng ngôn ngữ lịch sự, tôn trọng.</span></li>
+</ul>
+<p> </p>
+<p> </p>
+              </div>
               
             </div>
           </div>
@@ -1649,173 +1890,14 @@
         
         
         
-        <div data-item data-title="Tự học_1.2_Tiết 1: Dân cư và dân tộc ở Việt Nam" data-type="page" data-sec="4"
-             data-pkey="pl/80101/7762752" data-hash="32b186791df240683b9924c5bada97e02cbd3954" data-ts="1786526830000"
-             data-sechead
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80101/7762752'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Mục này vừa là nội dung vừa là tiêu đề nhóm → checkbox của nó
-                   điều khiển cả nhóm (gồm chính nó) -->
-              <input type="checkbox" title="Đánh dấu cả nhóm này"
-                     x-effect="syncSecBox($el, p.done)"
-                     @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
-                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tự học_1.2_Tiết 1: Dân cư và dân tộc ở Việt Nam</span>
-                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
-                     :class="o ? 'rotate-180' : ''"
-                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80101/7762752', '32b186791df240683b9924c5bada97e02cbd3954')">
-                  <button @click.stop="p.seen('pl/80101/7762752', '32b186791df240683b9924c5bada97e02cbd3954')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 12/08</span>
-                
-                
-                <a href="https://lms.vinschool.edu.vn/courses/80101/pages/tu-hoc-1-dot-2-tiet-1-dan-cu-va-dan-toc-o-viet-nam" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-              <div x-show="o" x-collapse x-cloak
-                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
-                <p><span data-sheets-userformat='{"2":15293,"3":{"1":0},"5":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"6":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"7":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"8":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"10":1,"11":4,"12":0,"14":{"1":3,"3":1},"15":"Cambria","16":12}' data-sheets-value='{"1":2,"2":"Ở những bài học trước, các em đã biết được vị trí địa lí, lãnh thổ, biểu tượng cùng đặc điểm tự nhiên của thiên nhiên Việt Nam. Thế con người Việt nam thì sao? Cùng đến với bài học hôm nay, chúng ta sẽ cùng nhau tìm hiểu những nét cơ bản về dân cư và dân tộc ở nước ta. "}'>Ở những bài học trước, các em đã biết được vị trí địa lí, lãnh thổ, biểu tượng cùng đặc điểm tự nhiên của đất nước Việt Nam. Vậy con người Việt Nam thì sao? Cùng đến với bài học hôm nay, chúng ta sẽ cùng nhau tìm hiểu những nét cơ bản về dân cư và dân tộc ở nước ta. </span></p>
-<p><span data-sheets-userformat='{"2":15293,"3":{"1":0},"5":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"6":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"7":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"8":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"10":1,"11":4,"12":0,"14":{"1":3,"3":1},"15":"Cambria","16":12}' data-sheets-value='{"1":2,"2":"Ở những bài học trước, các em đã biết được vị trí địa lí, lãnh thổ, biểu tượng cùng đặc điểm tự nhiên của thiên nhiên Việt Nam. Thế con người Việt nam thì sao? Cùng đến với bài học hôm nay, chúng ta sẽ cùng nhau tìm hiểu những nét cơ bản về dân cư và dân tộc ở nước ta. "}'>1. Mục tiêu: </span></p>
-<p><span data-sheets-userformat='{"2":15293,"3":{"1":0},"5":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"6":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"7":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"8":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"10":1,"11":4,"12":0,"14":{"1":3,"3":1},"15":"Cambria","16":12}' data-sheets-value='{"1":2,"2":"Ở những bài học trước, các em đã biết được vị trí địa lí, lãnh thổ, biểu tượng cùng đặc điểm tự nhiên của thiên nhiên Việt Nam. Thế con người Việt nam thì sao? Cùng đến với bài học hôm nay, chúng ta sẽ cùng nhau tìm hiểu những nét cơ bản về dân cư và dân tộc ở nước ta. "}'>– Biết sơ nét đặc điểm dân cư Việt Nam và so sánh được quy mô dân số Việt Nam với một số nước trong khu vực Đông Nam Á<br/>– Biết tên một số dân tộc ở Việt Nam và hiểu được sự đa dạng văn hoá của các dân tộc Việt Nam</span></p>
-<p><span data-sheets-userformat='{"2":15293,"3":{"1":0},"5":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"6":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"7":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"8":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"10":1,"11":4,"12":0,"14":{"1":3,"3":1},"15":"Cambria","16":12}' data-sheets-value='{"1":2,"2":"Ở những bài học trước, các em đã biết được vị trí địa lí, lãnh thổ, biểu tượng cùng đặc điểm tự nhiên của thiên nhiên Việt Nam. Thế con người Việt nam thì sao? Cùng đến với bài học hôm nay, chúng ta sẽ cùng nhau tìm hiểu những nét cơ bản về dân cư và dân tộc ở nước ta. "}'>2. Để học tập hiệu quả, các con hãy chuẩn bị đầy đủ tập và bút viết; tập trung lắng nghe; chủ động ghi chép và thực hành theo yêu cầu trong bài học nhé.</span></p>
-<p><span data-sheets-userformat='{"2":15293,"3":{"1":0},"5":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"6":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"7":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"8":{"1":[{"1":2,"2":0,"5":{"1":2,"2":0}},{"1":0,"2":0,"3":3},{"1":1,"2":0,"4":1}]},"10":1,"11":4,"12":0,"14":{"1":3,"3":1},"15":"Cambria","16":12}' data-sheets-value='{"1":2,"2":"Ở những bài học trước, các em đã biết được vị trí địa lí, lãnh thổ, biểu tượng cùng đặc điểm tự nhiên của thiên nhiên Việt Nam. Thế con người Việt nam thì sao? Cùng đến với bài học hôm nay, chúng ta sẽ cùng nhau tìm hiểu những nét cơ bản về dân cư và dân tộc ở nước ta. "}'> </span></p>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="1.2_Tiết 1: Dân cư và dân tộc ở Việt Nam" data-type="discussion" data-sec="4"
-             data-pkey="pl/80101/7762753" data-hash="24fd807b164efd12765bbdd7078d18ab49cfb565" data-ts="1786526830000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80101/7762753'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/80101/7762753'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/80101/7762753']; $el.indeterminate = !!p.redo['pl/80101/7762753']"
-                     @change="await p.toggle('pl/80101/7762753', '24fd807b164efd12765bbdd7078d18ab49cfb565'); $el.checked = !!p.done['pl/80101/7762753']; $el.indeterminate = !!p.redo['pl/80101/7762753']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="thảo luận">💬</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
-                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">1.2_Tiết 1: Dân cư và dân tộc ở Việt Nam</span>
-                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
-                     :class="o ? 'rotate-180' : ''"
-                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">thảo luận</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80101/7762753', '24fd807b164efd12765bbdd7078d18ab49cfb565')">
-                  <button @click.stop="p.seen('pl/80101/7762753', '24fd807b164efd12765bbdd7078d18ab49cfb565')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 12/08</span>
-                
-                
-                <a href="https://lms.vinschool.edu.vn/courses/80101/discussion_topics/618074" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-              <div x-show="o" x-collapse x-cloak
-                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
-                <p><strong><span style="font-size: 14pt;">🧩 Nhiệm vụ:</span></strong></p>
-<p><span style="font-size: 14pt;"><strong>Các con hãy tìm hiểu thông tin và trình bày ý kiến của mình về các nội dung sau.</strong></span></p>
-<p><span style="font-size: 14pt;"><strong>🔍</strong> Câu 1: Dân số nước ta là bao nhiêu (tính đến năm 2026)? Xếp thứ mấy trong khu vực Đông Nam Á?</span></p>
-<p><span style="font-size: 14pt;"><strong>🔍</strong> Câu 2: <em>Dân cư nước ta tập trung ở đâu? </em></span></p>
-<p><span style="font-size: 14pt;"><strong>🔍</strong> Câu 3: <em>Nêu 1-2 ảnh hưởng của sự phân bố dân cư ở nước ta.</em></span></p>
-<p> </p>
-<p><span style="font-size: 14pt;">✅ Lưu ý:</span></p>
-<ul>
-<li><span style="font-size: 14pt;">Mỗi câu hỏi, HS trình bày ít nhất 1-2 ý thể hiện phần tìm hiểu của bản thân.</span></li>
-<li><span style="font-size: 14pt;">HS trình bày thông tin tóm tắt, ngắn gọn, thể hiện sự đọc - tìm hiểu của bản thân.</span></li>
-<li><span style="font-size: 14pt;">HS sử dụng ngôn ngữ lịch sự, tôn trọng.</span></li>
-</ul>
-<p> </p>
-<p> </p>
-              </div>
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
       </div>
     </section>
     
 
   </main>
+  </div>
 
-  <footer class="max-w-4xl mx-auto px-4 pb-8 text-center text-xs text-slate-400">
+  <footer class="max-w-[72rem] mx-auto px-4 pb-8 text-center text-xs text-slate-400">
     Cập nhật tự động · bản lưu offline
   </footer>
 </body>

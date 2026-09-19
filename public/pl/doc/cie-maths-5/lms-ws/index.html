@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>LMS WS.docx · CIE Maths 5</title>
-<link rel="stylesheet" href="../../../../assets/tw.e9344bf8.css">
+<link rel="stylesheet" href="../../../../assets/tw.70807652.css">
 <style>
   [x-cloak] { display: none !important; }
   #pdf { width:100%; height:calc(100vh - 8.5rem); border:0; }
@@ -90,11 +90,14 @@
             :class="che === 'doc' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700'"
             class="px-3 py-2 text-xs font-medium rounded-lg border">📖 Đọc &amp; giải thích</button>
     
+    
+    
     <button @click="doiCheDo('pdf', true)" :aria-pressed="String(che === 'pdf')"
             :class="che === 'pdf' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700'"
             class="px-3 py-2 text-xs font-medium rounded-lg border">📄 Bản PDF</button>
     <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-5-unit-4-2-representing-letters-as-quantities/LMS WS.docx" download
        class="ml-auto px-3 py-2 text-xs font-medium rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">⬇ Tải file gốc</a>
+    
   </div>
 </nav>
 
@@ -281,6 +284,7 @@
     return {
       
       che: null,
+      chiDoc: false,
       // Giá trị đi vào STATE, không nhúng thẳng `|tojson` vào thuộc tính HTML:
       // `tojson` sinh chuỗi bọc nháy kép, mà thuộc tính cũng đóng bằng nháy kép
       // → đứt thuộc tính và chết cả Alpine. Đã dính BA lần trong dự án này.
@@ -328,13 +332,14 @@
         // Nhớ lựa chọn, nhưng CHỈ khi người dùng tự bấm. Bản quét không có chế
         // độ đọc nên bị ép sang PDF; ghi lựa chọn đó xuống thì một cuốn SGK đầu
         // độc mọi tài liệu sau — đã đo: 7/9 tài liệu mở nhầm sang PDF.
-        if (this.che === null) {
+        if (this.chiDoc) { this.che = 'doc'; }
+        else if (this.che === null) {
           let nho = null;
           try { nho = localStorage.getItem('lms_doc_mode'); } catch (e) {}
           this.che = nho === 'pdf' ? 'pdf' : 'doc';
         }
         if (this.che === 'pdf') this.moPdf();
-        this.$nextTick(() => { this.canhChu(); this.theoDoiTrang(); });
+        this.$nextTick(() => { this.canhChuLuoi(); this.theoDoiTrang(); });
         addEventListener('resize', () => { clearTimeout(this._h); this._h = setTimeout(() => this.canhChu(), 150); });
         if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => this.canhChu());
       },
@@ -342,7 +347,7 @@
         this.che = c;
         if (c === 'pdf') this.moPdf();
         if (luu) { try { localStorage.setItem('lms_doc_mode', c); } catch (e) {} }
-        if (c === 'doc') this.$nextTick(() => this.canhChu());
+        if (c === 'doc') this.$nextTick(() => this.canhChuLuoi());
       },
 
       /** Mục lục → nhảy tới trang N, chạy ở CẢ hai chế độ.
@@ -481,15 +486,40 @@
          sửa thì sai số dồn dần và cuối dòng lệch hẳn một hai từ.
          ⚠ Đo bằng `offsetWidth`, KHÔNG phải `getBoundingClientRect()` — cái sau
          đã tính cả transform của tổ tiên nên tỉ lệ ra sai hệ quy chiếu. */
-      canhChu() {
-        document.querySelectorAll('.khung').forEach((k) => {
+      /** Nắn bề rộng từng đoạn chữ cho khớp bản gốc.
+       *
+       * ⚠ BA LƯỢT tách bạch — ghi hết, ĐỌC hết, rồi ghi hết. Bản đầu ghi rồi
+       * đọc XEN KẼ từng span (`style.transform = ''` rồi `offsetWidth`), mà
+       * mỗi lần đọc sau một lần ghi là ép trình duyệt dựng lại bố cục ngay tại
+       * chỗ đó. Với một quyển sách 260 trang thì đó là **13.000 lượt dựng
+       * hình**. Đo trên hồ sơ điện thoại (CPU chậm 4×): mở sách mất **115
+       * giây**. Tách ba lượt thì chỉ còn ~3 lượt dựng hình cho mỗi trang.
+       */
+      /** Chỉ nắn những trang SẮP NHÌN THẤY, phần còn lại chờ cuộn tới.
+       *
+       * Một quyển 260 trang có 12.940 đoạn chữ; nắn hết ngay lúc mở là làm một
+       * đống việc cho 259 trang chưa ai đọc. Ảnh trang vốn đã nạp lười
+       * (`loading="lazy"`) — chỗ này chỉ là cho lớp chữ theo cùng nguyên tắc.
+       */
+      canhChuLuoi() {
+        if (this._ql) this._ql.disconnect();
+        this._ql = new IntersectionObserver((muc) => {
+          for (const m of muc) if (m.isIntersecting) this.canhChu(m.target);
+        }, { rootMargin: '1200px 0px' });
+        document.querySelectorAll('.khung').forEach((k) => this._ql.observe(k));
+      },
+
+      canhChu(chi) {
+        const ds = chi ? [chi] : Array.from(document.querySelectorAll('.khung'));
+        ds.forEach((k) => {
           const w = k.clientWidth; if (!w) return;
-          k.querySelectorAll('.chu span').forEach((s) => {
-            const dich = parseFloat(s.dataset.w) * w; if (!dich) return;
-            s.style.transform = '';
-            const that = s.offsetWidth; if (!that) return;
-            s.style.transform = 'scaleX(' + (dich / that) + ')';
-          });
+          const sp = Array.from(k.querySelectorAll('.chu span'));
+          for (const s of sp) s.style.transform = '';           // ghi hết
+          const rong = sp.map((s) => s.offsetWidth);            // ĐỌC hết
+          for (let i = 0; i < sp.length; i++) {                 // ghi hết
+            const dich = parseFloat(sp[i].dataset.w) * w;
+            if (dich && rong[i]) sp[i].style.transform = 'scaleX(' + (dich / rong[i]) + ')';
+          }
         });
       },
       // Video YouTube: dựng khung LÚC BẤM, miền youtube-nocookie. Nhúng sẵn là
