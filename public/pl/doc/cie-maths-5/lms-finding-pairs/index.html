@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>LMS Finding Pairs.pdf · CIE Maths 5</title>
-<link rel="stylesheet" href="../../../../assets/tw.6153ed8f.css">
+<link rel="stylesheet" href="../../../../assets/tw.1b910832.css">
 <style>
   [x-cloak] { display: none !important; }
   #pdf { width:100%; height:calc(100vh - 8.5rem); border:0; }
@@ -29,6 +29,11 @@
   .chu span { position:absolute; white-space:pre; color:transparent;
               line-height:1; transform-origin:0 0; }
   .chu span::selection { background:#6366f180; color:transparent; }
+  /* Kết quả tìm: chữ vốn trong suốt nên chỉ cần tô NỀN là thành vệt đánh dấu
+     nằm đúng trên chữ của ảnh trang. Không phải chèn thẻ, không phải đổi DOM —
+     một quyển sách có 13.000 span, đụng vào DOM là dựng hình lại cả trang. */
+  .chu span.tim     { background:#fde04780; }
+  .chu span.tim-nay { background:#fb923cc0; }
   .lk { position:absolute; z-index:3; display:grid; place-items:center; border:0;
         cursor:pointer; text-decoration:none; color:#fff; background:#ef4444;
         box-shadow:0 2px 8px #0006; }
@@ -101,6 +106,22 @@
             class="px-3 py-2 text-xs font-medium rounded-lg border">📄 Bản PDF</button>
     <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-5-unit-4-2-representing-letters-as-quantities/LMS Finding Pairs.pdf" download
        class="ml-auto px-3 py-2 text-xs font-medium rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">⬇ Tải file gốc</a>
+    
+    
+    
+    <div x-show="che === 'doc'" class="flex items-center gap-1">
+      <input type="search" x-model="tim" @input.debounce.250ms="timKiem()"
+             @keydown.enter.prevent="toiKetQua(1)"
+             @keydown.escape.prevent="tim=''; timKiem()"
+             placeholder="Tìm trong tài liệu…"
+             class="w-40 sm:w-56 px-2 py-2 text-xs rounded-lg border border-slate-300">
+      <span x-show="tim" x-cloak class="text-xs text-slate-500 tabular-nums w-14 text-center"
+            x-text="soKq ? (viTri + 1) + '/' + soKq : 'không có'"></span>
+      <button x-show="soKq" x-cloak @click="toiKetQua(-1)" type="button" title="Kết quả trước"
+              class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700">‹</button>
+      <button x-show="soKq" x-cloak @click="toiKetQua(1)" type="button" title="Kết quả sau"
+              class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700">›</button>
+    </div>
     
   </div>
 </nav>
@@ -317,6 +338,7 @@
     // declare it" và trang chỉ hiện "Chưa mở được bản PDF". Để trong closure
     // thì Alpine không với tới. Cùng lý do cho IntersectionObserver.
     let _pdf = null, _oq = null, _kho = null;
+    let _sp = null, _kq = [];        // danh sách span + kết quả tìm
     return {
       
       che: null,
@@ -329,6 +351,7 @@
       pdfWorkerUrl: "../../../../assets/pdf.worker.490b29ce.mjs",
       tiLe: 1.2, soTrang: 0, pdfLoi: '', srcNang: '',
       mlMo: false, trangDang: 0,
+      tim: '', soKq: 0, viTri: 0,
       user: "pl", course: "cie-maths-5",
       secret: localStorage.getItem('lms_key') || '',
 
@@ -384,6 +407,65 @@
         if (c === 'pdf') this.moPdf();
         if (luu) { try { localStorage.setItem('lms_doc_mode', c); } catch (e) {} }
         if (c === 'doc') this.$nextTick(() => this.canhChuLuoi());
+      },
+
+      /** ── Tìm trong tài liệu ────────────────────────────────────────────
+       *
+       * Tìm THẲNG trên DOM, không dựng index và không tải thêm gì. Lớp chữ vốn
+       * đã nằm đủ trong DOM — đó là điều kiện bắt buộc để `getSelection()` với
+       * tới được — nên dữ liệu để tìm đã có sẵn, miễn phí.
+       *
+       * ⚠ Gom danh sách span MỘT LẦN rồi giữ lại. Một quyển 260 trang có
+       * 12.940 span; đọc `textContent` của từng cái ở mỗi lần gõ phím là bắt
+       * trình duyệt duyệt lại cả cây DOM cho từng ký tự.
+       *
+       * ⚠ Đánh dấu bằng CLASS, không chèn thẻ `<mark>`. Chèn thẻ là sửa DOM ở
+       * hàng trăm chỗ và dựng hình lại cả trang — đúng cái bẫy đã làm `canhChu`
+       * mất 115 giây. Chữ vốn trong suốt nên tô nền là đủ thành vệt đánh dấu.
+       *
+       * ⚠ Có TRẦN kết quả. Gõ một chữ cái trên sách 260 trang là hàng nghìn
+       * kết quả — đánh dấu hết thì vô nghĩa với người đọc mà lại nặng máy.
+       *
+       * Hạn chế đã biết: mỗi span là MỘT DÒNG của bản gốc, nên cụm từ bị ngắt
+       * qua hai dòng sẽ không khớp. Chấp nhận — đổi lại không tốn byte nào.
+       */
+      timKiem() {
+        if (!_sp) {
+          _sp = Array.from(document.querySelectorAll('.chu span'))
+                     .map((e) => [e, (e.textContent || '').toLowerCase()]);
+        }
+        for (const e of _kq) e.classList.remove('tim', 'tim-nay');
+        _kq = [];
+        const q = (this.tim || '').trim().toLowerCase();
+        this.viTri = 0;
+        if (q.length < 2) { this.soKq = 0; return; }   // 1 ký tự thì vô nghĩa
+        for (const [e, t] of _sp) {
+          if (t.includes(q)) {
+            _kq.push(e);
+            if (_kq.length >= 300) break;              // trần
+          }
+        }
+        for (const e of _kq) e.classList.add('tim');
+        this.soKq = _kq.length;
+        if (_kq.length) this.toiKetQua(0);
+      },
+
+      /** Nhảy tới kết quả kế tiếp (`b`=1), trước đó (-1), hoặc chính nó (0). */
+      toiKetQua(b) {
+        if (!_kq.length) return;
+        _kq[this.viTri]?.classList.remove('tim-nay');
+        this.viTri = (this.viTri + b + _kq.length) % _kq.length;
+        const e = _kq[this.viTri];
+        e.classList.add('tim-nay');
+        // Mở trang chứa nó ra trước đã: ảnh nạp lười nên khung có thể chưa cao
+        // đúng, và lớp chữ của trang đó có thể chưa được nắn.
+        const k = e.closest('.khung');
+        if (k) this.canhChu(k);
+        const h = document.querySelector('nav.sticky');
+        const off = h ? h.getBoundingClientRect().height : 0;
+        const r = e.getBoundingClientRect();
+        window.scrollTo({ top: Math.max(0, r.top + window.scrollY - off - 80),
+                          behavior: 'smooth' });
       },
 
       /** Mục lục → nhảy tới trang N, chạy ở CẢ hai chế độ.
