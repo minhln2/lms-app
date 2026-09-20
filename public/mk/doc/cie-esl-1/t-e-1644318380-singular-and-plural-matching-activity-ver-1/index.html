@@ -994,9 +994,38 @@
         /** Đăng ký nghe vùng chọn. Trang phải TỰ GỌI (trong `init()` hoặc
             `x-init`) — để trong macro mà không gọi thì mọi thứ khác đều dựng
             đúng, nút chỉ đơn giản không bao giờ hiện, và không có lỗi nào. */
+        // Nắn vùng chọn NHÌN THẤY ra biên từ. Trẻ kéo chuột hay thừa/thiếu
+        // vài ký tự ở hai đầu; nắn ra cả từ thì đỡ hẳn thao tác lại.
+        //
+        // ⚠ CHỈ chạy lúc NHẢ chuột, tuyệt đối không giữa lúc kéo. Sửa vùng
+        // chọn đang kéo làm nó chuẩn hoá chiều thành xuôi, tức lật điểm focus
+        // — đó đúng là lỗi "kéo chậm từ dưới lên thì mất vùng chọn" đã phải
+        // sửa bằng `cloneRange()`. Ở đây cú kéo đã xong nên đổi chiều vô hại.
+        //
+        // ⚠ `setTimeout(…, 0)`: để trình duyệt xử lý xong vùng chọn của chính
+        // nó rồi mới đụng vào.
+        //
+        // ⚠ Không đổi gì thì ĐỪNG gọi `addRange`: mỗi lần gọi là một lượt
+        // `selectionchange`, kéo theo một lượt `chonDoi()` vô ích.
+        nanBienTu() {
+          const sel = window.getSelection();
+          if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+          const r0 = sel.getRangeAt(0);
+          const h = r0.commonAncestorContainer;
+          const el = h.nodeType === 3 ? h.parentElement : h;
+          if (!el || !el.closest || !el.closest('[data-tra]')) return;
+          const r = this._noRong(r0.cloneRange());
+          if (r.startContainer === r0.startContainer && r.startOffset === r0.startOffset
+              && r.endContainer === r0.endContainer && r.endOffset === r0.endOffset) return;
+          try { sel.removeAllRanges(); sel.addRange(r); } catch (e) { /* bỏ qua */ }
+        },
+
         traGan() {
           if (typeof document === 'undefined' || this._traDaGan) return;
           this._traDaGan = true;
+          for (const ev of ['mouseup', 'touchend']) {
+            document.addEventListener(ev, () => setTimeout(() => this.nanBienTu(), 0));
+          }
           let hen = null;
           // Gộp nhịp 120ms: kéo chọn trên điện thoại bắn hàng chục lượt mỗi giây.
           // `selectionchange` bắn trên `document` và KHÔNG nổi lên window ở mọi
