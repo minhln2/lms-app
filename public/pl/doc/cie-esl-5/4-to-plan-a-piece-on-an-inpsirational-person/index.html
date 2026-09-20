@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>4. To plan a piece on an inpsirational person.pptx · CIE ESL 5</title>
-<link rel="stylesheet" href="../../../../assets/tw.4432dbec.css">
+<link rel="stylesheet" href="../../../../assets/tw.4b97d341.css">
 <style>
   [x-cloak] { display: none !important; }
   #pdf { width:100%; height:calc(100vh - 8.5rem); border:0; }
@@ -18,14 +18,31 @@
      Toạ độ theo % và cỡ chữ theo `cqw` nên co giãn thuần CSS. KHÔNG nhân tỉ lệ
      bằng JS trên cả khối rồi lại scaleX từng đoạn: hai tầng transform lồng nhau
      đo bằng getBoundingClientRect (đã gồm transform cha) cho ra 2% số từ đúng chỗ. */
+  /* Nhãn "Trang 17/161" là của MÌNH, không phải nội dung sách. Để chọn được
+     thì kéo chuột qua hai trang liền nhau lại lôi luôn nó vào giữa đoạn chép
+     ra — người dùng báo đúng chuyện này. */
+  .stt { user-select:none; -webkit-user-select:none; }
   .khung { position:relative; container-type:inline-size; overflow:hidden; }
-  .khung > img { display:block; width:100%; height:auto; }
+  /* ⚠ Ảnh trang phải TRONG SUỐT với chuột và ngón tay. Nó nằm dưới lớp chữ,
+     nhưng giữ để bôi đen thì trình duyệt vẫn bắt được nó và bung menu ảnh
+     ("Lưu ảnh", "Sao chép ảnh") — cú bôi đen đang dở bị huỷ, và người dùng
+     tưởng trang không cho chọn chữ. Bốn thuộc tính, mỗi cái chặn một đường:
+     `pointer-events` (chuột), `user-select` (kéo chọn), `-webkit-user-drag`
+     (kéo thả ảnh đi), `-webkit-touch-callout` (giữ lâu trên iOS).
+     Áp cho CẢ `img.dong` (GIF động): chúng cũng nằm dưới lớp chữ. */
+  .khung > img { display:block; width:100%; height:auto;
+                 pointer-events:none; user-select:none; -webkit-user-select:none;
+                 -webkit-user-drag:none; -webkit-touch-callout:none; }
   .khung > img.dong { position:absolute; width:auto; height:auto; object-fit:fill; }
   .chu { position:absolute; inset:0; }
   /* Dấu mờ ("SAMPLE") và tiêu đề chạy: vẫn ở đó cho lớp chữ trung thực với
      bản gốc, nhưng KHÔNG chắn tay người đọc. Thiếu dòng này thì kéo chuột qua
      một câu trong sách lại chọn trúng chữ `SAMPLE` phủ kín trang. */
   .chu span.mo { pointer-events: none; user-select: none; }
+  /* Dấu xuống dòng CHÉP ĐƯỢC giữa hai dòng chữ. Phải nằm TRONG LUỒNG và
+     chứa ký tự thật; `font-size:0` để nó không chiếm một pixel nào. Xem
+     `doc_view.py` cho ba cách đã thử và trượt. */
+  .chu i.nl { white-space:pre; font-size:0; }
   .chu span { position:absolute; white-space:pre; color:transparent;
               line-height:1; transform-origin:0 0; }
   .chu span::selection { background:#6366f180; color:transparent; }
@@ -138,6 +155,8 @@
        class="mt-2 lg:mt-0 rounded-lg border border-slate-200 bg-white p-2 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
     <p class="px-2 pb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Mục lục</p>
     
+    
+    
     <ol class="space-y-0.5">
       
       
@@ -151,7 +170,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[1] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(1); moUnit[1] = true"
-                  :class="trangDang === 1 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 0 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">1</span>
             <span class="min-w-0">English</span>
@@ -170,7 +189,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[2] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(3); moUnit[2] = true"
-                  :class="trangDang === 3 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 1 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">3</span>
             <span class="min-w-0">Retrieval Practice – List as many connectives as you can in 1 m</span>
@@ -189,7 +208,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[3] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(8); moUnit[3] = true"
-                  :class="trangDang === 8 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 2 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">8</span>
             <span class="min-w-0">Next lesson, you will write your explanation piece on your insp</span>
@@ -207,15 +226,48 @@
 
 <main data-tra x-show="che === 'doc'" class="px-4 py-4">
 
-<section class="trang" id="tr-1" data-tr="1"><p class="stt">Trang 1/9</p><div class="khung"><img src="anh/trang-1.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.35946" style="left:30.369%;top:3.559%;font-size:9.165cqw">English </span><span data-w="0.16855" style="left:2.318%;top:23.042%;font-size:4.583cqw">WALT: </span><span data-w="0.71091" style="left:19.193%;top:23.042%;font-size:4.583cqw">Plan, write, edit and proofread </span><span data-w="0.82735" style="left:2.318%;top:31.861%;font-size:4.583cqw">short texts, with little or no support.</span><span data-w="0.16401" style="left:75.664%;top:8.927%;font-size:1.665cqw">Unit 1 – My World</span></div></div></section>
-<section class="trang" id="tr-2" data-tr="2"><p class="stt">Trang 2/9</p><div class="khung"><img src="anh/trang-2.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.92816" style="left:2.427%;top:2.991%;font-size:2.604cqw">WALT: Plan, write, edit and proofread short texts, with little or </span><span class="mo" data-w="0.16939" style="left:2.427%;top:6.994%;font-size:2.604cqw">no support.</span><span data-w="0.18929" style="left:7.949%;top:56.828%;font-size:2.501cqw">I can plan an </span><span data-w="0.24094" style="left:5.368%;top:62.164%;font-size:2.501cqw">explanation text </span><span data-w="0.27347" style="left:3.738%;top:67.501%;font-size:2.501cqw">on an inspirational </span><span data-w="0.10649" style="left:11.654%;top:72.837%;font-size:2.501cqw">person.</span><span data-w="0.25052" style="left:38.577%;top:59.496%;font-size:2.501cqw">I can use a range </span><span data-w="0.24842" style="left:38.684%;top:64.833%;font-size:2.501cqw">of connectives in </span><span data-w="0.12159" style="left:44.592%;top:70.169%;font-size:2.501cqw">my plan.</span><span data-w="0.26595" style="left:70.969%;top:62.164%;font-size:2.501cqw">I can use research </span><span data-w="0.26090" style="left:70.789%;top:67.501%;font-size:2.501cqw">to inform my plan.</span></div></div></section>
-<section class="trang" id="tr-3" data-tr="3"><p class="stt">Trang 3/9</p><div class="khung"><img src="anh/trang-3.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.34640" style="left:3.670%;top:13.674%;font-size:3.334cqw">Retrieval Practice </span><span data-w="0.50741" style="left:38.344%;top:13.674%;font-size:3.334cqw">– List as many connectives as </span><span data-w="0.34316" style="left:3.670%;top:20.082%;font-size:3.334cqw">you can in 1 minute.</span><span class="mo" data-w="0.92816" style="left:2.427%;top:2.991%;font-size:2.604cqw">WALT: Plan, write, edit and proofread short texts, with little or </span><span class="mo" data-w="0.16939" style="left:2.427%;top:6.994%;font-size:2.604cqw">no support.</span></div></div></section>
-<section class="trang" id="tr-4" data-tr="4"><p class="stt">Trang 4/9</p><div class="khung"><img src="anh/trang-4.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.92816" style="left:2.427%;top:2.991%;font-size:2.604cqw">WALT: Plan, write, edit and proofread short texts, with little or </span><span class="mo" data-w="0.16939" style="left:2.427%;top:6.994%;font-size:2.604cqw">no support.</span></div></div></section>
-<section class="trang" id="tr-5" data-tr="5"><p class="stt">Trang 5/9</p><div class="khung"><img src="anh/trang-5.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.92816" style="left:2.427%;top:2.991%;font-size:2.604cqw">WALT: Plan, write, edit and proofread short texts, with little or </span><span class="mo" data-w="0.16939" style="left:2.427%;top:6.994%;font-size:2.604cqw">no support.</span></div></div></section>
-<section class="trang" id="tr-6" data-tr="6"><p class="stt">Trang 6/9</p><div class="khung"><img src="anh/trang-6.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.92816" style="left:2.427%;top:2.991%;font-size:2.604cqw">WALT: Plan, write, edit and proofread short texts, with little or </span><span class="mo" data-w="0.16939" style="left:2.427%;top:6.994%;font-size:2.604cqw">no support.</span></div></div></section>
-<section class="trang" id="tr-7" data-tr="7"><p class="stt">Trang 7/9</p><div class="khung"><img src="anh/trang-7.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.92816" style="left:2.427%;top:2.991%;font-size:2.604cqw">WALT: Plan, write, edit and proofread short texts, with little or </span><span class="mo" data-w="0.16939" style="left:2.427%;top:6.994%;font-size:2.604cqw">no support.</span></div></div></section>
-<section class="trang" id="tr-8" data-tr="8"><p class="stt">Trang 8/9</p><div class="khung"><img src="anh/trang-8.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.90040" style="left:3.614%;top:13.904%;font-size:4.063cqw">Next lesson, you will write your explanation </span><span data-w="0.70537" style="left:3.614%;top:21.709%;font-size:4.063cqw">piece on your inspirational person.</span><span data-w="0.91881" style="left:2.427%;top:3.808%;font-size:2.501cqw">WALT: Plan, write, edit and proofread short texts, with little or no support.</span><span data-w="0.72512" style="left:4.202%;top:40.393%;font-size:2.917cqw">This is what you’ll need to include in your writing.</span></div></div></section>
-<section class="trang" id="tr-9" data-tr="9"><p class="stt">Trang 9/9</p><div class="khung"><img src="anh/trang-9.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.92816" style="left:2.427%;top:2.991%;font-size:2.604cqw">WALT: Plan, write, edit and proofread short texts, with little or </span><span class="mo" data-w="0.16939" style="left:2.427%;top:6.994%;font-size:2.604cqw">no support.</span><span data-w="0.18929" style="left:7.949%;top:56.828%;font-size:2.501cqw">I can plan an </span><span data-w="0.24094" style="left:5.368%;top:62.164%;font-size:2.501cqw">explanation text </span><span data-w="0.27347" style="left:3.738%;top:67.501%;font-size:2.501cqw">on an inspirational </span><span data-w="0.10649" style="left:11.654%;top:72.837%;font-size:2.501cqw">person.</span><span data-w="0.25052" style="left:38.577%;top:59.496%;font-size:2.501cqw">I can use a range </span><span data-w="0.24842" style="left:38.684%;top:64.833%;font-size:2.501cqw">of connectives in </span><span data-w="0.12159" style="left:44.592%;top:70.169%;font-size:2.501cqw">my plan.</span><span data-w="0.26595" style="left:70.969%;top:62.164%;font-size:2.501cqw">I can use research </span><span data-w="0.26090" style="left:70.789%;top:67.501%;font-size:2.501cqw">to inform my plan.</span></div></div></section>
+<section class="trang" id="tr-1" data-tr="1"><div class="khung"><img src="anh/trang-1.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.35946" style="left:30.369%;top:3.559%;font-size:9.165cqw">English </span><i class="nl">
+</i><span data-w="0.16855" style="left:2.318%;top:23.042%;font-size:4.583cqw">WALT: </span><span data-w="0.71091" style="left:19.193%;top:23.042%;font-size:4.583cqw">Plan, write, edit and proofread </span><i class="nl">
+</i><span data-w="0.82735" style="left:2.318%;top:31.861%;font-size:4.583cqw">short texts, with little or no support.</span><i class="nl">
+</i><span data-w="0.16401" style="left:75.664%;top:8.927%;font-size:1.665cqw">Unit 1 – My World</span></div></div></section>
+<section class="trang" id="tr-2" data-tr="2"><div class="khung"><img src="anh/trang-2.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.92816" style="left:2.427%;top:2.991%;font-size:2.604cqw">WALT: Plan, write, edit and proofread short texts, with little or </span><i class="nl">
+</i><span class="mo" data-w="0.16939" style="left:2.427%;top:6.994%;font-size:2.604cqw">no support.</span><i class="nl">
+</i><span data-w="0.18929" style="left:7.949%;top:56.828%;font-size:2.501cqw">I can plan an </span><i class="nl">
+</i><span data-w="0.24094" style="left:5.368%;top:62.164%;font-size:2.501cqw">explanation text </span><i class="nl">
+</i><span data-w="0.27347" style="left:3.738%;top:67.501%;font-size:2.501cqw">on an inspirational </span><i class="nl">
+</i><span data-w="0.10649" style="left:11.654%;top:72.837%;font-size:2.501cqw">person.</span><i class="nl">
+</i><span data-w="0.25052" style="left:38.577%;top:59.496%;font-size:2.501cqw">I can use a range </span><i class="nl">
+</i><span data-w="0.24842" style="left:38.684%;top:64.833%;font-size:2.501cqw">of connectives in </span><i class="nl">
+</i><span data-w="0.12159" style="left:44.592%;top:70.169%;font-size:2.501cqw">my plan.</span><i class="nl">
+</i><span data-w="0.26595" style="left:70.969%;top:62.164%;font-size:2.501cqw">I can use research </span><i class="nl">
+</i><span data-w="0.26090" style="left:70.789%;top:67.501%;font-size:2.501cqw">to inform my plan.</span></div></div></section>
+<section class="trang" id="tr-3" data-tr="3"><div class="khung"><img src="anh/trang-3.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.34640" style="left:3.670%;top:13.674%;font-size:3.334cqw">Retrieval Practice </span><span data-w="0.50741" style="left:38.344%;top:13.674%;font-size:3.334cqw">– List as many connectives as </span><i class="nl">
+</i><span data-w="0.34316" style="left:3.670%;top:20.082%;font-size:3.334cqw">you can in 1 minute.</span><i class="nl">
+</i><span class="mo" data-w="0.92816" style="left:2.427%;top:2.991%;font-size:2.604cqw">WALT: Plan, write, edit and proofread short texts, with little or </span><i class="nl">
+</i><span class="mo" data-w="0.16939" style="left:2.427%;top:6.994%;font-size:2.604cqw">no support.</span></div></div></section>
+<section class="trang" id="tr-4" data-tr="4"><div class="khung"><img src="anh/trang-4.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.92816" style="left:2.427%;top:2.991%;font-size:2.604cqw">WALT: Plan, write, edit and proofread short texts, with little or </span><i class="nl">
+</i><span class="mo" data-w="0.16939" style="left:2.427%;top:6.994%;font-size:2.604cqw">no support.</span></div></div></section>
+<section class="trang" id="tr-5" data-tr="5"><div class="khung"><img src="anh/trang-5.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.92816" style="left:2.427%;top:2.991%;font-size:2.604cqw">WALT: Plan, write, edit and proofread short texts, with little or </span><i class="nl">
+</i><span class="mo" data-w="0.16939" style="left:2.427%;top:6.994%;font-size:2.604cqw">no support.</span></div></div></section>
+<section class="trang" id="tr-6" data-tr="6"><div class="khung"><img src="anh/trang-6.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.92816" style="left:2.427%;top:2.991%;font-size:2.604cqw">WALT: Plan, write, edit and proofread short texts, with little or </span><i class="nl">
+</i><span class="mo" data-w="0.16939" style="left:2.427%;top:6.994%;font-size:2.604cqw">no support.</span></div></div></section>
+<section class="trang" id="tr-7" data-tr="7"><div class="khung"><img src="anh/trang-7.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.92816" style="left:2.427%;top:2.991%;font-size:2.604cqw">WALT: Plan, write, edit and proofread short texts, with little or </span><i class="nl">
+</i><span class="mo" data-w="0.16939" style="left:2.427%;top:6.994%;font-size:2.604cqw">no support.</span></div></div></section>
+<section class="trang" id="tr-8" data-tr="8"><div class="khung"><img src="anh/trang-8.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.90040" style="left:3.614%;top:13.904%;font-size:4.063cqw">Next lesson, you will write your explanation </span><i class="nl">
+</i><span data-w="0.70537" style="left:3.614%;top:21.709%;font-size:4.063cqw">piece on your inspirational person.</span><i class="nl">
+</i><span data-w="0.91881" style="left:2.427%;top:3.808%;font-size:2.501cqw">WALT: Plan, write, edit and proofread short texts, with little or no support.</span><i class="nl">
+</i><span data-w="0.72512" style="left:4.202%;top:40.393%;font-size:2.917cqw">This is what you’ll need to include in your writing.</span></div></div></section>
+<section class="trang" id="tr-9" data-tr="9"><div class="khung"><img src="anh/trang-9.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.92816" style="left:2.427%;top:2.991%;font-size:2.604cqw">WALT: Plan, write, edit and proofread short texts, with little or </span><i class="nl">
+</i><span class="mo" data-w="0.16939" style="left:2.427%;top:6.994%;font-size:2.604cqw">no support.</span><i class="nl">
+</i><span data-w="0.18929" style="left:7.949%;top:56.828%;font-size:2.501cqw">I can plan an </span><i class="nl">
+</i><span data-w="0.24094" style="left:5.368%;top:62.164%;font-size:2.501cqw">explanation text </span><i class="nl">
+</i><span data-w="0.27347" style="left:3.738%;top:67.501%;font-size:2.501cqw">on an inspirational </span><i class="nl">
+</i><span data-w="0.10649" style="left:11.654%;top:72.837%;font-size:2.501cqw">person.</span><i class="nl">
+</i><span data-w="0.25052" style="left:38.577%;top:59.496%;font-size:2.501cqw">I can use a range </span><i class="nl">
+</i><span data-w="0.24842" style="left:38.684%;top:64.833%;font-size:2.501cqw">of connectives in </span><i class="nl">
+</i><span data-w="0.12159" style="left:44.592%;top:70.169%;font-size:2.501cqw">my plan.</span><i class="nl">
+</i><span data-w="0.26595" style="left:70.969%;top:62.164%;font-size:2.501cqw">I can use research </span><i class="nl">
+</i><span data-w="0.26090" style="left:70.789%;top:67.501%;font-size:2.501cqw">to inform my plan.</span></div></div></section>
 </main>
 
 
@@ -283,7 +335,12 @@
 
         <div class="sticky top-0 flex items-start gap-2 px-4 py-3 border-b border-slate-100 bg-white">
           <div class="flex-1 min-w-0">
-            <p class="font-semibold text-slate-900 break-words" x-text="tra.text"></p>
+            <!-- Giữ xuống dòng của đoạn đã chọn (`whitespace-pre-line`) và
+                 CHẶN chiều cao: một đoạn 20 dòng mà để nở tự do thì phần giải
+                 thích — thứ người ta mở popup để đọc — bị đẩy hẳn khỏi màn
+                 hình. Cuộn riêng trong ô này, không cuộn cả popup. -->
+            <p class="font-semibold text-slate-900 break-words whitespace-pre-line
+                      max-h-28 overflow-y-auto" x-text="tra.goc || tra.text"></p>
             <p x-show="tra.mode === 'word' && tra.sent" x-cloak
                class="mt-0.5 text-xs text-slate-400 line-clamp-2" x-text="tra.sent"></p>
           </div>
@@ -401,9 +458,18 @@
       pdfJsUrl: "../../../../assets/pdf.e73f3ce5.mjs",
       pdfWorkerUrl: "../../../../assets/pdf.worker.490b29ce.mjs",
       tiLe: 1.2, soTrang: 0, pdfLoi: '', srcNang: '',
-      mlMo: false, trangDang: 0, moUnit: {},
+      mlMo: false, trangDang: 0, moUnit: {}, mucDang: -1, unitDang: -1,
       // Trang bắt đầu của từng unit — để tự mở đúng unit đang đọc.
       unitTr: [1, 3, 8],
+      // Trang mở đầu và CẤP của từng mục, theo đúng thứ tự vẽ ra. Cần cả hai
+      // để biết "đang đọc trang 15" thuộc mục nào: mục đang đọc là mục CUỐI
+      // CÙNG có trang mở đầu ≤ trang hiện tại, chứ không phải mục có trang mở
+      // đầu BẰNG trang hiện tại. Luật cũ (`===`) chỉ sáng đúng một trang duy
+      // nhất của mỗi mục, còn 9/10 thời gian đọc thì mục lục không sáng gì.
+      mlP: [1, 3, 8],
+      // ⚠ `default=1`: mục lục một cấp KHÔNG có trường `c`, và `map` trả về
+      // `Undefined` — `tojson` nổ ngay lúc build, cả trang trắng.
+      mlC: [1, 1, 1],
       tim: '', soKq: 0, viTri: 0,
       user: "pl", course: "cie-esl-5",
       secret: localStorage.getItem('lms_key') || '',
@@ -484,7 +550,10 @@
        */
       timKiem() {
         if (!_sp) {
-          _sp = Array.from(document.querySelectorAll('.chu span'))
+          // `:not(.mo)` — bỏ qua số trang, tiêu đề chạy, dấu mờ. Không lọc
+          // thì tìm "Rocks" ra 30 kết quả trùng nhau ở tiêu đề chạy của từng
+          // trang trong unit đó, đẩy kết quả thật xuống dưới.
+          _sp = Array.from(document.querySelectorAll('.chu span:not(.mo)'))
                      .map((e) => [e, (e.textContent || '').toLowerCase()]);
         }
         for (const e of _kq) e.classList.remove('tim', 'tim-nay');
@@ -550,6 +619,14 @@
           for (let i = 0; i < this.unitTr.length; i++) {
             if (this.unitTr[i] <= this.trangDang) u = i + 1;
           }
+          let a = -1, b = -1;
+          for (let i = 0; i < this.mlP.length; i++) {
+            if (this.mlP[i] > this.trangDang) break;
+            a = i;
+            if (this.mlC[i] !== 2) b = i;
+          }
+          this.mucDang = a;
+          this.unitDang = b;
           if (u && !this.moUnit[u]) this.moUnit[u] = true;
         }, { rootMargin: '-10% 0px -80% 0px' });
         document.querySelectorAll('.trang[data-tr], #pdfjs [data-trang]')
@@ -730,7 +807,7 @@
         // Nghĩa của một từ phụ thuộc CÂU chứa nó và BÀI đang học, nên không dựng
         // sẵn được: `sedimentary` trong bài về đá không giống ở chỗ khác. Vì vậy
         // gọi Gemini lúc bấm, kèm thuật ngữ của mục đang mở.
-        tra: { btn: null, show: false, mode: 'word', text: '', sent: '',
+        tra: { btn: null, show: false, mode: 'word', text: '', goc: '', sent: '',
                loading: false, err: '', ly_do: '', data: null },
 
         /** Nới vùng chọn ra nguyên từ: kéo lệch nửa chữ vẫn tra đúng từ. */
@@ -844,11 +921,21 @@
           // mà cũng hiện nút thì nút chắn mất đúng thứ người ta đang gõ.
           if (!el || !el.closest || !el.closest('[data-tra]')) return;
           const r = this._noRong(r0);
+          // Hai bản của cùng một đoạn, cố ý:
+          //  · `text`  — đã dồn khoảng trắng, dùng để GỌI API, đo độ dài, tra
+          //    glossary và làm khoá lịch sử. Giữ nguyên hành vi cũ.
+          //  · `goc`   — giữ nguyên xuống dòng, chỉ để HIỆN LẠI cho người đọc.
+          // Trước đây chỉ có bản dồn, nên bôi đen một khổ thơ hay một danh sách
+          // thì popup hiện một dòng dài dính liền, không còn nhận ra là đã chọn
+          // đúng chỗ nào.
+          const goc = (r.toString() || '').replace(/[ \t]+\n/g, '\n')
+                        .replace(/\n{3,}/g, '\n\n').trim();
           const text = (r.toString() || '').replace(/\s+/g, ' ').trim();
           if (!text || !/[A-Za-z]/.test(text) || text.length > 600) return;
           const b = r.getBoundingClientRect();
           if (!b.width && !b.height) return;
           this.tra.text = text;
+          this.tra.goc = goc;
           this.tra.sent = this._cauChua(r, text);
           this.tra.mode = text.split(/\s+/).length <= 3 ? 'word' : 'text';
           // Không có mã bí mật thì chỉ hiện nút khi tra offline ra được cái gì.

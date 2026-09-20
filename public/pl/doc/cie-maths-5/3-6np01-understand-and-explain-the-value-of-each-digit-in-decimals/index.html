@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>3. 6Np01 - Understand and explain the value of each digit in decimals.pptx · CIE Maths 5</title>
-<link rel="stylesheet" href="../../../../assets/tw.4432dbec.css">
+<link rel="stylesheet" href="../../../../assets/tw.4b97d341.css">
 <style>
   [x-cloak] { display: none !important; }
   #pdf { width:100%; height:calc(100vh - 8.5rem); border:0; }
@@ -18,14 +18,31 @@
      Toạ độ theo % và cỡ chữ theo `cqw` nên co giãn thuần CSS. KHÔNG nhân tỉ lệ
      bằng JS trên cả khối rồi lại scaleX từng đoạn: hai tầng transform lồng nhau
      đo bằng getBoundingClientRect (đã gồm transform cha) cho ra 2% số từ đúng chỗ. */
+  /* Nhãn "Trang 17/161" là của MÌNH, không phải nội dung sách. Để chọn được
+     thì kéo chuột qua hai trang liền nhau lại lôi luôn nó vào giữa đoạn chép
+     ra — người dùng báo đúng chuyện này. */
+  .stt { user-select:none; -webkit-user-select:none; }
   .khung { position:relative; container-type:inline-size; overflow:hidden; }
-  .khung > img { display:block; width:100%; height:auto; }
+  /* ⚠ Ảnh trang phải TRONG SUỐT với chuột và ngón tay. Nó nằm dưới lớp chữ,
+     nhưng giữ để bôi đen thì trình duyệt vẫn bắt được nó và bung menu ảnh
+     ("Lưu ảnh", "Sao chép ảnh") — cú bôi đen đang dở bị huỷ, và người dùng
+     tưởng trang không cho chọn chữ. Bốn thuộc tính, mỗi cái chặn một đường:
+     `pointer-events` (chuột), `user-select` (kéo chọn), `-webkit-user-drag`
+     (kéo thả ảnh đi), `-webkit-touch-callout` (giữ lâu trên iOS).
+     Áp cho CẢ `img.dong` (GIF động): chúng cũng nằm dưới lớp chữ. */
+  .khung > img { display:block; width:100%; height:auto;
+                 pointer-events:none; user-select:none; -webkit-user-select:none;
+                 -webkit-user-drag:none; -webkit-touch-callout:none; }
   .khung > img.dong { position:absolute; width:auto; height:auto; object-fit:fill; }
   .chu { position:absolute; inset:0; }
   /* Dấu mờ ("SAMPLE") và tiêu đề chạy: vẫn ở đó cho lớp chữ trung thực với
      bản gốc, nhưng KHÔNG chắn tay người đọc. Thiếu dòng này thì kéo chuột qua
      một câu trong sách lại chọn trúng chữ `SAMPLE` phủ kín trang. */
   .chu span.mo { pointer-events: none; user-select: none; }
+  /* Dấu xuống dòng CHÉP ĐƯỢC giữa hai dòng chữ. Phải nằm TRONG LUỒNG và
+     chứa ký tự thật; `font-size:0` để nó không chiếm một pixel nào. Xem
+     `doc_view.py` cho ba cách đã thử và trượt. */
+  .chu i.nl { white-space:pre; font-size:0; }
   .chu span { position:absolute; white-space:pre; color:transparent;
               line-height:1; transform-origin:0 0; }
   .chu span::selection { background:#6366f180; color:transparent; }
@@ -138,6 +155,8 @@
        class="mt-2 lg:mt-0 rounded-lg border border-slate-200 bg-white p-2 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
     <p class="px-2 pb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Mục lục</p>
     
+    
+    
     <ol class="space-y-0.5">
       
       
@@ -151,7 +170,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[1] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(1); moUnit[1] = true"
-                  :class="trangDang === 1 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 0 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">1</span>
             <span class="min-w-0">Maths</span>
@@ -170,7 +189,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[2] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(3); moUnit[2] = true"
-                  :class="trangDang === 3 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 1 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">3</span>
             <span class="min-w-0">Homework</span>
@@ -189,7 +208,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[3] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(4); moUnit[3] = true"
-                  :class="trangDang === 4 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 2 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">4</span>
             <span class="min-w-0">Retrieval Practice –</span>
@@ -208,7 +227,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[4] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(5); moUnit[4] = true"
-                  :class="trangDang === 5 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 3 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">5</span>
             <span class="min-w-0">Starter –</span>
@@ -227,7 +246,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[5] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(6); moUnit[5] = true"
-                  :class="trangDang === 6 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 4 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">6</span>
             <span class="min-w-0">How would you say this number?</span>
@@ -246,7 +265,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[6] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(15); moUnit[6] = true"
-                  :class="trangDang === 15 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 5 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">15</span>
             <span class="min-w-0">Plenary – Which of the following is the odd one out? Why?</span>
@@ -264,21 +283,175 @@
 
 <main data-tra x-show="che === 'doc'" class="px-4 py-4">
 
-<section class="trang" id="tr-1" data-tr="1"><p class="stt">Trang 1/15</p><div class="khung"><img src="anh/trang-1.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.30575" style="left:33.065%;top:3.559%;font-size:9.165cqw">Maths </span><span data-w="0.31617" style="left:7.329%;top:38.888%;font-size:5.522cqw">18.08.2026</span><span class="mo" data-w="0.17625" style="left:7.329%;top:63.812%;font-size:5.522cqw">WALT: </span><span data-w="0.57820" style="left:24.965%;top:66.219%;font-size:4.063cqw">Understand and explain the </span><span data-w="0.63350" style="left:7.329%;top:74.587%;font-size:4.063cqw">value of each digit in decimals.</span><span data-w="0.16909" style="left:75.664%;top:8.949%;font-size:1.875cqw">Unit 1.1 – Place </span><span data-w="0.06506" style="left:75.664%;top:12.951%;font-size:1.875cqw">Value </span></div></div></section>
-<section class="trang" id="tr-2" data-tr="2"><p class="stt">Trang 2/15</p><div class="khung"><img src="anh/trang-2.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.88985" style="left:2.430%;top:3.762%;font-size:2.917cqw">WALT: Understand and explain the value of each digit </span><span data-w="0.19694" style="left:2.430%;top:9.366%;font-size:2.917cqw">in decimals.</span><span data-w="0.18594" style="left:8.217%;top:50.904%;font-size:3.124cqw">I can read </span><span data-w="0.16529" style="left:9.248%;top:57.574%;font-size:3.124cqw">numbers </span><span data-w="0.21434" style="left:6.794%;top:64.245%;font-size:3.124cqw">correctly to </span><span data-w="0.25358" style="left:4.831%;top:70.916%;font-size:3.124cqw">three decimal </span><span data-w="0.12406" style="left:10.769%;top:77.587%;font-size:3.124cqw">places.</span><span data-w="0.22565" style="left:39.891%;top:45.751%;font-size:2.917cqw">I can identify </span><span data-w="0.20645" style="left:40.854%;top:51.980%;font-size:2.917cqw">the value of </span><span data-w="0.17355" style="left:42.499%;top:58.210%;font-size:2.917cqw">digits in a </span><span data-w="0.13691" style="left:44.335%;top:64.439%;font-size:2.917cqw">number </span><span data-w="0.19998" style="left:41.179%;top:70.669%;font-size:2.917cqw">correctly to </span><span data-w="0.23653" style="left:39.348%;top:76.898%;font-size:2.917cqw">three decimal </span><span data-w="0.11579" style="left:44.879%;top:83.128%;font-size:2.917cqw">places.</span><span data-w="0.26712" style="left:71.043%;top:49.817%;font-size:3.334cqw">I can find and </span><span data-w="0.21922" style="left:73.443%;top:56.934%;font-size:3.334cqw">correct the </span><span data-w="0.22649" style="left:73.080%;top:64.051%;font-size:3.334cqw">mistakes in </span><span data-w="0.22685" style="left:73.068%;top:71.169%;font-size:3.334cqw">the work of </span><span data-w="0.13404" style="left:77.125%;top:78.286%;font-size:3.334cqw">others.</span></div></div></section>
-<section class="trang" id="tr-3" data-tr="3"><p class="stt">Trang 3/15</p><div class="khung"><img src="anh/trang-3.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.24613" style="left:7.624%;top:10.068%;font-size:4.583cqw">Homework</span><span data-w="0.65011" style="left:7.624%;top:26.823%;font-size:4.166cqw">Complete pages 9 – 13 in your </span><span data-w="0.24152" style="left:7.624%;top:34.822%;font-size:4.166cqw">Workbooks.</span><span data-w="0.36664" style="left:7.624%;top:54.525%;font-size:4.166cqw">Due – Tuesday 25</span><span data-w="0.02468" style="left:44.300%;top:55.220%;font-size:2.415cqw">th</span><span data-w="0.29110" style="left:46.762%;top:54.525%;font-size:4.166cqw"> August 2026.</span></div></div></section>
-<section class="trang" id="tr-4" data-tr="4"><p class="stt">Trang 4/15</p><div class="khung"><img src="anh/trang-4.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.51482" style="left:7.624%;top:10.068%;font-size:4.583cqw">Retrieval Practice – </span><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><span data-w="0.33526" style="left:2.306%;top:27.966%;font-size:3.334cqw">Talk to your partner.</span><span data-w="0.72789" style="left:2.306%;top:42.201%;font-size:3.334cqw">What did you learn to do in maths in grade </span><span data-w="0.03877" style="left:2.306%;top:49.318%;font-size:3.334cqw">4?</span><span data-w="0.67552" style="left:2.306%;top:63.552%;font-size:3.334cqw">What did you find the most challenging?</span><span data-w="0.21371" style="left:39.528%;top:80.293%;font-size:3.750cqw">Now swap</span></div></div></section>
-<section class="trang" id="tr-5" data-tr="5"><p class="stt">Trang 5/15</p><div class="khung"><img src="anh/trang-5.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.23876" style="left:7.624%;top:10.068%;font-size:4.583cqw">Starter – </span><span data-w="0.64739" style="left:7.609%;top:24.012%;font-size:3.750cqw">What does these words mean?</span><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><span data-w="0.83390" style="left:5.947%;top:51.056%;font-size:2.917cqw">Decimal                                               Decimal point</span><span data-w="0.49230" style="left:5.947%;top:69.744%;font-size:2.917cqw">                          Decimal place</span><span data-w="0.18705" style="left:5.947%;top:88.433%;font-size:2.917cqw">Place value</span></div></div></section>
-<section class="trang" id="tr-6" data-tr="6"><p class="stt">Trang 6/15</p><div class="khung"><img src="anh/trang-6.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.75884" style="left:12.549%;top:19.428%;font-size:4.583cqw">How would you say this number?</span><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><span data-w="0.46863" style="left:27.369%;top:44.306%;font-size:8.333cqw">5,972.593</span><span data-w="0.03864" style="left:42.593%;top:69.654%;font-size:4.999cqw">A</span><span data-w="0.03809" style="left:55.662%;top:78.473%;font-size:4.999cqw">B</span><span data-w="0.03664" style="left:70.951%;top:66.350%;font-size:4.999cqw">C</span><span data-w="0.17512" style="left:3.853%;top:63.914%;font-size:2.917cqw">What is the </span><span data-w="0.08901" style="left:21.378%;top:63.914%;font-size:2.917cqw">value</span><span data-w="0.04650" style="left:30.277%;top:63.914%;font-size:2.917cqw"> of </span><span data-w="0.30188" style="left:3.853%;top:70.144%;font-size:2.917cqw">each of these digits?</span></div></div></section>
-<section class="trang" id="tr-7" data-tr="7"><p class="stt">Trang 7/15</p><div class="khung"><img src="anh/trang-7.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><span data-w="0.46863" style="left:28.541%;top:15.433%;font-size:8.333cqw">5,972.593</span><span data-w="0.03864" style="left:43.765%;top:40.780%;font-size:4.999cqw">A</span><span data-w="0.03809" style="left:56.834%;top:49.599%;font-size:4.999cqw">B</span><span data-w="0.03664" style="left:72.123%;top:37.476%;font-size:4.999cqw">C</span><span data-w="0.17512" style="left:5.023%;top:35.041%;font-size:2.917cqw">What is the </span><span data-w="0.08901" style="left:22.547%;top:35.041%;font-size:2.917cqw">value</span><span data-w="0.04650" style="left:31.447%;top:35.041%;font-size:2.917cqw"> of </span><span data-w="0.30188" style="left:5.023%;top:41.270%;font-size:2.917cqw">each of these digits?</span><span data-w="0.29148" style="left:5.023%;top:58.097%;font-size:4.166cqw">A = 5 tenths</span><span data-w="0.41038" style="left:5.023%;top:69.957%;font-size:4.166cqw">B = 9 hundredths</span><span data-w="0.13774" style="left:5.023%;top:81.817%;font-size:4.166cqw">C = 3 </span><span data-w="0.29423" style="left:5.023%;top:90.710%;font-size:4.166cqw">thousandths</span></div></div></section>
-<section class="trang" id="tr-8" data-tr="8"><p class="stt">Trang 8/15</p><div class="khung"><img src="anh/trang-8.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><span data-w="0.52654" style="left:7.146%;top:14.078%;font-size:8.333cqw">89,324.328</span><span data-w="0.17512" style="left:5.023%;top:35.041%;font-size:2.917cqw">What is the </span><span data-w="0.08901" style="left:22.547%;top:35.041%;font-size:2.917cqw">value</span><span data-w="0.45889" style="left:31.447%;top:35.041%;font-size:2.917cqw"> of each digit after the decimal </span><span data-w="0.08965" style="left:5.023%;top:41.270%;font-size:2.917cqw">point?</span><span data-w="0.31256" style="left:5.023%;top:46.058%;font-size:4.166cqw">3 tenths   0.3</span><span data-w="0.34389" style="left:5.023%;top:57.944%;font-size:4.166cqw">2 hundredths  </span><span data-w="0.10249" style="left:5.023%;top:66.837%;font-size:4.166cqw">0.02</span><span data-w="0.36664" style="left:5.020%;top:69.353%;font-size:4.166cqw">8 thousandths  </span><span data-w="0.13149" style="left:5.020%;top:78.245%;font-size:4.166cqw">0.008</span></div></div></section>
-<section class="trang" id="tr-9" data-tr="9"><p class="stt">Trang 9/15</p><div class="khung"><img src="anh/trang-9.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><span data-w="0.37905" style="left:7.146%;top:14.078%;font-size:8.333cqw">713.043</span><span data-w="0.17512" style="left:5.023%;top:35.041%;font-size:2.917cqw">What is the </span><span data-w="0.19680" style="left:22.547%;top:35.041%;font-size:2.917cqw">place value </span><span data-w="0.12830" style="left:42.236%;top:35.041%;font-size:2.917cqw">of the 4?</span><span data-w="0.27148" style="left:5.023%;top:46.058%;font-size:4.166cqw">hundredths</span></div></div></section>
-<section class="trang" id="tr-10" data-tr="10"><p class="stt">Trang 10/15</p><div class="khung"><img src="anh/trang-10.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><span data-w="0.28141" style="left:2.150%;top:27.706%;font-size:2.085cqw">Take it in turns to read the </span><span data-w="0.28026" style="left:2.150%;top:32.155%;font-size:2.085cqw">following numbers to your </span><span data-w="0.08205" style="left:2.150%;top:36.604%;font-size:2.085cqw">partner.</span><span data-w="0.02506" style="left:2.150%;top:46.443%;font-size:2.501cqw">a)</span><span data-w="0.12710" style="left:5.900%;top:46.443%;font-size:2.501cqw">56,327.56</span><span data-w="0.02561" style="left:2.150%;top:57.117%;font-size:2.501cqw">b)</span><span data-w="0.10324" style="left:5.900%;top:57.117%;font-size:2.501cqw">345.639</span><span data-w="0.02348" style="left:2.150%;top:67.790%;font-size:2.501cqw">c)</span><span data-w="0.08736" style="left:5.900%;top:67.790%;font-size:2.501cqw">12.502</span><span data-w="0.02561" style="left:2.150%;top:78.463%;font-size:2.501cqw">d)</span><span data-w="0.15893" style="left:5.900%;top:78.463%;font-size:2.501cqw">813,593.008</span><span data-w="0.02513" style="left:2.150%;top:89.136%;font-size:2.501cqw">e)</span><span data-w="0.10324" style="left:5.900%;top:89.136%;font-size:2.501cqw">437.170</span><span data-w="0.30088" style="left:34.878%;top:28.673%;font-size:2.085cqw">Write the value of the under-</span><span data-w="0.26050" style="left:34.878%;top:33.122%;font-size:2.085cqw">lined digit in each of the </span><span data-w="0.19921" style="left:34.878%;top:37.571%;font-size:2.085cqw">following numbers.</span><span data-w="0.13770" style="left:34.881%;top:49.227%;font-size:2.501cqw">f) 56,327.5</span><span data-w="0.01738" style="left:48.655%;top:49.227%;font-size:2.501cqw">6</span><span data-w="0.08913" style="left:34.881%;top:59.900%;font-size:2.501cqw">g) 345.</span><span data-w="0.01738" style="left:43.792%;top:59.900%;font-size:2.501cqw">6</span><span data-w="0.03179" style="left:45.528%;top:59.900%;font-size:2.501cqw">39</span><span data-w="0.11294" style="left:34.881%;top:70.574%;font-size:2.501cqw">h)  12.50</span><span data-w="0.01738" style="left:46.181%;top:70.574%;font-size:2.501cqw">2</span><span data-w="0.15968" style="left:34.881%;top:81.247%;font-size:2.501cqw">i)  813,593.0</span><span data-w="0.01738" style="left:50.855%;top:81.247%;font-size:2.501cqw">0</span><span data-w="0.01591" style="left:52.591%;top:81.247%;font-size:2.501cqw">8</span><span data-w="0.08813" style="left:34.881%;top:91.920%;font-size:2.501cqw">j)  437.</span><span data-w="0.01738" style="left:43.706%;top:91.920%;font-size:2.501cqw">1</span><span data-w="0.03179" style="left:45.442%;top:91.920%;font-size:2.501cqw">70</span><span data-w="0.34412" style="left:61.969%;top:48.853%;font-size:2.085cqw">k) Ms. Colette reads the number </span><span data-w="0.27847" style="left:61.969%;top:53.302%;font-size:2.085cqw">17.539 out loud. She says:</span><span data-w="0.31858" style="left:61.969%;top:62.200%;font-size:2.085cqw">“The number is seventeen </span><span data-w="0.34376" style="left:61.969%;top:66.649%;font-size:2.085cqw">point five-hundred and nine. </span><span data-w="0.22393" style="left:61.969%;top:71.098%;font-size:2.085cqw">The three is worth </span><span data-w="0.15764" style="left:61.969%;top:75.547%;font-size:2.085cqw">hundredths.”</span><span data-w="0.15793" style="left:61.969%;top:84.445%;font-size:2.085cqw">Is she correct? </span><span data-w="0.33463" style="left:61.969%;top:93.343%;font-size:2.085cqw">What mistake(s) has she made?</span></div></div></section>
-<section class="trang" id="tr-11" data-tr="11"><p class="stt">Trang 11/15</p><div class="khung"><img src="anh/trang-11.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><span data-w="0.64400" style="left:2.073%;top:32.560%;font-size:2.085cqw">Take it in turns to read the following numbers to your partner.</span><span data-w="0.02506" style="left:2.073%;top:42.399%;font-size:2.501cqw">a)</span><span data-w="0.12710" style="left:5.823%;top:42.399%;font-size:2.501cqw">56,327.56</span><span data-w="0.02561" style="left:2.073%;top:53.072%;font-size:2.501cqw">b)</span><span data-w="0.10324" style="left:5.823%;top:53.072%;font-size:2.501cqw">345.639</span><span data-w="0.02348" style="left:2.073%;top:63.745%;font-size:2.501cqw">c)</span><span data-w="0.08736" style="left:5.823%;top:63.745%;font-size:2.501cqw">12.502</span><span data-w="0.02561" style="left:2.073%;top:74.418%;font-size:2.501cqw">d)</span><span data-w="0.15893" style="left:5.823%;top:74.418%;font-size:2.501cqw">813,593.008</span><span data-w="0.02513" style="left:2.073%;top:85.092%;font-size:2.501cqw">e)</span><span data-w="0.10324" style="left:5.823%;top:85.092%;font-size:2.501cqw">437.170</span></div></div></section>
-<section class="trang" id="tr-12" data-tr="12"><p class="stt">Trang 12/15</p><div class="khung"><img src="anh/trang-12.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><span data-w="0.68754" style="left:3.794%;top:31.872%;font-size:2.085cqw">Write the value of the bold digit in each of the following numbers.</span><span data-w="0.02643" style="left:4.030%;top:46.049%;font-size:2.501cqw">f) </span><span data-w="0.10180" style="left:6.679%;top:46.395%;font-size:2.291cqw">56,327.5</span><span data-w="0.01592" style="left:16.854%;top:46.395%;font-size:2.291cqw">6</span><span data-w="0.08162" style="left:4.030%;top:56.249%;font-size:2.291cqw">g) 345.</span><span data-w="0.01592" style="left:12.192%;top:56.249%;font-size:2.291cqw">6</span><span data-w="0.02908" style="left:13.780%;top:56.249%;font-size:2.291cqw">39</span><span data-w="0.10338" style="left:4.030%;top:66.029%;font-size:2.291cqw">h)  12.50</span><span data-w="0.01592" style="left:14.368%;top:66.029%;font-size:2.291cqw">2</span><span data-w="0.02974" style="left:4.030%;top:75.810%;font-size:2.291cqw">i)  </span><span data-w="0.11631" style="left:4.030%;top:80.700%;font-size:2.291cqw">813,593.0</span><span data-w="0.01592" style="left:15.667%;top:80.700%;font-size:2.291cqw">0</span><span data-w="0.01457" style="left:17.256%;top:80.700%;font-size:2.291cqw">8</span><span data-w="0.08061" style="left:4.030%;top:90.480%;font-size:2.291cqw">j)  437.</span><span data-w="0.01592" style="left:12.106%;top:90.480%;font-size:2.291cqw">1</span><span data-w="0.02908" style="left:13.695%;top:90.480%;font-size:2.291cqw">70</span><span data-w="0.26907" style="left:24.682%;top:45.839%;font-size:2.291cqw">6 hundredths     0.06</span><span data-w="0.19550" style="left:24.685%;top:56.176%;font-size:2.291cqw">6 tenths      0.6</span><span data-w="0.28953" style="left:24.685%;top:66.518%;font-size:2.291cqw">2 thousandths    0.002</span><span data-w="0.19724" style="left:24.685%;top:76.855%;font-size:2.291cqw">0 hundredths / </span><span data-w="0.01592" style="left:24.685%;top:81.745%;font-size:2.291cqw">0</span><span data-w="0.16598" style="left:24.685%;top:87.197%;font-size:2.291cqw">1 tenth    0.1</span></div></div></section>
-<section class="trang" id="tr-13" data-tr="13"><p class="stt">Trang 13/15</p><div class="khung"><img src="anh/trang-13.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><span data-w="0.64891" style="left:23.043%;top:16.651%;font-size:2.501cqw">Ms. Colette reads the number 17.539 out loud. She </span><span data-w="0.69705" style="left:23.043%;top:21.987%;font-size:2.501cqw">says “The number is seventeen point five-hundred and </span><span data-w="0.46940" style="left:23.043%;top:27.324%;font-size:2.501cqw">nine. The three is worth hundredths.”</span><span data-w="0.18909" style="left:23.043%;top:37.997%;font-size:2.501cqw">Is she correct? </span><span data-w="0.40080" style="left:23.043%;top:48.670%;font-size:2.501cqw">What mistake(s) has she made?</span><span data-w="0.29065" style="left:5.023%;top:62.060%;font-size:2.917cqw">She is not correct</span><span data-w="0.79953" style="left:5.023%;top:74.519%;font-size:2.917cqw">The number is “seventeen point five three nine”</span><span data-w="0.54387" style="left:5.023%;top:86.978%;font-size:2.917cqw">The three is worth 3 hundredths.</span></div></div></section>
-<section class="trang" id="tr-14" data-tr="14"><p class="stt">Trang 14/15</p><div class="khung"><img src="anh/trang-14.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.88985" style="left:2.430%;top:3.762%;font-size:2.917cqw">WALT: Understand and explain the value of each digit </span><span data-w="0.19694" style="left:2.430%;top:9.366%;font-size:2.917cqw">in decimals.</span><span data-w="0.18594" style="left:8.217%;top:50.683%;font-size:3.124cqw">I can read </span><span data-w="0.16529" style="left:9.248%;top:57.354%;font-size:3.124cqw">numbers </span><span data-w="0.21434" style="left:6.794%;top:64.024%;font-size:3.124cqw">correctly to </span><span data-w="0.25358" style="left:4.831%;top:70.695%;font-size:3.124cqw">three decimal </span><span data-w="0.11231" style="left:10.730%;top:77.739%;font-size:3.124cqw">places</span><span data-w="0.01263" style="left:21.968%;top:77.393%;font-size:3.334cqw">.</span><span data-w="0.22565" style="left:39.891%;top:45.751%;font-size:2.917cqw">I can identify </span><span data-w="0.20645" style="left:40.854%;top:51.980%;font-size:2.917cqw">the value of </span><span data-w="0.17355" style="left:42.499%;top:58.210%;font-size:2.917cqw">digits in a </span><span data-w="0.13691" style="left:44.335%;top:64.439%;font-size:2.917cqw">number </span><span data-w="0.19998" style="left:41.179%;top:70.669%;font-size:2.917cqw">correctly to </span><span data-w="0.23653" style="left:39.348%;top:76.898%;font-size:2.917cqw">three decimal </span><span data-w="0.11579" style="left:44.879%;top:83.128%;font-size:2.917cqw">places.</span><span data-w="0.26712" style="left:71.043%;top:49.817%;font-size:3.334cqw">I can find and </span><span data-w="0.21922" style="left:73.443%;top:56.934%;font-size:3.334cqw">correct the </span><span data-w="0.22649" style="left:73.080%;top:64.051%;font-size:3.334cqw">mistakes in </span><span data-w="0.22685" style="left:73.068%;top:71.169%;font-size:3.334cqw">the work of </span><span data-w="0.13404" style="left:77.125%;top:78.286%;font-size:3.334cqw">others.</span></div></div></section>
-<section class="trang" id="tr-15" data-tr="15"><p class="stt">Trang 15/15</p><div class="khung"><img src="anh/trang-15.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.25104" style="left:7.624%;top:13.524%;font-size:4.583cqw">Plenary – </span><span data-w="0.57577" style="left:32.761%;top:13.524%;font-size:4.583cqw">Which of the following is </span><span data-w="0.52989" style="left:7.624%;top:22.327%;font-size:4.583cqw">the odd one out? Why?</span><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><span data-w="0.13149" style="left:16.184%;top:42.213%;font-size:4.166cqw">5.628</span><span data-w="0.13016" style="left:56.707%;top:44.214%;font-size:4.166cqw">5628 </span><span data-w="0.29423" style="left:56.707%;top:53.107%;font-size:4.166cqw">thousandths</span><span data-w="0.34076" style="left:11.604%;top:70.330%;font-size:4.166cqw">56 tenths and </span><span data-w="0.36664" style="left:11.604%;top:79.222%;font-size:4.166cqw">28 thousandths</span><span data-w="0.35818" style="left:56.214%;top:70.330%;font-size:4.166cqw">56 hundredths </span><span data-w="0.32622" style="left:56.214%;top:79.222%;font-size:4.166cqw">and 28 tenths</span></div></div></section>
+<section class="trang" id="tr-1" data-tr="1"><div class="khung"><img src="anh/trang-1.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.30575" style="left:33.065%;top:3.559%;font-size:9.165cqw">Maths </span><i class="nl">
+</i><span data-w="0.31617" style="left:7.329%;top:38.888%;font-size:5.522cqw">18.08.2026</span><i class="nl">
+</i><span class="mo" data-w="0.17625" style="left:7.329%;top:63.812%;font-size:5.522cqw">WALT: </span><span data-w="0.57820" style="left:24.965%;top:66.219%;font-size:4.063cqw">Understand and explain the </span><i class="nl">
+</i><span data-w="0.63350" style="left:7.329%;top:74.587%;font-size:4.063cqw">value of each digit in decimals.</span><i class="nl">
+</i><span data-w="0.16909" style="left:75.664%;top:8.949%;font-size:1.875cqw">Unit 1.1 – Place </span><i class="nl">
+</i><span data-w="0.06506" style="left:75.664%;top:12.951%;font-size:1.875cqw">Value </span></div></div></section>
+<section class="trang" id="tr-2" data-tr="2"><div class="khung"><img src="anh/trang-2.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.88985" style="left:2.430%;top:3.762%;font-size:2.917cqw">WALT: Understand and explain the value of each digit </span><i class="nl">
+</i><span data-w="0.19694" style="left:2.430%;top:9.366%;font-size:2.917cqw">in decimals.</span><i class="nl">
+</i><span data-w="0.18594" style="left:8.217%;top:50.904%;font-size:3.124cqw">I can read </span><i class="nl">
+</i><span data-w="0.16529" style="left:9.248%;top:57.574%;font-size:3.124cqw">numbers </span><i class="nl">
+</i><span data-w="0.21434" style="left:6.794%;top:64.245%;font-size:3.124cqw">correctly to </span><i class="nl">
+</i><span data-w="0.25358" style="left:4.831%;top:70.916%;font-size:3.124cqw">three decimal </span><i class="nl">
+</i><span data-w="0.12406" style="left:10.769%;top:77.587%;font-size:3.124cqw">places.</span><i class="nl">
+</i><span data-w="0.22565" style="left:39.891%;top:45.751%;font-size:2.917cqw">I can identify </span><i class="nl">
+</i><span data-w="0.20645" style="left:40.854%;top:51.980%;font-size:2.917cqw">the value of </span><i class="nl">
+</i><span data-w="0.17355" style="left:42.499%;top:58.210%;font-size:2.917cqw">digits in a </span><i class="nl">
+</i><span data-w="0.13691" style="left:44.335%;top:64.439%;font-size:2.917cqw">number </span><i class="nl">
+</i><span data-w="0.19998" style="left:41.179%;top:70.669%;font-size:2.917cqw">correctly to </span><i class="nl">
+</i><span data-w="0.23653" style="left:39.348%;top:76.898%;font-size:2.917cqw">three decimal </span><i class="nl">
+</i><span data-w="0.11579" style="left:44.879%;top:83.128%;font-size:2.917cqw">places.</span><i class="nl">
+</i><span data-w="0.26712" style="left:71.043%;top:49.817%;font-size:3.334cqw">I can find and </span><i class="nl">
+</i><span data-w="0.21922" style="left:73.443%;top:56.934%;font-size:3.334cqw">correct the </span><i class="nl">
+</i><span data-w="0.22649" style="left:73.080%;top:64.051%;font-size:3.334cqw">mistakes in </span><i class="nl">
+</i><span data-w="0.22685" style="left:73.068%;top:71.169%;font-size:3.334cqw">the work of </span><i class="nl">
+</i><span data-w="0.13404" style="left:77.125%;top:78.286%;font-size:3.334cqw">others.</span></div></div></section>
+<section class="trang" id="tr-3" data-tr="3"><div class="khung"><img src="anh/trang-3.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.24613" style="left:7.624%;top:10.068%;font-size:4.583cqw">Homework</span><i class="nl">
+</i><span data-w="0.65011" style="left:7.624%;top:26.823%;font-size:4.166cqw">Complete pages 9 – 13 in your </span><i class="nl">
+</i><span data-w="0.24152" style="left:7.624%;top:34.822%;font-size:4.166cqw">Workbooks.</span><i class="nl">
+</i><span data-w="0.36664" style="left:7.624%;top:54.525%;font-size:4.166cqw">Due – Tuesday 25</span><span data-w="0.02468" style="left:44.300%;top:55.220%;font-size:2.415cqw">th</span><span data-w="0.29110" style="left:46.762%;top:54.525%;font-size:4.166cqw"> August 2026.</span></div></div></section>
+<section class="trang" id="tr-4" data-tr="4"><div class="khung"><img src="anh/trang-4.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.51482" style="left:7.624%;top:10.068%;font-size:4.583cqw">Retrieval Practice – </span><i class="nl">
+</i><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><i class="nl">
+</i><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><i class="nl">
+</i><span data-w="0.33526" style="left:2.306%;top:27.966%;font-size:3.334cqw">Talk to your partner.</span><i class="nl">
+</i><span data-w="0.72789" style="left:2.306%;top:42.201%;font-size:3.334cqw">What did you learn to do in maths in grade </span><i class="nl">
+</i><span data-w="0.03877" style="left:2.306%;top:49.318%;font-size:3.334cqw">4?</span><i class="nl">
+</i><span data-w="0.67552" style="left:2.306%;top:63.552%;font-size:3.334cqw">What did you find the most challenging?</span><i class="nl">
+</i><span data-w="0.21371" style="left:39.528%;top:80.293%;font-size:3.750cqw">Now swap</span></div></div></section>
+<section class="trang" id="tr-5" data-tr="5"><div class="khung"><img src="anh/trang-5.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.23876" style="left:7.624%;top:10.068%;font-size:4.583cqw">Starter – </span><i class="nl">
+</i><span data-w="0.64739" style="left:7.609%;top:24.012%;font-size:3.750cqw">What does these words mean?</span><i class="nl">
+</i><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><i class="nl">
+</i><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><i class="nl">
+</i><span data-w="0.83390" style="left:5.947%;top:51.056%;font-size:2.917cqw">Decimal                                               Decimal point</span><i class="nl">
+</i><span data-w="0.49230" style="left:5.947%;top:69.744%;font-size:2.917cqw">                          Decimal place</span><i class="nl">
+</i><span data-w="0.18705" style="left:5.947%;top:88.433%;font-size:2.917cqw">Place value</span></div></div></section>
+<section class="trang" id="tr-6" data-tr="6"><div class="khung"><img src="anh/trang-6.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.75884" style="left:12.549%;top:19.428%;font-size:4.583cqw">How would you say this number?</span><i class="nl">
+</i><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><i class="nl">
+</i><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><i class="nl">
+</i><span data-w="0.46863" style="left:27.369%;top:44.306%;font-size:8.333cqw">5,972.593</span><i class="nl">
+</i><span data-w="0.03864" style="left:42.593%;top:69.654%;font-size:4.999cqw">A</span><i class="nl">
+</i><span data-w="0.03809" style="left:55.662%;top:78.473%;font-size:4.999cqw">B</span><i class="nl">
+</i><span data-w="0.03664" style="left:70.951%;top:66.350%;font-size:4.999cqw">C</span><i class="nl">
+</i><span data-w="0.17512" style="left:3.853%;top:63.914%;font-size:2.917cqw">What is the </span><span data-w="0.08901" style="left:21.378%;top:63.914%;font-size:2.917cqw">value</span><span data-w="0.04650" style="left:30.277%;top:63.914%;font-size:2.917cqw"> of </span><i class="nl">
+</i><span data-w="0.30188" style="left:3.853%;top:70.144%;font-size:2.917cqw">each of these digits?</span></div></div></section>
+<section class="trang" id="tr-7" data-tr="7"><div class="khung"><img src="anh/trang-7.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><i class="nl">
+</i><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><i class="nl">
+</i><span data-w="0.46863" style="left:28.541%;top:15.433%;font-size:8.333cqw">5,972.593</span><i class="nl">
+</i><span data-w="0.03864" style="left:43.765%;top:40.780%;font-size:4.999cqw">A</span><i class="nl">
+</i><span data-w="0.03809" style="left:56.834%;top:49.599%;font-size:4.999cqw">B</span><i class="nl">
+</i><span data-w="0.03664" style="left:72.123%;top:37.476%;font-size:4.999cqw">C</span><i class="nl">
+</i><span data-w="0.17512" style="left:5.023%;top:35.041%;font-size:2.917cqw">What is the </span><span data-w="0.08901" style="left:22.547%;top:35.041%;font-size:2.917cqw">value</span><span data-w="0.04650" style="left:31.447%;top:35.041%;font-size:2.917cqw"> of </span><i class="nl">
+</i><span data-w="0.30188" style="left:5.023%;top:41.270%;font-size:2.917cqw">each of these digits?</span><i class="nl">
+</i><span data-w="0.29148" style="left:5.023%;top:58.097%;font-size:4.166cqw">A = 5 tenths</span><i class="nl">
+</i><span data-w="0.41038" style="left:5.023%;top:69.957%;font-size:4.166cqw">B = 9 hundredths</span><i class="nl">
+</i><span data-w="0.13774" style="left:5.023%;top:81.817%;font-size:4.166cqw">C = 3 </span><i class="nl">
+</i><span data-w="0.29423" style="left:5.023%;top:90.710%;font-size:4.166cqw">thousandths</span></div></div></section>
+<section class="trang" id="tr-8" data-tr="8"><div class="khung"><img src="anh/trang-8.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><i class="nl">
+</i><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><i class="nl">
+</i><span data-w="0.52654" style="left:7.146%;top:14.078%;font-size:8.333cqw">89,324.328</span><i class="nl">
+</i><span data-w="0.17512" style="left:5.023%;top:35.041%;font-size:2.917cqw">What is the </span><span data-w="0.08901" style="left:22.547%;top:35.041%;font-size:2.917cqw">value</span><span data-w="0.45889" style="left:31.447%;top:35.041%;font-size:2.917cqw"> of each digit after the decimal </span><i class="nl">
+</i><span data-w="0.08965" style="left:5.023%;top:41.270%;font-size:2.917cqw">point?</span><i class="nl">
+</i><span data-w="0.31256" style="left:5.023%;top:46.058%;font-size:4.166cqw">3 tenths   0.3</span><i class="nl">
+</i><span data-w="0.34389" style="left:5.023%;top:57.944%;font-size:4.166cqw">2 hundredths  </span><i class="nl">
+</i><span data-w="0.10249" style="left:5.023%;top:66.837%;font-size:4.166cqw">0.02</span><i class="nl">
+</i><span data-w="0.36664" style="left:5.020%;top:69.353%;font-size:4.166cqw">8 thousandths  </span><i class="nl">
+</i><span data-w="0.13149" style="left:5.020%;top:78.245%;font-size:4.166cqw">0.008</span></div></div></section>
+<section class="trang" id="tr-9" data-tr="9"><div class="khung"><img src="anh/trang-9.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><i class="nl">
+</i><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><i class="nl">
+</i><span data-w="0.37905" style="left:7.146%;top:14.078%;font-size:8.333cqw">713.043</span><i class="nl">
+</i><span data-w="0.17512" style="left:5.023%;top:35.041%;font-size:2.917cqw">What is the </span><span data-w="0.19680" style="left:22.547%;top:35.041%;font-size:2.917cqw">place value </span><span data-w="0.12830" style="left:42.236%;top:35.041%;font-size:2.917cqw">of the 4?</span><i class="nl">
+</i><span data-w="0.27148" style="left:5.023%;top:46.058%;font-size:4.166cqw">hundredths</span></div></div></section>
+<section class="trang" id="tr-10" data-tr="10"><div class="khung"><img src="anh/trang-10.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><i class="nl">
+</i><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><i class="nl">
+</i><span data-w="0.28141" style="left:2.150%;top:27.706%;font-size:2.085cqw">Take it in turns to read the </span><i class="nl">
+</i><span data-w="0.28026" style="left:2.150%;top:32.155%;font-size:2.085cqw">following numbers to your </span><i class="nl">
+</i><span data-w="0.08205" style="left:2.150%;top:36.604%;font-size:2.085cqw">partner.</span><i class="nl">
+</i><span data-w="0.02506" style="left:2.150%;top:46.443%;font-size:2.501cqw">a)</span><span data-w="0.12710" style="left:5.900%;top:46.443%;font-size:2.501cqw">56,327.56</span><i class="nl">
+</i><span data-w="0.02561" style="left:2.150%;top:57.117%;font-size:2.501cqw">b)</span><span data-w="0.10324" style="left:5.900%;top:57.117%;font-size:2.501cqw">345.639</span><i class="nl">
+</i><span data-w="0.02348" style="left:2.150%;top:67.790%;font-size:2.501cqw">c)</span><span data-w="0.08736" style="left:5.900%;top:67.790%;font-size:2.501cqw">12.502</span><i class="nl">
+</i><span data-w="0.02561" style="left:2.150%;top:78.463%;font-size:2.501cqw">d)</span><span data-w="0.15893" style="left:5.900%;top:78.463%;font-size:2.501cqw">813,593.008</span><i class="nl">
+</i><span data-w="0.02513" style="left:2.150%;top:89.136%;font-size:2.501cqw">e)</span><span data-w="0.10324" style="left:5.900%;top:89.136%;font-size:2.501cqw">437.170</span><i class="nl">
+</i><span data-w="0.30088" style="left:34.878%;top:28.673%;font-size:2.085cqw">Write the value of the under-</span><i class="nl">
+</i><span data-w="0.26050" style="left:34.878%;top:33.122%;font-size:2.085cqw">lined digit in each of the </span><i class="nl">
+</i><span data-w="0.19921" style="left:34.878%;top:37.571%;font-size:2.085cqw">following numbers.</span><i class="nl">
+</i><span data-w="0.13770" style="left:34.881%;top:49.227%;font-size:2.501cqw">f) 56,327.5</span><span data-w="0.01738" style="left:48.655%;top:49.227%;font-size:2.501cqw">6</span><i class="nl">
+</i><span data-w="0.08913" style="left:34.881%;top:59.900%;font-size:2.501cqw">g) 345.</span><span data-w="0.01738" style="left:43.792%;top:59.900%;font-size:2.501cqw">6</span><span data-w="0.03179" style="left:45.528%;top:59.900%;font-size:2.501cqw">39</span><i class="nl">
+</i><span data-w="0.11294" style="left:34.881%;top:70.574%;font-size:2.501cqw">h)  12.50</span><span data-w="0.01738" style="left:46.181%;top:70.574%;font-size:2.501cqw">2</span><i class="nl">
+</i><span data-w="0.15968" style="left:34.881%;top:81.247%;font-size:2.501cqw">i)  813,593.0</span><span data-w="0.01738" style="left:50.855%;top:81.247%;font-size:2.501cqw">0</span><span data-w="0.01591" style="left:52.591%;top:81.247%;font-size:2.501cqw">8</span><i class="nl">
+</i><span data-w="0.08813" style="left:34.881%;top:91.920%;font-size:2.501cqw">j)  437.</span><span data-w="0.01738" style="left:43.706%;top:91.920%;font-size:2.501cqw">1</span><span data-w="0.03179" style="left:45.442%;top:91.920%;font-size:2.501cqw">70</span><i class="nl">
+</i><span data-w="0.34412" style="left:61.969%;top:48.853%;font-size:2.085cqw">k) Ms. Colette reads the number </span><i class="nl">
+</i><span data-w="0.27847" style="left:61.969%;top:53.302%;font-size:2.085cqw">17.539 out loud. She says:</span><i class="nl">
+</i><span data-w="0.31858" style="left:61.969%;top:62.200%;font-size:2.085cqw">“The number is seventeen </span><i class="nl">
+</i><span data-w="0.34376" style="left:61.969%;top:66.649%;font-size:2.085cqw">point five-hundred and nine. </span><i class="nl">
+</i><span data-w="0.22393" style="left:61.969%;top:71.098%;font-size:2.085cqw">The three is worth </span><i class="nl">
+</i><span data-w="0.15764" style="left:61.969%;top:75.547%;font-size:2.085cqw">hundredths.”</span><i class="nl">
+</i><span data-w="0.15793" style="left:61.969%;top:84.445%;font-size:2.085cqw">Is she correct? </span><i class="nl">
+</i><span data-w="0.33463" style="left:61.969%;top:93.343%;font-size:2.085cqw">What mistake(s) has she made?</span></div></div></section>
+<section class="trang" id="tr-11" data-tr="11"><div class="khung"><img src="anh/trang-11.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><i class="nl">
+</i><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><i class="nl">
+</i><span data-w="0.64400" style="left:2.073%;top:32.560%;font-size:2.085cqw">Take it in turns to read the following numbers to your partner.</span><i class="nl">
+</i><span data-w="0.02506" style="left:2.073%;top:42.399%;font-size:2.501cqw">a)</span><span data-w="0.12710" style="left:5.823%;top:42.399%;font-size:2.501cqw">56,327.56</span><i class="nl">
+</i><span data-w="0.02561" style="left:2.073%;top:53.072%;font-size:2.501cqw">b)</span><span data-w="0.10324" style="left:5.823%;top:53.072%;font-size:2.501cqw">345.639</span><i class="nl">
+</i><span data-w="0.02348" style="left:2.073%;top:63.745%;font-size:2.501cqw">c)</span><span data-w="0.08736" style="left:5.823%;top:63.745%;font-size:2.501cqw">12.502</span><i class="nl">
+</i><span data-w="0.02561" style="left:2.073%;top:74.418%;font-size:2.501cqw">d)</span><span data-w="0.15893" style="left:5.823%;top:74.418%;font-size:2.501cqw">813,593.008</span><i class="nl">
+</i><span data-w="0.02513" style="left:2.073%;top:85.092%;font-size:2.501cqw">e)</span><span data-w="0.10324" style="left:5.823%;top:85.092%;font-size:2.501cqw">437.170</span></div></div></section>
+<section class="trang" id="tr-12" data-tr="12"><div class="khung"><img src="anh/trang-12.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><i class="nl">
+</i><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><i class="nl">
+</i><span data-w="0.68754" style="left:3.794%;top:31.872%;font-size:2.085cqw">Write the value of the bold digit in each of the following numbers.</span><i class="nl">
+</i><span data-w="0.02643" style="left:4.030%;top:46.049%;font-size:2.501cqw">f) </span><span data-w="0.10180" style="left:6.679%;top:46.395%;font-size:2.291cqw">56,327.5</span><span data-w="0.01592" style="left:16.854%;top:46.395%;font-size:2.291cqw">6</span><i class="nl">
+</i><span data-w="0.08162" style="left:4.030%;top:56.249%;font-size:2.291cqw">g) 345.</span><span data-w="0.01592" style="left:12.192%;top:56.249%;font-size:2.291cqw">6</span><span data-w="0.02908" style="left:13.780%;top:56.249%;font-size:2.291cqw">39</span><i class="nl">
+</i><span data-w="0.10338" style="left:4.030%;top:66.029%;font-size:2.291cqw">h)  12.50</span><span data-w="0.01592" style="left:14.368%;top:66.029%;font-size:2.291cqw">2</span><i class="nl">
+</i><span data-w="0.02974" style="left:4.030%;top:75.810%;font-size:2.291cqw">i)  </span><i class="nl">
+</i><span data-w="0.11631" style="left:4.030%;top:80.700%;font-size:2.291cqw">813,593.0</span><span data-w="0.01592" style="left:15.667%;top:80.700%;font-size:2.291cqw">0</span><span data-w="0.01457" style="left:17.256%;top:80.700%;font-size:2.291cqw">8</span><i class="nl">
+</i><span data-w="0.08061" style="left:4.030%;top:90.480%;font-size:2.291cqw">j)  437.</span><span data-w="0.01592" style="left:12.106%;top:90.480%;font-size:2.291cqw">1</span><span data-w="0.02908" style="left:13.695%;top:90.480%;font-size:2.291cqw">70</span><i class="nl">
+</i><span data-w="0.26907" style="left:24.682%;top:45.839%;font-size:2.291cqw">6 hundredths     0.06</span><i class="nl">
+</i><span data-w="0.19550" style="left:24.685%;top:56.176%;font-size:2.291cqw">6 tenths      0.6</span><i class="nl">
+</i><span data-w="0.28953" style="left:24.685%;top:66.518%;font-size:2.291cqw">2 thousandths    0.002</span><i class="nl">
+</i><span data-w="0.19724" style="left:24.685%;top:76.855%;font-size:2.291cqw">0 hundredths / </span><i class="nl">
+</i><span data-w="0.01592" style="left:24.685%;top:81.745%;font-size:2.291cqw">0</span><i class="nl">
+</i><span data-w="0.16598" style="left:24.685%;top:87.197%;font-size:2.291cqw">1 tenth    0.1</span></div></div></section>
+<section class="trang" id="tr-13" data-tr="13"><div class="khung"><img src="anh/trang-13.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><i class="nl">
+</i><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><i class="nl">
+</i><span data-w="0.64891" style="left:23.043%;top:16.651%;font-size:2.501cqw">Ms. Colette reads the number 17.539 out loud. She </span><i class="nl">
+</i><span data-w="0.69705" style="left:23.043%;top:21.987%;font-size:2.501cqw">says “The number is seventeen point five-hundred and </span><i class="nl">
+</i><span data-w="0.46940" style="left:23.043%;top:27.324%;font-size:2.501cqw">nine. The three is worth hundredths.”</span><i class="nl">
+</i><span data-w="0.18909" style="left:23.043%;top:37.997%;font-size:2.501cqw">Is she correct? </span><i class="nl">
+</i><span data-w="0.40080" style="left:23.043%;top:48.670%;font-size:2.501cqw">What mistake(s) has she made?</span><i class="nl">
+</i><span data-w="0.29065" style="left:5.023%;top:62.060%;font-size:2.917cqw">She is not correct</span><i class="nl">
+</i><span data-w="0.79953" style="left:5.023%;top:74.519%;font-size:2.917cqw">The number is “seventeen point five three nine”</span><i class="nl">
+</i><span data-w="0.54387" style="left:5.023%;top:86.978%;font-size:2.917cqw">The three is worth 3 hundredths.</span></div></div></section>
+<section class="trang" id="tr-14" data-tr="14"><div class="khung"><img src="anh/trang-14.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.88985" style="left:2.430%;top:3.762%;font-size:2.917cqw">WALT: Understand and explain the value of each digit </span><i class="nl">
+</i><span data-w="0.19694" style="left:2.430%;top:9.366%;font-size:2.917cqw">in decimals.</span><i class="nl">
+</i><span data-w="0.18594" style="left:8.217%;top:50.683%;font-size:3.124cqw">I can read </span><i class="nl">
+</i><span data-w="0.16529" style="left:9.248%;top:57.354%;font-size:3.124cqw">numbers </span><i class="nl">
+</i><span data-w="0.21434" style="left:6.794%;top:64.024%;font-size:3.124cqw">correctly to </span><i class="nl">
+</i><span data-w="0.25358" style="left:4.831%;top:70.695%;font-size:3.124cqw">three decimal </span><i class="nl">
+</i><span data-w="0.11231" style="left:10.730%;top:77.739%;font-size:3.124cqw">places</span><span data-w="0.01263" style="left:21.968%;top:77.393%;font-size:3.334cqw">.</span><i class="nl">
+</i><span data-w="0.22565" style="left:39.891%;top:45.751%;font-size:2.917cqw">I can identify </span><i class="nl">
+</i><span data-w="0.20645" style="left:40.854%;top:51.980%;font-size:2.917cqw">the value of </span><i class="nl">
+</i><span data-w="0.17355" style="left:42.499%;top:58.210%;font-size:2.917cqw">digits in a </span><i class="nl">
+</i><span data-w="0.13691" style="left:44.335%;top:64.439%;font-size:2.917cqw">number </span><i class="nl">
+</i><span data-w="0.19998" style="left:41.179%;top:70.669%;font-size:2.917cqw">correctly to </span><i class="nl">
+</i><span data-w="0.23653" style="left:39.348%;top:76.898%;font-size:2.917cqw">three decimal </span><i class="nl">
+</i><span data-w="0.11579" style="left:44.879%;top:83.128%;font-size:2.917cqw">places.</span><i class="nl">
+</i><span data-w="0.26712" style="left:71.043%;top:49.817%;font-size:3.334cqw">I can find and </span><i class="nl">
+</i><span data-w="0.21922" style="left:73.443%;top:56.934%;font-size:3.334cqw">correct the </span><i class="nl">
+</i><span data-w="0.22649" style="left:73.080%;top:64.051%;font-size:3.334cqw">mistakes in </span><i class="nl">
+</i><span data-w="0.22685" style="left:73.068%;top:71.169%;font-size:3.334cqw">the work of </span><i class="nl">
+</i><span data-w="0.13404" style="left:77.125%;top:78.286%;font-size:3.334cqw">others.</span></div></div></section>
+<section class="trang" id="tr-15" data-tr="15"><div class="khung"><img src="anh/trang-15.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.25104" style="left:7.624%;top:13.524%;font-size:4.583cqw">Plenary – </span><span data-w="0.57577" style="left:32.761%;top:13.524%;font-size:4.583cqw">Which of the following is </span><i class="nl">
+</i><span data-w="0.52989" style="left:7.624%;top:22.327%;font-size:4.583cqw">the odd one out? Why?</span><i class="nl">
+</i><span class="mo" data-w="0.09196" style="left:5.023%;top:3.834%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.62608" style="left:14.211%;top:3.834%;font-size:2.501cqw">Understand and explain the value of each digit in </span><i class="nl">
+</i><span class="mo" data-w="0.11942" style="left:5.023%;top:9.171%;font-size:2.501cqw">decimals.</span><i class="nl">
+</i><span data-w="0.13149" style="left:16.184%;top:42.213%;font-size:4.166cqw">5.628</span><i class="nl">
+</i><span data-w="0.13016" style="left:56.707%;top:44.214%;font-size:4.166cqw">5628 </span><i class="nl">
+</i><span data-w="0.29423" style="left:56.707%;top:53.107%;font-size:4.166cqw">thousandths</span><i class="nl">
+</i><span data-w="0.34076" style="left:11.604%;top:70.330%;font-size:4.166cqw">56 tenths and </span><i class="nl">
+</i><span data-w="0.36664" style="left:11.604%;top:79.222%;font-size:4.166cqw">28 thousandths</span><i class="nl">
+</i><span data-w="0.35818" style="left:56.214%;top:70.330%;font-size:4.166cqw">56 hundredths </span><i class="nl">
+</i><span data-w="0.32622" style="left:56.214%;top:79.222%;font-size:4.166cqw">and 28 tenths</span></div></div></section>
 </main>
 
 
@@ -346,7 +519,12 @@
 
         <div class="sticky top-0 flex items-start gap-2 px-4 py-3 border-b border-slate-100 bg-white">
           <div class="flex-1 min-w-0">
-            <p class="font-semibold text-slate-900 break-words" x-text="tra.text"></p>
+            <!-- Giữ xuống dòng của đoạn đã chọn (`whitespace-pre-line`) và
+                 CHẶN chiều cao: một đoạn 20 dòng mà để nở tự do thì phần giải
+                 thích — thứ người ta mở popup để đọc — bị đẩy hẳn khỏi màn
+                 hình. Cuộn riêng trong ô này, không cuộn cả popup. -->
+            <p class="font-semibold text-slate-900 break-words whitespace-pre-line
+                      max-h-28 overflow-y-auto" x-text="tra.goc || tra.text"></p>
             <p x-show="tra.mode === 'word' && tra.sent" x-cloak
                class="mt-0.5 text-xs text-slate-400 line-clamp-2" x-text="tra.sent"></p>
           </div>
@@ -464,9 +642,18 @@
       pdfJsUrl: "../../../../assets/pdf.e73f3ce5.mjs",
       pdfWorkerUrl: "../../../../assets/pdf.worker.490b29ce.mjs",
       tiLe: 1.2, soTrang: 0, pdfLoi: '', srcNang: '',
-      mlMo: false, trangDang: 0, moUnit: {},
+      mlMo: false, trangDang: 0, moUnit: {}, mucDang: -1, unitDang: -1,
       // Trang bắt đầu của từng unit — để tự mở đúng unit đang đọc.
       unitTr: [1, 3, 4, 5, 6, 15],
+      // Trang mở đầu và CẤP của từng mục, theo đúng thứ tự vẽ ra. Cần cả hai
+      // để biết "đang đọc trang 15" thuộc mục nào: mục đang đọc là mục CUỐI
+      // CÙNG có trang mở đầu ≤ trang hiện tại, chứ không phải mục có trang mở
+      // đầu BẰNG trang hiện tại. Luật cũ (`===`) chỉ sáng đúng một trang duy
+      // nhất của mỗi mục, còn 9/10 thời gian đọc thì mục lục không sáng gì.
+      mlP: [1, 3, 4, 5, 6, 15],
+      // ⚠ `default=1`: mục lục một cấp KHÔNG có trường `c`, và `map` trả về
+      // `Undefined` — `tojson` nổ ngay lúc build, cả trang trắng.
+      mlC: [1, 1, 1, 1, 1, 1],
       tim: '', soKq: 0, viTri: 0,
       user: "pl", course: "cie-maths-5",
       secret: localStorage.getItem('lms_key') || '',
@@ -547,7 +734,10 @@
        */
       timKiem() {
         if (!_sp) {
-          _sp = Array.from(document.querySelectorAll('.chu span'))
+          // `:not(.mo)` — bỏ qua số trang, tiêu đề chạy, dấu mờ. Không lọc
+          // thì tìm "Rocks" ra 30 kết quả trùng nhau ở tiêu đề chạy của từng
+          // trang trong unit đó, đẩy kết quả thật xuống dưới.
+          _sp = Array.from(document.querySelectorAll('.chu span:not(.mo)'))
                      .map((e) => [e, (e.textContent || '').toLowerCase()]);
         }
         for (const e of _kq) e.classList.remove('tim', 'tim-nay');
@@ -613,6 +803,14 @@
           for (let i = 0; i < this.unitTr.length; i++) {
             if (this.unitTr[i] <= this.trangDang) u = i + 1;
           }
+          let a = -1, b = -1;
+          for (let i = 0; i < this.mlP.length; i++) {
+            if (this.mlP[i] > this.trangDang) break;
+            a = i;
+            if (this.mlC[i] !== 2) b = i;
+          }
+          this.mucDang = a;
+          this.unitDang = b;
           if (u && !this.moUnit[u]) this.moUnit[u] = true;
         }, { rootMargin: '-10% 0px -80% 0px' });
         document.querySelectorAll('.trang[data-tr], #pdfjs [data-trang]')
@@ -793,7 +991,7 @@
         // Nghĩa của một từ phụ thuộc CÂU chứa nó và BÀI đang học, nên không dựng
         // sẵn được: `sedimentary` trong bài về đá không giống ở chỗ khác. Vì vậy
         // gọi Gemini lúc bấm, kèm thuật ngữ của mục đang mở.
-        tra: { btn: null, show: false, mode: 'word', text: '', sent: '',
+        tra: { btn: null, show: false, mode: 'word', text: '', goc: '', sent: '',
                loading: false, err: '', ly_do: '', data: null },
 
         /** Nới vùng chọn ra nguyên từ: kéo lệch nửa chữ vẫn tra đúng từ. */
@@ -907,11 +1105,21 @@
           // mà cũng hiện nút thì nút chắn mất đúng thứ người ta đang gõ.
           if (!el || !el.closest || !el.closest('[data-tra]')) return;
           const r = this._noRong(r0);
+          // Hai bản của cùng một đoạn, cố ý:
+          //  · `text`  — đã dồn khoảng trắng, dùng để GỌI API, đo độ dài, tra
+          //    glossary và làm khoá lịch sử. Giữ nguyên hành vi cũ.
+          //  · `goc`   — giữ nguyên xuống dòng, chỉ để HIỆN LẠI cho người đọc.
+          // Trước đây chỉ có bản dồn, nên bôi đen một khổ thơ hay một danh sách
+          // thì popup hiện một dòng dài dính liền, không còn nhận ra là đã chọn
+          // đúng chỗ nào.
+          const goc = (r.toString() || '').replace(/[ \t]+\n/g, '\n')
+                        .replace(/\n{3,}/g, '\n\n').trim();
           const text = (r.toString() || '').replace(/\s+/g, ' ').trim();
           if (!text || !/[A-Za-z]/.test(text) || text.length > 600) return;
           const b = r.getBoundingClientRect();
           if (!b.width && !b.height) return;
           this.tra.text = text;
+          this.tra.goc = goc;
           this.tra.sent = this._cauChua(r, text);
           this.tra.mode = text.split(/\s+/).length <= 3 ? 'word' : 'text';
           // Không có mã bí mật thì chỉ hiện nút khi tra offline ra được cái gì.

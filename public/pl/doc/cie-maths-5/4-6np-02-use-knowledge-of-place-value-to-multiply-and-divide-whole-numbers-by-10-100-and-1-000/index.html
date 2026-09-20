@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>4. 6Np.02 – Use knowledge of place value to multiply and divide whole numbers by 10, 100 and 1,000..pptx · CIE Maths 5</title>
-<link rel="stylesheet" href="../../../../assets/tw.4432dbec.css">
+<link rel="stylesheet" href="../../../../assets/tw.4b97d341.css">
 <style>
   [x-cloak] { display: none !important; }
   #pdf { width:100%; height:calc(100vh - 8.5rem); border:0; }
@@ -18,14 +18,31 @@
      Toạ độ theo % và cỡ chữ theo `cqw` nên co giãn thuần CSS. KHÔNG nhân tỉ lệ
      bằng JS trên cả khối rồi lại scaleX từng đoạn: hai tầng transform lồng nhau
      đo bằng getBoundingClientRect (đã gồm transform cha) cho ra 2% số từ đúng chỗ. */
+  /* Nhãn "Trang 17/161" là của MÌNH, không phải nội dung sách. Để chọn được
+     thì kéo chuột qua hai trang liền nhau lại lôi luôn nó vào giữa đoạn chép
+     ra — người dùng báo đúng chuyện này. */
+  .stt { user-select:none; -webkit-user-select:none; }
   .khung { position:relative; container-type:inline-size; overflow:hidden; }
-  .khung > img { display:block; width:100%; height:auto; }
+  /* ⚠ Ảnh trang phải TRONG SUỐT với chuột và ngón tay. Nó nằm dưới lớp chữ,
+     nhưng giữ để bôi đen thì trình duyệt vẫn bắt được nó và bung menu ảnh
+     ("Lưu ảnh", "Sao chép ảnh") — cú bôi đen đang dở bị huỷ, và người dùng
+     tưởng trang không cho chọn chữ. Bốn thuộc tính, mỗi cái chặn một đường:
+     `pointer-events` (chuột), `user-select` (kéo chọn), `-webkit-user-drag`
+     (kéo thả ảnh đi), `-webkit-touch-callout` (giữ lâu trên iOS).
+     Áp cho CẢ `img.dong` (GIF động): chúng cũng nằm dưới lớp chữ. */
+  .khung > img { display:block; width:100%; height:auto;
+                 pointer-events:none; user-select:none; -webkit-user-select:none;
+                 -webkit-user-drag:none; -webkit-touch-callout:none; }
   .khung > img.dong { position:absolute; width:auto; height:auto; object-fit:fill; }
   .chu { position:absolute; inset:0; }
   /* Dấu mờ ("SAMPLE") và tiêu đề chạy: vẫn ở đó cho lớp chữ trung thực với
      bản gốc, nhưng KHÔNG chắn tay người đọc. Thiếu dòng này thì kéo chuột qua
      một câu trong sách lại chọn trúng chữ `SAMPLE` phủ kín trang. */
   .chu span.mo { pointer-events: none; user-select: none; }
+  /* Dấu xuống dòng CHÉP ĐƯỢC giữa hai dòng chữ. Phải nằm TRONG LUỒNG và
+     chứa ký tự thật; `font-size:0` để nó không chiếm một pixel nào. Xem
+     `doc_view.py` cho ba cách đã thử và trượt. */
+  .chu i.nl { white-space:pre; font-size:0; }
   .chu span { position:absolute; white-space:pre; color:transparent;
               line-height:1; transform-origin:0 0; }
   .chu span::selection { background:#6366f180; color:transparent; }
@@ -138,6 +155,8 @@
        class="mt-2 lg:mt-0 rounded-lg border border-slate-200 bg-white p-2 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
     <p class="px-2 pb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Mục lục</p>
     
+    
+    
     <ol class="space-y-0.5">
       
       
@@ -151,7 +170,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[1] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(1); moUnit[1] = true"
-                  :class="trangDang === 1 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 0 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">1</span>
             <span class="min-w-0">Maths</span>
@@ -170,7 +189,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[2] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(3); moUnit[2] = true"
-                  :class="trangDang === 3 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 1 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">3</span>
             <span class="min-w-0">Homework</span>
@@ -189,7 +208,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[3] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(4); moUnit[3] = true"
-                  :class="trangDang === 4 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 2 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">4</span>
             <span class="min-w-0">Retrieval Practice –</span>
@@ -208,7 +227,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[4] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(5); moUnit[4] = true"
-                  :class="trangDang === 5 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 3 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">5</span>
             <span class="min-w-0">Starter – Match the equivalent calculations.</span>
@@ -227,7 +246,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[5] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(6); moUnit[5] = true"
-                  :class="trangDang === 6 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 4 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">6</span>
             <span class="min-w-0">How do we multiply by 10?</span>
@@ -246,7 +265,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[6] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(7); moUnit[6] = true"
-                  :class="trangDang === 7 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 5 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">7</span>
             <span class="min-w-0">How do we multiply by 100?</span>
@@ -265,7 +284,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[7] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(8); moUnit[7] = true"
-                  :class="trangDang === 8 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 6 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">8</span>
             <span class="min-w-0">How do we multiply by 1,000?</span>
@@ -284,7 +303,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[8] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(9); moUnit[8] = true"
-                  :class="trangDang === 9 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 7 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">9</span>
             <span class="min-w-0">Check your understanding</span>
@@ -303,7 +322,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[9] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(10); moUnit[9] = true"
-                  :class="trangDang === 10 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 8 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">10</span>
             <span class="min-w-0">How do we divide by 10?</span>
@@ -322,7 +341,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[10] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(11); moUnit[10] = true"
-                  :class="trangDang === 11 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 9 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">11</span>
             <span class="min-w-0">How do we divide by 100?</span>
@@ -341,7 +360,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[11] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(12); moUnit[11] = true"
-                  :class="trangDang === 12 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 10 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">12</span>
             <span class="min-w-0">How do we divide by 1,000?</span>
@@ -360,7 +379,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[12] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(13); moUnit[12] = true"
-                  :class="trangDang === 13 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 11 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">13</span>
             <span class="min-w-0">Check your understanding (2)</span>
@@ -379,7 +398,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[13] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(18); moUnit[13] = true"
-                  :class="trangDang === 18 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 12 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">18</span>
             <span class="min-w-0">Plenary – There are ten buses in the carpark. Each bus has te</span>
@@ -397,24 +416,234 @@
 
 <main data-tra x-show="che === 'doc'" class="px-4 py-4">
 
-<section class="trang" id="tr-1" data-tr="1"><p class="stt">Trang 1/18</p><div class="khung"><img src="anh/trang-1.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.33363" style="left:31.665%;top:1.859%;font-size:10.001cqw">Maths </span><span data-w="0.25604" style="left:6.797%;top:44.911%;font-size:4.479cqw">20.08.2026</span><span data-w="0.14285" style="left:6.797%;top:65.826%;font-size:4.479cqw">WALT: </span><span data-w="0.69876" style="left:21.085%;top:67.718%;font-size:3.334cqw">Use knowledge of place value to multiply </span><span data-w="0.82070" style="left:6.797%;top:74.567%;font-size:3.334cqw">and divide whole numbers by 10, 100 and 1,000.</span><span data-w="0.16909" style="left:75.664%;top:8.949%;font-size:1.875cqw">Unit 1.1 – Place </span><span data-w="0.06506" style="left:75.664%;top:12.951%;font-size:1.875cqw">Value </span></div></div></section>
-<section class="trang" id="tr-2" data-tr="2"><p class="stt">Trang 2/18</p><div class="khung"><img src="anh/trang-2.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.86614" style="left:2.430%;top:3.762%;font-size:2.917cqw">WALT: Use knowledge of place value to multiply and </span><span data-w="0.72911" style="left:2.430%;top:9.366%;font-size:2.917cqw">divide whole numbers by 10, 100 and 1,000.</span><span data-w="0.22066" style="left:6.381%;top:54.159%;font-size:2.501cqw">With support, I </span><span data-w="0.24381" style="left:5.223%;top:59.496%;font-size:2.501cqw">can multiply and </span><span data-w="0.27450" style="left:3.688%;top:64.833%;font-size:2.501cqw">divide decimal and </span><span data-w="0.26747" style="left:4.036%;top:70.169%;font-size:2.501cqw">whole numbers by </span><span data-w="0.26342" style="left:3.800%;top:75.506%;font-size:2.501cqw">10, 100 and 1,000.</span><span data-w="0.23824" style="left:39.192%;top:51.491%;font-size:2.501cqw">Independently, I </span><span data-w="0.24381" style="left:38.917%;top:56.828%;font-size:2.501cqw">can multiply and </span><span data-w="0.21318" style="left:40.446%;top:62.164%;font-size:2.501cqw">divide decimal </span><span data-w="0.15343" style="left:43.435%;top:67.501%;font-size:2.501cqw">and whole </span><span data-w="0.22818" style="left:39.696%;top:72.837%;font-size:2.501cqw">numbers by 10, </span><span data-w="0.21048" style="left:40.142%;top:78.174%;font-size:2.501cqw">100 and 1,000.</span><span data-w="0.24321" style="left:72.182%;top:55.095%;font-size:2.917cqw">I can write my </span><span data-w="0.23108" style="left:72.788%;top:61.325%;font-size:2.917cqw">own question </span><span data-w="0.26305" style="left:71.187%;top:67.554%;font-size:2.917cqw">when given the </span><span data-w="0.12553" style="left:77.556%;top:73.784%;font-size:2.917cqw">answer.</span></div></div></section>
-<section class="trang" id="tr-3" data-tr="3"><p class="stt">Trang 3/18</p><div class="khung"><img src="anh/trang-3.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.24613" style="left:7.624%;top:10.068%;font-size:4.583cqw">Homework</span><span data-w="0.65011" style="left:7.624%;top:26.823%;font-size:4.166cqw">Complete pages 9 – 13 in your </span><span data-w="0.24152" style="left:7.624%;top:34.822%;font-size:4.166cqw">Workbooks.</span><span data-w="0.36664" style="left:7.624%;top:54.525%;font-size:4.166cqw">Due – Tuesday 25</span><span data-w="0.02468" style="left:44.300%;top:55.220%;font-size:2.415cqw">th</span><span data-w="0.29110" style="left:46.762%;top:54.525%;font-size:4.166cqw"> August 2026.</span></div></div></section>
-<section class="trang" id="tr-4" data-tr="4"><p class="stt">Trang 4/18</p><div class="khung"><img src="anh/trang-4.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.32714" style="left:2.430%;top:10.543%;font-size:2.917cqw">Retrieval Practice – </span><span class="mo" data-w="0.91368" style="left:2.430%;top:3.875%;font-size:1.875cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 and 1,000.</span><span data-w="0.12426" style="left:21.074%;top:19.260%;font-size:1.875cqw">Last Lesson</span><span data-w="0.38130" style="left:8.530%;top:27.002%;font-size:1.875cqw">What is the value of the underlined </span><span data-w="0.09232" style="left:22.674%;top:30.873%;font-size:1.875cqw">number?</span><span data-w="0.11853" style="left:21.369%;top:38.615%;font-size:1.875cqw">33,234.539</span><span data-w="0.12426" style="left:63.368%;top:19.260%;font-size:1.875cqw">Last Lesson</span><span data-w="0.28987" style="left:55.080%;top:27.002%;font-size:1.875cqw">Mr. Jon thinks of a number. </span><span data-w="0.00656" style="left:57.410%;top:30.950%;font-size:1.875cqw">•</span><span data-w="0.21988" style="left:59.754%;top:30.873%;font-size:1.875cqw">It is greater than 45.</span><span data-w="0.00656" style="left:50.391%;top:34.821%;font-size:1.875cqw">•</span><span data-w="0.36661" style="left:52.736%;top:34.744%;font-size:1.875cqw">Has an even number in the tenths </span><span data-w="0.17518" style="left:61.993%;top:38.615%;font-size:1.875cqw">and hundredths.</span><span data-w="0.00656" style="left:49.677%;top:42.563%;font-size:1.875cqw">•</span><span data-w="0.38090" style="left:52.021%;top:42.487%;font-size:1.875cqw">Rounds to 60 when rounding to the </span><span data-w="0.12037" style="left:64.736%;top:46.358%;font-size:1.875cqw">nearest 10.</span><span data-w="0.28824" style="left:55.163%;top:50.229%;font-size:1.875cqw">What could his number be?</span><span data-w="0.09756" style="left:22.411%;top:58.376%;font-size:1.875cqw">Last Year</span><span data-w="0.20795" style="left:16.887%;top:66.118%;font-size:1.875cqw">Here is a sequence:</span><span data-w="0.14578" style="left:19.999%;top:73.860%;font-size:1.875cqw">1, 5, 9, 13, 17</span><span data-w="0.38966" style="left:8.111%;top:81.603%;font-size:1.875cqw">The rule is ‘add 4’.  Write the next 3 </span><span data-w="0.06857" style="left:23.861%;top:85.474%;font-size:1.875cqw">terms.</span><span data-w="0.09756" style="left:64.706%;top:58.376%;font-size:1.875cqw">Last Year</span><span data-w="0.40106" style="left:49.514%;top:66.118%;font-size:1.875cqw">Write the number is words and digits.</span><span data-w="0.27692" style="left:55.724%;top:73.860%;font-size:1.875cqw">40,000 + 5,000 + 80 + 0.2</span><span data-w="0.15200" style="left:9.478%;top:45.533%;font-size:1.875cqw">9 thousandths</span><span data-w="0.05923" style="left:31.925%;top:45.533%;font-size:1.875cqw">0.009</span><span data-w="0.10545" style="left:22.125%;top:90.033%;font-size:1.875cqw">21, 25, 29</span><span data-w="0.45330" style="left:48.363%;top:81.182%;font-size:1.875cqw">Forty-five thousand and eighty, point two. </span><span data-w="0.09234" style="left:63.327%;top:87.338%;font-size:1.875cqw">45,080.2</span></div></div></section>
-<section class="trang" id="tr-5" data-tr="5"><p class="stt">Trang 5/18</p><div class="khung"><img src="anh/trang-5.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.71173" style="left:7.848%;top:17.017%;font-size:4.583cqw">Starter – Match the equivalent </span><span data-w="0.30159" style="left:7.848%;top:25.820%;font-size:4.583cqw">calculations. </span><span data-w="0.82373" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Use knowledge of place value to multiply and divide whole </span><span data-w="0.39464" style="left:2.430%;top:8.609%;font-size:2.501cqw">numbers by 10, 100 and 1,000.</span><span data-w="0.12111" style="left:11.191%;top:47.586%;font-size:4.166cqw">X 100</span><span data-w="0.14957" style="left:68.300%;top:74.695%;font-size:4.166cqw">X 10 X </span><span data-w="0.05287" style="left:68.300%;top:83.587%;font-size:4.166cqw">10</span><span data-w="0.23540" style="left:69.129%;top:47.586%;font-size:4.166cqw">X 100 ÷ 10</span><span data-w="0.22211" style="left:31.520%;top:74.695%;font-size:4.166cqw">X 1,000 ÷ </span><span data-w="0.07937" style="left:31.520%;top:83.587%;font-size:4.166cqw">100</span><span data-w="0.10099" style="left:12.088%;top:74.700%;font-size:4.166cqw">÷ 10</span><span data-w="0.31468" style="left:31.854%;top:47.586%;font-size:4.166cqw">X 100 ÷ 1,000 </span></div></div></section>
-<section class="trang" id="tr-6" data-tr="6"><p class="stt">Trang 6/18</p><div class="khung"><img src="anh/trang-6.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.56316" style="left:18.050%;top:14.983%;font-size:4.166cqw">How do we multiply by 10?</span><span class="mo" data-w="0.91368" style="left:2.430%;top:3.880%;font-size:1.875cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 and 1,000.</span><span data-w="0.71526" style="left:12.809%;top:75.996%;font-size:3.334cqw">We move every digit one place to the </span><span data-w="0.07704" style="left:12.809%;top:83.113%;font-size:3.334cqw">left.</span><span data-w="0.26564" style="left:12.809%;top:88.509%;font-size:4.166cqw">54.2 x 10 =</span></div></div></section>
-<section class="trang" id="tr-7" data-tr="7"><p class="stt">Trang 7/18</p><div class="khung"><img src="anh/trang-7.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.64927" style="left:14.501%;top:15.373%;font-size:4.583cqw">How do we multiply by 100?</span><span class="mo" data-w="0.91368" style="left:2.430%;top:4.358%;font-size:1.875cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 and 1,000.</span><span data-w="0.73546" style="left:15.466%;top:73.328%;font-size:3.334cqw">We move every digit two places to the </span><span data-w="0.07704" style="left:15.466%;top:80.445%;font-size:3.334cqw">left.</span><span data-w="0.29460" style="left:15.469%;top:87.023%;font-size:4.166cqw">54.2 x 100 =</span></div></div></section>
-<section class="trang" id="tr-8" data-tr="8"><p class="stt">Trang 8/18</p><div class="khung"><img src="anh/trang-8.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.69299" style="left:17.226%;top:14.060%;font-size:4.583cqw">How do we multiply by 1,000?</span><span class="mo" data-w="0.91368" style="left:2.430%;top:3.880%;font-size:1.875cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 and 1,000.</span><span data-w="0.76703" style="left:12.889%;top:77.251%;font-size:3.334cqw">We move every digit three places to the </span><span data-w="0.07704" style="left:12.889%;top:84.368%;font-size:3.334cqw">left.</span><span data-w="0.33935" style="left:12.809%;top:88.509%;font-size:4.166cqw">54.2 x 1,000 =</span></div></div></section>
-<section class="trang" id="tr-9" data-tr="9"><p class="stt">Trang 9/18</p><div class="khung"><img src="anh/trang-9.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.49587" style="left:2.430%;top:9.020%;font-size:3.334cqw">Check your understanding</span><span data-w="0.91704" style="left:2.430%;top:19.615%;font-size:3.334cqw">On your place value grids complete these calculations.</span><span data-w="0.22751" style="left:2.430%;top:32.956%;font-size:3.334cqw">a) 36 x 100 =</span><span data-w="0.14664" style="left:2.430%;top:46.203%;font-size:3.334cqw">b) 0.43 x</span><span data-w="0.08084" style="left:18.260%;top:46.203%;font-size:3.334cqw">10 =</span><span data-w="0.03130" style="left:2.430%;top:59.450%;font-size:3.334cqw">c)</span><span data-w="0.27019" style="left:6.650%;top:59.450%;font-size:3.334cqw">5.921 x 1,000 =</span><span data-w="0.16787" style="left:2.430%;top:72.697%;font-size:3.334cqw">d) 22.32 x</span><span data-w="0.22779" style="left:20.386%;top:72.697%;font-size:3.334cqw">1,000 x 10 = </span><span class="mo" data-w="0.91368" style="left:2.430%;top:3.880%;font-size:1.875cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 and 1,000.</span><span data-w="0.13149" style="left:25.202%;top:33.577%;font-size:4.166cqw">3,600</span><span data-w="0.07366" style="left:25.972%;top:46.431%;font-size:4.166cqw">4.3</span><span data-w="0.13149" style="left:32.631%;top:57.377%;font-size:4.166cqw">5,921</span><span data-w="0.18940" style="left:40.249%;top:70.288%;font-size:4.166cqw">223,200</span></div></div></section>
-<section class="trang" id="tr-10" data-tr="10"><p class="stt">Trang 10/18</p><div class="khung"><img src="anh/trang-10.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.57292" style="left:19.630%;top:16.949%;font-size:4.583cqw">How do we divide by 10?</span><span data-w="0.90516" style="left:2.430%;top:3.854%;font-size:2.085cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 </span><span data-w="0.11218" style="left:2.430%;top:7.857%;font-size:2.085cqw">and 1,000.</span><span data-w="0.71526" style="left:15.511%;top:76.978%;font-size:3.334cqw">We move every digit one place to the </span><span data-w="0.10404" style="left:15.511%;top:84.095%;font-size:3.334cqw">right.</span><span data-w="0.33151" style="left:16.205%;top:88.215%;font-size:4.166cqw">46,321 ÷ 10 =</span></div></div></section>
-<section class="trang" id="tr-11" data-tr="11"><p class="stt">Trang 11/18</p><div class="khung"><img src="anh/trang-11.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.60202" style="left:17.970%;top:15.783%;font-size:4.583cqw">How do we divide by 100?</span><span class="mo" data-w="0.91368" style="left:2.430%;top:3.880%;font-size:1.875cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 and 1,000.</span><span data-w="0.73546" style="left:13.178%;top:74.310%;font-size:3.334cqw">We move every digit two places to the </span><span data-w="0.10404" style="left:13.178%;top:81.427%;font-size:3.334cqw">right.</span><span data-w="0.36039" style="left:16.205%;top:88.215%;font-size:4.166cqw">46,321 ÷ 100 =</span></div></div></section>
-<section class="trang" id="tr-12" data-tr="12"><p class="stt">Trang 12/18</p><div class="khung"><img src="anh/trang-12.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.64588" style="left:18.443%;top:16.303%;font-size:4.583cqw">How do we divide by 1,000?</span><span class="mo" data-w="0.91368" style="left:2.430%;top:3.880%;font-size:1.875cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 and 1,000.</span><span data-w="0.76703" style="left:12.443%;top:75.954%;font-size:3.334cqw">We move every digit three places to the </span><span data-w="0.10404" style="left:12.443%;top:83.071%;font-size:3.334cqw">right.</span><span data-w="0.40517" style="left:16.205%;top:88.215%;font-size:4.166cqw">46,321 ÷ 1,000 =</span></div></div></section>
-<section class="trang" id="tr-13" data-tr="13"><p class="stt">Trang 13/18</p><div class="khung"><img src="anh/trang-13.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.68163" style="left:2.430%;top:9.191%;font-size:4.583cqw">Check your understanding</span><span data-w="0.91704" style="left:2.430%;top:21.584%;font-size:3.334cqw">On your place value grids complete these calculations.</span><span data-w="0.20107" style="left:2.430%;top:34.926%;font-size:3.334cqw">a) 56,221.3 </span><span data-w="0.02790" style="left:22.562%;top:34.926%;font-size:3.334cqw">÷</span><span data-w="0.11264" style="left:25.349%;top:34.926%;font-size:3.334cqw"> 100 =</span><span data-w="0.09510" style="left:2.430%;top:48.173%;font-size:3.334cqw">b) 56 </span><span class="mo" data-w="0.03947" style="left:11.950%;top:48.173%;font-size:3.334cqw">÷ </span><span data-w="0.08084" style="left:15.900%;top:48.173%;font-size:3.334cqw">10 =</span><span data-w="0.03130" style="left:2.430%;top:61.420%;font-size:3.334cqw">c)</span><span data-w="0.10594" style="left:6.650%;top:61.420%;font-size:3.334cqw">1,092 </span><span data-w="0.02790" style="left:17.262%;top:61.420%;font-size:3.334cqw">÷</span><span data-w="0.14448" style="left:20.049%;top:61.420%;font-size:3.334cqw"> 1,000 =</span><span data-w="0.14814" style="left:2.430%;top:74.667%;font-size:3.334cqw">d) 2,345 </span><span class="mo" data-w="0.03947" style="left:17.262%;top:74.667%;font-size:3.334cqw">÷ </span><span data-w="0.25215" style="left:21.212%;top:74.667%;font-size:3.334cqw">1,000 X 100 = </span><span class="mo" data-w="0.91368" style="left:2.430%;top:3.880%;font-size:1.875cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 and 1,000.</span><span data-w="0.18940" style="left:33.761%;top:32.595%;font-size:4.166cqw">562.213</span><span data-w="0.07366" style="left:22.500%;top:45.380%;font-size:4.166cqw">5.6</span><span data-w="0.13149" style="left:30.838%;top:58.532%;font-size:4.166cqw">1.092</span><span data-w="0.13149" style="left:42.812%;top:71.685%;font-size:4.166cqw">234.5</span></div></div></section>
-<section class="trang" id="tr-14" data-tr="14"><p class="stt">Trang 14/18</p><div class="khung"><img src="anh/trang-14.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.38493" style="left:3.363%;top:40.897%;font-size:2.917cqw">Find the missing numbers.</span><span data-w="0.02923" style="left:3.363%;top:48.356%;font-size:2.917cqw">a)</span><span data-w="0.25468" style="left:7.583%;top:48.356%;font-size:2.917cqw">56.602 x 1,000 =</span><span data-w="0.02987" style="left:3.363%;top:55.815%;font-size:2.917cqw">b)</span><span data-w="0.06479" style="left:7.583%;top:55.815%;font-size:2.917cqw">789 </span><span class="mo" data-w="0.03454" style="left:14.058%;top:55.815%;font-size:2.917cqw">÷ </span><span data-w="0.08921" style="left:17.507%;top:55.815%;font-size:2.917cqw">100 =</span><span data-w="0.02739" style="left:3.363%;top:63.273%;font-size:2.917cqw">c)</span><span data-w="0.18980" style="left:7.583%;top:63.273%;font-size:2.917cqw">0.078 x 10 =</span><span data-w="0.02987" style="left:3.363%;top:70.732%;font-size:2.917cqw">d)</span><span data-w="0.07404" style="left:7.583%;top:70.732%;font-size:2.917cqw">0.95 </span><span class="mo" data-w="0.03454" style="left:14.982%;top:70.732%;font-size:2.917cqw">÷ </span><span data-w="0.08921" style="left:18.431%;top:70.732%;font-size:2.917cqw">100 =</span><span data-w="0.02932" style="left:3.363%;top:78.191%;font-size:2.917cqw">e)</span><span data-w="0.18665" style="left:7.583%;top:78.191%;font-size:2.917cqw">8.345 X 100 </span><span class="mo" data-w="0.03454" style="left:26.244%;top:78.191%;font-size:2.917cqw">÷ </span><span data-w="0.08335" style="left:29.693%;top:78.191%;font-size:2.917cqw">1,000</span><span data-w="0.03454" style="left:38.031%;top:78.191%;font-size:2.917cqw"> =</span><span data-w="0.82373" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Use knowledge of place value to multiply and divide whole </span><span data-w="0.39464" style="left:2.430%;top:8.609%;font-size:2.501cqw">numbers by 10, 100 and 1,000.</span><span data-w="0.05933" style="left:13.069%;top:20.227%;font-size:2.085cqw">Work </span><span data-w="0.09058" style="left:13.069%;top:24.676%;font-size:2.085cqw">with me.</span><span data-w="0.05933" style="left:37.012%;top:20.327%;font-size:2.085cqw">Work </span><span data-w="0.15362" style="left:37.012%;top:24.775%;font-size:2.085cqw">independently.</span><span data-w="0.36641" style="left:58.110%;top:30.232%;font-size:1.875cqw">Look at these number cards. Write the </span><span data-w="0.34462" style="left:58.110%;top:34.235%;font-size:1.875cqw">correct letter of the card next to the </span><span data-w="0.16322" style="left:58.110%;top:38.237%;font-size:1.875cqw">correct sentence.</span><span data-w="0.03686" style="left:58.511%;top:54.374%;font-size:2.085cqw">6.1</span><span data-w="0.02898" style="left:70.172%;top:53.985%;font-size:2.085cqw">61</span><span data-w="0.04347" style="left:79.623%;top:53.801%;font-size:2.085cqw">610</span><span data-w="0.05135" style="left:90.064%;top:53.985%;font-size:2.085cqw">0.61</span><span data-w="0.02091" style="left:49.192%;top:69.128%;font-size:2.085cqw">a)</span><span data-w="0.21749" style="left:53.412%;top:69.128%;font-size:2.085cqw">One hundredth of 61</span><span data-w="0.02135" style="left:49.192%;top:74.985%;font-size:2.085cqw">b)</span><span data-w="0.40509" style="left:53.412%;top:74.985%;font-size:2.085cqw">One thousand times bigger than 0.061</span><span data-w="0.01958" style="left:49.192%;top:80.841%;font-size:2.085cqw">c)</span><span data-w="0.42077" style="left:53.412%;top:80.841%;font-size:2.085cqw">The number one hundred times smaller </span><span data-w="0.10044" style="left:53.412%;top:84.844%;font-size:2.085cqw">than 610.</span><span data-w="0.49575" style="left:49.192%;top:90.701%;font-size:2.085cqw">d) Write your own sentence for the card that is </span><span data-w="0.04032" style="left:49.192%;top:94.703%;font-size:2.085cqw">left.</span><span data-w="0.01611" style="left:59.955%;top:44.809%;font-size:2.085cqw">A</span><span data-w="0.01589" style="left:70.488%;top:44.809%;font-size:2.085cqw">B</span><span data-w="0.01528" style="left:81.023%;top:44.809%;font-size:2.085cqw">C</span><span data-w="0.01730" style="left:91.901%;top:44.488%;font-size:2.085cqw">D</span></div></div></section>
-<section class="trang" id="tr-15" data-tr="15"><p class="stt">Trang 15/18</p><div class="khung"><img src="anh/trang-15.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.28272" style="left:3.363%;top:40.851%;font-size:3.334cqw">Find the missing </span><span data-w="0.15805" style="left:3.363%;top:47.259%;font-size:3.334cqw">numbers.</span><span data-w="0.33362" style="left:3.363%;top:56.325%;font-size:3.334cqw">a) 56.602 x 1,000 =</span><span data-w="0.11633" style="left:3.363%;top:65.296%;font-size:3.334cqw">b) 789 </span><span class="mo" data-w="0.03947" style="left:15.009%;top:65.296%;font-size:3.334cqw">÷ </span><span data-w="0.10208" style="left:18.960%;top:65.296%;font-size:3.334cqw">100 =</span><span data-w="0.03130" style="left:3.363%;top:74.268%;font-size:3.334cqw">c)</span><span data-w="0.22029" style="left:7.583%;top:74.268%;font-size:3.334cqw">0.078 X 10 =</span><span data-w="0.12693" style="left:3.363%;top:83.239%;font-size:3.334cqw">d) 0.95 </span><span class="mo" data-w="0.03947" style="left:16.069%;top:83.239%;font-size:3.334cqw">÷ </span><span data-w="0.10208" style="left:20.019%;top:83.239%;font-size:3.334cqw">100 =</span><span data-w="0.25575" style="left:3.363%;top:92.210%;font-size:3.334cqw">e) 8.345 X 100 </span><span class="mo" data-w="0.03947" style="left:28.969%;top:92.210%;font-size:3.334cqw">÷ </span><span data-w="0.09537" style="left:32.920%;top:92.210%;font-size:3.334cqw">1,000</span><span data-w="0.90516" style="left:2.430%;top:3.854%;font-size:2.085cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 </span><span data-w="0.11218" style="left:2.430%;top:7.857%;font-size:2.085cqw">and 1,000.</span><span data-w="0.07120" style="left:13.069%;top:20.280%;font-size:2.501cqw">Work </span><span data-w="0.06090" style="left:13.069%;top:25.617%;font-size:2.501cqw">with </span><span data-w="0.04757" style="left:13.069%;top:30.953%;font-size:2.501cqw">me.</span><span data-w="0.07120" style="left:37.012%;top:20.380%;font-size:2.501cqw">Work </span><span data-w="0.18394" style="left:37.012%;top:25.717%;font-size:2.501cqw">independently.</span><span data-w="0.14445" style="left:34.559%;top:49.051%;font-size:3.750cqw">56,602</span><span data-w="0.09240" style="left:26.400%;top:58.017%;font-size:3.750cqw">7.89</span><span data-w="0.09240" style="left:28.249%;top:67.393%;font-size:3.750cqw">0.78</span><span data-w="0.14449" style="left:28.249%;top:76.191%;font-size:3.750cqw">0.0095</span><span data-w="0.14449" style="left:43.916%;top:85.561%;font-size:3.750cqw">0.8345</span></div></div></section>
-<section class="trang" id="tr-16" data-tr="16"><p class="stt">Trang 16/18</p><div class="khung"><img src="anh/trang-16.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.90516" style="left:2.430%;top:3.854%;font-size:2.085cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 </span><span data-w="0.11218" style="left:2.430%;top:7.857%;font-size:2.085cqw">and 1,000.</span><span data-w="0.36713" style="left:13.893%;top:32.255%;font-size:2.085cqw">Look at these number cards. Write </span><span data-w="0.38387" style="left:13.893%;top:36.704%;font-size:2.085cqw">the correct letter of the card next to </span><span data-w="0.22256" style="left:13.893%;top:41.153%;font-size:2.085cqw">the correct sentence.</span><span data-w="0.04422" style="left:13.895%;top:54.664%;font-size:2.501cqw">6.1</span><span data-w="0.01738" style="left:25.954%;top:56.024%;font-size:2.501cqw">6</span><span data-w="0.01738" style="left:25.954%;top:61.361%;font-size:2.501cqw">1</span><span data-w="0.05212" style="left:35.406%;top:55.840%;font-size:2.501cqw">610</span><span data-w="0.04422" style="left:45.850%;top:56.024%;font-size:2.501cqw">0.6</span><span data-w="0.01738" style="left:45.850%;top:61.361%;font-size:2.501cqw">1</span><span data-w="0.02091" style="left:4.907%;top:68.256%;font-size:2.085cqw">a)</span><span data-w="0.21749" style="left:9.127%;top:68.256%;font-size:2.085cqw">One hundredth of 61</span><span data-w="0.02135" style="left:4.907%;top:74.113%;font-size:2.085cqw">b)</span><span data-w="0.40509" style="left:9.127%;top:74.113%;font-size:2.085cqw">One thousand times bigger than 0.061</span><span data-w="0.01958" style="left:4.907%;top:79.970%;font-size:2.085cqw">c)</span><span data-w="0.42077" style="left:9.127%;top:79.970%;font-size:2.085cqw">The number one hundred times smaller </span><span data-w="0.10044" style="left:9.127%;top:83.972%;font-size:2.085cqw">than 610.</span><span data-w="0.49575" style="left:4.907%;top:89.829%;font-size:2.085cqw">d) Write your own sentence for the card that is </span><span data-w="0.04032" style="left:4.907%;top:93.831%;font-size:2.085cqw">left.</span><span data-w="0.01933" style="left:15.738%;top:46.848%;font-size:2.501cqw">A</span><span data-w="0.01906" style="left:26.270%;top:46.848%;font-size:2.501cqw">B</span><span data-w="0.01833" style="left:36.806%;top:46.848%;font-size:2.501cqw">C</span><span data-w="0.02076" style="left:47.687%;top:46.527%;font-size:2.501cqw">D</span><span data-w="0.02076" style="left:32.025%;top:67.926%;font-size:2.501cqw">D</span><span data-w="0.01906" style="left:47.063%;top:73.946%;font-size:2.501cqw">B</span><span data-w="0.01933" style="left:16.600%;top:83.663%;font-size:2.501cqw">A</span></div></div></section>
-<section class="trang" id="tr-17" data-tr="17"><p class="stt">Trang 17/18</p><div class="khung"><img src="anh/trang-17.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.82373" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Use knowledge of place value to multiply and divide whole </span><span data-w="0.39464" style="left:2.430%;top:8.609%;font-size:2.501cqw">numbers by 10, 100 and 1,000.</span><span data-w="0.22066" style="left:6.381%;top:54.159%;font-size:2.501cqw">With support, I </span><span data-w="0.24381" style="left:5.223%;top:59.496%;font-size:2.501cqw">can multiply and </span><span data-w="0.27450" style="left:3.688%;top:64.833%;font-size:2.501cqw">divide decimal and </span><span data-w="0.26747" style="left:4.036%;top:70.169%;font-size:2.501cqw">whole numbers by </span><span data-w="0.26342" style="left:3.800%;top:75.506%;font-size:2.501cqw">10, 100 and 1,000.</span><span data-w="0.23824" style="left:39.192%;top:51.491%;font-size:2.501cqw">Independently, I </span><span data-w="0.24381" style="left:38.917%;top:56.828%;font-size:2.501cqw">can multiply and </span><span data-w="0.21318" style="left:40.446%;top:62.164%;font-size:2.501cqw">divide decimal </span><span data-w="0.15343" style="left:43.435%;top:67.501%;font-size:2.501cqw">and whole </span><span data-w="0.22818" style="left:39.696%;top:72.837%;font-size:2.501cqw">numbers by 10, </span><span data-w="0.21048" style="left:40.142%;top:78.174%;font-size:2.501cqw">100 and 1,000.</span><span data-w="0.24321" style="left:72.182%;top:55.095%;font-size:2.917cqw">I can write my </span><span data-w="0.23108" style="left:72.788%;top:61.325%;font-size:2.917cqw">own question </span><span data-w="0.26305" style="left:71.187%;top:67.554%;font-size:2.917cqw">when given the </span><span data-w="0.12553" style="left:77.556%;top:73.784%;font-size:2.917cqw">answer.</span></div></div></section>
-<section class="trang" id="tr-18" data-tr="18"><p class="stt">Trang 18/18</p><div class="khung"><img src="anh/trang-18.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.18268" style="left:3.399%;top:14.110%;font-size:3.334cqw">Plenary – </span><span data-w="0.66074" style="left:3.399%;top:27.689%;font-size:3.750cqw">There are ten buses in the carpark.</span><span data-w="0.56782" style="left:3.399%;top:34.170%;font-size:3.750cqw">Each bus has ten people on it.</span><span data-w="0.53564" style="left:3.399%;top:40.652%;font-size:3.750cqw">Each person has ten fingers.</span><span data-w="0.87442" style="left:3.399%;top:53.615%;font-size:3.750cqw">One bus drives away. One person gets off one </span><span data-w="0.73282" style="left:3.399%;top:60.097%;font-size:3.750cqw">of the remaining buses and leaves the </span><span data-w="0.15454" style="left:3.399%;top:66.579%;font-size:3.750cqw">carpark.</span><span data-w="0.79109" style="left:3.399%;top:79.542%;font-size:3.750cqw">How many fingers are left in the car park?</span><span data-w="0.26502" style="left:69.918%;top:87.637%;font-size:4.166cqw">890 fingers</span><span data-w="0.90516" style="left:3.399%;top:4.059%;font-size:2.085cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 </span><span data-w="0.11218" style="left:3.399%;top:8.062%;font-size:2.085cqw">and 1,000.</span></div></div></section>
+<section class="trang" id="tr-1" data-tr="1"><div class="khung"><img src="anh/trang-1.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.33363" style="left:31.665%;top:1.859%;font-size:10.001cqw">Maths </span><i class="nl">
+</i><span data-w="0.25604" style="left:6.797%;top:44.911%;font-size:4.479cqw">20.08.2026</span><i class="nl">
+</i><span data-w="0.14285" style="left:6.797%;top:65.826%;font-size:4.479cqw">WALT: </span><span data-w="0.69876" style="left:21.085%;top:67.718%;font-size:3.334cqw">Use knowledge of place value to multiply </span><i class="nl">
+</i><span data-w="0.82070" style="left:6.797%;top:74.567%;font-size:3.334cqw">and divide whole numbers by 10, 100 and 1,000.</span><i class="nl">
+</i><span data-w="0.16909" style="left:75.664%;top:8.949%;font-size:1.875cqw">Unit 1.1 – Place </span><i class="nl">
+</i><span data-w="0.06506" style="left:75.664%;top:12.951%;font-size:1.875cqw">Value </span></div></div></section>
+<section class="trang" id="tr-2" data-tr="2"><div class="khung"><img src="anh/trang-2.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.86614" style="left:2.430%;top:3.762%;font-size:2.917cqw">WALT: Use knowledge of place value to multiply and </span><i class="nl">
+</i><span data-w="0.72911" style="left:2.430%;top:9.366%;font-size:2.917cqw">divide whole numbers by 10, 100 and 1,000.</span><i class="nl">
+</i><span data-w="0.22066" style="left:6.381%;top:54.159%;font-size:2.501cqw">With support, I </span><i class="nl">
+</i><span data-w="0.24381" style="left:5.223%;top:59.496%;font-size:2.501cqw">can multiply and </span><i class="nl">
+</i><span data-w="0.27450" style="left:3.688%;top:64.833%;font-size:2.501cqw">divide decimal and </span><i class="nl">
+</i><span data-w="0.26747" style="left:4.036%;top:70.169%;font-size:2.501cqw">whole numbers by </span><i class="nl">
+</i><span data-w="0.26342" style="left:3.800%;top:75.506%;font-size:2.501cqw">10, 100 and 1,000.</span><i class="nl">
+</i><span data-w="0.23824" style="left:39.192%;top:51.491%;font-size:2.501cqw">Independently, I </span><i class="nl">
+</i><span data-w="0.24381" style="left:38.917%;top:56.828%;font-size:2.501cqw">can multiply and </span><i class="nl">
+</i><span data-w="0.21318" style="left:40.446%;top:62.164%;font-size:2.501cqw">divide decimal </span><i class="nl">
+</i><span data-w="0.15343" style="left:43.435%;top:67.501%;font-size:2.501cqw">and whole </span><i class="nl">
+</i><span data-w="0.22818" style="left:39.696%;top:72.837%;font-size:2.501cqw">numbers by 10, </span><i class="nl">
+</i><span data-w="0.21048" style="left:40.142%;top:78.174%;font-size:2.501cqw">100 and 1,000.</span><i class="nl">
+</i><span data-w="0.24321" style="left:72.182%;top:55.095%;font-size:2.917cqw">I can write my </span><i class="nl">
+</i><span data-w="0.23108" style="left:72.788%;top:61.325%;font-size:2.917cqw">own question </span><i class="nl">
+</i><span data-w="0.26305" style="left:71.187%;top:67.554%;font-size:2.917cqw">when given the </span><i class="nl">
+</i><span data-w="0.12553" style="left:77.556%;top:73.784%;font-size:2.917cqw">answer.</span></div></div></section>
+<section class="trang" id="tr-3" data-tr="3"><div class="khung"><img src="anh/trang-3.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.24613" style="left:7.624%;top:10.068%;font-size:4.583cqw">Homework</span><i class="nl">
+</i><span data-w="0.65011" style="left:7.624%;top:26.823%;font-size:4.166cqw">Complete pages 9 – 13 in your </span><i class="nl">
+</i><span data-w="0.24152" style="left:7.624%;top:34.822%;font-size:4.166cqw">Workbooks.</span><i class="nl">
+</i><span data-w="0.36664" style="left:7.624%;top:54.525%;font-size:4.166cqw">Due – Tuesday 25</span><span data-w="0.02468" style="left:44.300%;top:55.220%;font-size:2.415cqw">th</span><span data-w="0.29110" style="left:46.762%;top:54.525%;font-size:4.166cqw"> August 2026.</span></div></div></section>
+<section class="trang" id="tr-4" data-tr="4"><div class="khung"><img src="anh/trang-4.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.32714" style="left:2.430%;top:10.543%;font-size:2.917cqw">Retrieval Practice – </span><i class="nl">
+</i><span class="mo" data-w="0.91368" style="left:2.430%;top:3.875%;font-size:1.875cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 and 1,000.</span><i class="nl">
+</i><span data-w="0.12426" style="left:21.074%;top:19.260%;font-size:1.875cqw">Last Lesson</span><i class="nl">
+</i><span data-w="0.38130" style="left:8.530%;top:27.002%;font-size:1.875cqw">What is the value of the underlined </span><i class="nl">
+</i><span data-w="0.09232" style="left:22.674%;top:30.873%;font-size:1.875cqw">number?</span><i class="nl">
+</i><span data-w="0.11853" style="left:21.369%;top:38.615%;font-size:1.875cqw">33,234.539</span><i class="nl">
+</i><span data-w="0.12426" style="left:63.368%;top:19.260%;font-size:1.875cqw">Last Lesson</span><i class="nl">
+</i><span data-w="0.28987" style="left:55.080%;top:27.002%;font-size:1.875cqw">Mr. Jon thinks of a number. </span><i class="nl">
+</i><span data-w="0.00656" style="left:57.410%;top:30.950%;font-size:1.875cqw">•</span><i class="nl">
+</i><span data-w="0.21988" style="left:59.754%;top:30.873%;font-size:1.875cqw">It is greater than 45.</span><i class="nl">
+</i><span data-w="0.00656" style="left:50.391%;top:34.821%;font-size:1.875cqw">•</span><i class="nl">
+</i><span data-w="0.36661" style="left:52.736%;top:34.744%;font-size:1.875cqw">Has an even number in the tenths </span><i class="nl">
+</i><span data-w="0.17518" style="left:61.993%;top:38.615%;font-size:1.875cqw">and hundredths.</span><i class="nl">
+</i><span data-w="0.00656" style="left:49.677%;top:42.563%;font-size:1.875cqw">•</span><i class="nl">
+</i><span data-w="0.38090" style="left:52.021%;top:42.487%;font-size:1.875cqw">Rounds to 60 when rounding to the </span><i class="nl">
+</i><span data-w="0.12037" style="left:64.736%;top:46.358%;font-size:1.875cqw">nearest 10.</span><i class="nl">
+</i><span data-w="0.28824" style="left:55.163%;top:50.229%;font-size:1.875cqw">What could his number be?</span><i class="nl">
+</i><span data-w="0.09756" style="left:22.411%;top:58.376%;font-size:1.875cqw">Last Year</span><i class="nl">
+</i><span data-w="0.20795" style="left:16.887%;top:66.118%;font-size:1.875cqw">Here is a sequence:</span><i class="nl">
+</i><span data-w="0.14578" style="left:19.999%;top:73.860%;font-size:1.875cqw">1, 5, 9, 13, 17</span><i class="nl">
+</i><span data-w="0.38966" style="left:8.111%;top:81.603%;font-size:1.875cqw">The rule is ‘add 4’.  Write the next 3 </span><i class="nl">
+</i><span data-w="0.06857" style="left:23.861%;top:85.474%;font-size:1.875cqw">terms.</span><i class="nl">
+</i><span data-w="0.09756" style="left:64.706%;top:58.376%;font-size:1.875cqw">Last Year</span><i class="nl">
+</i><span data-w="0.40106" style="left:49.514%;top:66.118%;font-size:1.875cqw">Write the number is words and digits.</span><i class="nl">
+</i><span data-w="0.27692" style="left:55.724%;top:73.860%;font-size:1.875cqw">40,000 + 5,000 + 80 + 0.2</span><i class="nl">
+</i><span data-w="0.15200" style="left:9.478%;top:45.533%;font-size:1.875cqw">9 thousandths</span><i class="nl">
+</i><span data-w="0.05923" style="left:31.925%;top:45.533%;font-size:1.875cqw">0.009</span><i class="nl">
+</i><span data-w="0.10545" style="left:22.125%;top:90.033%;font-size:1.875cqw">21, 25, 29</span><i class="nl">
+</i><span data-w="0.45330" style="left:48.363%;top:81.182%;font-size:1.875cqw">Forty-five thousand and eighty, point two. </span><i class="nl">
+</i><span data-w="0.09234" style="left:63.327%;top:87.338%;font-size:1.875cqw">45,080.2</span></div></div></section>
+<section class="trang" id="tr-5" data-tr="5"><div class="khung"><img src="anh/trang-5.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.71173" style="left:7.848%;top:17.017%;font-size:4.583cqw">Starter – Match the equivalent </span><i class="nl">
+</i><span data-w="0.30159" style="left:7.848%;top:25.820%;font-size:4.583cqw">calculations. </span><i class="nl">
+</i><span data-w="0.82373" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Use knowledge of place value to multiply and divide whole </span><i class="nl">
+</i><span data-w="0.39464" style="left:2.430%;top:8.609%;font-size:2.501cqw">numbers by 10, 100 and 1,000.</span><i class="nl">
+</i><span data-w="0.12111" style="left:11.191%;top:47.586%;font-size:4.166cqw">X 100</span><i class="nl">
+</i><span data-w="0.14957" style="left:68.300%;top:74.695%;font-size:4.166cqw">X 10 X </span><i class="nl">
+</i><span data-w="0.05287" style="left:68.300%;top:83.587%;font-size:4.166cqw">10</span><i class="nl">
+</i><span data-w="0.23540" style="left:69.129%;top:47.586%;font-size:4.166cqw">X 100 ÷ 10</span><i class="nl">
+</i><span data-w="0.22211" style="left:31.520%;top:74.695%;font-size:4.166cqw">X 1,000 ÷ </span><i class="nl">
+</i><span data-w="0.07937" style="left:31.520%;top:83.587%;font-size:4.166cqw">100</span><i class="nl">
+</i><span data-w="0.10099" style="left:12.088%;top:74.700%;font-size:4.166cqw">÷ 10</span><i class="nl">
+</i><span data-w="0.31468" style="left:31.854%;top:47.586%;font-size:4.166cqw">X 100 ÷ 1,000 </span></div></div></section>
+<section class="trang" id="tr-6" data-tr="6"><div class="khung"><img src="anh/trang-6.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.56316" style="left:18.050%;top:14.983%;font-size:4.166cqw">How do we multiply by 10?</span><i class="nl">
+</i><span class="mo" data-w="0.91368" style="left:2.430%;top:3.880%;font-size:1.875cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 and 1,000.</span><i class="nl">
+</i><span data-w="0.71526" style="left:12.809%;top:75.996%;font-size:3.334cqw">We move every digit one place to the </span><i class="nl">
+</i><span data-w="0.07704" style="left:12.809%;top:83.113%;font-size:3.334cqw">left.</span><i class="nl">
+</i><span data-w="0.26564" style="left:12.809%;top:88.509%;font-size:4.166cqw">54.2 x 10 =</span></div></div></section>
+<section class="trang" id="tr-7" data-tr="7"><div class="khung"><img src="anh/trang-7.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.64927" style="left:14.501%;top:15.373%;font-size:4.583cqw">How do we multiply by 100?</span><i class="nl">
+</i><span class="mo" data-w="0.91368" style="left:2.430%;top:4.358%;font-size:1.875cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 and 1,000.</span><i class="nl">
+</i><span data-w="0.73546" style="left:15.466%;top:73.328%;font-size:3.334cqw">We move every digit two places to the </span><i class="nl">
+</i><span data-w="0.07704" style="left:15.466%;top:80.445%;font-size:3.334cqw">left.</span><i class="nl">
+</i><span data-w="0.29460" style="left:15.469%;top:87.023%;font-size:4.166cqw">54.2 x 100 =</span></div></div></section>
+<section class="trang" id="tr-8" data-tr="8"><div class="khung"><img src="anh/trang-8.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.69299" style="left:17.226%;top:14.060%;font-size:4.583cqw">How do we multiply by 1,000?</span><i class="nl">
+</i><span class="mo" data-w="0.91368" style="left:2.430%;top:3.880%;font-size:1.875cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 and 1,000.</span><i class="nl">
+</i><span data-w="0.76703" style="left:12.889%;top:77.251%;font-size:3.334cqw">We move every digit three places to the </span><i class="nl">
+</i><span data-w="0.07704" style="left:12.889%;top:84.368%;font-size:3.334cqw">left.</span><i class="nl">
+</i><span data-w="0.33935" style="left:12.809%;top:88.509%;font-size:4.166cqw">54.2 x 1,000 =</span></div></div></section>
+<section class="trang" id="tr-9" data-tr="9"><div class="khung"><img src="anh/trang-9.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.49587" style="left:2.430%;top:9.020%;font-size:3.334cqw">Check your understanding</span><i class="nl">
+</i><span data-w="0.91704" style="left:2.430%;top:19.615%;font-size:3.334cqw">On your place value grids complete these calculations.</span><i class="nl">
+</i><span data-w="0.22751" style="left:2.430%;top:32.956%;font-size:3.334cqw">a) 36 x 100 =</span><i class="nl">
+</i><span data-w="0.14664" style="left:2.430%;top:46.203%;font-size:3.334cqw">b) 0.43 x</span><span data-w="0.08084" style="left:18.260%;top:46.203%;font-size:3.334cqw">10 =</span><i class="nl">
+</i><span data-w="0.03130" style="left:2.430%;top:59.450%;font-size:3.334cqw">c)</span><span data-w="0.27019" style="left:6.650%;top:59.450%;font-size:3.334cqw">5.921 x 1,000 =</span><i class="nl">
+</i><span data-w="0.16787" style="left:2.430%;top:72.697%;font-size:3.334cqw">d) 22.32 x</span><span data-w="0.22779" style="left:20.386%;top:72.697%;font-size:3.334cqw">1,000 x 10 = </span><i class="nl">
+</i><span class="mo" data-w="0.91368" style="left:2.430%;top:3.880%;font-size:1.875cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 and 1,000.</span><i class="nl">
+</i><span data-w="0.13149" style="left:25.202%;top:33.577%;font-size:4.166cqw">3,600</span><i class="nl">
+</i><span data-w="0.07366" style="left:25.972%;top:46.431%;font-size:4.166cqw">4.3</span><i class="nl">
+</i><span data-w="0.13149" style="left:32.631%;top:57.377%;font-size:4.166cqw">5,921</span><i class="nl">
+</i><span data-w="0.18940" style="left:40.249%;top:70.288%;font-size:4.166cqw">223,200</span></div></div></section>
+<section class="trang" id="tr-10" data-tr="10"><div class="khung"><img src="anh/trang-10.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.57292" style="left:19.630%;top:16.949%;font-size:4.583cqw">How do we divide by 10?</span><i class="nl">
+</i><span data-w="0.90516" style="left:2.430%;top:3.854%;font-size:2.085cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 </span><i class="nl">
+</i><span data-w="0.11218" style="left:2.430%;top:7.857%;font-size:2.085cqw">and 1,000.</span><i class="nl">
+</i><span data-w="0.71526" style="left:15.511%;top:76.978%;font-size:3.334cqw">We move every digit one place to the </span><i class="nl">
+</i><span data-w="0.10404" style="left:15.511%;top:84.095%;font-size:3.334cqw">right.</span><i class="nl">
+</i><span data-w="0.33151" style="left:16.205%;top:88.215%;font-size:4.166cqw">46,321 ÷ 10 =</span></div></div></section>
+<section class="trang" id="tr-11" data-tr="11"><div class="khung"><img src="anh/trang-11.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.60202" style="left:17.970%;top:15.783%;font-size:4.583cqw">How do we divide by 100?</span><i class="nl">
+</i><span class="mo" data-w="0.91368" style="left:2.430%;top:3.880%;font-size:1.875cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 and 1,000.</span><i class="nl">
+</i><span data-w="0.73546" style="left:13.178%;top:74.310%;font-size:3.334cqw">We move every digit two places to the </span><i class="nl">
+</i><span data-w="0.10404" style="left:13.178%;top:81.427%;font-size:3.334cqw">right.</span><i class="nl">
+</i><span data-w="0.36039" style="left:16.205%;top:88.215%;font-size:4.166cqw">46,321 ÷ 100 =</span></div></div></section>
+<section class="trang" id="tr-12" data-tr="12"><div class="khung"><img src="anh/trang-12.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.64588" style="left:18.443%;top:16.303%;font-size:4.583cqw">How do we divide by 1,000?</span><i class="nl">
+</i><span class="mo" data-w="0.91368" style="left:2.430%;top:3.880%;font-size:1.875cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 and 1,000.</span><i class="nl">
+</i><span data-w="0.76703" style="left:12.443%;top:75.954%;font-size:3.334cqw">We move every digit three places to the </span><i class="nl">
+</i><span data-w="0.10404" style="left:12.443%;top:83.071%;font-size:3.334cqw">right.</span><i class="nl">
+</i><span data-w="0.40517" style="left:16.205%;top:88.215%;font-size:4.166cqw">46,321 ÷ 1,000 =</span></div></div></section>
+<section class="trang" id="tr-13" data-tr="13"><div class="khung"><img src="anh/trang-13.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.68163" style="left:2.430%;top:9.191%;font-size:4.583cqw">Check your understanding</span><i class="nl">
+</i><span data-w="0.91704" style="left:2.430%;top:21.584%;font-size:3.334cqw">On your place value grids complete these calculations.</span><i class="nl">
+</i><span data-w="0.20107" style="left:2.430%;top:34.926%;font-size:3.334cqw">a) 56,221.3 </span><span data-w="0.02790" style="left:22.562%;top:34.926%;font-size:3.334cqw">÷</span><span data-w="0.11264" style="left:25.349%;top:34.926%;font-size:3.334cqw"> 100 =</span><i class="nl">
+</i><span data-w="0.09510" style="left:2.430%;top:48.173%;font-size:3.334cqw">b) 56 </span><span class="mo" data-w="0.03947" style="left:11.950%;top:48.173%;font-size:3.334cqw">÷ </span><span data-w="0.08084" style="left:15.900%;top:48.173%;font-size:3.334cqw">10 =</span><i class="nl">
+</i><span data-w="0.03130" style="left:2.430%;top:61.420%;font-size:3.334cqw">c)</span><span data-w="0.10594" style="left:6.650%;top:61.420%;font-size:3.334cqw">1,092 </span><span data-w="0.02790" style="left:17.262%;top:61.420%;font-size:3.334cqw">÷</span><span data-w="0.14448" style="left:20.049%;top:61.420%;font-size:3.334cqw"> 1,000 =</span><i class="nl">
+</i><span data-w="0.14814" style="left:2.430%;top:74.667%;font-size:3.334cqw">d) 2,345 </span><span class="mo" data-w="0.03947" style="left:17.262%;top:74.667%;font-size:3.334cqw">÷ </span><span data-w="0.25215" style="left:21.212%;top:74.667%;font-size:3.334cqw">1,000 X 100 = </span><i class="nl">
+</i><span class="mo" data-w="0.91368" style="left:2.430%;top:3.880%;font-size:1.875cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 and 1,000.</span><i class="nl">
+</i><span data-w="0.18940" style="left:33.761%;top:32.595%;font-size:4.166cqw">562.213</span><i class="nl">
+</i><span data-w="0.07366" style="left:22.500%;top:45.380%;font-size:4.166cqw">5.6</span><i class="nl">
+</i><span data-w="0.13149" style="left:30.838%;top:58.532%;font-size:4.166cqw">1.092</span><i class="nl">
+</i><span data-w="0.13149" style="left:42.812%;top:71.685%;font-size:4.166cqw">234.5</span></div></div></section>
+<section class="trang" id="tr-14" data-tr="14"><div class="khung"><img src="anh/trang-14.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.38493" style="left:3.363%;top:40.897%;font-size:2.917cqw">Find the missing numbers.</span><i class="nl">
+</i><span data-w="0.02923" style="left:3.363%;top:48.356%;font-size:2.917cqw">a)</span><span data-w="0.25468" style="left:7.583%;top:48.356%;font-size:2.917cqw">56.602 x 1,000 =</span><i class="nl">
+</i><span data-w="0.02987" style="left:3.363%;top:55.815%;font-size:2.917cqw">b)</span><span data-w="0.06479" style="left:7.583%;top:55.815%;font-size:2.917cqw">789 </span><span class="mo" data-w="0.03454" style="left:14.058%;top:55.815%;font-size:2.917cqw">÷ </span><span data-w="0.08921" style="left:17.507%;top:55.815%;font-size:2.917cqw">100 =</span><i class="nl">
+</i><span data-w="0.02739" style="left:3.363%;top:63.273%;font-size:2.917cqw">c)</span><span data-w="0.18980" style="left:7.583%;top:63.273%;font-size:2.917cqw">0.078 x 10 =</span><i class="nl">
+</i><span data-w="0.02987" style="left:3.363%;top:70.732%;font-size:2.917cqw">d)</span><span data-w="0.07404" style="left:7.583%;top:70.732%;font-size:2.917cqw">0.95 </span><span class="mo" data-w="0.03454" style="left:14.982%;top:70.732%;font-size:2.917cqw">÷ </span><span data-w="0.08921" style="left:18.431%;top:70.732%;font-size:2.917cqw">100 =</span><i class="nl">
+</i><span data-w="0.02932" style="left:3.363%;top:78.191%;font-size:2.917cqw">e)</span><span data-w="0.18665" style="left:7.583%;top:78.191%;font-size:2.917cqw">8.345 X 100 </span><span class="mo" data-w="0.03454" style="left:26.244%;top:78.191%;font-size:2.917cqw">÷ </span><span data-w="0.08335" style="left:29.693%;top:78.191%;font-size:2.917cqw">1,000</span><span data-w="0.03454" style="left:38.031%;top:78.191%;font-size:2.917cqw"> =</span><i class="nl">
+</i><span data-w="0.82373" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Use knowledge of place value to multiply and divide whole </span><i class="nl">
+</i><span data-w="0.39464" style="left:2.430%;top:8.609%;font-size:2.501cqw">numbers by 10, 100 and 1,000.</span><i class="nl">
+</i><span data-w="0.05933" style="left:13.069%;top:20.227%;font-size:2.085cqw">Work </span><i class="nl">
+</i><span data-w="0.09058" style="left:13.069%;top:24.676%;font-size:2.085cqw">with me.</span><i class="nl">
+</i><span data-w="0.05933" style="left:37.012%;top:20.327%;font-size:2.085cqw">Work </span><i class="nl">
+</i><span data-w="0.15362" style="left:37.012%;top:24.775%;font-size:2.085cqw">independently.</span><i class="nl">
+</i><span data-w="0.36641" style="left:58.110%;top:30.232%;font-size:1.875cqw">Look at these number cards. Write the </span><i class="nl">
+</i><span data-w="0.34462" style="left:58.110%;top:34.235%;font-size:1.875cqw">correct letter of the card next to the </span><i class="nl">
+</i><span data-w="0.16322" style="left:58.110%;top:38.237%;font-size:1.875cqw">correct sentence.</span><i class="nl">
+</i><span data-w="0.03686" style="left:58.511%;top:54.374%;font-size:2.085cqw">6.1</span><i class="nl">
+</i><span data-w="0.02898" style="left:70.172%;top:53.985%;font-size:2.085cqw">61</span><i class="nl">
+</i><span data-w="0.04347" style="left:79.623%;top:53.801%;font-size:2.085cqw">610</span><i class="nl">
+</i><span data-w="0.05135" style="left:90.064%;top:53.985%;font-size:2.085cqw">0.61</span><i class="nl">
+</i><span data-w="0.02091" style="left:49.192%;top:69.128%;font-size:2.085cqw">a)</span><i class="nl">
+</i><span data-w="0.21749" style="left:53.412%;top:69.128%;font-size:2.085cqw">One hundredth of 61</span><i class="nl">
+</i><span data-w="0.02135" style="left:49.192%;top:74.985%;font-size:2.085cqw">b)</span><i class="nl">
+</i><span data-w="0.40509" style="left:53.412%;top:74.985%;font-size:2.085cqw">One thousand times bigger than 0.061</span><i class="nl">
+</i><span data-w="0.01958" style="left:49.192%;top:80.841%;font-size:2.085cqw">c)</span><i class="nl">
+</i><span data-w="0.42077" style="left:53.412%;top:80.841%;font-size:2.085cqw">The number one hundred times smaller </span><i class="nl">
+</i><span data-w="0.10044" style="left:53.412%;top:84.844%;font-size:2.085cqw">than 610.</span><i class="nl">
+</i><span data-w="0.49575" style="left:49.192%;top:90.701%;font-size:2.085cqw">d) Write your own sentence for the card that is </span><i class="nl">
+</i><span data-w="0.04032" style="left:49.192%;top:94.703%;font-size:2.085cqw">left.</span><i class="nl">
+</i><span data-w="0.01611" style="left:59.955%;top:44.809%;font-size:2.085cqw">A</span><i class="nl">
+</i><span data-w="0.01589" style="left:70.488%;top:44.809%;font-size:2.085cqw">B</span><i class="nl">
+</i><span data-w="0.01528" style="left:81.023%;top:44.809%;font-size:2.085cqw">C</span><i class="nl">
+</i><span data-w="0.01730" style="left:91.901%;top:44.488%;font-size:2.085cqw">D</span></div></div></section>
+<section class="trang" id="tr-15" data-tr="15"><div class="khung"><img src="anh/trang-15.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.28272" style="left:3.363%;top:40.851%;font-size:3.334cqw">Find the missing </span><i class="nl">
+</i><span data-w="0.15805" style="left:3.363%;top:47.259%;font-size:3.334cqw">numbers.</span><i class="nl">
+</i><span data-w="0.33362" style="left:3.363%;top:56.325%;font-size:3.334cqw">a) 56.602 x 1,000 =</span><i class="nl">
+</i><span data-w="0.11633" style="left:3.363%;top:65.296%;font-size:3.334cqw">b) 789 </span><span class="mo" data-w="0.03947" style="left:15.009%;top:65.296%;font-size:3.334cqw">÷ </span><span data-w="0.10208" style="left:18.960%;top:65.296%;font-size:3.334cqw">100 =</span><i class="nl">
+</i><span data-w="0.03130" style="left:3.363%;top:74.268%;font-size:3.334cqw">c)</span><span data-w="0.22029" style="left:7.583%;top:74.268%;font-size:3.334cqw">0.078 X 10 =</span><i class="nl">
+</i><span data-w="0.12693" style="left:3.363%;top:83.239%;font-size:3.334cqw">d) 0.95 </span><span class="mo" data-w="0.03947" style="left:16.069%;top:83.239%;font-size:3.334cqw">÷ </span><span data-w="0.10208" style="left:20.019%;top:83.239%;font-size:3.334cqw">100 =</span><i class="nl">
+</i><span data-w="0.25575" style="left:3.363%;top:92.210%;font-size:3.334cqw">e) 8.345 X 100 </span><span class="mo" data-w="0.03947" style="left:28.969%;top:92.210%;font-size:3.334cqw">÷ </span><span data-w="0.09537" style="left:32.920%;top:92.210%;font-size:3.334cqw">1,000</span><i class="nl">
+</i><span data-w="0.90516" style="left:2.430%;top:3.854%;font-size:2.085cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 </span><i class="nl">
+</i><span data-w="0.11218" style="left:2.430%;top:7.857%;font-size:2.085cqw">and 1,000.</span><i class="nl">
+</i><span data-w="0.07120" style="left:13.069%;top:20.280%;font-size:2.501cqw">Work </span><i class="nl">
+</i><span data-w="0.06090" style="left:13.069%;top:25.617%;font-size:2.501cqw">with </span><i class="nl">
+</i><span data-w="0.04757" style="left:13.069%;top:30.953%;font-size:2.501cqw">me.</span><i class="nl">
+</i><span data-w="0.07120" style="left:37.012%;top:20.380%;font-size:2.501cqw">Work </span><i class="nl">
+</i><span data-w="0.18394" style="left:37.012%;top:25.717%;font-size:2.501cqw">independently.</span><i class="nl">
+</i><span data-w="0.14445" style="left:34.559%;top:49.051%;font-size:3.750cqw">56,602</span><i class="nl">
+</i><span data-w="0.09240" style="left:26.400%;top:58.017%;font-size:3.750cqw">7.89</span><i class="nl">
+</i><span data-w="0.09240" style="left:28.249%;top:67.393%;font-size:3.750cqw">0.78</span><i class="nl">
+</i><span data-w="0.14449" style="left:28.249%;top:76.191%;font-size:3.750cqw">0.0095</span><i class="nl">
+</i><span data-w="0.14449" style="left:43.916%;top:85.561%;font-size:3.750cqw">0.8345</span></div></div></section>
+<section class="trang" id="tr-16" data-tr="16"><div class="khung"><img src="anh/trang-16.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.90516" style="left:2.430%;top:3.854%;font-size:2.085cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 </span><i class="nl">
+</i><span data-w="0.11218" style="left:2.430%;top:7.857%;font-size:2.085cqw">and 1,000.</span><i class="nl">
+</i><span data-w="0.36713" style="left:13.893%;top:32.255%;font-size:2.085cqw">Look at these number cards. Write </span><i class="nl">
+</i><span data-w="0.38387" style="left:13.893%;top:36.704%;font-size:2.085cqw">the correct letter of the card next to </span><i class="nl">
+</i><span data-w="0.22256" style="left:13.893%;top:41.153%;font-size:2.085cqw">the correct sentence.</span><i class="nl">
+</i><span data-w="0.04422" style="left:13.895%;top:54.664%;font-size:2.501cqw">6.1</span><i class="nl">
+</i><span data-w="0.01738" style="left:25.954%;top:56.024%;font-size:2.501cqw">6</span><i class="nl">
+</i><span data-w="0.01738" style="left:25.954%;top:61.361%;font-size:2.501cqw">1</span><i class="nl">
+</i><span data-w="0.05212" style="left:35.406%;top:55.840%;font-size:2.501cqw">610</span><i class="nl">
+</i><span data-w="0.04422" style="left:45.850%;top:56.024%;font-size:2.501cqw">0.6</span><i class="nl">
+</i><span data-w="0.01738" style="left:45.850%;top:61.361%;font-size:2.501cqw">1</span><i class="nl">
+</i><span data-w="0.02091" style="left:4.907%;top:68.256%;font-size:2.085cqw">a)</span><i class="nl">
+</i><span data-w="0.21749" style="left:9.127%;top:68.256%;font-size:2.085cqw">One hundredth of 61</span><i class="nl">
+</i><span data-w="0.02135" style="left:4.907%;top:74.113%;font-size:2.085cqw">b)</span><i class="nl">
+</i><span data-w="0.40509" style="left:9.127%;top:74.113%;font-size:2.085cqw">One thousand times bigger than 0.061</span><i class="nl">
+</i><span data-w="0.01958" style="left:4.907%;top:79.970%;font-size:2.085cqw">c)</span><i class="nl">
+</i><span data-w="0.42077" style="left:9.127%;top:79.970%;font-size:2.085cqw">The number one hundred times smaller </span><i class="nl">
+</i><span data-w="0.10044" style="left:9.127%;top:83.972%;font-size:2.085cqw">than 610.</span><i class="nl">
+</i><span data-w="0.49575" style="left:4.907%;top:89.829%;font-size:2.085cqw">d) Write your own sentence for the card that is </span><i class="nl">
+</i><span data-w="0.04032" style="left:4.907%;top:93.831%;font-size:2.085cqw">left.</span><i class="nl">
+</i><span data-w="0.01933" style="left:15.738%;top:46.848%;font-size:2.501cqw">A</span><i class="nl">
+</i><span data-w="0.01906" style="left:26.270%;top:46.848%;font-size:2.501cqw">B</span><i class="nl">
+</i><span data-w="0.01833" style="left:36.806%;top:46.848%;font-size:2.501cqw">C</span><i class="nl">
+</i><span data-w="0.02076" style="left:47.687%;top:46.527%;font-size:2.501cqw">D</span><i class="nl">
+</i><span data-w="0.02076" style="left:32.025%;top:67.926%;font-size:2.501cqw">D</span><i class="nl">
+</i><span data-w="0.01906" style="left:47.063%;top:73.946%;font-size:2.501cqw">B</span><i class="nl">
+</i><span data-w="0.01933" style="left:16.600%;top:83.663%;font-size:2.501cqw">A</span></div></div></section>
+<section class="trang" id="tr-17" data-tr="17"><div class="khung"><img src="anh/trang-17.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.82373" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Use knowledge of place value to multiply and divide whole </span><i class="nl">
+</i><span data-w="0.39464" style="left:2.430%;top:8.609%;font-size:2.501cqw">numbers by 10, 100 and 1,000.</span><i class="nl">
+</i><span data-w="0.22066" style="left:6.381%;top:54.159%;font-size:2.501cqw">With support, I </span><i class="nl">
+</i><span data-w="0.24381" style="left:5.223%;top:59.496%;font-size:2.501cqw">can multiply and </span><i class="nl">
+</i><span data-w="0.27450" style="left:3.688%;top:64.833%;font-size:2.501cqw">divide decimal and </span><i class="nl">
+</i><span data-w="0.26747" style="left:4.036%;top:70.169%;font-size:2.501cqw">whole numbers by </span><i class="nl">
+</i><span data-w="0.26342" style="left:3.800%;top:75.506%;font-size:2.501cqw">10, 100 and 1,000.</span><i class="nl">
+</i><span data-w="0.23824" style="left:39.192%;top:51.491%;font-size:2.501cqw">Independently, I </span><i class="nl">
+</i><span data-w="0.24381" style="left:38.917%;top:56.828%;font-size:2.501cqw">can multiply and </span><i class="nl">
+</i><span data-w="0.21318" style="left:40.446%;top:62.164%;font-size:2.501cqw">divide decimal </span><i class="nl">
+</i><span data-w="0.15343" style="left:43.435%;top:67.501%;font-size:2.501cqw">and whole </span><i class="nl">
+</i><span data-w="0.22818" style="left:39.696%;top:72.837%;font-size:2.501cqw">numbers by 10, </span><i class="nl">
+</i><span data-w="0.21048" style="left:40.142%;top:78.174%;font-size:2.501cqw">100 and 1,000.</span><i class="nl">
+</i><span data-w="0.24321" style="left:72.182%;top:55.095%;font-size:2.917cqw">I can write my </span><i class="nl">
+</i><span data-w="0.23108" style="left:72.788%;top:61.325%;font-size:2.917cqw">own question </span><i class="nl">
+</i><span data-w="0.26305" style="left:71.187%;top:67.554%;font-size:2.917cqw">when given the </span><i class="nl">
+</i><span data-w="0.12553" style="left:77.556%;top:73.784%;font-size:2.917cqw">answer.</span></div></div></section>
+<section class="trang" id="tr-18" data-tr="18"><div class="khung"><img src="anh/trang-18.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.18268" style="left:3.399%;top:14.110%;font-size:3.334cqw">Plenary – </span><i class="nl">
+</i><span data-w="0.66074" style="left:3.399%;top:27.689%;font-size:3.750cqw">There are ten buses in the carpark.</span><i class="nl">
+</i><span data-w="0.56782" style="left:3.399%;top:34.170%;font-size:3.750cqw">Each bus has ten people on it.</span><i class="nl">
+</i><span data-w="0.53564" style="left:3.399%;top:40.652%;font-size:3.750cqw">Each person has ten fingers.</span><i class="nl">
+</i><span data-w="0.87442" style="left:3.399%;top:53.615%;font-size:3.750cqw">One bus drives away. One person gets off one </span><i class="nl">
+</i><span data-w="0.73282" style="left:3.399%;top:60.097%;font-size:3.750cqw">of the remaining buses and leaves the </span><i class="nl">
+</i><span data-w="0.15454" style="left:3.399%;top:66.579%;font-size:3.750cqw">carpark.</span><i class="nl">
+</i><span data-w="0.79109" style="left:3.399%;top:79.542%;font-size:3.750cqw">How many fingers are left in the car park?</span><i class="nl">
+</i><span data-w="0.26502" style="left:69.918%;top:87.637%;font-size:4.166cqw">890 fingers</span><i class="nl">
+</i><span data-w="0.90516" style="left:3.399%;top:4.059%;font-size:2.085cqw">WALT: Use knowledge of place value to multiply and divide whole numbers by 10, 100 </span><i class="nl">
+</i><span data-w="0.11218" style="left:3.399%;top:8.062%;font-size:2.085cqw">and 1,000.</span></div></div></section>
 </main>
 
 
@@ -482,7 +711,12 @@
 
         <div class="sticky top-0 flex items-start gap-2 px-4 py-3 border-b border-slate-100 bg-white">
           <div class="flex-1 min-w-0">
-            <p class="font-semibold text-slate-900 break-words" x-text="tra.text"></p>
+            <!-- Giữ xuống dòng của đoạn đã chọn (`whitespace-pre-line`) và
+                 CHẶN chiều cao: một đoạn 20 dòng mà để nở tự do thì phần giải
+                 thích — thứ người ta mở popup để đọc — bị đẩy hẳn khỏi màn
+                 hình. Cuộn riêng trong ô này, không cuộn cả popup. -->
+            <p class="font-semibold text-slate-900 break-words whitespace-pre-line
+                      max-h-28 overflow-y-auto" x-text="tra.goc || tra.text"></p>
             <p x-show="tra.mode === 'word' && tra.sent" x-cloak
                class="mt-0.5 text-xs text-slate-400 line-clamp-2" x-text="tra.sent"></p>
           </div>
@@ -600,9 +834,18 @@
       pdfJsUrl: "../../../../assets/pdf.e73f3ce5.mjs",
       pdfWorkerUrl: "../../../../assets/pdf.worker.490b29ce.mjs",
       tiLe: 1.2, soTrang: 0, pdfLoi: '', srcNang: '',
-      mlMo: false, trangDang: 0, moUnit: {},
+      mlMo: false, trangDang: 0, moUnit: {}, mucDang: -1, unitDang: -1,
       // Trang bắt đầu của từng unit — để tự mở đúng unit đang đọc.
       unitTr: [1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 18],
+      // Trang mở đầu và CẤP của từng mục, theo đúng thứ tự vẽ ra. Cần cả hai
+      // để biết "đang đọc trang 15" thuộc mục nào: mục đang đọc là mục CUỐI
+      // CÙNG có trang mở đầu ≤ trang hiện tại, chứ không phải mục có trang mở
+      // đầu BẰNG trang hiện tại. Luật cũ (`===`) chỉ sáng đúng một trang duy
+      // nhất của mỗi mục, còn 9/10 thời gian đọc thì mục lục không sáng gì.
+      mlP: [1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 18],
+      // ⚠ `default=1`: mục lục một cấp KHÔNG có trường `c`, và `map` trả về
+      // `Undefined` — `tojson` nổ ngay lúc build, cả trang trắng.
+      mlC: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
       tim: '', soKq: 0, viTri: 0,
       user: "pl", course: "cie-maths-5",
       secret: localStorage.getItem('lms_key') || '',
@@ -683,7 +926,10 @@
        */
       timKiem() {
         if (!_sp) {
-          _sp = Array.from(document.querySelectorAll('.chu span'))
+          // `:not(.mo)` — bỏ qua số trang, tiêu đề chạy, dấu mờ. Không lọc
+          // thì tìm "Rocks" ra 30 kết quả trùng nhau ở tiêu đề chạy của từng
+          // trang trong unit đó, đẩy kết quả thật xuống dưới.
+          _sp = Array.from(document.querySelectorAll('.chu span:not(.mo)'))
                      .map((e) => [e, (e.textContent || '').toLowerCase()]);
         }
         for (const e of _kq) e.classList.remove('tim', 'tim-nay');
@@ -749,6 +995,14 @@
           for (let i = 0; i < this.unitTr.length; i++) {
             if (this.unitTr[i] <= this.trangDang) u = i + 1;
           }
+          let a = -1, b = -1;
+          for (let i = 0; i < this.mlP.length; i++) {
+            if (this.mlP[i] > this.trangDang) break;
+            a = i;
+            if (this.mlC[i] !== 2) b = i;
+          }
+          this.mucDang = a;
+          this.unitDang = b;
           if (u && !this.moUnit[u]) this.moUnit[u] = true;
         }, { rootMargin: '-10% 0px -80% 0px' });
         document.querySelectorAll('.trang[data-tr], #pdfjs [data-trang]')
@@ -929,7 +1183,7 @@
         // Nghĩa của một từ phụ thuộc CÂU chứa nó và BÀI đang học, nên không dựng
         // sẵn được: `sedimentary` trong bài về đá không giống ở chỗ khác. Vì vậy
         // gọi Gemini lúc bấm, kèm thuật ngữ của mục đang mở.
-        tra: { btn: null, show: false, mode: 'word', text: '', sent: '',
+        tra: { btn: null, show: false, mode: 'word', text: '', goc: '', sent: '',
                loading: false, err: '', ly_do: '', data: null },
 
         /** Nới vùng chọn ra nguyên từ: kéo lệch nửa chữ vẫn tra đúng từ. */
@@ -1043,11 +1297,21 @@
           // mà cũng hiện nút thì nút chắn mất đúng thứ người ta đang gõ.
           if (!el || !el.closest || !el.closest('[data-tra]')) return;
           const r = this._noRong(r0);
+          // Hai bản của cùng một đoạn, cố ý:
+          //  · `text`  — đã dồn khoảng trắng, dùng để GỌI API, đo độ dài, tra
+          //    glossary và làm khoá lịch sử. Giữ nguyên hành vi cũ.
+          //  · `goc`   — giữ nguyên xuống dòng, chỉ để HIỆN LẠI cho người đọc.
+          // Trước đây chỉ có bản dồn, nên bôi đen một khổ thơ hay một danh sách
+          // thì popup hiện một dòng dài dính liền, không còn nhận ra là đã chọn
+          // đúng chỗ nào.
+          const goc = (r.toString() || '').replace(/[ \t]+\n/g, '\n')
+                        .replace(/\n{3,}/g, '\n\n').trim();
           const text = (r.toString() || '').replace(/\s+/g, ' ').trim();
           if (!text || !/[A-Za-z]/.test(text) || text.length > 600) return;
           const b = r.getBoundingClientRect();
           if (!b.width && !b.height) return;
           this.tra.text = text;
+          this.tra.goc = goc;
           this.tra.sent = this._cauChua(r, text);
           this.tra.mode = text.split(/\s+/).length <= 3 ? 'word' : 'text';
           // Không có mã bí mật thì chỉ hiện nút khi tra offline ra được cái gì.

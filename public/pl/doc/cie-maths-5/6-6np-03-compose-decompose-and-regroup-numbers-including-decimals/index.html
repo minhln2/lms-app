@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>6. 6Np.03 – Compose, decompose and regroup numbers including decimals..pptx · CIE Maths 5</title>
-<link rel="stylesheet" href="../../../../assets/tw.4432dbec.css">
+<link rel="stylesheet" href="../../../../assets/tw.4b97d341.css">
 <style>
   [x-cloak] { display: none !important; }
   #pdf { width:100%; height:calc(100vh - 8.5rem); border:0; }
@@ -18,14 +18,31 @@
      Toạ độ theo % và cỡ chữ theo `cqw` nên co giãn thuần CSS. KHÔNG nhân tỉ lệ
      bằng JS trên cả khối rồi lại scaleX từng đoạn: hai tầng transform lồng nhau
      đo bằng getBoundingClientRect (đã gồm transform cha) cho ra 2% số từ đúng chỗ. */
+  /* Nhãn "Trang 17/161" là của MÌNH, không phải nội dung sách. Để chọn được
+     thì kéo chuột qua hai trang liền nhau lại lôi luôn nó vào giữa đoạn chép
+     ra — người dùng báo đúng chuyện này. */
+  .stt { user-select:none; -webkit-user-select:none; }
   .khung { position:relative; container-type:inline-size; overflow:hidden; }
-  .khung > img { display:block; width:100%; height:auto; }
+  /* ⚠ Ảnh trang phải TRONG SUỐT với chuột và ngón tay. Nó nằm dưới lớp chữ,
+     nhưng giữ để bôi đen thì trình duyệt vẫn bắt được nó và bung menu ảnh
+     ("Lưu ảnh", "Sao chép ảnh") — cú bôi đen đang dở bị huỷ, và người dùng
+     tưởng trang không cho chọn chữ. Bốn thuộc tính, mỗi cái chặn một đường:
+     `pointer-events` (chuột), `user-select` (kéo chọn), `-webkit-user-drag`
+     (kéo thả ảnh đi), `-webkit-touch-callout` (giữ lâu trên iOS).
+     Áp cho CẢ `img.dong` (GIF động): chúng cũng nằm dưới lớp chữ. */
+  .khung > img { display:block; width:100%; height:auto;
+                 pointer-events:none; user-select:none; -webkit-user-select:none;
+                 -webkit-user-drag:none; -webkit-touch-callout:none; }
   .khung > img.dong { position:absolute; width:auto; height:auto; object-fit:fill; }
   .chu { position:absolute; inset:0; }
   /* Dấu mờ ("SAMPLE") và tiêu đề chạy: vẫn ở đó cho lớp chữ trung thực với
      bản gốc, nhưng KHÔNG chắn tay người đọc. Thiếu dòng này thì kéo chuột qua
      một câu trong sách lại chọn trúng chữ `SAMPLE` phủ kín trang. */
   .chu span.mo { pointer-events: none; user-select: none; }
+  /* Dấu xuống dòng CHÉP ĐƯỢC giữa hai dòng chữ. Phải nằm TRONG LUỒNG và
+     chứa ký tự thật; `font-size:0` để nó không chiếm một pixel nào. Xem
+     `doc_view.py` cho ba cách đã thử và trượt. */
+  .chu i.nl { white-space:pre; font-size:0; }
   .chu span { position:absolute; white-space:pre; color:transparent;
               line-height:1; transform-origin:0 0; }
   .chu span::selection { background:#6366f180; color:transparent; }
@@ -138,6 +155,8 @@
        class="mt-2 lg:mt-0 rounded-lg border border-slate-200 bg-white p-2 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
     <p class="px-2 pb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Mục lục</p>
     
+    
+    
     <ol class="space-y-0.5">
       
       
@@ -151,7 +170,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[1] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(1); moUnit[1] = true"
-                  :class="trangDang === 1 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 0 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">1</span>
             <span class="min-w-0">Maths</span>
@@ -170,7 +189,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[2] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(3); moUnit[2] = true"
-                  :class="trangDang === 3 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 1 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">3</span>
             <span class="min-w-0">Retrieval Practice –</span>
@@ -189,7 +208,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[3] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(4); moUnit[3] = true"
-                  :class="trangDang === 4 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 2 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">4</span>
             <span class="min-w-0">Starter – What do the following words mean?</span>
@@ -208,7 +227,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[4] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(5); moUnit[4] = true"
-                  :class="trangDang === 5 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 3 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">5</span>
             <span class="min-w-0">We can use our knowledge of place value to decompose decimal nu</span>
@@ -227,7 +246,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[5] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(6); moUnit[5] = true"
-                  :class="trangDang === 6 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 4 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">6</span>
             <span class="min-w-0">We can use our knowledge of place value to decompose decimal nu (2)</span>
@@ -246,7 +265,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[6] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(7); moUnit[6] = true"
-                  :class="trangDang === 7 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 5 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">7</span>
             <span class="min-w-0">We can use our knowledge of place value to compose decimal numb</span>
@@ -265,7 +284,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[7] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(8); moUnit[7] = true"
-                  :class="trangDang === 8 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 6 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">8</span>
             <span class="min-w-0">Check your understanding.</span>
@@ -284,7 +303,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[8] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(9); moUnit[8] = true"
-                  :class="trangDang === 9 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 7 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">9</span>
             <span class="min-w-0">Regrouping is when we exchange different amounts between differ</span>
@@ -303,7 +322,7 @@
                   class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
                   x-text="moUnit[9] ? '▾' : '▸'"></button>
           <button type="button" @click="toiTrang(15); moUnit[9] = true"
-                  :class="trangDang === 15 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  :class="unitDang === 8 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
                   class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
             <span class="tabular-nums text-slate-400 shrink-0">15</span>
             <span class="min-w-0">Plenary – Two stars and a wish. Tell your partner two things th</span>
@@ -321,21 +340,178 @@
 
 <main data-tra x-show="che === 'doc'" class="px-4 py-4">
 
-<section class="trang" id="tr-1" data-tr="1"><p class="stt">Trang 1/15</p><div class="khung"><img src="anh/trang-1.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.33363" style="left:31.665%;top:1.859%;font-size:10.001cqw">Maths </span><span data-w="0.17944" style="left:6.797%;top:46.229%;font-size:5.625cqw">WALT: </span><span data-w="0.56516" style="left:24.759%;top:48.637%;font-size:4.166cqw">Compose, decompose and </span><span data-w="0.77464" style="left:6.797%;top:57.193%;font-size:4.166cqw">regroup numbers including decimals.</span><span data-w="0.20822" style="left:75.664%;top:8.949%;font-size:1.875cqw">Unit 1.1 – Place Value </span></div></div></section>
-<section class="trang" id="tr-2" data-tr="2"><p class="stt">Trang 2/15</p><div class="khung"><img src="anh/trang-2.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><span data-w="0.24432" style="left:5.268%;top:55.095%;font-size:2.917cqw">I can compose </span><span data-w="0.26757" style="left:4.104%;top:61.325%;font-size:2.917cqw">and decompose </span><span data-w="0.13787" style="left:10.594%;top:67.554%;font-size:2.917cqw">decimal </span><span data-w="0.15505" style="left:9.224%;top:73.784%;font-size:2.917cqw">numbers.</span><span data-w="0.15660" style="left:43.349%;top:45.751%;font-size:2.917cqw">I can use </span><span data-w="0.23656" style="left:39.348%;top:51.980%;font-size:2.917cqw">regrouping to </span><span data-w="0.23274" style="left:39.534%;top:58.210%;font-size:2.917cqw">solve missing </span><span data-w="0.13691" style="left:44.335%;top:64.439%;font-size:2.917cqw">number </span><span data-w="0.17075" style="left:42.640%;top:70.669%;font-size:2.917cqw">questions </span><span data-w="0.16016" style="left:43.166%;top:76.898%;font-size:2.917cqw">involving </span><span data-w="0.15613" style="left:42.868%;top:83.128%;font-size:2.917cqw">decimals.</span><span data-w="0.15660" style="left:76.514%;top:51.980%;font-size:2.917cqw">I can use </span><span data-w="0.23656" style="left:72.513%;top:58.210%;font-size:2.917cqw">regrouping to </span><span data-w="0.22594" style="left:73.045%;top:64.439%;font-size:2.917cqw">decompose a </span><span data-w="0.17775" style="left:75.457%;top:70.669%;font-size:2.917cqw">number in </span><span data-w="0.24867" style="left:71.394%;top:76.898%;font-size:2.917cqw">multiple ways. </span></div></div></section>
-<section class="trang" id="tr-3" data-tr="3"><p class="stt">Trang 3/15</p><div class="khung"><img src="anh/trang-3.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.42093" style="left:3.092%;top:14.699%;font-size:3.750cqw">Retrieval Practice – </span><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><span data-w="0.59102" style="left:3.647%;top:34.017%;font-size:3.334cqw">Ms. Colette says “5,807 divided by </span><span data-w="0.23459" style="left:3.647%;top:41.134%;font-size:3.334cqw">1,000 is 5.87”</span><span data-w="0.24182" style="left:3.647%;top:55.369%;font-size:3.334cqw">Is she correct?</span><span data-w="0.49127" style="left:3.647%;top:69.603%;font-size:3.334cqw">What mistake has she made?</span></div></div></section>
-<section class="trang" id="tr-4" data-tr="4"><p class="stt">Trang 4/15</p><div class="khung"><img src="anh/trang-4.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.75019" style="left:3.269%;top:16.081%;font-size:4.166cqw">Starter – What do the following </span><span data-w="0.32439" style="left:3.269%;top:24.081%;font-size:4.166cqw">words mean? </span><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><span data-w="0.23546" style="left:8.070%;top:45.869%;font-size:4.583cqw">Compose</span><span data-w="0.29810" style="left:8.070%;top:63.471%;font-size:4.583cqw">Decompose</span><span data-w="0.21855" style="left:8.070%;top:81.072%;font-size:4.583cqw">Regroup</span><span data-w="0.30914" style="left:42.044%;top:45.448%;font-size:4.166cqw">Put together.</span><span data-w="0.39826" style="left:42.041%;top:64.105%;font-size:4.166cqw">Break down into </span><span data-w="0.13878" style="left:42.041%;top:72.998%;font-size:4.166cqw">parts.</span><span data-w="0.43192" style="left:42.044%;top:79.947%;font-size:4.166cqw">Change the way a </span><span data-w="0.43575" style="left:42.044%;top:88.840%;font-size:4.166cqw">number is written.</span></div></div></section>
-<section class="trang" id="tr-5" data-tr="5"><p class="stt">Trang 5/15</p><div class="khung"><img src="anh/trang-5.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.65306" style="left:2.430%;top:16.268%;font-size:2.917cqw">We can use our knowledge of place value to </span><span data-w="0.18609" style="left:67.780%;top:16.268%;font-size:2.917cqw">decompose</span><span data-w="0.13317" style="left:86.391%;top:16.268%;font-size:2.917cqw"> decimal </span><span data-w="0.13799" style="left:2.430%;top:21.862%;font-size:2.917cqw">numbers.</span><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><span data-w="0.28905" style="left:30.900%;top:28.017%;font-size:7.500cqw">34.832</span><span data-w="0.37167" style="left:5.153%;top:47.997%;font-size:7.500cqw">30+4+0.</span><span data-w="0.05212" style="left:27.980%;top:64.638%;font-size:7.500cqw">8</span><span data-w="0.19552" style="left:46.296%;top:48.628%;font-size:7.500cqw">+0.0</span><span data-w="0.05212" style="left:46.296%;top:64.638%;font-size:7.500cqw">3</span><span data-w="0.24765" style="left:67.612%;top:48.628%;font-size:7.500cqw">+0.00</span><span data-w="0.05212" style="left:67.612%;top:64.638%;font-size:7.500cqw">2</span><span data-w="0.59523" style="left:2.427%;top:70.760%;font-size:3.750cqw">How have we decomposed this </span><span data-w="0.16605" style="left:2.427%;top:77.966%;font-size:3.750cqw">number?</span><span data-w="0.84029" style="left:2.430%;top:86.355%;font-size:3.750cqw">It has been decomposed into its place value.</span></div></div></section>
-<section class="trang" id="tr-6" data-tr="6"><p class="stt">Trang 6/15</p><div class="khung"><img src="anh/trang-6.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.60760" style="left:2.430%;top:12.916%;font-size:2.708cqw">We can use our knowledge of place value to </span><span data-w="0.17307" style="left:63.292%;top:12.916%;font-size:2.708cqw">decompose</span><span data-w="0.12385" style="left:80.630%;top:12.916%;font-size:2.708cqw"> decimal </span><span data-w="0.12837" style="left:2.430%;top:18.116%;font-size:2.708cqw">numbers.</span><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><span data-w="0.28905" style="left:30.153%;top:23.620%;font-size:7.500cqw">34.832</span><span data-w="0.37167" style="left:5.235%;top:43.049%;font-size:7.500cqw">30+4+0.</span><span data-w="0.05212" style="left:28.063%;top:59.690%;font-size:7.500cqw">8</span><span data-w="0.19552" style="left:46.381%;top:43.680%;font-size:7.500cqw">+0.0</span><span data-w="0.05212" style="left:46.381%;top:59.690%;font-size:7.500cqw">3</span><span data-w="0.24765" style="left:67.697%;top:43.680%;font-size:7.500cqw">+0.00</span><span data-w="0.05212" style="left:67.697%;top:59.690%;font-size:7.500cqw">2</span><span data-w="0.89215" style="left:2.811%;top:66.868%;font-size:3.750cqw">Is this the only way to decompose the number?</span><span data-w="0.84224" style="left:2.814%;top:78.314%;font-size:2.814cqw">No, but we call this regrouping which we will look at </span><span data-w="0.08149" style="left:2.814%;top:83.183%;font-size:2.814cqw">later.</span></div></div></section>
-<section class="trang" id="tr-7" data-tr="7"><p class="stt">Trang 7/15</p><div class="khung"><img src="anh/trang-7.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.74810" style="left:2.430%;top:14.866%;font-size:3.334cqw">We can use our knowledge of place value to </span><span data-w="0.16665" style="left:77.317%;top:14.866%;font-size:3.334cqw">compose</span><span data-w="0.30003" style="left:2.430%;top:21.274%;font-size:3.334cqw">decimal numbers.</span><span class="mo" data-w="0.88437" style="left:2.427%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><span data-w="0.93026" style="left:5.666%;top:33.934%;font-size:6.251cqw">400 + 30 + 2 + 0.9 + 0.01 </span><span data-w="0.05232" style="left:5.666%;top:47.275%;font-size:6.251cqw">=</span><span data-w="0.28905" style="left:32.826%;top:68.010%;font-size:7.500cqw">432.91</span></div></div></section>
-<section class="trang" id="tr-8" data-tr="8"><p class="stt">Trang 8/15</p><div class="khung"><img src="anh/trang-8.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.76220" style="left:2.430%;top:19.507%;font-size:4.999cqw">Check your understanding.</span><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><span data-w="0.62482" style="left:2.415%;top:34.899%;font-size:2.917cqw">Compose a number using these parts.</span><span data-w="0.64279" style="left:2.415%;top:56.445%;font-size:2.917cqw">Decompose this number into it’s parts.</span><span data-w="0.53189" style="left:2.415%;top:44.513%;font-size:3.750cqw">500 + 8 + 0.05 + 0.009 =</span><span data-w="0.17055" style="left:2.415%;top:67.850%;font-size:3.750cqw">650.403</span><span data-w="0.25588" style="left:62.161%;top:43.319%;font-size:5.625cqw">508.059</span><span data-w="0.59625" style="left:29.840%;top:74.864%;font-size:4.583cqw">600 + 50 + 0.4 + 0.003</span></div></div></section>
-<section class="trang" id="tr-9" data-tr="9"><p class="stt">Trang 9/15</p><div class="khung"><img src="anh/trang-9.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.22984" style="left:2.430%;top:15.076%;font-size:3.334cqw">Regrouping </span><span data-w="0.67732" style="left:25.402%;top:15.076%;font-size:3.334cqw">is when we exchange different amounts </span><span data-w="0.52621" style="left:2.430%;top:21.485%;font-size:3.334cqw">between different place values.</span><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><span data-w="0.19271" style="left:8.796%;top:38.191%;font-size:4.999cqw">42.329</span><span data-w="0.64137" style="left:8.796%;top:51.821%;font-size:4.999cqw">40+2+0.3+0.02+0.009</span><span data-w="0.67607" style="left:8.796%;top:64.149%;font-size:4.999cqw">30+12+0.3+0.02+0.009</span><span data-w="0.56464" style="left:8.796%;top:76.162%;font-size:4.999cqw">42+0.1+0.22+0.009</span></div></div></section>
-<section class="trang" id="tr-10" data-tr="10"><p class="stt">Trang 10/15</p><div class="khung"><img src="anh/trang-10.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><span data-w="0.28773" style="left:2.418%;top:32.444%;font-size:2.085cqw">Compose these parts to </span><span data-w="0.18764" style="left:2.418%;top:36.893%;font-size:2.085cqw">make a number.</span><span data-w="0.02091" style="left:2.418%;top:45.791%;font-size:2.085cqw">a)</span><span data-w="0.21164" style="left:5.232%;top:45.791%;font-size:2.085cqw">90 + 7 + 0.1 + 0.05</span><span data-w="0.02135" style="left:2.418%;top:50.240%;font-size:2.085cqw">b)</span><span data-w="0.25139" style="left:5.232%;top:50.240%;font-size:2.085cqw">500 + 3 + 0.04 + 0.003</span><span data-w="0.01958" style="left:2.418%;top:54.689%;font-size:2.085cqw">c)</span><span data-w="0.21161" style="left:5.232%;top:54.689%;font-size:2.085cqw">3,000 + 20 + 0.4 + </span><span data-w="0.05964" style="left:5.232%;top:59.138%;font-size:2.085cqw">0.001</span><span data-w="0.21578" style="left:2.418%;top:68.036%;font-size:2.085cqw">Decompose these </span><span data-w="0.22767" style="left:2.418%;top:72.485%;font-size:2.085cqw">numbers into their </span><span data-w="0.06950" style="left:2.418%;top:76.933%;font-size:2.085cqw">parts.</span><span data-w="0.10100" style="left:2.418%;top:85.831%;font-size:2.085cqw">d) 425.25</span><span data-w="0.10061" style="left:2.418%;top:90.280%;font-size:2.085cqw">e) 92.086</span><span data-w="0.11426" style="left:2.418%;top:94.729%;font-size:2.085cqw">g) 210.064</span><span data-w="0.41468" style="left:29.867%;top:32.439%;font-size:2.085cqw">Use your knowledge of regrouping </span><span data-w="0.33938" style="left:29.867%;top:36.888%;font-size:2.085cqw">to find the missing numbers.</span><span data-w="0.40031" style="left:29.867%;top:49.315%;font-size:1.875cqw">e) 773.23 = 700 + 70 + _____+ 0.2 + 0.03</span><span data-w="0.31886" style="left:29.867%;top:55.319%;font-size:1.875cqw">f) 0.582 = ______ +  _____ + 0.002</span><span data-w="0.28910" style="left:29.867%;top:61.322%;font-size:1.875cqw">g) 2.405 = 2 + 0.4 +  ______    </span><span data-w="0.32748" style="left:29.867%;top:67.326%;font-size:1.875cqw">h) 0.934 = _______ + _____ + 0.004</span><span data-w="0.38790" style="left:29.867%;top:73.330%;font-size:1.875cqw">i) 57.12 = 40 + _____ + 7 + 0.1 + _______</span><span data-w="0.39384" style="left:29.867%;top:79.333%;font-size:1.875cqw">j) 219.901 = 100 + ______ + 9 + ______ + </span><span data-w="0.05355" style="left:29.867%;top:85.337%;font-size:1.875cqw">0.001</span><span data-w="0.23669" style="left:73.325%;top:32.444%;font-size:2.085cqw">k) Conject: How many </span><span data-w="0.24391" style="left:73.325%;top:36.893%;font-size:2.085cqw">different ways can you </span><span data-w="0.22521" style="left:73.325%;top:41.342%;font-size:2.085cqw">regroup this number?</span><span data-w="0.13262" style="left:73.325%;top:50.347%;font-size:2.917cqw">782.493</span><span data-w="0.20665" style="left:73.325%;top:60.918%;font-size:2.085cqw">Now write as many </span><span data-w="0.23004" style="left:73.325%;top:65.367%;font-size:2.085cqw">different ways as you </span><span data-w="0.04401" style="left:73.325%;top:69.816%;font-size:2.085cqw">can.</span><span data-w="0.24758" style="left:73.325%;top:78.714%;font-size:2.085cqw">Compare your answers </span><span data-w="0.20859" style="left:73.325%;top:83.163%;font-size:2.085cqw">with someone else. </span><span data-w="0.21960" style="left:73.325%;top:87.612%;font-size:2.085cqw">Was your conjecture </span><span data-w="0.08401" style="left:73.325%;top:92.061%;font-size:2.085cqw">correct?</span></div></div></section>
-<section class="trang" id="tr-11" data-tr="11"><p class="stt">Trang 11/15</p><div class="khung"><img src="anh/trang-11.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><span data-w="0.47541" style="left:2.418%;top:32.444%;font-size:2.085cqw">Compose these parts to make a number.</span><span data-w="0.02091" style="left:2.418%;top:41.342%;font-size:2.085cqw">a)</span><span data-w="0.21164" style="left:5.232%;top:41.342%;font-size:2.085cqw">90 + 7 + 0.1 + 0.05</span><span data-w="0.02135" style="left:2.418%;top:45.791%;font-size:2.085cqw">b)</span><span data-w="0.25139" style="left:5.232%;top:45.791%;font-size:2.085cqw">500 + 3 + 0.04 + 0.003</span><span data-w="0.01958" style="left:2.418%;top:50.240%;font-size:2.085cqw">c)</span><span data-w="0.27136" style="left:5.232%;top:50.240%;font-size:2.085cqw">3,000 + 20 + 0.4 + 0.001</span><span data-w="0.51316" style="left:2.418%;top:59.138%;font-size:2.085cqw">Decompose these numbers into their parts.</span><span data-w="0.10100" style="left:2.418%;top:68.036%;font-size:2.085cqw">d) 425.25</span><span data-w="0.10061" style="left:2.418%;top:72.485%;font-size:2.085cqw">e) 92.086</span><span data-w="0.11426" style="left:2.418%;top:76.933%;font-size:2.085cqw">g) 210.064</span><span data-w="0.14522" style="left:55.739%;top:27.761%;font-size:2.917cqw">a)97.105</span><span data-w="0.17682" style="left:55.739%;top:37.105%;font-size:2.917cqw">b) 503.043</span><span data-w="0.20456" style="left:55.739%;top:46.449%;font-size:2.917cqw">c) 3,020.401</span><span data-w="0.04428" style="left:55.739%;top:65.138%;font-size:2.917cqw">d) </span><span data-w="0.34249" style="left:55.739%;top:74.482%;font-size:2.917cqw">400+20+5+0.2+0.05</span><span data-w="0.34100" style="left:55.739%;top:83.827%;font-size:2.917cqw">e) 90+2+0.08+0.006</span><span data-w="0.04428" style="left:55.739%;top:93.171%;font-size:2.917cqw">g) </span></div></div></section>
-<section class="trang" id="tr-12" data-tr="12"><p class="stt">Trang 12/15</p><div class="khung"><img src="anh/trang-12.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><span data-w="0.62266" style="left:8.235%;top:27.818%;font-size:2.917cqw">Use your knowledge of regrouping to </span><span data-w="0.42948" style="left:8.235%;top:34.048%;font-size:2.917cqw">find the missing numbers.</span><span data-w="0.23265" style="left:8.235%;top:48.375%;font-size:1.875cqw">e) 773.23 = 700 + 70 + </span><span data-w="0.01781" style="left:31.523%;top:48.375%;font-size:1.875cqw">3 </span><span data-w="0.11467" style="left:33.310%;top:48.375%;font-size:1.875cqw">+0.2 + 0.03</span><span data-w="0.10101" style="left:8.235%;top:54.378%;font-size:1.875cqw">f) 0.582 = </span><span data-w="0.02977" style="left:18.348%;top:54.378%;font-size:1.875cqw">0.5</span><span data-w="0.03352" style="left:21.325%;top:54.378%;font-size:1.875cqw"> +  </span><span data-w="0.04168" style="left:24.676%;top:54.378%;font-size:1.875cqw">0.08</span><span data-w="0.08122" style="left:28.839%;top:54.378%;font-size:1.875cqw"> + 0.002</span><span data-w="0.20910" style="left:8.235%;top:60.382%;font-size:1.875cqw">g) 2.405 = 2 + 0.4 +  </span><span data-w="0.05355" style="left:29.173%;top:60.382%;font-size:1.875cqw">0.005</span><span data-w="0.10637" style="left:8.235%;top:66.386%;font-size:1.875cqw">h) 0.934 = </span><span data-w="0.02977" style="left:18.874%;top:66.386%;font-size:1.875cqw">0.9</span><span data-w="0.02752" style="left:21.850%;top:66.386%;font-size:1.875cqw"> + </span><span data-w="0.04168" style="left:24.614%;top:66.386%;font-size:1.875cqw">0.03</span><span data-w="0.08122" style="left:28.777%;top:66.386%;font-size:1.875cqw"> + 0.004</span><span data-w="0.15101" style="left:8.235%;top:72.390%;font-size:1.875cqw">i) 57.12 = 40 + </span><span data-w="0.02379" style="left:23.359%;top:72.390%;font-size:1.875cqw">10</span><span data-w="0.12439" style="left:25.733%;top:72.390%;font-size:1.875cqw"> + 7 + 0.1 + </span><span data-w="0.04168" style="left:38.196%;top:72.390%;font-size:1.875cqw">0.02</span><span data-w="0.18675" style="left:8.235%;top:78.393%;font-size:1.875cqw">j) 219.901 = 100 + </span><span data-w="0.03566" style="left:26.935%;top:78.393%;font-size:1.875cqw">110</span><span data-w="0.06699" style="left:30.511%;top:78.393%;font-size:1.875cqw"> + 9 + </span><span data-w="0.02977" style="left:37.222%;top:78.393%;font-size:1.875cqw">0.9</span><span data-w="0.08122" style="left:40.198%;top:78.393%;font-size:1.875cqw"> + 0.001</span></div></div></section>
-<section class="trang" id="tr-13" data-tr="13"><p class="stt">Trang 13/15</p><div class="khung"><img src="anh/trang-13.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.88437" style="left:1.828%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><span data-w="0.84735" style="left:4.488%;top:38.844%;font-size:2.917cqw">i) Conject: How many different ways can you regroup this </span><span data-w="0.12909" style="left:4.488%;top:45.073%;font-size:2.917cqw">number?</span><span data-w="0.17055" style="left:4.488%;top:57.639%;font-size:3.750cqw">782.493</span><span data-w="0.67097" style="left:4.488%;top:71.767%;font-size:2.917cqw">Now write as many different ways as you can.</span><span data-w="0.78040" style="left:4.488%;top:84.226%;font-size:2.917cqw">Compare your answers with someone else. Was your </span><span data-w="0.28000" style="left:4.488%;top:90.455%;font-size:2.917cqw">conjecture correct?</span></div></div></section>
-<section class="trang" id="tr-14" data-tr="14"><p class="stt">Trang 14/15</p><div class="khung"><img src="anh/trang-14.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.76490" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including </span><span data-w="0.17279" style="left:2.430%;top:8.609%;font-size:2.501cqw">decimals.com</span><span data-w="0.24432" style="left:5.268%;top:55.095%;font-size:2.917cqw">I can compose </span><span data-w="0.26757" style="left:4.104%;top:61.325%;font-size:2.917cqw">and decompose </span><span data-w="0.13787" style="left:10.594%;top:67.554%;font-size:2.917cqw">decimal </span><span data-w="0.15505" style="left:9.224%;top:73.784%;font-size:2.917cqw">numbers.</span><span data-w="0.15660" style="left:43.349%;top:45.751%;font-size:2.917cqw">I can use </span><span data-w="0.23656" style="left:39.348%;top:51.980%;font-size:2.917cqw">regrouping to </span><span data-w="0.23274" style="left:39.534%;top:58.210%;font-size:2.917cqw">solve missing </span><span data-w="0.13691" style="left:44.335%;top:64.439%;font-size:2.917cqw">number </span><span data-w="0.17075" style="left:42.640%;top:70.669%;font-size:2.917cqw">questions </span><span data-w="0.16016" style="left:43.166%;top:76.898%;font-size:2.917cqw">involving </span><span data-w="0.15613" style="left:42.868%;top:83.128%;font-size:2.917cqw">decimals.</span><span data-w="0.15660" style="left:76.514%;top:51.980%;font-size:2.917cqw">I can use </span><span data-w="0.23656" style="left:72.513%;top:58.210%;font-size:2.917cqw">regrouping to </span><span data-w="0.22594" style="left:73.045%;top:64.439%;font-size:2.917cqw">decompose a </span><span data-w="0.17775" style="left:75.457%;top:70.669%;font-size:2.917cqw">number in </span><span data-w="0.24867" style="left:71.394%;top:76.898%;font-size:2.917cqw">multiple ways. </span></div></div></section>
-<section class="trang" id="tr-15" data-tr="15"><p class="stt">Trang 15/15</p><div class="khung"><img src="anh/trang-15.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.49539" style="left:3.399%;top:24.365%;font-size:2.814cqw">Plenary – Two stars and a wish.</span><span data-w="0.87474" style="left:3.399%;top:29.775%;font-size:2.814cqw">Tell your partner two things that went well and one thing that </span><span data-w="0.75841" style="left:3.399%;top:35.185%;font-size:2.814cqw">you want to do in the future regarding today’s lesson.</span><span class="mo" data-w="0.88437" style="left:3.399%;top:3.157%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span></div></div></section>
+<section class="trang" id="tr-1" data-tr="1"><div class="khung"><img src="anh/trang-1.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.33363" style="left:31.665%;top:1.859%;font-size:10.001cqw">Maths </span><i class="nl">
+</i><span data-w="0.17944" style="left:6.797%;top:46.229%;font-size:5.625cqw">WALT: </span><span data-w="0.56516" style="left:24.759%;top:48.637%;font-size:4.166cqw">Compose, decompose and </span><i class="nl">
+</i><span data-w="0.77464" style="left:6.797%;top:57.193%;font-size:4.166cqw">regroup numbers including decimals.</span><i class="nl">
+</i><span data-w="0.20822" style="left:75.664%;top:8.949%;font-size:1.875cqw">Unit 1.1 – Place Value </span></div></div></section>
+<section class="trang" id="tr-2" data-tr="2"><div class="khung"><img src="anh/trang-2.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><i class="nl">
+</i><span data-w="0.24432" style="left:5.268%;top:55.095%;font-size:2.917cqw">I can compose </span><i class="nl">
+</i><span data-w="0.26757" style="left:4.104%;top:61.325%;font-size:2.917cqw">and decompose </span><i class="nl">
+</i><span data-w="0.13787" style="left:10.594%;top:67.554%;font-size:2.917cqw">decimal </span><i class="nl">
+</i><span data-w="0.15505" style="left:9.224%;top:73.784%;font-size:2.917cqw">numbers.</span><i class="nl">
+</i><span data-w="0.15660" style="left:43.349%;top:45.751%;font-size:2.917cqw">I can use </span><i class="nl">
+</i><span data-w="0.23656" style="left:39.348%;top:51.980%;font-size:2.917cqw">regrouping to </span><i class="nl">
+</i><span data-w="0.23274" style="left:39.534%;top:58.210%;font-size:2.917cqw">solve missing </span><i class="nl">
+</i><span data-w="0.13691" style="left:44.335%;top:64.439%;font-size:2.917cqw">number </span><i class="nl">
+</i><span data-w="0.17075" style="left:42.640%;top:70.669%;font-size:2.917cqw">questions </span><i class="nl">
+</i><span data-w="0.16016" style="left:43.166%;top:76.898%;font-size:2.917cqw">involving </span><i class="nl">
+</i><span data-w="0.15613" style="left:42.868%;top:83.128%;font-size:2.917cqw">decimals.</span><i class="nl">
+</i><span data-w="0.15660" style="left:76.514%;top:51.980%;font-size:2.917cqw">I can use </span><i class="nl">
+</i><span data-w="0.23656" style="left:72.513%;top:58.210%;font-size:2.917cqw">regrouping to </span><i class="nl">
+</i><span data-w="0.22594" style="left:73.045%;top:64.439%;font-size:2.917cqw">decompose a </span><i class="nl">
+</i><span data-w="0.17775" style="left:75.457%;top:70.669%;font-size:2.917cqw">number in </span><i class="nl">
+</i><span data-w="0.24867" style="left:71.394%;top:76.898%;font-size:2.917cqw">multiple ways. </span></div></div></section>
+<section class="trang" id="tr-3" data-tr="3"><div class="khung"><img src="anh/trang-3.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.42093" style="left:3.092%;top:14.699%;font-size:3.750cqw">Retrieval Practice – </span><i class="nl">
+</i><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><i class="nl">
+</i><span data-w="0.59102" style="left:3.647%;top:34.017%;font-size:3.334cqw">Ms. Colette says “5,807 divided by </span><i class="nl">
+</i><span data-w="0.23459" style="left:3.647%;top:41.134%;font-size:3.334cqw">1,000 is 5.87”</span><i class="nl">
+</i><span data-w="0.24182" style="left:3.647%;top:55.369%;font-size:3.334cqw">Is she correct?</span><i class="nl">
+</i><span data-w="0.49127" style="left:3.647%;top:69.603%;font-size:3.334cqw">What mistake has she made?</span></div></div></section>
+<section class="trang" id="tr-4" data-tr="4"><div class="khung"><img src="anh/trang-4.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.75019" style="left:3.269%;top:16.081%;font-size:4.166cqw">Starter – What do the following </span><i class="nl">
+</i><span data-w="0.32439" style="left:3.269%;top:24.081%;font-size:4.166cqw">words mean? </span><i class="nl">
+</i><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><i class="nl">
+</i><span data-w="0.23546" style="left:8.070%;top:45.869%;font-size:4.583cqw">Compose</span><i class="nl">
+</i><span data-w="0.29810" style="left:8.070%;top:63.471%;font-size:4.583cqw">Decompose</span><i class="nl">
+</i><span data-w="0.21855" style="left:8.070%;top:81.072%;font-size:4.583cqw">Regroup</span><i class="nl">
+</i><span data-w="0.30914" style="left:42.044%;top:45.448%;font-size:4.166cqw">Put together.</span><i class="nl">
+</i><span data-w="0.39826" style="left:42.041%;top:64.105%;font-size:4.166cqw">Break down into </span><i class="nl">
+</i><span data-w="0.13878" style="left:42.041%;top:72.998%;font-size:4.166cqw">parts.</span><i class="nl">
+</i><span data-w="0.43192" style="left:42.044%;top:79.947%;font-size:4.166cqw">Change the way a </span><i class="nl">
+</i><span data-w="0.43575" style="left:42.044%;top:88.840%;font-size:4.166cqw">number is written.</span></div></div></section>
+<section class="trang" id="tr-5" data-tr="5"><div class="khung"><img src="anh/trang-5.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.65306" style="left:2.430%;top:16.268%;font-size:2.917cqw">We can use our knowledge of place value to </span><span data-w="0.18609" style="left:67.780%;top:16.268%;font-size:2.917cqw">decompose</span><span data-w="0.13317" style="left:86.391%;top:16.268%;font-size:2.917cqw"> decimal </span><i class="nl">
+</i><span data-w="0.13799" style="left:2.430%;top:21.862%;font-size:2.917cqw">numbers.</span><i class="nl">
+</i><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><i class="nl">
+</i><span data-w="0.28905" style="left:30.900%;top:28.017%;font-size:7.500cqw">34.832</span><i class="nl">
+</i><span data-w="0.37167" style="left:5.153%;top:47.997%;font-size:7.500cqw">30+4+0.</span><i class="nl">
+</i><span data-w="0.05212" style="left:27.980%;top:64.638%;font-size:7.500cqw">8</span><i class="nl">
+</i><span data-w="0.19552" style="left:46.296%;top:48.628%;font-size:7.500cqw">+0.0</span><i class="nl">
+</i><span data-w="0.05212" style="left:46.296%;top:64.638%;font-size:7.500cqw">3</span><i class="nl">
+</i><span data-w="0.24765" style="left:67.612%;top:48.628%;font-size:7.500cqw">+0.00</span><i class="nl">
+</i><span data-w="0.05212" style="left:67.612%;top:64.638%;font-size:7.500cqw">2</span><i class="nl">
+</i><span data-w="0.59523" style="left:2.427%;top:70.760%;font-size:3.750cqw">How have we decomposed this </span><i class="nl">
+</i><span data-w="0.16605" style="left:2.427%;top:77.966%;font-size:3.750cqw">number?</span><i class="nl">
+</i><span data-w="0.84029" style="left:2.430%;top:86.355%;font-size:3.750cqw">It has been decomposed into its place value.</span></div></div></section>
+<section class="trang" id="tr-6" data-tr="6"><div class="khung"><img src="anh/trang-6.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.60760" style="left:2.430%;top:12.916%;font-size:2.708cqw">We can use our knowledge of place value to </span><span data-w="0.17307" style="left:63.292%;top:12.916%;font-size:2.708cqw">decompose</span><span data-w="0.12385" style="left:80.630%;top:12.916%;font-size:2.708cqw"> decimal </span><i class="nl">
+</i><span data-w="0.12837" style="left:2.430%;top:18.116%;font-size:2.708cqw">numbers.</span><i class="nl">
+</i><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><i class="nl">
+</i><span data-w="0.28905" style="left:30.153%;top:23.620%;font-size:7.500cqw">34.832</span><i class="nl">
+</i><span data-w="0.37167" style="left:5.235%;top:43.049%;font-size:7.500cqw">30+4+0.</span><i class="nl">
+</i><span data-w="0.05212" style="left:28.063%;top:59.690%;font-size:7.500cqw">8</span><i class="nl">
+</i><span data-w="0.19552" style="left:46.381%;top:43.680%;font-size:7.500cqw">+0.0</span><i class="nl">
+</i><span data-w="0.05212" style="left:46.381%;top:59.690%;font-size:7.500cqw">3</span><i class="nl">
+</i><span data-w="0.24765" style="left:67.697%;top:43.680%;font-size:7.500cqw">+0.00</span><i class="nl">
+</i><span data-w="0.05212" style="left:67.697%;top:59.690%;font-size:7.500cqw">2</span><i class="nl">
+</i><span data-w="0.89215" style="left:2.811%;top:66.868%;font-size:3.750cqw">Is this the only way to decompose the number?</span><i class="nl">
+</i><span data-w="0.84224" style="left:2.814%;top:78.314%;font-size:2.814cqw">No, but we call this regrouping which we will look at </span><i class="nl">
+</i><span data-w="0.08149" style="left:2.814%;top:83.183%;font-size:2.814cqw">later.</span></div></div></section>
+<section class="trang" id="tr-7" data-tr="7"><div class="khung"><img src="anh/trang-7.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.74810" style="left:2.430%;top:14.866%;font-size:3.334cqw">We can use our knowledge of place value to </span><span data-w="0.16665" style="left:77.317%;top:14.866%;font-size:3.334cqw">compose</span><i class="nl">
+</i><span data-w="0.30003" style="left:2.430%;top:21.274%;font-size:3.334cqw">decimal numbers.</span><i class="nl">
+</i><span class="mo" data-w="0.88437" style="left:2.427%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><i class="nl">
+</i><span data-w="0.93026" style="left:5.666%;top:33.934%;font-size:6.251cqw">400 + 30 + 2 + 0.9 + 0.01 </span><i class="nl">
+</i><span data-w="0.05232" style="left:5.666%;top:47.275%;font-size:6.251cqw">=</span><i class="nl">
+</i><span data-w="0.28905" style="left:32.826%;top:68.010%;font-size:7.500cqw">432.91</span></div></div></section>
+<section class="trang" id="tr-8" data-tr="8"><div class="khung"><img src="anh/trang-8.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.76220" style="left:2.430%;top:19.507%;font-size:4.999cqw">Check your understanding.</span><i class="nl">
+</i><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><i class="nl">
+</i><span data-w="0.62482" style="left:2.415%;top:34.899%;font-size:2.917cqw">Compose a number using these parts.</span><i class="nl">
+</i><span data-w="0.64279" style="left:2.415%;top:56.445%;font-size:2.917cqw">Decompose this number into it’s parts.</span><i class="nl">
+</i><span data-w="0.53189" style="left:2.415%;top:44.513%;font-size:3.750cqw">500 + 8 + 0.05 + 0.009 =</span><i class="nl">
+</i><span data-w="0.17055" style="left:2.415%;top:67.850%;font-size:3.750cqw">650.403</span><i class="nl">
+</i><span data-w="0.25588" style="left:62.161%;top:43.319%;font-size:5.625cqw">508.059</span><i class="nl">
+</i><span data-w="0.59625" style="left:29.840%;top:74.864%;font-size:4.583cqw">600 + 50 + 0.4 + 0.003</span></div></div></section>
+<section class="trang" id="tr-9" data-tr="9"><div class="khung"><img src="anh/trang-9.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.22984" style="left:2.430%;top:15.076%;font-size:3.334cqw">Regrouping </span><span data-w="0.67732" style="left:25.402%;top:15.076%;font-size:3.334cqw">is when we exchange different amounts </span><i class="nl">
+</i><span data-w="0.52621" style="left:2.430%;top:21.485%;font-size:3.334cqw">between different place values.</span><i class="nl">
+</i><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><i class="nl">
+</i><span data-w="0.19271" style="left:8.796%;top:38.191%;font-size:4.999cqw">42.329</span><i class="nl">
+</i><span data-w="0.64137" style="left:8.796%;top:51.821%;font-size:4.999cqw">40+2+0.3+0.02+0.009</span><i class="nl">
+</i><span data-w="0.67607" style="left:8.796%;top:64.149%;font-size:4.999cqw">30+12+0.3+0.02+0.009</span><i class="nl">
+</i><span data-w="0.56464" style="left:8.796%;top:76.162%;font-size:4.999cqw">42+0.1+0.22+0.009</span></div></div></section>
+<section class="trang" id="tr-10" data-tr="10"><div class="khung"><img src="anh/trang-10.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><i class="nl">
+</i><span data-w="0.28773" style="left:2.418%;top:32.444%;font-size:2.085cqw">Compose these parts to </span><i class="nl">
+</i><span data-w="0.18764" style="left:2.418%;top:36.893%;font-size:2.085cqw">make a number.</span><i class="nl">
+</i><span data-w="0.02091" style="left:2.418%;top:45.791%;font-size:2.085cqw">a)</span><span data-w="0.21164" style="left:5.232%;top:45.791%;font-size:2.085cqw">90 + 7 + 0.1 + 0.05</span><i class="nl">
+</i><span data-w="0.02135" style="left:2.418%;top:50.240%;font-size:2.085cqw">b)</span><span data-w="0.25139" style="left:5.232%;top:50.240%;font-size:2.085cqw">500 + 3 + 0.04 + 0.003</span><i class="nl">
+</i><span data-w="0.01958" style="left:2.418%;top:54.689%;font-size:2.085cqw">c)</span><span data-w="0.21161" style="left:5.232%;top:54.689%;font-size:2.085cqw">3,000 + 20 + 0.4 + </span><i class="nl">
+</i><span data-w="0.05964" style="left:5.232%;top:59.138%;font-size:2.085cqw">0.001</span><i class="nl">
+</i><span data-w="0.21578" style="left:2.418%;top:68.036%;font-size:2.085cqw">Decompose these </span><i class="nl">
+</i><span data-w="0.22767" style="left:2.418%;top:72.485%;font-size:2.085cqw">numbers into their </span><i class="nl">
+</i><span data-w="0.06950" style="left:2.418%;top:76.933%;font-size:2.085cqw">parts.</span><i class="nl">
+</i><span data-w="0.10100" style="left:2.418%;top:85.831%;font-size:2.085cqw">d) 425.25</span><i class="nl">
+</i><span data-w="0.10061" style="left:2.418%;top:90.280%;font-size:2.085cqw">e) 92.086</span><i class="nl">
+</i><span data-w="0.11426" style="left:2.418%;top:94.729%;font-size:2.085cqw">g) 210.064</span><i class="nl">
+</i><span data-w="0.41468" style="left:29.867%;top:32.439%;font-size:2.085cqw">Use your knowledge of regrouping </span><i class="nl">
+</i><span data-w="0.33938" style="left:29.867%;top:36.888%;font-size:2.085cqw">to find the missing numbers.</span><i class="nl">
+</i><span data-w="0.40031" style="left:29.867%;top:49.315%;font-size:1.875cqw">e) 773.23 = 700 + 70 + _____+ 0.2 + 0.03</span><i class="nl">
+</i><span data-w="0.31886" style="left:29.867%;top:55.319%;font-size:1.875cqw">f) 0.582 = ______ +  _____ + 0.002</span><i class="nl">
+</i><span data-w="0.28910" style="left:29.867%;top:61.322%;font-size:1.875cqw">g) 2.405 = 2 + 0.4 +  ______    </span><i class="nl">
+</i><span data-w="0.32748" style="left:29.867%;top:67.326%;font-size:1.875cqw">h) 0.934 = _______ + _____ + 0.004</span><i class="nl">
+</i><span data-w="0.38790" style="left:29.867%;top:73.330%;font-size:1.875cqw">i) 57.12 = 40 + _____ + 7 + 0.1 + _______</span><i class="nl">
+</i><span data-w="0.39384" style="left:29.867%;top:79.333%;font-size:1.875cqw">j) 219.901 = 100 + ______ + 9 + ______ + </span><i class="nl">
+</i><span data-w="0.05355" style="left:29.867%;top:85.337%;font-size:1.875cqw">0.001</span><i class="nl">
+</i><span data-w="0.23669" style="left:73.325%;top:32.444%;font-size:2.085cqw">k) Conject: How many </span><i class="nl">
+</i><span data-w="0.24391" style="left:73.325%;top:36.893%;font-size:2.085cqw">different ways can you </span><i class="nl">
+</i><span data-w="0.22521" style="left:73.325%;top:41.342%;font-size:2.085cqw">regroup this number?</span><i class="nl">
+</i><span data-w="0.13262" style="left:73.325%;top:50.347%;font-size:2.917cqw">782.493</span><i class="nl">
+</i><span data-w="0.20665" style="left:73.325%;top:60.918%;font-size:2.085cqw">Now write as many </span><i class="nl">
+</i><span data-w="0.23004" style="left:73.325%;top:65.367%;font-size:2.085cqw">different ways as you </span><i class="nl">
+</i><span data-w="0.04401" style="left:73.325%;top:69.816%;font-size:2.085cqw">can.</span><i class="nl">
+</i><span data-w="0.24758" style="left:73.325%;top:78.714%;font-size:2.085cqw">Compare your answers </span><i class="nl">
+</i><span data-w="0.20859" style="left:73.325%;top:83.163%;font-size:2.085cqw">with someone else. </span><i class="nl">
+</i><span data-w="0.21960" style="left:73.325%;top:87.612%;font-size:2.085cqw">Was your conjecture </span><i class="nl">
+</i><span data-w="0.08401" style="left:73.325%;top:92.061%;font-size:2.085cqw">correct?</span></div></div></section>
+<section class="trang" id="tr-11" data-tr="11"><div class="khung"><img src="anh/trang-11.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><i class="nl">
+</i><span data-w="0.47541" style="left:2.418%;top:32.444%;font-size:2.085cqw">Compose these parts to make a number.</span><i class="nl">
+</i><span data-w="0.02091" style="left:2.418%;top:41.342%;font-size:2.085cqw">a)</span><span data-w="0.21164" style="left:5.232%;top:41.342%;font-size:2.085cqw">90 + 7 + 0.1 + 0.05</span><i class="nl">
+</i><span data-w="0.02135" style="left:2.418%;top:45.791%;font-size:2.085cqw">b)</span><span data-w="0.25139" style="left:5.232%;top:45.791%;font-size:2.085cqw">500 + 3 + 0.04 + 0.003</span><i class="nl">
+</i><span data-w="0.01958" style="left:2.418%;top:50.240%;font-size:2.085cqw">c)</span><span data-w="0.27136" style="left:5.232%;top:50.240%;font-size:2.085cqw">3,000 + 20 + 0.4 + 0.001</span><i class="nl">
+</i><span data-w="0.51316" style="left:2.418%;top:59.138%;font-size:2.085cqw">Decompose these numbers into their parts.</span><i class="nl">
+</i><span data-w="0.10100" style="left:2.418%;top:68.036%;font-size:2.085cqw">d) 425.25</span><i class="nl">
+</i><span data-w="0.10061" style="left:2.418%;top:72.485%;font-size:2.085cqw">e) 92.086</span><i class="nl">
+</i><span data-w="0.11426" style="left:2.418%;top:76.933%;font-size:2.085cqw">g) 210.064</span><i class="nl">
+</i><span data-w="0.14522" style="left:55.739%;top:27.761%;font-size:2.917cqw">a)97.105</span><i class="nl">
+</i><span data-w="0.17682" style="left:55.739%;top:37.105%;font-size:2.917cqw">b) 503.043</span><i class="nl">
+</i><span data-w="0.20456" style="left:55.739%;top:46.449%;font-size:2.917cqw">c) 3,020.401</span><i class="nl">
+</i><span data-w="0.04428" style="left:55.739%;top:65.138%;font-size:2.917cqw">d) </span><i class="nl">
+</i><span data-w="0.34249" style="left:55.739%;top:74.482%;font-size:2.917cqw">400+20+5+0.2+0.05</span><i class="nl">
+</i><span data-w="0.34100" style="left:55.739%;top:83.827%;font-size:2.917cqw">e) 90+2+0.08+0.006</span><i class="nl">
+</i><span data-w="0.04428" style="left:55.739%;top:93.171%;font-size:2.917cqw">g) </span></div></div></section>
+<section class="trang" id="tr-12" data-tr="12"><div class="khung"><img src="anh/trang-12.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.88437" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><i class="nl">
+</i><span data-w="0.62266" style="left:8.235%;top:27.818%;font-size:2.917cqw">Use your knowledge of regrouping to </span><i class="nl">
+</i><span data-w="0.42948" style="left:8.235%;top:34.048%;font-size:2.917cqw">find the missing numbers.</span><i class="nl">
+</i><span data-w="0.23265" style="left:8.235%;top:48.375%;font-size:1.875cqw">e) 773.23 = 700 + 70 + </span><span data-w="0.01781" style="left:31.523%;top:48.375%;font-size:1.875cqw">3 </span><span data-w="0.11467" style="left:33.310%;top:48.375%;font-size:1.875cqw">+0.2 + 0.03</span><i class="nl">
+</i><span data-w="0.10101" style="left:8.235%;top:54.378%;font-size:1.875cqw">f) 0.582 = </span><span data-w="0.02977" style="left:18.348%;top:54.378%;font-size:1.875cqw">0.5</span><span data-w="0.03352" style="left:21.325%;top:54.378%;font-size:1.875cqw"> +  </span><span data-w="0.04168" style="left:24.676%;top:54.378%;font-size:1.875cqw">0.08</span><span data-w="0.08122" style="left:28.839%;top:54.378%;font-size:1.875cqw"> + 0.002</span><i class="nl">
+</i><span data-w="0.20910" style="left:8.235%;top:60.382%;font-size:1.875cqw">g) 2.405 = 2 + 0.4 +  </span><span data-w="0.05355" style="left:29.173%;top:60.382%;font-size:1.875cqw">0.005</span><i class="nl">
+</i><span data-w="0.10637" style="left:8.235%;top:66.386%;font-size:1.875cqw">h) 0.934 = </span><span data-w="0.02977" style="left:18.874%;top:66.386%;font-size:1.875cqw">0.9</span><span data-w="0.02752" style="left:21.850%;top:66.386%;font-size:1.875cqw"> + </span><span data-w="0.04168" style="left:24.614%;top:66.386%;font-size:1.875cqw">0.03</span><span data-w="0.08122" style="left:28.777%;top:66.386%;font-size:1.875cqw"> + 0.004</span><i class="nl">
+</i><span data-w="0.15101" style="left:8.235%;top:72.390%;font-size:1.875cqw">i) 57.12 = 40 + </span><span data-w="0.02379" style="left:23.359%;top:72.390%;font-size:1.875cqw">10</span><span data-w="0.12439" style="left:25.733%;top:72.390%;font-size:1.875cqw"> + 7 + 0.1 + </span><span data-w="0.04168" style="left:38.196%;top:72.390%;font-size:1.875cqw">0.02</span><i class="nl">
+</i><span data-w="0.18675" style="left:8.235%;top:78.393%;font-size:1.875cqw">j) 219.901 = 100 + </span><span data-w="0.03566" style="left:26.935%;top:78.393%;font-size:1.875cqw">110</span><span data-w="0.06699" style="left:30.511%;top:78.393%;font-size:1.875cqw"> + 9 + </span><span data-w="0.02977" style="left:37.222%;top:78.393%;font-size:1.875cqw">0.9</span><span data-w="0.08122" style="left:40.198%;top:78.393%;font-size:1.875cqw"> + 0.001</span></div></div></section>
+<section class="trang" id="tr-13" data-tr="13"><div class="khung"><img src="anh/trang-13.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.88437" style="left:1.828%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span><i class="nl">
+</i><span data-w="0.84735" style="left:4.488%;top:38.844%;font-size:2.917cqw">i) Conject: How many different ways can you regroup this </span><i class="nl">
+</i><span data-w="0.12909" style="left:4.488%;top:45.073%;font-size:2.917cqw">number?</span><i class="nl">
+</i><span data-w="0.17055" style="left:4.488%;top:57.639%;font-size:3.750cqw">782.493</span><i class="nl">
+</i><span data-w="0.67097" style="left:4.488%;top:71.767%;font-size:2.917cqw">Now write as many different ways as you can.</span><i class="nl">
+</i><span data-w="0.78040" style="left:4.488%;top:84.226%;font-size:2.917cqw">Compare your answers with someone else. Was your </span><i class="nl">
+</i><span data-w="0.28000" style="left:4.488%;top:90.455%;font-size:2.917cqw">conjecture correct?</span></div></div></section>
+<section class="trang" id="tr-14" data-tr="14"><div class="khung"><img src="anh/trang-14.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.76490" style="left:2.430%;top:3.808%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including </span><i class="nl">
+</i><span data-w="0.17279" style="left:2.430%;top:8.609%;font-size:2.501cqw">decimals.com</span><i class="nl">
+</i><span data-w="0.24432" style="left:5.268%;top:55.095%;font-size:2.917cqw">I can compose </span><i class="nl">
+</i><span data-w="0.26757" style="left:4.104%;top:61.325%;font-size:2.917cqw">and decompose </span><i class="nl">
+</i><span data-w="0.13787" style="left:10.594%;top:67.554%;font-size:2.917cqw">decimal </span><i class="nl">
+</i><span data-w="0.15505" style="left:9.224%;top:73.784%;font-size:2.917cqw">numbers.</span><i class="nl">
+</i><span data-w="0.15660" style="left:43.349%;top:45.751%;font-size:2.917cqw">I can use </span><i class="nl">
+</i><span data-w="0.23656" style="left:39.348%;top:51.980%;font-size:2.917cqw">regrouping to </span><i class="nl">
+</i><span data-w="0.23274" style="left:39.534%;top:58.210%;font-size:2.917cqw">solve missing </span><i class="nl">
+</i><span data-w="0.13691" style="left:44.335%;top:64.439%;font-size:2.917cqw">number </span><i class="nl">
+</i><span data-w="0.17075" style="left:42.640%;top:70.669%;font-size:2.917cqw">questions </span><i class="nl">
+</i><span data-w="0.16016" style="left:43.166%;top:76.898%;font-size:2.917cqw">involving </span><i class="nl">
+</i><span data-w="0.15613" style="left:42.868%;top:83.128%;font-size:2.917cqw">decimals.</span><i class="nl">
+</i><span data-w="0.15660" style="left:76.514%;top:51.980%;font-size:2.917cqw">I can use </span><i class="nl">
+</i><span data-w="0.23656" style="left:72.513%;top:58.210%;font-size:2.917cqw">regrouping to </span><i class="nl">
+</i><span data-w="0.22594" style="left:73.045%;top:64.439%;font-size:2.917cqw">decompose a </span><i class="nl">
+</i><span data-w="0.17775" style="left:75.457%;top:70.669%;font-size:2.917cqw">number in </span><i class="nl">
+</i><span data-w="0.24867" style="left:71.394%;top:76.898%;font-size:2.917cqw">multiple ways. </span></div></div></section>
+<section class="trang" id="tr-15" data-tr="15"><div class="khung"><img src="anh/trang-15.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.49539" style="left:3.399%;top:24.365%;font-size:2.814cqw">Plenary – Two stars and a wish.</span><i class="nl">
+</i><span data-w="0.87474" style="left:3.399%;top:29.775%;font-size:2.814cqw">Tell your partner two things that went well and one thing that </span><i class="nl">
+</i><span data-w="0.75841" style="left:3.399%;top:35.185%;font-size:2.814cqw">you want to do in the future regarding today’s lesson.</span><i class="nl">
+</i><span class="mo" data-w="0.88437" style="left:3.399%;top:3.157%;font-size:2.501cqw">WALT: Compose, decompose and regroup numbers including decimals.</span></div></div></section>
 </main>
 
 
@@ -403,7 +579,12 @@
 
         <div class="sticky top-0 flex items-start gap-2 px-4 py-3 border-b border-slate-100 bg-white">
           <div class="flex-1 min-w-0">
-            <p class="font-semibold text-slate-900 break-words" x-text="tra.text"></p>
+            <!-- Giữ xuống dòng của đoạn đã chọn (`whitespace-pre-line`) và
+                 CHẶN chiều cao: một đoạn 20 dòng mà để nở tự do thì phần giải
+                 thích — thứ người ta mở popup để đọc — bị đẩy hẳn khỏi màn
+                 hình. Cuộn riêng trong ô này, không cuộn cả popup. -->
+            <p class="font-semibold text-slate-900 break-words whitespace-pre-line
+                      max-h-28 overflow-y-auto" x-text="tra.goc || tra.text"></p>
             <p x-show="tra.mode === 'word' && tra.sent" x-cloak
                class="mt-0.5 text-xs text-slate-400 line-clamp-2" x-text="tra.sent"></p>
           </div>
@@ -521,9 +702,18 @@
       pdfJsUrl: "../../../../assets/pdf.e73f3ce5.mjs",
       pdfWorkerUrl: "../../../../assets/pdf.worker.490b29ce.mjs",
       tiLe: 1.2, soTrang: 0, pdfLoi: '', srcNang: '',
-      mlMo: false, trangDang: 0, moUnit: {},
+      mlMo: false, trangDang: 0, moUnit: {}, mucDang: -1, unitDang: -1,
       // Trang bắt đầu của từng unit — để tự mở đúng unit đang đọc.
       unitTr: [1, 3, 4, 5, 6, 7, 8, 9, 15],
+      // Trang mở đầu và CẤP của từng mục, theo đúng thứ tự vẽ ra. Cần cả hai
+      // để biết "đang đọc trang 15" thuộc mục nào: mục đang đọc là mục CUỐI
+      // CÙNG có trang mở đầu ≤ trang hiện tại, chứ không phải mục có trang mở
+      // đầu BẰNG trang hiện tại. Luật cũ (`===`) chỉ sáng đúng một trang duy
+      // nhất của mỗi mục, còn 9/10 thời gian đọc thì mục lục không sáng gì.
+      mlP: [1, 3, 4, 5, 6, 7, 8, 9, 15],
+      // ⚠ `default=1`: mục lục một cấp KHÔNG có trường `c`, và `map` trả về
+      // `Undefined` — `tojson` nổ ngay lúc build, cả trang trắng.
+      mlC: [1, 1, 1, 1, 1, 1, 1, 1, 1],
       tim: '', soKq: 0, viTri: 0,
       user: "pl", course: "cie-maths-5",
       secret: localStorage.getItem('lms_key') || '',
@@ -604,7 +794,10 @@
        */
       timKiem() {
         if (!_sp) {
-          _sp = Array.from(document.querySelectorAll('.chu span'))
+          // `:not(.mo)` — bỏ qua số trang, tiêu đề chạy, dấu mờ. Không lọc
+          // thì tìm "Rocks" ra 30 kết quả trùng nhau ở tiêu đề chạy của từng
+          // trang trong unit đó, đẩy kết quả thật xuống dưới.
+          _sp = Array.from(document.querySelectorAll('.chu span:not(.mo)'))
                      .map((e) => [e, (e.textContent || '').toLowerCase()]);
         }
         for (const e of _kq) e.classList.remove('tim', 'tim-nay');
@@ -670,6 +863,14 @@
           for (let i = 0; i < this.unitTr.length; i++) {
             if (this.unitTr[i] <= this.trangDang) u = i + 1;
           }
+          let a = -1, b = -1;
+          for (let i = 0; i < this.mlP.length; i++) {
+            if (this.mlP[i] > this.trangDang) break;
+            a = i;
+            if (this.mlC[i] !== 2) b = i;
+          }
+          this.mucDang = a;
+          this.unitDang = b;
           if (u && !this.moUnit[u]) this.moUnit[u] = true;
         }, { rootMargin: '-10% 0px -80% 0px' });
         document.querySelectorAll('.trang[data-tr], #pdfjs [data-trang]')
@@ -850,7 +1051,7 @@
         // Nghĩa của một từ phụ thuộc CÂU chứa nó và BÀI đang học, nên không dựng
         // sẵn được: `sedimentary` trong bài về đá không giống ở chỗ khác. Vì vậy
         // gọi Gemini lúc bấm, kèm thuật ngữ của mục đang mở.
-        tra: { btn: null, show: false, mode: 'word', text: '', sent: '',
+        tra: { btn: null, show: false, mode: 'word', text: '', goc: '', sent: '',
                loading: false, err: '', ly_do: '', data: null },
 
         /** Nới vùng chọn ra nguyên từ: kéo lệch nửa chữ vẫn tra đúng từ. */
@@ -964,11 +1165,21 @@
           // mà cũng hiện nút thì nút chắn mất đúng thứ người ta đang gõ.
           if (!el || !el.closest || !el.closest('[data-tra]')) return;
           const r = this._noRong(r0);
+          // Hai bản của cùng một đoạn, cố ý:
+          //  · `text`  — đã dồn khoảng trắng, dùng để GỌI API, đo độ dài, tra
+          //    glossary và làm khoá lịch sử. Giữ nguyên hành vi cũ.
+          //  · `goc`   — giữ nguyên xuống dòng, chỉ để HIỆN LẠI cho người đọc.
+          // Trước đây chỉ có bản dồn, nên bôi đen một khổ thơ hay một danh sách
+          // thì popup hiện một dòng dài dính liền, không còn nhận ra là đã chọn
+          // đúng chỗ nào.
+          const goc = (r.toString() || '').replace(/[ \t]+\n/g, '\n')
+                        .replace(/\n{3,}/g, '\n\n').trim();
           const text = (r.toString() || '').replace(/\s+/g, ' ').trim();
           if (!text || !/[A-Za-z]/.test(text) || text.length > 600) return;
           const b = r.getBoundingClientRect();
           if (!b.width && !b.height) return;
           this.tra.text = text;
+          this.tra.goc = goc;
           this.tra.sent = this._cauChua(r, text);
           this.tra.mode = text.split(/\s+/).length <= 3 ? 'word' : 'text';
           // Không có mã bí mật thì chỉ hiện nút khi tra offline ra được cái gì.

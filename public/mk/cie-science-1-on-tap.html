@@ -9,7 +9,7 @@
   <title>Ôn tập · CIE Science 1</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.4432dbec.css">
+  <link rel="stylesheet" href="../assets/tw.4b97d341.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -864,7 +864,7 @@
         // Nghĩa của một từ phụ thuộc CÂU chứa nó và BÀI đang học, nên không dựng
         // sẵn được: `sedimentary` trong bài về đá không giống ở chỗ khác. Vì vậy
         // gọi Gemini lúc bấm, kèm thuật ngữ của mục đang mở.
-        tra: { btn: null, show: false, mode: 'word', text: '', sent: '',
+        tra: { btn: null, show: false, mode: 'word', text: '', goc: '', sent: '',
                loading: false, err: '', ly_do: '', data: null },
 
         /** Nới vùng chọn ra nguyên từ: kéo lệch nửa chữ vẫn tra đúng từ. */
@@ -978,11 +978,21 @@
           // mà cũng hiện nút thì nút chắn mất đúng thứ người ta đang gõ.
           if (!el || !el.closest || !el.closest('[data-tra]')) return;
           const r = this._noRong(r0);
+          // Hai bản của cùng một đoạn, cố ý:
+          //  · `text`  — đã dồn khoảng trắng, dùng để GỌI API, đo độ dài, tra
+          //    glossary và làm khoá lịch sử. Giữ nguyên hành vi cũ.
+          //  · `goc`   — giữ nguyên xuống dòng, chỉ để HIỆN LẠI cho người đọc.
+          // Trước đây chỉ có bản dồn, nên bôi đen một khổ thơ hay một danh sách
+          // thì popup hiện một dòng dài dính liền, không còn nhận ra là đã chọn
+          // đúng chỗ nào.
+          const goc = (r.toString() || '').replace(/[ \t]+\n/g, '\n')
+                        .replace(/\n{3,}/g, '\n\n').trim();
           const text = (r.toString() || '').replace(/\s+/g, ' ').trim();
           if (!text || !/[A-Za-z]/.test(text) || text.length > 600) return;
           const b = r.getBoundingClientRect();
           if (!b.width && !b.height) return;
           this.tra.text = text;
+          this.tra.goc = goc;
           this.tra.sent = this._cauChua(r, text);
           this.tra.mode = text.split(/\s+/).length <= 3 ? 'word' : 'text';
           // Không có mã bí mật thì chỉ hiện nút khi tra offline ra được cái gì.
@@ -2732,7 +2742,12 @@
 
         <div class="sticky top-0 flex items-start gap-2 px-4 py-3 border-b border-slate-100 bg-white">
           <div class="flex-1 min-w-0">
-            <p class="font-semibold text-slate-900 break-words" x-text="tra.text"></p>
+            <!-- Giữ xuống dòng của đoạn đã chọn (`whitespace-pre-line`) và
+                 CHẶN chiều cao: một đoạn 20 dòng mà để nở tự do thì phần giải
+                 thích — thứ người ta mở popup để đọc — bị đẩy hẳn khỏi màn
+                 hình. Cuộn riêng trong ô này, không cuộn cả popup. -->
+            <p class="font-semibold text-slate-900 break-words whitespace-pre-line
+                      max-h-28 overflow-y-auto" x-text="tra.goc || tra.text"></p>
             <p x-show="tra.mode === 'word' && tra.sent" x-cloak
                class="mt-0.5 text-xs text-slate-400 line-clamp-2" x-text="tra.sent"></p>
           </div>
