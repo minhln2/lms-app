@@ -1026,7 +1026,20 @@
           // Chỉ bắt trong vùng nội dung: bôi đen ở ô tìm kiếm hay thanh chế độ
           // mà cũng hiện nút thì nút chắn mất đúng thứ người ta đang gõ.
           if (!el || !el.closest || !el.closest('[data-tra]')) return;
-          const r = this._noRong(r0);
+          // ⚠ PHẢI nhân bản. `getRangeAt(0)` trả về Range SỐNG của vùng
+          // chọn, nên `setStart`/`setEnd` trong `_noRong` sửa thẳng vùng
+          // người dùng ĐANG kéo — và thao tác đó chuẩn hoá chiều thành xuôi,
+          // tức lật điểm focus từ đầu xuống cuối. Kéo xuôi vô hại (focus vốn
+          // ở cuối); kéo NGƯỢC thì cú kéo tiếp theo tính từ chỗ khác và vùng
+          // chọn co lại. Người dùng báo: "kéo từ trên xuống thì được, từ dưới
+          // lên thì không".
+          //
+          // ⚠ Chuột mô phỏng chạy liền tay KHÔNG tái hiện được: handler chờ
+          // 120ms sau cú di chuyển CUỐI (mỗi `mousemove` gọi `clearTimeout`),
+          // nên nó chỉ chạy sau khi nhả chuột. Phải kéo có khựng >120ms giữa
+          // chừng, đúng nhịp tay người. Đo được: nghỉ 25ms/bước → hai chiều
+          // đều 370 ký tự; nghỉ 200ms/bước → xuống 370, LÊN CÒN 65.
+          const r = this._noRong(r0.cloneRange());
           // Hai bản của cùng một đoạn, cố ý:
           //  · `text`  — đã dồn khoảng trắng, dùng để GỌI API, đo độ dài, tra
           //    glossary và làm khoá lịch sử. Giữ nguyên hành vi cũ.
