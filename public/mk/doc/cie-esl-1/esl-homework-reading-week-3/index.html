@@ -291,7 +291,7 @@
           </div>
         </template>
 
-        <template x-if="!tra.loading && tra.data && tra.mode === 'text'">
+        <template x-if="!tra.loading && tra.data && tra.mode === 'text' && tra.data.dich">
           <div class="px-4 pt-4">
             <p class="text-slate-900 leading-relaxed" x-text="tra.data.dich"></p>
           </div>
@@ -317,7 +317,11 @@
           </div>
         </template>
 
-        <template x-if="!tra.loading && tra.data && (tra.data.tu_kho || []).length">
+        <!-- ⚠ Còn chặn thêm ở ĐÂY dù prompt đã dặn bỏ: model không phải lúc
+             nào cũng nghe, và một chip `dash · dấu gạch ngang` lọt ra trông y
+             như tính năng chứ không như lỗi. Hàng rào ở prompt để khỏi tốn
+             token, hàng rào ở đây để khỏi lọt. -->
+        <template x-if="!tra.loading && tra.data && traMonNn() === 'en' && (tra.data.tu_kho || []).length">
           <div class="px-4 pt-3 flex flex-wrap gap-1.5">
             <template x-for="(w, i) in tra.data.tu_kho" :key="i">
               <span class="px-2 py-1 rounded-lg bg-slate-100 text-xs">
@@ -986,6 +990,10 @@
         /** Ngôn ngữ giải thích đang dùng. Thứ tự: lựa chọn đã lưu của MÔN NÀY
             → mặc định do trang cung cấp (`traNgonNgu()`, thường là ngôn ngữ
             dạy của môn) → tiếng Việt. */
+        // Ngôn ngữ DẠY của môn — cố định, khác `nnHienTai()` là lựa chọn của
+        // người học. Trang nhúng có thể không định nghĩa `traNgonNgu()`
+        // (trang môn không định nghĩa), nên mặc định là tiếng Việt.
+        traMonNn() { return (this.traNgonNgu ? this.traNgonNgu() : 'vi') === 'en' ? 'en' : 'vi'; },
         nnHienTai() {
           if (this.nnTra) return this.nnTra;
           let luu = null;
@@ -1028,6 +1036,7 @@
               body: JSON.stringify({
                 mode: 'chat', text: this.tra.text, sent: this.tra.sent,
                 ctx: this._traCtx(), hoi: q, nn: this.nnHienTai(),
+                mon_nn: this.traMonNn(),
                 // Bỏ lượt vừa đẩy vào — nó chính là `hoi`.
                 lich_su: this.tra.chat.slice(0, -1).slice(-6),
                 user: this.user, course: this.course, sec: this.traSec(),
@@ -1070,6 +1079,7 @@
               body: JSON.stringify({ mode: this.tra.mode, text: this.tra.text,
                                      sent: this.tra.sent, ctx: this._traCtx(),
                                      nn: this.nnHienTai(),
+                                     mon_nn: this.traMonNn(),
                                      user: this.user, course: this.course, sec: this.traSec() }),
             });
             coPhanHoi = true;

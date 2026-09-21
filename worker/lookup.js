@@ -291,6 +291,10 @@ export async function handleLookup(request, env) {
   // Ngôn ngữ của phần GIẢI THÍCH. Mặc định tiếng Việt; môn dạy bằng
   // tiếng Anh thì trang tự gửi "en" lên.
   const nn = b?.nn === "en" ? "en" : "vi";
+  // Ngôn ngữ DẠY của môn — khác `nn` ở trên (`nn` là ngôn ngữ người học chọn
+  // cho phần giải thích). Môn dạy bằng tiếng Việt thì đoạn được bôi đen vốn
+  // đã là tiếng Việt, nên hai trường sinh ra cho môn tiếng Anh trở thành rác.
+  const mon_nn = b?.mon_nn === "en" ? "en" : "vi";
   const text = cut(b?.text, mode === "word" ? MAX.word : MAX.text);
   const hoi = cut(b?.hoi, MAX.hoi);
   // Lịch sử hội thoại do TRÌNH DUYỆT gửi lên, như `ctx` — Worker không giữ
@@ -317,6 +321,20 @@ export async function handleLookup(request, env) {
   const he = [HE, ctx && "Ngữ cảnh — định nghĩa TIẾNG ANH lấy từ sách, chỉ dùng để " +
     "biết từ đang mang nghĩa NÀO. Đây KHÔNG phải bản dịch, đừng chép lại:\n" + ctx,
     SHAPE[mode],
+    // ⚠ Đặt SAU SHAPE, cùng lý do với phần ghi đè ngôn ngữ bên dưới: thứ nói
+    // sau mới đè được thứ nói trước.
+    //
+    // Môn tiếng Việt thì `tu_kho` (chú từ tiếng Anh khó) không có gì để chú —
+    // model vẫn cố sinh ra và cho ra những chip vô nghĩa kiểu
+    // `dash · dấu gạch ngang`, `explanatory part · bộ phận chú thích`: dịch
+    // NGƯỢC một từ tiếng Việt sang tiếng Anh rồi dịch lại. Còn `dich` ("bản
+    // dịch tiếng Việt") thì chép lại gần nguyên văn đoạn gốc, mà đoạn gốc đã
+    // nằm ngay phía trên trong popup. Cắt ở PROMPT chứ không chỉ ẩn ở giao
+    // diện: ẩn thì vẫn trả tiền token cho thứ không ai đọc.
+    mode === "text" && mon_nn !== "en" &&
+      "MÔN DẠY BẰNG TIẾNG VIỆT — đoạn được hỏi vốn đã là tiếng Việt:\n"
+      + "· `tu_kho`: trả về mảng RỖNG [] — không có từ tiếng Anh nào để chú.\n"
+      + '· `dich`: trả về chuỗi RỖNG "" — đừng chép lại đoạn gốc.\n',
     // ⚠ Câu này đặt CUỐI CÙNG, sau SHAPE. Mọi mô tả trường ở trên đều viết
     // "tiếng Việt"; muốn đổi ngôn ngữ thì phải đè lên chúng, mà thứ nói sau
     // mới đè được thứ nói trước. Đặt trước SHAPE thì model theo SHAPE.
