@@ -46,7 +46,7 @@ export const CAP = 300;
 
 /** Kẹp độ dài từng trường. Đầu ra mới là chỗ tốn tiền, nhưng đầu vào trôi nổi
  *  thì cũng kéo đầu ra dài theo. */
-const MAX = { word: 40, sent: 300, text: 600, ctx: 1200 };
+const MAX = { word: 40, sent: 300, text: 600, ctx: 1200, hoi: 300, su: 1400 };
 
 const json = (d, s = 200) =>
   new Response(JSON.stringify(d), {
@@ -85,6 +85,22 @@ const HE = "Bạn là gia sư cho học sinh Việt Nam đang học môn này b�
  * token/1 phần, `present perfect` ra 255 token/3 phần — cùng một prompt.
  */
 const SHAPE = {
+  // Hỏi đáp tiếp về chính đoạn vừa tra. Đầu ra CHỈ một trường: popup vẽ nó
+  // thành bong bóng chat, không cần khối `phan[]` nào.
+  //
+  // ⚠ Vẫn là JSON chứ không phải văn bản trần, để dùng chung đúng một đường
+  // phân tích với hai chế độ kia — thêm một đường nữa là thêm một chỗ sẽ lệch.
+  chat:
+    'Trả về JSON thuần, không rào đầu, đúng khoá sau:\n' +
+    '{"tra_loi":"câu trả lời bằng tiếng Việt"}\n' +
+    'Trả lời NGẮN (2–5 câu), đúng trình độ học sinh tiểu học, bám vào đoạn đang ' +
+    'học ở trên. Được phép ví von cho dễ hiểu.\n' +
+    'Nếu câu hỏi nằm ngoài đoạn đang học nhưng vẫn thuộc môn này thì cứ trả lời; ' +
+    'nếu lạc hẳn đề tài thì nói thẳng là câu đó không liên quan tới bài.\n' +
+    'KHÔNG bịa số liệu hay dữ kiện không có trong đoạn. Thiếu dữ kiện thì nói rõ ' +
+    'còn thiếu gì.\n' +
+    'Nếu là câu hỏi ý kiến riêng thì đừng trả lời thay, chỉ gợi cách nghĩ.',
+
   word:
     'Trả về JSON thuần, không rào đầu, đúng các khoá sau:\n' +
     '{"tu":"từ gốc","loai":"","ipa":"phiên âm IPA","nghia":"",' +
@@ -271,8 +287,16 @@ export async function handleLookup(request, env) {
   const user = cut(b?.user, 32);
   const course = cut(b?.course, 64);
   const sec = cut(b?.sec, 64);
-  const mode = b?.mode === "text" ? "text" : "word";
+  const mode = ["text", "chat"].includes(b?.mode) ? b.mode : "word";
   const text = cut(b?.text, mode === "word" ? MAX.word : MAX.text);
+  const hoi = cut(b?.hoi, MAX.hoi);
+  // Lịch sử hội thoại do TRÌNH DUYỆT gửi lên, như `ctx` — Worker không giữ
+  // trạng thái. Kẹp cả số lượt lẫn tổng độ dài: một cuộc chat dài là đầu vào
+  // phình tuyến tính, mà đầu vào phình thì đầu ra cũng phình theo.
+  const su = Array.isArray(b?.lich_su) ? b.lich_su.slice(-6) : [];
+  const lich_su = cut(su.map((m) => (m && m.ai === "em" ? "Học sinh: " : "Gia sư: ")
+                                    + cut(m && m.noi, 400)).join("\n"), MAX.su);
+  if (mode === "chat" && !hoi) return json({ error: "Thiếu 'hoi'" }, 400);
   const sent = cut(b?.sent, MAX.sent);
   const ctx = cut(b?.ctx, MAX.ctx);
   if (!text) return json({ error: "Thiếu 'text'" }, 400);
@@ -292,7 +316,11 @@ export async function handleLookup(request, env) {
     SHAPE[mode]].filter(Boolean).join("\n\n");
   const nguoi = mode === "word"
     ? `Từ cần giải nghĩa: "${text}"` + (sent ? `\nCâu chứa từ đó: "${sent}"` : "")
-    : text;
+    : mode === "chat"
+      ? `Đoạn đang học:\n${text}\n\n`
+        + (lich_su ? `Đã trao đổi:\n${lich_su}\n\n` : "")
+        + `Câu hỏi của học sinh: ${hoi}`
+      : text;
 
   const uri = `${ENDPOINT}?key=${encodeURIComponent(key)}`;
   const colo = (request.cf && request.cf.colo) || "?";

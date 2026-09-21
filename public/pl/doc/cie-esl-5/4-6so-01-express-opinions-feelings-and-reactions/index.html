@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>4. 6So.01 - Express opinions, feelings and reactions..pptx · CIE ESL 5</title>
-<link rel="stylesheet" href="../../../../assets/tw.4b97d341.css">
+<link rel="stylesheet" href="../../../../assets/tw.59c3e9d5.css">
 <style>
   [x-cloak] { display: none !important; }
   #pdf { width:100%; height:calc(100vh - 8.5rem); border:0; }
@@ -352,14 +352,19 @@
 
         <div class="sticky top-0 flex items-start gap-2 px-4 py-3 border-b border-slate-100 bg-white">
           <div class="flex-1 min-w-0">
-            <!-- Giữ xuống dòng của đoạn đã chọn (`whitespace-pre-line`) và
-                 CHẶN chiều cao: một đoạn 20 dòng mà để nở tự do thì phần giải
-                 thích — thứ người ta mở popup để đọc — bị đẩy hẳn khỏi màn
-                 hình. Cuộn riêng trong ô này, không cuộn cả popup. -->
-            <p class="font-semibold text-slate-900 break-words whitespace-pre-line
-                      max-h-28 overflow-y-auto" x-text="tra.goc || tra.text"></p>
-            <p x-show="tra.mode === 'word' && tra.sent" x-cloak
-               class="mt-0.5 text-xs text-slate-400 line-clamp-2" x-text="tra.sent"></p>
+            <!-- Đoạn gốc GẬP LẠI còn 2 dòng. Người ta mở popup để đọc phần
+                 GIẢI THÍCH; chữ gốc thì vừa bôi đen xong nên đã biết rồi. Để nó
+                 nở tự do thì một đoạn 20 dòng đẩy hẳn phần giải thích khỏi màn
+                 hình — đã đo. Ngữ cảnh (câu chứa từ) gập chung luôn cho đỡ rối. -->
+            <p @click="moGoc = !moGoc"
+               class="font-semibold text-slate-900 break-words whitespace-pre-line cursor-pointer"
+               :class="moGoc ? 'max-h-60 overflow-y-auto' : 'line-clamp-2'"
+               x-text="tra.goc || tra.text"></p>
+            <p x-show="moGoc && tra.sent" x-cloak
+               class="mt-1 text-xs text-slate-400" x-text="tra.sent"></p>
+            <button x-show="daiGoc" x-cloak @click="moGoc = !moGoc" type="button"
+                    class="mt-0.5 -mb-1 py-1 text-[0.7rem] text-indigo-500 hover:text-indigo-700"
+                    x-text="moGoc ? '▴ Thu gọn' : '▾ Xem đầy đủ'"></button>
           </div>
           <!-- Trần 200 ký tự là của /api/tts. Ẩn nút khi vượt, thay vì để bấm rồi
                lặng lẽ rơi về giọng hệ điều hành — im lặng kiểu đó nhìn y hệt như
@@ -441,13 +446,33 @@
            class="px-4 pb-3 text-xs text-slate-400"
            x-text="'Nghĩa lấy từ học liệu của bài' + (tra.ly_do ? ' — ' + tra.ly_do : '.')"></p>
 
-        <p x-show="!tra.loading && !tra.data" x-cloak class="px-4 py-5 text-sm text-slate-500"
+        <p x-show="!tra.loading && traRong()" x-cloak class="px-4 py-5 text-sm text-slate-500"
            x-text="tra.err || 'Không tìm thấy nghĩa của mục này.'"></p>
 
-        <div x-show="!tra.loading && traKhoa()" x-cloak class="px-4 pb-4">
-          <button @click="traMo(tra.mode === 'word' ? 'text' : 'word')" type="button"
-                  class="w-full px-3 py-2 text-sm rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  x-text="tra.mode === 'word' ? 'Dịch cả cụm này' : 'Giải nghĩa như một từ'"></button>
+        <!-- ── Hỏi tiếp về chính đoạn này ────────────────────────────────
+             Thay cho nút đổi chế độ cũ ("Giải nghĩa như một từ" / "Dịch cả cụm
+             này"): đổi chế độ chỉ là hỏi lại cùng một câu theo kiểu khác, còn
+             hỏi tiếp thì trả lời được thứ mà không schema cố định nào phủ hết.
+             Mỗi lượt hỏi tính vào ĐÚNG trần 300/ngày như một lượt tra. -->
+        <div x-show="!tra.loading && traKhoa()" x-cloak class="px-4 pb-4 pt-1">
+          <template x-for="(m, i) in tra.chat" :key="i">
+            <p class="mb-2 text-sm leading-relaxed"
+               :class="m.ai === 'em' ? 'text-right' : ''">
+              <span class="inline-block px-3 py-2 rounded-2xl max-w-[85%] text-left"
+                    :class="m.ai === 'em' ? 'bg-indigo-50 text-indigo-900'
+                                          : 'bg-slate-100 text-slate-700'"
+                    x-text="m.noi"></span>
+            </p>
+          </template>
+          <p x-show="tra.dangHoi" x-cloak class="mb-2 text-sm text-slate-400">Đang nghĩ…</p>
+          <form @submit.prevent="traHoi()" class="flex gap-2">
+            <input x-model="tra.hoi" type="text" maxlength="300"
+                   placeholder="Hỏi thêm về phần này…"
+                   class="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg border border-slate-300">
+            <button type="submit" :disabled="tra.dangHoi || !tra.hoi.trim()"
+                    class="shrink-0 px-3 py-2 text-sm rounded-lg bg-indigo-600 text-white
+                           disabled:bg-slate-200 disabled:text-slate-400">Hỏi</button>
+          </form>
         </div>
       </div>
     </div>
@@ -824,7 +849,9 @@
         // Nghĩa của một từ phụ thuộc CÂU chứa nó và BÀI đang học, nên không dựng
         // sẵn được: `sedimentary` trong bài về đá không giống ở chỗ khác. Vì vậy
         // gọi Gemini lúc bấm, kèm thuật ngữ của mục đang mở.
+        moGoc: false,          // đoạn gốc trong popup đang mở rộng?
         tra: { btn: null, show: false, mode: 'word', text: '', goc: '', sent: '',
+               chat: [], hoi: '', dangHoi: false,
                loading: false, err: '', ly_do: '', data: null },
 
         /** Nới vùng chọn ra nguyên từ: kéo lệch nửa chữ vẫn tra đúng từ. */
@@ -970,13 +997,73 @@
           this.tra.mode = text.split(/\s+/).length <= 3 ? 'word' : 'text';
           // Không có mã bí mật thì chỉ hiện nút khi tra offline ra được cái gì.
           if (!this.traKhoa() && !this._traOffline()) return;
+          // Nhớ lại vùng chọn để `traDong()` dựng lại nút sau khi đóng popup.
+          this._traRg = r.cloneRange();
           this.tra.btn = { x: Math.min(Math.max(b.left + b.width / 2, 60), innerWidth - 60),
                            y: Math.min(b.bottom + 8, innerHeight - 44) };
+        },
+
+        /** Có gì để hiện trong popup không?
+
+            ⚠ KHÔNG hỏi `!tra.data`. Máy chủ có thể trả về 200 kèm một object
+            mà mọi trường đều rỗng; lúc đó `tra.data` là truthy nên dòng "Không
+            tìm thấy nghĩa" bị ẩn, mà cũng chẳng nhánh nào vẽ ra gì — popup chỉ
+            còn cái khung và một cái nút. Người dùng gửi ảnh chụp đúng cảnh đó
+            và hỏi "sao ấn giải thích không được". Im lặng kiểu này tệ hơn báo
+            lỗi: không ai biết nên thử lại hay đã hỏng. */
+        traRong() {
+          const d = this.tra.data;
+          if (!d) return true;
+          return !(d.nghia || d.dich || d.luu_y
+                   || (d.phan || []).length || (d.tu_kho || []).length);
+        },
+
+        /** Đoạn gốc có dài quá 2 dòng không — chỉ khi đó mới hiện nút mở.
+            Đếm theo KÝ TỰ chứ không đo chiều cao thật: đo chiều cao phải chờ
+            vẽ xong rồi đọc lại DOM, tức một vòng layout nữa cho mỗi lần mở
+            popup, mà sai sót ở đây chỉ là thừa/thiếu một cái nút nhỏ. */
+        get daiGoc() {
+          const t = this.tra.goc || this.tra.text || '';
+          return t.length > 110 || t.includes('\n') || !!this.tra.sent;
+        },
+
+        async traHoi() {
+          const q = (this.tra.hoi || '').trim();
+          if (!q || this.tra.dangHoi || !this.traKhoa()) return;
+          this.tra.chat.push({ ai: 'em', noi: q });
+          this.tra.hoi = ''; this.tra.dangHoi = true;
+          try {
+            const r = await fetch('/api/lookup', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'x-progress-key': this.traKhoa() },
+              // Gửi kèm ĐOẠN GỐC và lịch sử: Worker không giữ trạng thái, cùng
+              // lý do đã buộc `ctx` phải do trình duyệt gửi lên.
+              body: JSON.stringify({
+                mode: 'chat', text: this.tra.text, sent: this.tra.sent,
+                ctx: this._traCtx(), hoi: q,
+                // Bỏ lượt vừa đẩy vào — nó chính là `hoi`.
+                lich_su: this.tra.chat.slice(0, -1).slice(-6),
+                user: this.user, course: this.course, sec: this.traSec(),
+              }),
+            });
+            const b = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(b.error || ('HTTP ' + r.status));
+            const t = (b.data && b.data.tra_loi) || '';
+            // Trả về rỗng cũng phải NÓI RA, đừng đẩy một bong bóng trắng vào
+            // cuộc trò chuyện — cùng bài học với `traRong()`.
+            this.tra.chat.push({ ai: 'gs', noi: t || 'Chưa trả lời được câu này.' });
+          } catch (e) {
+            console.warn('hỏi tiếp hỏng:', String(e.message || e));
+            this.tra.chat.push({ ai: 'gs', noi: 'Chưa trả lời được lúc này, thử lại sau nhé.' });
+          }
+          this.tra.dangHoi = false;
         },
 
         async traMo(mode) {
           if (mode) this.tra.mode = mode;
           this.tra.show = true; this.tra.btn = null;
+          this.tra.chat = []; this.tra.hoi = ''; this.tra.dangHoi = false;
+          this.moGoc = false;
           this.tra.err = ''; this.tra.ly_do = ''; this.tra.data = null; this.tra.loading = true;
           // Trang có thể cần nạp học liệu trước (trang môn nạp LƯỜI, vì file
           // study JSON tới ~200KB và phần lớn lượt vào trang môn không tra từ nào).
@@ -1070,8 +1157,27 @@
           });
         },
 
-        traDong() { this.tra.show = false; this.tra.btn = null; this.tra.data = null;
-                    this.tra.err = ''; this.tra.ly_do = ''; },
+        /** Đóng popup và TRẢ LẠI nút 🔎 cho chỗ vừa chọn.
+
+            Trước đây đóng xong là nút biến mất, muốn xem lại phải bôi đen lại
+            từ đầu. Cú bấm để đóng (dù vào ✕ hay ra nền) tự xoá vùng chọn, nên
+            chỉ gọi `chonDoi()` thôi thì không đủ — phải ĐẶT LẠI vùng chọn đã
+            nhớ ở `chonDoi()` rồi mới tính lại vị trí nút. */
+        traDong() {
+          this.tra.show = false; this.tra.btn = null; this.tra.data = null;
+          this.tra.err = ''; this.tra.ly_do = '';
+          this.tra.chat = []; this.tra.hoi = ''; this.moGoc = false;
+          const rg = this._traRg;
+          setTimeout(() => {
+            if (rg) {
+              try {
+                const s = window.getSelection();
+                s.removeAllRanges(); s.addRange(rg);
+              } catch (e) { return; }
+            }
+            this.chonDoi();
+          }, 0);
+        },
 
     };
   }
