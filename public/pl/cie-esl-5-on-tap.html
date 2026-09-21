@@ -9,7 +9,7 @@
   <title>Ôn tập · CIE ESL 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.59c3e9d5.css">
+  <link rel="stylesheet" href="../assets/tw.4f40ea63.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -852,7 +852,9 @@
         autoRead(text) { if (this.autoSpeak) setTimeout(() => this.speak(text), 50); },
 
         // ── Bốn hàm móc của `_tracuu.html` ───────────────────────────────────
-        traTen()    { return 'Môn: CIE ESL 5. Mục đang học: '
+        
+      traNgonNgu() { return false ? 'en' : 'vi'; },
+      traTen()    { return 'Môn: CIE ESL 5. Mục đang học: '
                              + (this.conceptName(this.scope) || '—') + '.'; },
         traMucCtx() { return this.scopedSummary || []; },
         traDoc()    { return this.data; },
@@ -865,6 +867,7 @@
         // sẵn được: `sedimentary` trong bài về đá không giống ở chỗ khác. Vì vậy
         // gọi Gemini lúc bấm, kèm thuật ngữ của mục đang mở.
         moGoc: false,          // đoạn gốc trong popup đang mở rộng?
+        nnTra: '',             // ngôn ngữ giải thích: 'vi' | 'en'
         tra: { btn: null, show: false, mode: 'word', text: '', goc: '', sent: '',
                chat: [], hoi: '', dangHoi: false,
                loading: false, err: '', ly_do: '', data: null },
@@ -1033,6 +1036,33 @@
                    || (d.phan || []).length || (d.tu_kho || []).length);
         },
 
+        /** Khoá nhớ lựa chọn ngôn ngữ — RIÊNG từng môn. Trẻ học Science
+            bằng tiếng Anh nhưng Lịch sử bằng tiếng Việt; một khoá chung là
+            đổi ở môn này thì môn kia cũng đổi theo. */
+        _nnKhoa() { return 'tra_nn:' + (this.course || 'chung'); },
+
+        /** Ngôn ngữ giải thích đang dùng. Thứ tự: lựa chọn đã lưu của MÔN NÀY
+            → mặc định do trang cung cấp (`traNgonNgu()`, thường là ngôn ngữ
+            dạy của môn) → tiếng Việt. */
+        nnHienTai() {
+          if (this.nnTra) return this.nnTra;
+          let luu = null;
+          try { luu = localStorage.getItem(this._nnKhoa()); } catch (e) {}
+          if (luu === 'vi' || luu === 'en') return (this.nnTra = luu);
+          const md = this.traNgonNgu ? this.traNgonNgu() : 'vi';
+          return (this.nnTra = md === 'en' ? 'en' : 'vi');
+        },
+
+        /** Đổi ngôn ngữ và HỎI LẠI ngay — đổi mà không tra lại thì người dùng
+            phải tự đoán là phải bấm gì nữa. */
+        doiNn(v) {
+          if (this.nnHienTai() === v) return;
+          this.nnTra = v;
+          try { localStorage.setItem(this._nnKhoa(), v); } catch (e) {}
+          this.tra.chat = [];
+          if (this.tra.show) this.traMo(this.tra.mode);
+        },
+
         /** Đoạn gốc có dài quá 2 dòng không — chỉ khi đó mới hiện nút mở.
             Đếm theo KÝ TỰ chứ không đo chiều cao thật: đo chiều cao phải chờ
             vẽ xong rồi đọc lại DOM, tức một vòng layout nữa cho mỗi lần mở
@@ -1055,7 +1085,7 @@
               // lý do đã buộc `ctx` phải do trình duyệt gửi lên.
               body: JSON.stringify({
                 mode: 'chat', text: this.tra.text, sent: this.tra.sent,
-                ctx: this._traCtx(), hoi: q,
+                ctx: this._traCtx(), hoi: q, nn: this.nnHienTai(),
                 // Bỏ lượt vừa đẩy vào — nó chính là `hoi`.
                 lich_su: this.tra.chat.slice(0, -1).slice(-6),
                 user: this.user, course: this.course, sec: this.traSec(),
@@ -1097,6 +1127,7 @@
               // KHÔNG đưa chúng vào prompt gửi Google (test_lookup_route chốt).
               body: JSON.stringify({ mode: this.tra.mode, text: this.tra.text,
                                      sent: this.tra.sent, ctx: this._traCtx(),
+                                     nn: this.nnHienTai(),
                                      user: this.user, course: this.course, sec: this.traSec() }),
             });
             coPhanHoi = true;
@@ -2875,10 +2906,28 @@
                x-text="tra.goc || tra.text"></p>
             <p x-show="moGoc && tra.sent" x-cloak
                class="mt-1 text-xs text-slate-400" x-text="tra.sent"></p>
-            <button x-show="daiGoc" x-cloak @click="moGoc = !moGoc" type="button"
-                    class="mt-0.5 -mb-1 py-1 text-[0.7rem] text-indigo-500 hover:text-indigo-700"
-                    x-text="moGoc ? '▴ Thu gọn' : '▾ Xem đầy đủ'"></button>
+
           </div>
+          <!-- Chọn ngôn ngữ phần giải thích. Mặc định là ngôn ngữ DẠY của môn
+               (`traNgonNgu()`), đổi thì nhớ riêng cho môn đó trong trình duyệt —
+               trẻ học Science bằng tiếng Anh nhưng Lịch sử bằng tiếng Việt. -->
+          <div class="shrink-0 flex rounded-lg border border-slate-200 overflow-hidden text-[0.7rem]">
+            <button @click="doiNn('vi')" type="button" title="Giải thích bằng tiếng Việt"
+                    class="px-2 py-1.5"
+                    :class="nnHienTai() === 'vi' ? 'bg-indigo-600 text-white'
+                                                 : 'text-slate-500 hover:bg-slate-50'">VI</button>
+            <button @click="doiNn('en')" type="button" title="Explain in English"
+                    class="px-2 py-1.5"
+                    :class="nnHienTai() === 'en' ? 'bg-indigo-600 text-white'
+                                                 : 'text-slate-500 hover:bg-slate-50'">EN</button>
+          </div>
+          <!-- Mở/thu đoạn gốc: KÝ HIỆU thôi, không chữ. Nó đứng cạnh 🔊 và ✕
+               nên hàng nút giữ được một nhịp, và không ăn mất chiều cao của
+               phần giải thích. -->
+          <button x-show="daiGoc" x-cloak @click="moGoc = !moGoc" type="button"
+                  :title="moGoc ? 'Thu gọn đoạn gốc' : 'Xem đầy đủ đoạn gốc'"
+                  class="shrink-0 w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100"
+                  x-text="moGoc ? '⌃' : '⌄'"></button>
           <!-- Trần 200 ký tự là của /api/tts. Ẩn nút khi vượt, thay vì để bấm rồi
                lặng lẽ rơi về giọng hệ điều hành — im lặng kiểu đó nhìn y hệt như
                đang chạy bình thường, chỉ khác giọng. -->

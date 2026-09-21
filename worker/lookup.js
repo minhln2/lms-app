@@ -288,6 +288,9 @@ export async function handleLookup(request, env) {
   const course = cut(b?.course, 64);
   const sec = cut(b?.sec, 64);
   const mode = ["text", "chat"].includes(b?.mode) ? b.mode : "word";
+  // Ngôn ngữ của phần GIẢI THÍCH. Mặc định tiếng Việt; môn dạy bằng
+  // tiếng Anh thì trang tự gửi "en" lên.
+  const nn = b?.nn === "en" ? "en" : "vi";
   const text = cut(b?.text, mode === "word" ? MAX.word : MAX.text);
   const hoi = cut(b?.hoi, MAX.hoi);
   // Lịch sử hội thoại do TRÌNH DUYỆT gửi lên, như `ctx` — Worker không giữ
@@ -313,7 +316,22 @@ export async function handleLookup(request, env) {
   // vế phải của mỗi dòng là cách gọi tiếng Việt bắt buộc và chép nó vào `nghia`.
   const he = [HE, ctx && "Ngữ cảnh — định nghĩa TIẾNG ANH lấy từ sách, chỉ dùng để " +
     "biết từ đang mang nghĩa NÀO. Đây KHÔNG phải bản dịch, đừng chép lại:\n" + ctx,
-    SHAPE[mode]].filter(Boolean).join("\n\n");
+    SHAPE[mode],
+    // ⚠ Câu này đặt CUỐI CÙNG, sau SHAPE. Mọi mô tả trường ở trên đều viết
+    // "tiếng Việt"; muốn đổi ngôn ngữ thì phải đè lên chúng, mà thứ nói sau
+    // mới đè được thứ nói trước. Đặt trước SHAPE thì model theo SHAPE.
+    nn === "en" && "GHI ĐÈ NGÔN NGỮ: viết phần GIẢI THÍCH bằng TIẾNG ANH đơn "
+      + "giản, đúng trình độ học sinh tiểu học — `noi_dung`, `luu_y`, `dich`, "
+      + "`tra_loi`, và trường `vi` của mỗi ví dụ. Giữ nguyên tên khoá JSON.\n"
+      // ⚠ `nghia` là NGOẠI LỆ CÓ CHỦ Ý. Nó không phải phần giải thích mà là từ
+      // tiếng Việt tương đương — thứ duy nhất trong cả schema mà tiếng mẹ đẻ
+      // mới có tác dụng, và cũng là thứ trẻ cần nhất khi gặp thuật ngữ lạ. Bỏ
+      // dòng này thì model vẫn giữ tiếng Việt (đã đo), nhưng lúc đó là ăn may
+      // chứ không phải chủ đích.
+      + "NGOẠI LỆ: `nghia` vẫn là TỪ TIẾNG VIỆT tương đương, giữ nguyên như mô "
+      + "tả ở trên — đó là chỗ để đối chiếu với tiếng mẹ đẻ, không phải phần "
+      + "giải thích.",
+  ].filter(Boolean).join("\n\n");
   const nguoi = mode === "word"
     ? `Từ cần giải nghĩa: "${text}"` + (sent ? `\nCâu chứa từ đó: "${sent}"` : "")
     : mode === "chat"
