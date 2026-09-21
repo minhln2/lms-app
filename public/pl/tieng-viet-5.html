@@ -426,10 +426,10 @@
       <div x-show="p.ready && p.online" x-cloak class="mt-2 flex items-center gap-2 text-xs">
         <div class="flex-1 h-1.5 rounded-full bg-slate-200 overflow-hidden">
           <div class="h-full bg-emerald-500 transition-all duration-300"
-               :style="'width: ' + (recent7 ? recentPct(p.done) : Math.round(Object.keys(p.done).filter(k => k.startsWith('pl/80102/')).length / 49 * 100)) + '%'"></div>
+               :style="'width: ' + (recent7 ? recentPct(p.done) : Math.round(Object.keys(p.done).filter(k => k.startsWith('pl/80102/')).length / 46 * 100)) + '%'"></div>
         </div>
         <span class="text-slate-500 whitespace-nowrap"
-              x-text="recent7 ? (recentStats(p.done).done + '/' + recentStats(p.done).total + ' trong 7 ngày') : (Object.keys(p.done).filter(k => k.startsWith('pl/80102/')).length + '/49 đã học')"></span>
+              x-text="recent7 ? (recentStats(p.done).done + '/' + recentStats(p.done).total + ' trong 7 ngày') : (Object.keys(p.done).filter(k => k.startsWith('pl/80102/')).length + '/46 đã học')"></span>
         <span x-show="p.saving" x-cloak class="text-indigo-500">đang lưu…</span>
         <span x-show="p.err" x-cloak class="text-rose-600" x-text="p.err"></span>
       </div>
@@ -493,7 +493,7 @@
             <span class="min-w-0 flex-1">TIẾNG VIỆT - TÀI LIỆU THAM KHẢO</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-4'), p.done) + '/3'"></span>
+                    x-text="moduleDone(document.getElementById('mod-4'), p.done) + '/1'"></span>
             </template>
           </button>
         </li>
@@ -515,7 +515,7 @@
             <span class="min-w-0 flex-1">TÀI LIỆU THAM KHẢO</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-6'), p.done) + '/1'"></span>
+                    x-text="moduleDone(document.getElementById('mod-6'), p.done) + '/0'"></span>
             </template>
           </button>
         </li>
@@ -548,6 +548,35 @@
 
   <main class="min-w-0 lg:flex-1 px-4 py-6 space-y-4">
 
+    
+    
+    <section class="bg-white rounded-xl shadow-sm border border-amber-200 overflow-hidden">
+      <div class="px-4 py-3 bg-amber-50 border-b border-amber-200">
+        <h2 class="font-semibold text-amber-900">📚 Sách giáo khoa</h2>
+        <p class="text-xs text-amber-800/80 mt-0.5">Bôi đen chữ để tra nghĩa, như ở trang ôn tập.</p>
+      </div>
+      <ul class="divide-y divide-slate-100">
+        
+        <li>
+          <a href="sach/tieng-viet-5/sgk-tieng-viet-5-tap-mot/index.html"
+             class="flex items-center gap-3 px-4 py-3 hover:bg-amber-50/60">
+            <span class="text-lg shrink-0">📖</span>
+            <span class="min-w-0 flex-1 text-sm font-medium text-slate-800">SGK Tiếng Việt 5 — Tập một</span>
+            <span class="shrink-0 text-xs text-slate-400 tabular-nums">170 trang</span>
+          </a>
+        </li>
+        
+        <li>
+          <a href="sach/tieng-viet-5/sgk-tieng-viet-5-tap-hai/index.html"
+             class="flex items-center gap-3 px-4 py-3 hover:bg-amber-50/60">
+            <span class="text-lg shrink-0">📖</span>
+            <span class="min-w-0 flex-1 text-sm font-medium text-slate-800">SGK Tiếng Việt 5 — Tập hai</span>
+            <span class="shrink-0 text-xs text-slate-400 tabular-nums">162 trang</span>
+          </a>
+        </li>
+        
+      </ul>
+    </section>
     
 
     
@@ -2605,75 +2634,14 @@
         <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">TIẾNG VIỆT - TÀI LIỆU THAM KHẢO</span>
         <template x-if="p.online">
           <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
-                :class="moduleDone($el.closest('[data-module]'), p.done) === 3
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 1
                         ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
-                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/3'"></span>
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/1'"></span>
         </template>
-        <span class="text-xs text-slate-400 shrink-0">3 mục</span>
+        <span class="text-xs text-slate-400 shrink-0">1 mục</span>
       </button>
 
       <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
-        
-        
-        <div data-item data-title="SGK TIẾNG VIỆT - LỚP 5 - TẬP 1" data-type="file" data-sec="0"
-             data-pkey="pl/80102/8738581" data-hash="a6d3858fa96d70ccfbe01c335b60c85d97fc04cc" data-ts="1789389332000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80102/8738581'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/80102/8738581'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/80102/8738581']; $el.indeterminate = !!p.redo['pl/80102/8738581']"
-                     @change="await p.toggle('pl/80102/8738581', 'a6d3858fa96d70ccfbe01c335b60c85d97fc04cc'); $el.checked = !!p.done['pl/80102/8738581']; $el.indeterminate = !!p.redo['pl/80102/8738581']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Tài liệu đã tải về local -->
-              <a href="doc/tieng-viet-5/05-sgk-tieng-viet-5-tap-mot/index.html" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                SGK TIẾNG VIỆT - LỚP 5 - TẬP 1
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80102/8738581', 'a6d3858fa96d70ccfbe01c335b60c85d97fc04cc')">
-                  <button @click.stop="p.seen('pl/80102/8738581', 'a6d3858fa96d70ccfbe01c335b60c85d97fc04cc')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                <span>31.0 MB</span>
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 14/09</span>
-                
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
         
         
         <div data-item data-title="TỔNG QUAN CHƯƠNG TRÌNH TIẾNG VIỆT 5" data-type="page" data-sec="0"
@@ -2748,67 +2716,6 @@
 <p style="text-align: center;"><em><strong>CÔ CHÚC CÁC CON CÓ THÊM THẬT NHIỀU KIẾN THỨC LÍ THÚ VÀ BỔ ÍCH!</strong></em></p>
 <p><a class="inline_disabled" href="https://lms.vinschool.edu.vn/courses/80102/modules" rel="noopener" target="_blank"><img alt="click-here.jpg" height="148" loading="lazy" src="https://minhln2.github.io/lms/pl/materials/tieng-viet-5/tieng-viet-tai-lieu-tham-khao/click-here-1.jpg" style="display: block; margin-left: auto; margin-right: auto;" width="421"/></a></p>
               </div>
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="SGK TIẾNG VIỆT - LỚP 5 - TẬP 2" data-type="file" data-sec="0"
-             data-pkey="pl/80102/8738582" data-hash="e56d34a9b203b15e3828ef3b2aecc8634ba8d8bc" data-ts="1788832818000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80102/8738582'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/80102/8738582'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/80102/8738582']; $el.indeterminate = !!p.redo['pl/80102/8738582']"
-                     @change="await p.toggle('pl/80102/8738582', 'e56d34a9b203b15e3828ef3b2aecc8634ba8d8bc'); $el.checked = !!p.done['pl/80102/8738582']; $el.indeterminate = !!p.redo['pl/80102/8738582']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Tài liệu đã tải về local -->
-              <a href="doc/tieng-viet-5/05-sgk-tieng-viet-5-tap-hai/index.html" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                SGK TIẾNG VIỆT - LỚP 5 - TẬP 2
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80102/8738582', 'e56d34a9b203b15e3828ef3b2aecc8634ba8d8bc')">
-                  <button @click.stop="p.seen('pl/80102/8738582', 'e56d34a9b203b15e3828ef3b2aecc8634ba8d8bc')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                <span>29.5 MB</span>
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 08/09</span>
-                
-                
-              </div>
-
               
             </div>
           </div>
@@ -3414,76 +3321,17 @@
         <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">TÀI LIỆU THAM KHẢO</span>
         <template x-if="p.online">
           <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
-                :class="moduleDone($el.closest('[data-module]'), p.done) === 1
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 0
                         ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
-                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/1'"></span>
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/0'"></span>
         </template>
-        <span class="text-xs text-slate-400 shrink-0">1 mục</span>
+        <span class="text-xs text-slate-400 shrink-0">0 mục</span>
       </button>
 
       <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
         
         
-        <div data-item data-title="SGK LỊCH SỬ - ĐỊA LÍ - LỚP 5 " data-type="file" data-sec="0"
-             data-pkey="pl/80102/8738584" data-hash="c4fdc1113086a818581f4e7edaba56ee11aeef33" data-ts="1788832835000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
-             class="group" :class="p.done['pl/80102/8738584'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/80102/8738584'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/80102/8738584']; $el.indeterminate = !!p.redo['pl/80102/8738584']"
-                     @change="await p.toggle('pl/80102/8738584', 'c4fdc1113086a818581f4e7edaba56ee11aeef33'); $el.checked = !!p.done['pl/80102/8738584']; $el.indeterminate = !!p.redo['pl/80102/8738584']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Tài liệu đã tải về local -->
-              <a href="doc/tieng-viet-5/05-sgk-lich-su-va-dia-li-5/index.html" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                SGK LỊCH SỬ - ĐỊA LÍ - LỚP 5 
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/80102/8738584', 'c4fdc1113086a818581f4e7edaba56ee11aeef33')">
-                  <button @click.stop="p.seen('pl/80102/8738584', 'c4fdc1113086a818581f4e7edaba56ee11aeef33')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                <span>23.3 MB</span>
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 08/09</span>
-                
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
+        <p class="px-4 py-3 text-sm text-slate-400 italic">Chưa có nội dung.</p>
         
       </div>
     </section>

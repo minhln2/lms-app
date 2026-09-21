@@ -8,7 +8,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>05-sgk-tieng-viet-5-tap-hai.pdf · Tiếng Việt 5</title>
+<title>Tiếng Việt 5 — SGK Tiếng Việt 5 — Tập hai · Tiếng Việt 5</title>
 <link rel="stylesheet" href="../../../../assets/tw.4f40ea63.css">
 <style>
   [x-cloak] { display: none !important; }
@@ -104,7 +104,7 @@
   <a href="../../../../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">🏠 Home</a><span class="shrink-0 text-indigo-300">›</span>
   <a href="../../../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">PL</a><span class="shrink-0 text-indigo-300">›</span>
   <a href="../../../tieng-viet-5.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">Tiếng Việt 5</a><span class="shrink-0 text-indigo-300">›</span>
-  <span aria-current="page" class="truncate font-medium text-white">05-sgk-tieng-viet-5-tap-hai.pdf</span>
+  <span aria-current="page" class="truncate font-medium text-white">Tiếng Việt 5 — SGK Tiếng Việt 5 — Tập hai</span>
 </nav>
   </div>
 </header>
@@ -117,12 +117,6 @@
             class="px-3 py-2 text-xs font-medium rounded-lg border">📖 Đọc &amp; giải thích</button>
     
     
-    
-    <button @click="doiCheDo('pdf', true)" :aria-pressed="String(che === 'pdf')"
-            :class="che === 'pdf' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700'"
-            class="px-3 py-2 text-xs font-medium rounded-lg border">📄 Bản PDF</button>
-    <a href="https://minhln2.github.io/lms/pl/materials/tieng-viet-5/tieng-viet-tai-lieu-tham-khao/05-sgk-tieng-viet-5-tap-hai.pdf" download
-       class="ml-auto px-3 py-2 text-xs font-medium rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">⬇ Tải file gốc</a>
     
     
     
@@ -4486,15 +4480,30 @@
      PDF.js (0,51 MB sau gzip) chỉ tải khi bấm 📄. -->
 <main x-show="che === 'pdf'" x-cloak class="px-4 py-4">
 
-  
-  <p class="no-print mb-3 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm text-slate-600">
-    File nặng nên trang này mở bằng trình xem PDF của trình duyệt.
-    Không xem được thì <a :href="pdfGoc" target="_blank" rel="noopener"
-       class="underline font-medium text-indigo-700">mở ở tab mới ↗</a>.
+  <div class="no-print sticky top-[3.1rem] z-10 mb-3 flex items-center gap-2 flex-wrap
+              bg-white/95 backdrop-blur border border-slate-200 rounded-lg px-2 py-1.5">
+    <button @click="thuNho()" :disabled="tiLe <= 0.5" type="button" title="Thu nhỏ"
+            class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700 disabled:opacity-40">−</button>
+    <span class="text-xs text-slate-600 tabular-nums w-14 text-center"
+          x-text="Math.round(tiLe * 100) + '%'"></span>
+    <button @click="phongTo()" :disabled="tiLe >= 4" type="button" title="Phóng to"
+            class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700 disabled:opacity-40">+</button>
+    <button @click="vuaBeRong()" type="button"
+            class="px-3 py-2 text-xs font-medium rounded-lg border border-slate-300 text-slate-700">Vừa bề rộng</button>
+    <span x-show="soTrang" x-cloak class="ml-auto text-xs text-slate-500 tabular-nums"
+          x-text="soTrang + ' trang'"></span>
+    <a :href="pdfGoc" target="_blank" rel="noopener"
+       class="px-3 py-2 text-xs font-medium rounded-lg border border-slate-300 text-slate-700">Mở ở tab mới ↗</a>
+  </div>
+
+  <p x-show="pdfLoi" x-cloak
+     class="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-900">
+    <span x-text="pdfLoi"></span>
+    — <a :href="pdfGoc" target="_blank" rel="noopener" class="underline font-medium">mở bản PDF ở tab mới</a>.
   </p>
-  
-  <iframe :src="srcNang" title="Bản PDF"
-          class="w-full h-[80vh] border border-slate-200 rounded-lg bg-white"></iframe>
+  <p x-show="!pdfLoi && !soTrang" x-cloak class="text-sm text-slate-500">Đang mở bản PDF…</p>
+
+  <div id="pdfjs" class="space-y-3"></div>
 
 </main>
 </div>
@@ -4693,12 +4702,12 @@
     let _neo = null;
     return {
       
-      che: null,
-      chiDoc: false,
+      che: "doc",
+      chiDoc: true,
       // Giá trị đi vào STATE, không nhúng thẳng `|tojson` vào thuộc tính HTML:
       // `tojson` sinh chuỗi bọc nháy kép, mà thuộc tính cũng đóng bằng nháy kép
       // → đứt thuộc tính và chết cả Alpine. Đã dính BA lần trong dự án này.
-      pdfGoc: "https://minhln2.github.io/lms/pl/materials/tieng-viet-5/tieng-viet-tai-lieu-tham-khao/05-sgk-tieng-viet-5-tap-hai.pdf",
+      pdfGoc: "",
       pdfJsUrl: "../../../../assets/pdf.e73f3ce5.mjs",
       pdfWorkerUrl: "../../../../assets/pdf.worker.490b29ce.mjs",
       tiLe: 1.2, soTrang: 0, pdfLoi: '', srcNang: '',
@@ -5098,7 +5107,7 @@
       // Trang đọc không có khái niệm/phạm vi; ngữ cảnh là tên môn + tên tài liệu.
       
       traNgonNgu() { return false ? 'en' : 'vi'; },
-      traTen() { return 'Môn: ' + "Ti\u1ebfng Vi\u1ec7t 5" + '. Đang đọc tài liệu: ' + "05-sgk-tieng-viet-5-tap-hai.pdf" + '.'; },
+      traTen() { return 'Môn: ' + "Ti\u1ebfng Vi\u1ec7t 5" + '. Đang đọc tài liệu: ' + "Ti\u1ebfng Vi\u1ec7t 5 \u2014 SGK Ti\u1ebfng Vi\u1ec7t 5 \u2014 T\u1eadp hai" + '.'; },
       traMucCtx() { return []; },
       traDoc() { return null; },
       traSec() { return ''; },
