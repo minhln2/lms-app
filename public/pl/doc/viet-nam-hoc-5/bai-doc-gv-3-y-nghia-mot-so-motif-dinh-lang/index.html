@@ -1,0 +1,1622 @@
+
+
+
+
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Bai doc GV 3_Y nghia mot so motif dinh lang.docx · Việt Nam Học 5</title>
+<link rel="stylesheet" href="../../../../assets/tw.4f40ea63.css">
+<style>
+  [x-cloak] { display: none !important; }
+  #pdf { width:100%; height:calc(100vh - 8.5rem); border:0; }
+  .an { display:none !important; }
+  /* ── ảnh trang + lớp chữ trong suốt ─────────────────────────────────────
+     Toạ độ theo % và cỡ chữ theo `cqw` nên co giãn thuần CSS. KHÔNG nhân tỉ lệ
+     bằng JS trên cả khối rồi lại scaleX từng đoạn: hai tầng transform lồng nhau
+     đo bằng getBoundingClientRect (đã gồm transform cha) cho ra 2% số từ đúng chỗ. */
+  /* Nhãn "Trang 17/161" là của MÌNH, không phải nội dung sách. Để chọn được
+     thì kéo chuột qua hai trang liền nhau lại lôi luôn nó vào giữa đoạn chép
+     ra — người dùng báo đúng chuyện này. */
+  .stt { user-select:none; -webkit-user-select:none; }
+  .khung { position:relative; container-type:inline-size; overflow:hidden; }
+  /* ⚠ Ảnh trang phải TRONG SUỐT với chuột và ngón tay. Nó nằm dưới lớp chữ,
+     nhưng giữ để bôi đen thì trình duyệt vẫn bắt được nó và bung menu ảnh
+     ("Lưu ảnh", "Sao chép ảnh") — cú bôi đen đang dở bị huỷ, và người dùng
+     tưởng trang không cho chọn chữ. Bốn thuộc tính, mỗi cái chặn một đường:
+     `pointer-events` (chuột), `user-select` (kéo chọn), `-webkit-user-drag`
+     (kéo thả ảnh đi), `-webkit-touch-callout` (giữ lâu trên iOS).
+     Áp cho CẢ `img.dong` (GIF động): chúng cũng nằm dưới lớp chữ. */
+  .khung > img { display:block; width:100%; height:auto;
+                 pointer-events:none; user-select:none; -webkit-user-select:none;
+                 -webkit-user-drag:none; -webkit-touch-callout:none; }
+  .khung > img.dong { position:absolute; width:auto; height:auto; object-fit:fill; }
+  .chu { position:absolute; inset:0; }
+  /* Dấu mờ ("SAMPLE") và tiêu đề chạy: vẫn ở đó cho lớp chữ trung thực với
+     bản gốc, nhưng KHÔNG chắn tay người đọc. Thiếu dòng này thì kéo chuột qua
+     một câu trong sách lại chọn trúng chữ `SAMPLE` phủ kín trang. */
+  .chu span.mo { pointer-events: none; user-select: none; }
+  /* Dấu xuống dòng CHÉP ĐƯỢC giữa hai dòng chữ. Phải nằm TRONG LUỒNG và
+     chứa ký tự thật; `font-size:0` để nó không chiếm một pixel nào. Xem
+     `doc_view.py` cho ba cách đã thử và trượt. */
+  .chu i.nl { position:absolute; white-space:pre; font-size:0; }
+  .chu span { position:absolute; white-space:pre; color:transparent;
+              line-height:1; transform-origin:0 0; }
+  .chu span::selection { background:#6366f180; color:transparent; }
+  /* Kết quả tìm: chữ vốn trong suốt nên chỉ cần tô NỀN là thành vệt đánh dấu
+     nằm đúng trên chữ của ảnh trang. Không phải chèn thẻ, không phải đổi DOM —
+     một quyển sách có 13.000 span, đụng vào DOM là dựng hình lại cả trang. */
+  .chu span.tim     { background:#fde04780; }
+  .chu span.tim-nay { background:#fb923cc0; }
+  .lk { position:absolute; z-index:3; display:grid; place-items:center; border:0;
+        cursor:pointer; text-decoration:none; color:#fff; background:#ef4444;
+        box-shadow:0 2px 8px #0006; }
+  .lk.to  { width:14%; aspect-ratio:1.6; max-width:76px; border-radius:12px; font-size:1.6em; }
+  .lk.nho { width:32px; height:32px; border-radius:50%; font-size:.72em; margin-left:4px; }
+  .lk:hover { background:#dc2626; }
+  .khung .yt { position:absolute; z-index:4; border:0; border-radius:6px; }
+  /* ── In từ chế độ 📖 ──────────────────────────────────────────────────────
+     Để chế độ đọc TỰ IN ĐƯỢC, không phải nhờ trình xem PDF. Cần vậy vì Chrome
+     trên Windows có tuỳ chọn "Download PDFs instead of automatically opening
+     them"; bật lên thì khung PDF nhúng chỉ tải file về, và nút In của chế độ 📄
+     thành ngõ cụt đúng lúc cần nhất.
+     `size` phải khớp hướng giấy THẬT của tài liệu — CSS không trộn hướng giấy
+     giữa chừng được, nhưng mỗi trang đọc chỉ có một tài liệu nên một giá trị đủ.
+     Đo được khi chưa có phần này: PPTX 28 slide in ra 14 tờ vì slide ngang lọt
+     hai cái một tờ A4 dọc. */
+  
+  @page { size: 612pt 792pt; margin: 0; }
+
+  /* Thanh nav dính cao ~3rem; không chừa thì mục lục nhảy tới trang nào là
+     đầu trang đó chui xuống dưới nav. */
+  .trang, #pdfjs > [data-trang] { scroll-margin-top: 3.6rem; }
+  @media print {
+    header, nav, .no-print { display: none !important; }
+    body { background: #fff; }
+    main { max-width: none !important; padding: 0 !important; }
+    .stt { display: none; }
+    /* Ép ảnh vừa ĐÚNG chiều cao tờ giấy. Để `width:100%` thôi thì tỉ lệ
+       khớp về lý thuyết nhưng làm tròn dưới một pixel vẫn đẩy sang tờ thứ hai —
+       đo được: 8 trang in ra 16 tờ, 18 trang ra 36, tức MỖI trang thừa một tờ
+       trắng. `height:100vh` + `overflow:hidden` cắt đúng chỗ đó. */
+    .trang { margin: 0; height: 100vh; overflow: hidden;
+             break-after: page; break-inside: avoid; }
+    .trang:last-child { break-after: auto; }
+    .khung { border: 0; border-radius: 0; height: 100vh; }
+    .khung > img { border-radius: 0; height: 100vh; width: auto;
+                   max-width: 100vw; margin: 0 auto; }
+    .lk { display: none !important; }   /* nút ▶ không có nghĩa trên giấy */
+  }
+</style>
+<script defer src="../../../../assets/collapse.d0a27f2d.js"></script>
+<script defer src="../../../../assets/alpine.63d2636a.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800"
+      x-data="docStore()" x-init="traGan()">
+
+<header class="no-print bg-indigo-600 text-white">
+  <div class="max-w-[76rem] mx-auto px-4 py-2 min-w-0">
+    
+    <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-indigo-200">
+  <a href="../../../../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">🏠 Home</a><span class="shrink-0 text-indigo-300">›</span>
+  <a href="../../../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">PL</a><span class="shrink-0 text-indigo-300">›</span>
+  <a href="../../../viet-nam-hoc-5.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">Việt Nam Học 5</a><span class="shrink-0 text-indigo-300">›</span>
+  <span aria-current="page" class="truncate font-medium text-white">Bai doc GV 3_Y nghia mot so motif dinh lang.docx</span>
+</nav>
+  </div>
+</header>
+
+<nav class="no-print sticky top-0 z-20 bg-white border-b border-slate-200">
+  <div class="max-w-[76rem] mx-auto px-4 py-2 flex items-center gap-2 flex-wrap">
+    
+    <button @click="doiCheDo('doc', true)" :aria-pressed="String(che === 'doc')"
+            :class="che === 'doc' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700'"
+            class="px-3 py-2 text-xs font-medium rounded-lg border">📖 Đọc &amp; giải thích</button>
+    
+    
+    
+    <button @click="doiCheDo('pdf', true)" :aria-pressed="String(che === 'pdf')"
+            :class="che === 'pdf' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700'"
+            class="px-3 py-2 text-xs font-medium rounded-lg border">📄 Bản PDF</button>
+    <a href="https://minhln2.github.io/lms/pl/materials/viet-nam-hoc-5/chu-de-1-hoa-van-dinh-den-chua/Bai doc GV 3_Y nghia mot so motif dinh lang.docx" download
+       class="ml-auto px-3 py-2 text-xs font-medium rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">⬇ Tải file gốc</a>
+    
+    
+    
+    <div x-show="che === 'doc'" class="flex items-center gap-1">
+      <input type="search" x-model="tim" @input.debounce.250ms="timKiem()"
+             @keydown.enter.prevent="toiKetQua(1)"
+             @keydown.escape.prevent="tim=''; timKiem()"
+             placeholder="Tìm trong tài liệu…"
+             class="w-40 sm:w-56 px-2 py-2 text-xs rounded-lg border border-slate-300">
+      <span x-show="tim" x-cloak class="text-xs text-slate-500 tabular-nums w-14 text-center"
+            x-text="soKq ? (viTri + 1) + '/' + soKq : 'không có'"></span>
+      <button x-show="soKq" x-cloak @click="toiKetQua(-1)" type="button" title="Kết quả trước"
+              class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700">‹</button>
+      <button x-show="soKq" x-cloak @click="toiKetQua(1)" type="button" title="Kết quả sau"
+              class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700">›</button>
+    </div>
+    
+  </div>
+</nav>
+
+<div class="max-w-[76rem] mx-auto lg:flex lg:gap-5 lg:items-start">
+
+
+
+<aside class="no-print select-none px-4 pt-4 lg:w-60 lg:shrink-0 lg:sticky lg:top-[3.4rem] lg:pl-4 lg:pr-0">
+  <button @click="mlMo = !mlMo" type="button" :aria-expanded="String(mlMo)"
+          class="lg:hidden w-full px-3 py-2 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-700 text-left">
+    <span x-text="mlMo ? '▾' : '▸'"></span> Mục lục (6 mục)
+  </button>
+  <div :class="mlMo ? 'block' : 'hidden lg:block'"
+       class="mt-2 lg:mt-0 rounded-lg border border-slate-200 bg-white p-2 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
+    <p class="px-2 pb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Mục lục</p>
+    
+    
+    
+    <ol class="space-y-0.5">
+      
+      
+        
+          
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          <button type="button" @click="moUnit[1] = !moUnit[1]"
+                  :aria-expanded="String(!!moUnit[1])"
+                  class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
+                  x-text="moUnit[1] ? '▾' : '▸'"></button>
+          <button type="button" @click="toiTrang(1); moUnit[1] = true"
+                  :class="unitDang === 0 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">1</span>
+            <span class="min-w-0">Ý NGHĨA VÀ BIỂU TƯỢNG CỦA MỘT SỐ MÔ TÍP TRANG TRÍ TIÊU BIỂU TRONG ĐIÊU KHẮC ĐÌNH LÀNG</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[1]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          <button type="button" @click="moUnit[2] = !moUnit[2]"
+                  :aria-expanded="String(!!moUnit[2])"
+                  class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
+                  x-text="moUnit[2] ? '▾' : '▸'"></button>
+          <button type="button" @click="toiTrang(1); moUnit[2] = true"
+                  :class="unitDang === 1 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">1</span>
+            <span class="min-w-0">1. Biểu tượng trong văn hoá nghệ thuật</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[2]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          <button type="button" @click="moUnit[3] = !moUnit[3]"
+                  :aria-expanded="String(!!moUnit[3])"
+                  class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
+                  x-text="moUnit[3] ? '▾' : '▸'"></button>
+          <button type="button" @click="toiTrang(1); moUnit[3] = true"
+                  :class="unitDang === 2 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">1</span>
+            <span class="min-w-0">2. Ý nghĩa, biểu tượng của một số môtíp trang trí tiêu biểu</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[3]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          <button type="button" @click="moUnit[4] = !moUnit[4]"
+                  :aria-expanded="String(!!moUnit[4])"
+                  class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
+                  x-text="moUnit[4] ? '▾' : '▸'"></button>
+          <button type="button" @click="toiTrang(1); moUnit[4] = true"
+                  :class="unitDang === 3 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">1</span>
+            <span class="min-w-0">2.1. Các mô típ thiên nhiên - vũ trụ</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[4]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          <button type="button" @click="moUnit[5] = !moUnit[5]"
+                  :aria-expanded="String(!!moUnit[5])"
+                  class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
+                  x-text="moUnit[5] ? '▾' : '▸'"></button>
+          <button type="button" @click="toiTrang(3); moUnit[5] = true"
+                  :class="unitDang === 4 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">3</span>
+            <span class="min-w-0">2.2. Các môtíp trang trí cây cỏ</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[5]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          <button type="button" @click="moUnit[6] = !moUnit[6]"
+                  :aria-expanded="String(!!moUnit[6])"
+                  class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
+                  x-text="moUnit[6] ? '▾' : '▸'"></button>
+          <button type="button" @click="toiTrang(6); moUnit[6] = true"
+                  :class="unitDang === 5 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">6</span>
+            <span class="min-w-0">3.2.3. Các mô típ trang trí động vật</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[6]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+      </ol></li>
+    </ol>
+  </div>
+</aside>
+
+<div class="min-w-0 lg:flex-1">
+
+<main data-tra x-show="che === 'doc'" class="px-4 py-4">
+
+<section class="trang" id="tr-1" data-tr="1"><div class="khung"><img src="anh/trang-1.webp" width="1020" height="1320" alt="" loading="lazy"><div class="chu"><span data-w="0.73868" style="left:11.781%;top:11.524%;font-size:2.124cqw">Ý NGHĨA VÀ BIỂU TƯỢNG CỦA MỘT SỐ MÔ TÍP TRANG TRÍ TIÊU BIỂU </span><i class="nl" style="left:11.781%;top:13.411%">
+</i><span data-w="0.33260" style="left:11.781%;top:13.411%;font-size:2.124cqw">TRONG ĐIÊU KHẮC ĐÌNH LÀNG</span><i class="nl" style="left:58.840%;top:17.029%">
+</i><span data-w="0.22289" style="left:58.840%;top:17.029%;font-size:2.124cqw">NGUYỄN VĂN CƯƠNG</span><i class="nl" style="left:15.482%;top:22.313%">
+</i><span data-w="0.73325" style="left:15.482%;top:22.313%;font-size:2.124cqw">Trang trí là một loại hình của nghệ thuật tạo hình, có khả năng biểu hiện tư tưởng, </span><i class="nl" style="left:11.781%;top:24.200%">
+</i><span data-w="0.77026" style="left:11.781%;top:24.200%;font-size:2.124cqw">tình cảm, thẩm mỹ của cả một cộng đồng, dân tộc. Bằng nghệ thuật cách điệu, tượng </span><i class="nl" style="left:11.781%;top:26.088%">
+</i><span data-w="0.77026" style="left:11.781%;top:26.088%;font-size:2.124cqw">trưng hóa các đối tượng như tự nhiên, cây cỏ, động vật… đã tạo thành các mô típ (motif) </span><i class="nl" style="left:11.781%;top:27.976%">
+</i><span data-w="0.77026" style="left:11.781%;top:27.976%;font-size:2.124cqw">trang trí. Trong điêu khắc đình làng có nhiều chạm khắc trang trí. Người nghệ nhân xưa </span><i class="nl" style="left:11.781%;top:29.863%">
+</i><span data-w="0.77026" style="left:11.781%;top:29.863%;font-size:2.124cqw">đã sáng tạo, tiếp thu và sử dụng nhiều mô típ trang trí. Các mô típ trang trí có ý nghĩa và </span><i class="nl" style="left:11.781%;top:31.751%">
+</i><span data-w="0.21490" style="left:11.781%;top:31.751%;font-size:2.124cqw">biểu tượng với rất nhiều </span><span data-w="0.08871" style="left:33.333%;top:31.751%;font-size:2.124cqw">lớp nghĩa </span><span data-w="0.46577" style="left:42.222%;top:31.751%;font-size:2.124cqw">phong phú. Việc tìm hiểu và giải mã chúng cho phép </span><i class="nl" style="left:11.781%;top:33.639%">
+</i><span data-w="0.57030" style="left:11.781%;top:33.639%;font-size:2.124cqw">chúng ta tìm hiểu về tư duy, quan niệm và thẩm mỹ của người xưa.</span><i class="nl" style="left:15.482%;top:37.332%">
+</i><span data-w="0.35607" style="left:15.482%;top:37.332%;font-size:2.124cqw">1. Biểu tượng trong văn hoá nghệ thuật</span><i class="nl" style="left:15.482%;top:40.955%">
+</i><span data-w="0.51904" style="left:15.482%;top:40.955%;font-size:2.124cqw">Biểu tượng (symbol) trong tiếng Hán bao gồm hai thành tố: </span><span data-w="0.04257" style="left:67.500%;top:40.955%;font-size:2.124cqw">biểu </span><span data-w="0.17059" style="left:71.765%;top:40.955%;font-size:2.124cqw">= là dấu hiệu, là sự </span><i class="nl" style="left:11.781%;top:42.843%">
+</i><span data-w="0.15341" style="left:11.781%;top:42.843%;font-size:2.124cqw">bộc lộ, phô bày; </span><span data-w="0.05818" style="left:27.165%;top:42.843%;font-size:2.124cqw">tượng </span><span data-w="0.55833" style="left:32.990%;top:42.843%;font-size:2.124cqw">= là hình (tượng). Thoạt tiên, biểu tượng được dùng theo một </span><i class="nl" style="left:11.781%;top:44.731%">
+</i><span data-w="0.77042" style="left:11.781%;top:44.731%;font-size:2.124cqw">nghĩa thực dụng: là một vật (đá, ngọc, sành, hay gỗ) được chia làm hai trong một giao </span><i class="nl" style="left:11.781%;top:46.618%">
+</i><span data-w="0.77042" style="left:11.781%;top:46.618%;font-size:2.124cqw">ước như tín vật, khi gặp nhau chắp lại để làm tin. Biểu tượng là phương tiện phản ánh tư </span><i class="nl" style="left:11.781%;top:48.506%">
+</i><span data-w="0.77042" style="left:11.781%;top:48.506%;font-size:2.124cqw">duy, hành vi, khát vọng, kể cả điều cấm kỵ, ám ảnh, sợ hãi. Biểu tượng thể hiện những </span><i class="nl" style="left:11.781%;top:50.394%">
+</i><span data-w="0.77042" style="left:11.781%;top:50.394%;font-size:2.124cqw">góc khuất của tiềm thức và vô thức, cho nên biểu tượng “bộc lộ rồi lủi trốn; càng tự phơi </span><i class="nl" style="left:11.781%;top:52.281%">
+</i><span data-w="0.77042" style="left:11.781%;top:52.281%;font-size:2.124cqw">bầy sáng tỏ, nó lại càng tự dấu mình đi. Các biểu tượng tiết lộ mà che dấu và che dấu mà </span><i class="nl" style="left:11.781%;top:54.169%">
+</i><span data-w="0.16889" style="left:11.781%;top:54.169%;font-size:2.124cqw">tiết lộ” (Gurvitch). </span><span data-w="0.00613" style="left:28.693%;top:54.137%;font-size:1.225cqw">1</span><span data-w="0.59518" style="left:29.306%;top:54.169%;font-size:2.124cqw"> Biểu tượng là phương tiện chuyển tải tư tưởng, thông điệp vượt ra </span><i class="nl" style="left:11.781%;top:56.056%">
+</i><span data-w="0.77042" style="left:11.781%;top:56.056%;font-size:2.124cqw">ngoài khuôn khổ của dấu hiệu, hình ảnh, âm thanh. Biểu tượng mang đến nhiều điều bất </span><i class="nl" style="left:11.781%;top:57.944%">
+</i><span data-w="0.77042" style="left:11.781%;top:57.944%;font-size:2.124cqw">khả tri giác. Nhà từ điển Pháp André Lalande định nghĩa: “Biểu tượng là cái biểu hiện </span><i class="nl" style="left:11.781%;top:59.832%">
+</i><span data-w="0.77042" style="left:11.781%;top:59.832%;font-size:2.124cqw">một cái khác căn cứ vào một tương ứng loại suy”. Giản dị hơn, “biểu tượng là một dấu </span><i class="nl" style="left:11.781%;top:61.719%">
+</i><span data-w="0.77042" style="left:11.781%;top:61.719%;font-size:2.124cqw">hiệu hình ảnh, bằng con vật sống động hay đồ vật, nó biểu hiện một điều trừu tượng, nó </span><i class="nl" style="left:11.781%;top:63.607%">
+</i><span data-w="0.62268" style="left:11.781%;top:63.607%;font-size:2.124cqw">là hình ảnh cụ thể của một sự hay một điều gì đó.” (Petit Larousse: 1981)</span><span data-w="0.00613" style="left:74.052%;top:63.575%;font-size:1.225cqw">2</span><span data-w="0.00531" style="left:74.665%;top:63.607%;font-size:2.124cqw">.</span><i class="nl" style="left:15.482%;top:67.262%">
+</i><span data-w="0.73309" style="left:15.482%;top:67.262%;font-size:2.124cqw">Trong quá trình lịch sử, các lớp văn hoá chồng lấp và phủ lên các biểu tượng văn hoá </span><i class="nl" style="left:11.781%;top:69.150%">
+</i><span data-w="0.77010" style="left:11.781%;top:69.150%;font-size:2.124cqw">một bức màn huyền ảo. Do đó, việc giải mã các biểu tượng trở nên một thách đố đầy khó </span><i class="nl" style="left:11.781%;top:71.038%">
+</i><span data-w="0.77010" style="left:11.781%;top:71.038%;font-size:2.124cqw">khăn và thú vị, đòi hỏi cách tiếp cận liên ngành. Sáng tạo ra biểu tượng đòi hỏi một trình </span><i class="nl" style="left:11.781%;top:72.925%">
+</i><span data-w="0.77010" style="left:11.781%;top:72.925%;font-size:2.124cqw">độ tư duy trừu tượng nhất định. Việc sử dụng mô típ trang trí có ý nghĩa và biểu tượng </span><i class="nl" style="left:11.781%;top:74.813%">
+</i><span data-w="0.42477" style="left:11.781%;top:74.813%;font-size:2.124cqw">thể hiện quan niệm, tư tưởng của chủ thể văn hóa.</span><i class="nl" style="left:15.482%;top:78.506%">
+</i><span data-w="0.52829" style="left:15.482%;top:78.506%;font-size:2.124cqw">2. Ý nghĩa, biểu tượng của một số môtíp trang trí tiêu biểu</span><i class="nl" style="left:15.482%;top:82.130%">
+</i><span data-w="0.73309" style="left:15.482%;top:82.130%;font-size:2.124cqw">Trong điêu khắc trang trí đình làng, các mô típ trang trí có ý nghĩa và biểu tượng </span><i class="nl" style="left:11.781%;top:84.017%">
+</i><span data-w="0.64299" style="left:11.781%;top:84.017%;font-size:2.124cqw">gồm 3 chủ đề chính: 1) thiên nhiên - vũ trụ; 2) cây cỏ; 3) linh thú, động vật.</span><i class="nl" style="left:15.482%;top:87.704%">
+</i><span data-w="0.31735" style="left:15.482%;top:87.704%;font-size:2.124cqw">2.1. Các mô típ thiên nhiên - vũ trụ</span></div></div></section>
+<section class="trang" id="tr-2" data-tr="2"><div class="khung"><img src="anh/trang-2.webp" width="1020" height="1320" alt="" loading="lazy"><div class="chu"><span data-w="0.09053" style="left:15.482%;top:9.156%;font-size:2.124cqw">- Thái cực</span><i class="nl" style="left:15.482%;top:12.767%">
+</i><span data-w="0.73325" style="left:15.482%;top:12.767%;font-size:2.124cqw">Thái cực được quan niệm là khởi nguyên của vũ trụ. Thái cực được diễn tả bằng một </span><i class="nl" style="left:11.781%;top:14.655%">
+</i><span data-w="0.77026" style="left:11.781%;top:14.655%;font-size:2.124cqw">biểu tượng dưới dạng một hình tròn, ở giữa có đường lượn hình chữ S. Một nửa màu </span><i class="nl" style="left:11.781%;top:16.543%">
+</i><span data-w="0.77034" style="left:11.781%;top:16.543%;font-size:2.124cqw">trắng (biểu tượng cho dương) có chấm đen (âm), nửa bên kia màu đen (biểu tượng cho </span><i class="nl" style="left:11.781%;top:18.430%">
+</i><span data-w="0.77026" style="left:11.781%;top:18.430%;font-size:2.124cqw">âm) có chấm trắng (dương). Thái cực là nguồn gốc, là sự bắt đầu của sự sống. Sự chuyển </span><i class="nl" style="left:11.781%;top:20.318%">
+</i><span data-w="0.77026" style="left:11.781%;top:20.318%;font-size:2.124cqw">động của Thái cực sản sinh ra âm - dương. Âm dương vận động sản sinh ra vạn vật. Biểu </span><i class="nl" style="left:11.781%;top:22.205%">
+</i><span data-w="0.77026" style="left:11.781%;top:22.205%;font-size:2.124cqw">tượng Thái cực mang ý nghĩa về sự khởi đầu, hoàn hảo, toàn vẹn, mang lại điềm lành, </span><i class="nl" style="left:11.781%;top:24.093%">
+</i><span data-w="0.77026" style="left:11.781%;top:24.093%;font-size:2.124cqw">hạnh phúc, đồng thời có thể trấn quỷ, trừ tà. Trong mỹ thuật đình làng, người ta thường </span><i class="nl" style="left:11.781%;top:25.981%">
+</i><span data-w="0.77026" style="left:11.781%;top:25.981%;font-size:2.124cqw">vẽ vòng Thái cực trên Thiên tỉnh (trần gian giữa của đình làng). Cũng có khi chúng ta bắt </span><i class="nl" style="left:11.781%;top:27.868%">
+</i><span data-w="0.55830" style="left:11.781%;top:27.868%;font-size:2.124cqw">gặp vòng Thái cực trong vầng mặt trời trên nóc đình, trong đồ án </span><span data-w="0.18291" style="left:67.753%;top:27.868%;font-size:2.124cqw">lưỡng long chầu nhật</span><span data-w="0.02721" style="left:86.078%;top:27.868%;font-size:2.124cqw">, ở </span><i class="nl" style="left:11.781%;top:29.756%">
+</i><span data-w="0.77026" style="left:11.781%;top:29.756%;font-size:2.124cqw">những ngôi đình muộn thời Nguyễn. Ở ngôi đình sớm nhất Việt Nam, đình Thụy Phiêu </span><i class="nl" style="left:11.781%;top:31.644%">
+</i><span data-w="0.77026" style="left:11.781%;top:31.644%;font-size:2.124cqw">(Hà Tây), niên đại 1531, có vòng Thái cực được chạm vào gác thờ. Tuy nhiên, niên đại </span><i class="nl" style="left:11.781%;top:33.531%">
+</i><span data-w="0.77026" style="left:11.781%;top:33.531%;font-size:2.124cqw">của gác thờ có thể muộn, vào thời Nguyễn. Biểu tượng Thái cực thường đi với Tứ tượng </span><i class="nl" style="left:11.781%;top:35.419%">
+</i><span data-w="0.75458" style="left:11.781%;top:35.419%;font-size:2.124cqw">hoặc Bát quái. Nhưng trong trang trí đình làng, mô típ này hầu như không được sử dụng.</span><i class="nl" style="left:15.482%;top:39.118%">
+</i><span data-w="0.18486" style="left:15.482%;top:39.118%;font-size:2.124cqw">- Mặt trời -Mặt trăng</span><i class="nl" style="left:15.482%;top:42.742%">
+</i><span data-w="0.73333" style="left:15.482%;top:42.742%;font-size:2.124cqw">Hình tượng mặt trời biểu tượng cho sự chủ động và sự thống lĩnh. Mặt trời là thái </span><i class="nl" style="left:11.781%;top:44.630%">
+</i><span data-w="0.77034" style="left:11.781%;top:44.630%;font-size:2.124cqw">dương hay đại diện cho nguyên lý thuần dương, biểu hiện của dương tính mạnh mẽ. </span><i class="nl" style="left:11.781%;top:46.517%">
+</i><span data-w="0.77034" style="left:11.781%;top:46.517%;font-size:2.124cqw">Trong truyền thuyết Trung Hoa, mặt trời (vầng thái dương) cũng có khi là biểu tượng của </span><i class="nl" style="left:11.781%;top:48.405%">
+</i><span data-w="0.77034" style="left:11.781%;top:48.405%;font-size:2.124cqw">hoàng đế. Môtíp mặt trời thường được sử dụng với hình tượng “lưỡng long chầu nhật”, </span><i class="nl" style="left:11.781%;top:50.293%">
+</i><span data-w="0.77034" style="left:11.781%;top:50.293%;font-size:2.124cqw">được đắp nổi bằng vữa có gắn mảnh sành trên nóc đình, hoặc trong các đồ án trang trí ở </span><i class="nl" style="left:11.781%;top:52.180%">
+</i><span data-w="0.77034" style="left:11.781%;top:52.180%;font-size:2.124cqw">cửa võng. Mặt trăng là hình ảnh mang nguyên lý đối lập với mặt trời. Xét theo nguyên lý </span><i class="nl" style="left:11.781%;top:54.068%">
+</i><span data-w="0.77034" style="left:11.781%;top:54.068%;font-size:2.124cqw">âm dương, mặt trăng mang tính thuần âm, liên quan đến phụ nữ. Mặt trăng mang lại điềm </span><i class="nl" style="left:11.781%;top:55.955%">
+</i><span data-w="0.77042" style="left:11.781%;top:55.955%;font-size:2.124cqw">lành, hạnh phúc. Đạo giáo cho rằng, mặt trăng là nơi cư trú của chú thỏ ngọc, đang </span><i class="nl" style="left:11.781%;top:57.843%">
+</i><span data-w="0.77042" style="left:11.781%;top:57.843%;font-size:2.124cqw">nghiền thuốc trường sinh ở gốc đa. Trong cách hiểu như vậy, mặt trăng là nơi chứa đựng </span><i class="nl" style="left:11.781%;top:59.731%">
+</i><span data-w="0.77034" style="left:11.781%;top:59.731%;font-size:2.124cqw">nguồn sống bất tử. Trong chạm khắc trang trí đình làng mô típ mặt trời và mặt trăng có </span><i class="nl" style="left:11.781%;top:61.618%">
+</i><span data-w="0.26217" style="left:11.781%;top:61.618%;font-size:2.124cqw">mặt trong đồ án trang trí như: </span><span data-w="0.41233" style="left:38.072%;top:61.618%;font-size:2.124cqw">lưỡng long chầu nhật, lưỡng long chầu nguyệt. </span><span data-w="0.09412" style="left:79.395%;top:61.618%;font-size:2.124cqw">Môtíp này </span><i class="nl" style="left:11.781%;top:63.506%">
+</i><span data-w="0.77034" style="left:11.781%;top:63.506%;font-size:2.124cqw">thường được bố trí ở vị trí trung tâm, trang trọng, như cửa võng, bàn thờ, ở trên nóc đình, </span><i class="nl" style="left:11.781%;top:65.394%">
+</i><span data-w="0.13327" style="left:11.781%;top:65.394%;font-size:2.124cqw">trên trán bia đá.</span><i class="nl" style="left:15.482%;top:69.093%">
+</i><span data-w="0.05125" style="left:15.482%;top:69.093%;font-size:2.124cqw">- Mây</span><i class="nl" style="left:15.482%;top:72.704%">
+</i><span data-w="0.73325" style="left:15.482%;top:72.704%;font-size:2.124cqw">Mây mang đến những dấu hiệu tốt lành, hạnh phúc. Đối với cư dân nông nghiệp, </span><i class="nl" style="left:11.781%;top:74.592%">
+</i><span data-w="0.77026" style="left:11.781%;top:74.592%;font-size:2.124cqw">mây dấu hiệu báo hiệu cơn mưa. Cuộc “mây mưa” còn được ví như hành vi tính dục, có ý </span><i class="nl" style="left:11.781%;top:76.479%">
+</i><span data-w="0.77026" style="left:11.781%;top:76.479%;font-size:2.124cqw">nghĩa phồn thực. Đối với cộng đồng, cá nhân, mây mang đến điềm báo cát tường, như </span><i class="nl" style="left:11.781%;top:78.367%">
+</i><span data-w="0.25853" style="left:11.781%;top:78.367%;font-size:2.124cqw">mây ngũ sắc cũng có nghĩa là </span><span data-w="0.07874" style="left:37.696%;top:78.367%;font-size:2.124cqw">ngũ phúc</span><span data-w="0.43235" style="left:45.572%;top:78.367%;font-size:2.124cqw">. Khi đức Phật ra đời, có mây ngũ sắc toả ánh hào </span><i class="nl" style="left:11.781%;top:80.255%">
+</i><span data-w="0.77026" style="left:11.781%;top:80.255%;font-size:2.124cqw">quang. Trong những lễ tế thần, người xưa quan niệm có ứng nghiệm là khi có những đám </span><i class="nl" style="left:11.781%;top:82.142%">
+</i><span data-w="0.77026" style="left:11.781%;top:82.142%;font-size:2.124cqw">mây trắng hoặc mây ngũ sắc hiện ra. Với ý nghĩa trên, hình tượng mây được những người </span><i class="nl" style="left:11.781%;top:84.030%">
+</i><span data-w="0.68828" style="left:11.781%;top:84.030%;font-size:2.124cqw">nghệ nhân dân gian xưa bố trí trong những đồ án trang trí cùng với Tứ linh như </span><span data-w="0.07966" style="left:80.842%;top:84.030%;font-size:2.124cqw">long vân </span><i class="nl" style="left:11.781%;top:85.918%">
+</i><span data-w="0.32251" style="left:11.781%;top:85.918%;font-size:2.124cqw">khánh hội, long ẩn vân, phượng mây, </span><span data-w="0.22672" style="left:44.044%;top:85.918%;font-size:2.124cqw">mây nâng vòng Thái cực...</span></div></div></section>
+<section class="trang" id="tr-3" data-tr="3"><div class="khung"><img src="anh/trang-3.webp" width="1020" height="1320" alt="" loading="lazy"><div class="chu"><span data-w="0.06119" style="left:15.482%;top:9.156%;font-size:2.124cqw">- Nước</span><i class="nl" style="left:15.482%;top:12.767%">
+</i><span data-w="0.73325" style="left:15.482%;top:12.767%;font-size:2.124cqw">Đối với cư dân nông nghiệp lúa nước, nước là nguồn sống của con người và vạn vật. </span><i class="nl" style="left:11.781%;top:14.655%">
+</i><span data-w="0.64902" style="left:11.781%;top:14.655%;font-size:2.124cqw">Nhưng nước cũng đứng đầu trong các mối hiểm họa đối với con người - “</span><span data-w="0.11928" style="left:76.879%;top:14.655%;font-size:2.124cqw">thuỷ hỏa đạo </span><i class="nl" style="left:11.781%;top:16.543%">
+</i><span data-w="0.02592" style="left:11.781%;top:16.543%;font-size:2.124cqw">tặc</span><span data-w="0.39289" style="left:14.379%;top:16.543%;font-size:2.124cqw">”. Nước có mối quan hệ với lửa trong thế </span><span data-w="0.11313" style="left:53.758%;top:16.543%;font-size:2.124cqw">tương khắc </span><span data-w="0.00707" style="left:65.082%;top:16.543%;font-size:2.124cqw">(</span><span data-w="0.12673" style="left:65.792%;top:16.543%;font-size:2.124cqw">thủy khắc hỏa</span><span data-w="0.04535" style="left:78.472%;top:16.543%;font-size:2.124cqw">) và </span><span data-w="0.05776" style="left:83.015%;top:16.543%;font-size:2.124cqw">tương </span><i class="nl" style="left:11.781%;top:18.430%">
+</i><span data-w="0.03360" style="left:11.781%;top:18.430%;font-size:2.124cqw">tác </span><span data-w="0.00707" style="left:15.147%;top:18.430%;font-size:2.124cqw">(</span><span data-w="0.12550" style="left:15.858%;top:18.430%;font-size:2.124cqw">thủy hỏa ký tế</span><span data-w="0.60368" style="left:28.440%;top:18.430%;font-size:2.124cqw">). Hình tượng sóng nước thường là những môtíp được bố trí ở phía </span><i class="nl" style="left:11.781%;top:20.318%">
+</i><span data-w="0.77034" style="left:11.781%;top:20.318%;font-size:2.124cqw">dưới của bố cục, gồm những đường lượn cong đều. Thời Lý - Trần, trong mỹ thuật Phật </span><i class="nl" style="left:11.781%;top:22.205%">
+</i><span data-w="0.77026" style="left:11.781%;top:22.205%;font-size:2.124cqw">giáo có môtíp sóng hình nấm, ở bệ tượng Phật, ở trụ đá... Nhiều nhà nghiên cứu mỹ thuật </span><i class="nl" style="left:11.781%;top:24.093%">
+</i><span data-w="0.77034" style="left:11.781%;top:24.093%;font-size:2.124cqw">nhận thấy ở môtíp này có hình tượng lưỡng nguyên: vừa là hình tượng cây, vừa mang </span><i class="nl" style="left:11.781%;top:25.981%">
+</i><span data-w="0.77034" style="left:11.781%;top:25.981%;font-size:2.124cqw">hình tượng núi. Trong chạm khắc đình làng, mô típ nước thường được sử dụng trong đồ </span><i class="nl" style="left:11.781%;top:27.868%">
+</i><span data-w="0.77034" style="left:11.781%;top:27.868%;font-size:2.124cqw">án trang trí, như rồng phun nước, cá chép hoá rồng... Nước luôn ở thế động và được cách </span><i class="nl" style="left:11.781%;top:29.756%">
+</i><span data-w="0.09431" style="left:11.781%;top:29.756%;font-size:2.124cqw">điệu thành </span><span data-w="0.09368" style="left:21.217%;top:29.756%;font-size:2.124cqw">sóng nước </span><span data-w="0.09815" style="left:30.588%;top:29.756%;font-size:2.124cqw">như vẩy cá.</span><i class="nl" style="left:15.482%;top:33.468%">
+</i><span data-w="0.09037" style="left:15.482%;top:33.468%;font-size:2.124cqw">- Tia chớp</span><i class="nl" style="left:15.482%;top:37.079%">
+</i><span data-w="0.73325" style="left:15.482%;top:37.079%;font-size:2.124cqw">Hệ quả của mối quan hệ lửa và nước, dấu hiệu báo trước cơn mưa là tia chớp, sét. </span><i class="nl" style="left:11.781%;top:38.967%">
+</i><span data-w="0.77026" style="left:11.781%;top:38.967%;font-size:2.124cqw">Hình tượng của tia chớp có ý nghĩa giao hòa để tạo ra mưa thuận, gió hòa. Tia chớp còn </span><i class="nl" style="left:11.781%;top:40.854%">
+</i><span data-w="0.77026" style="left:11.781%;top:40.854%;font-size:2.124cqw">là biểu tượng của thanh gươm, tia sáng mặt trời. “Mũi tên bắn từ nỏ thần vua Thục: “Chỉ </span><i class="nl" style="left:11.781%;top:42.742%">
+</i><span data-w="0.77026" style="left:11.781%;top:42.742%;font-size:2.124cqw">sông, sông cạn; chỉ núi, núi tan; chỉ ngàn, ngàn cháy”.. Thanh gươm của thủ lĩnh Hoả Xá </span><i class="nl" style="left:11.781%;top:44.630%">
+</i><span data-w="0.77026" style="left:11.781%;top:44.630%;font-size:2.124cqw">(Tây Nguyên) là tượng trưng của sấm sét. Gươm thiêng của các vua Căm-pu-chia thuở </span><i class="nl" style="left:11.781%;top:46.517%">
+</i><span data-w="0.77034" style="left:11.781%;top:46.517%;font-size:2.124cqw">trước, nếu rút ra khỏi vỏ mà không trải qua nghi lễ, người ta tin rằng cả vương quốc sẽ bị </span><i class="nl" style="left:11.781%;top:48.405%">
+</i><span data-w="0.77026" style="left:11.781%;top:48.405%;font-size:2.124cqw">lửa thiêu tàn. Nhúng gươm xuống nước là biểu thị hoà hợp (lưỡng hợp) nước lửa, một </span><i class="nl" style="left:11.781%;top:50.293%">
+</i><span data-w="0.76281" style="left:11.781%;top:50.293%;font-size:2.124cqw">nghi lễ phồn thực. Nhưng nhúng gươm xuống nước cũng là biểu thị thế lưỡng phân Nước</span><i class="nl" style="left:11.781%;top:52.149%">
+</i><span data-w="0.41113" style="left:11.781%;top:52.149%;font-size:2.124cqw">– Lửa: lửa trị nước, nước rút, nghi lễ chống lụt”.</span><span data-w="0.00613" style="left:52.900%;top:52.117%;font-size:1.225cqw">3</span><i class="nl" style="left:15.482%;top:55.842%">
+</i><span data-w="0.63949" style="left:15.482%;top:55.842%;font-size:2.124cqw">Trong điêu khắc đình làng, tia chớp được hiện  thực  hóa  dưới  hình  thức </span><span data-w="0.09224" style="left:79.600%;top:55.842%;font-size:2.124cqw">đao  rồng </span><i class="nl" style="left:11.781%;top:57.729%">
+</i><span data-w="0.77051" style="left:11.781%;top:57.729%;font-size:2.124cqw">(còn gọi là đao lửa). Tia chớp - đao rồng làm cho con rồng như tăng thêm uy lực. Nó còn </span><i class="nl" style="left:11.781%;top:59.617%">
+</i><span data-w="0.77042" style="left:11.781%;top:59.617%;font-size:2.124cqw">biểu tượng của tinh thần dũng mãnh, thượng võ và biểu tượng của quyền lực. Tia chớp </span><i class="nl" style="left:11.781%;top:61.505%">
+</i><span data-w="0.77042" style="left:11.781%;top:61.505%;font-size:2.124cqw">được thể hiện bằng vân xoáy mập ở gốc, duỗi dần ra ngọn, rồi thẳng ra đến đầu như mũi </span><i class="nl" style="left:11.781%;top:63.392%">
+</i><span data-w="0.77042" style="left:11.781%;top:63.392%;font-size:2.124cqw">đao trong đồ án mặt trời hoặc rồng. Đây là những môtíp trang trí tuyệt đẹp của chạm khắc </span><i class="nl" style="left:11.781%;top:65.280%">
+</i><span data-w="0.15810" style="left:11.781%;top:65.280%;font-size:2.124cqw">trang trí đình làng.</span><i class="nl" style="left:15.482%;top:68.979%">
+</i><span data-w="0.27468" style="left:15.482%;top:68.979%;font-size:2.124cqw">2.2. Các môtíp trang trí cây cỏ</span><i class="nl" style="left:15.482%;top:72.591%">
+</i><span data-w="0.73325" style="left:15.482%;top:72.591%;font-size:2.124cqw">Sống trong môi trường của hệ sinh thái nhiệt đới, cây cỏ có ý nghĩa quan trọng trong </span><i class="nl" style="left:11.781%;top:74.478%">
+</i><span data-w="0.77026" style="left:11.781%;top:74.478%;font-size:2.124cqw">đời sống vật chất và tâm linh của con người. Sống, tồn tại trong cây cỏ, nhờ cây cỏ. Chết, </span><i class="nl" style="left:11.781%;top:76.366%">
+</i><span data-w="0.77034" style="left:11.781%;top:76.366%;font-size:2.124cqw">hoá thân trong cây cỏ. Cho nên từ xa xưa đã có tín ngưỡng thờ cây. Trong ý nghĩa sâu xa </span><i class="nl" style="left:11.781%;top:78.253%">
+</i><span data-w="0.77026" style="left:11.781%;top:78.253%;font-size:2.124cqw">về tâm linh, cây được xem như là cái trung gian nối trời với đất. Trong đình làng, mô típ </span><i class="nl" style="left:11.781%;top:80.141%">
+</i><span data-w="0.77026" style="left:11.781%;top:80.141%;font-size:2.124cqw">cây cỏ được sử dụng rất nhiều trong những chạm khắc trang trí. Chủ đề cây cỏ được quán </span><i class="nl" style="left:11.781%;top:82.029%">
+</i><span data-w="0.77026" style="left:11.781%;top:82.029%;font-size:2.124cqw">xuyến trong chạm khắc trang trí từ những ngôi đình cổ nhất thế kỷ XVI cho đến những </span><i class="nl" style="left:11.781%;top:83.916%">
+</i><span data-w="0.77026" style="left:11.781%;top:83.916%;font-size:2.124cqw">ngôi đình cuối thế kỷ XIX, đầu thế kỷ XX. Chúng ta lần lượt xem xét ý nghĩa và biểu </span><i class="nl" style="left:11.781%;top:85.804%">
+</i><span data-w="0.77026" style="left:11.781%;top:85.804%;font-size:2.124cqw">tượng của từng loại cây cỏ được những người nghệ sỹ nông dân sử dụng nhiều trong điêu </span><i class="nl" style="left:11.781%;top:87.692%">
+</i><span data-w="0.13028" style="left:11.781%;top:87.692%;font-size:2.124cqw">khắc đình làng.</span></div></div></section>
+<section class="trang" id="tr-4" data-tr="4"><div class="khung"><img src="anh/trang-4.webp" width="1020" height="1320" alt="" loading="lazy"><div class="chu"><span data-w="0.11968" style="left:15.482%;top:9.156%;font-size:2.124cqw">- Cây hoa sen</span><i class="nl" style="left:15.482%;top:12.767%">
+</i><span data-w="0.73325" style="left:15.482%;top:12.767%;font-size:2.124cqw">Là loại cây cao quý, gắn với Phật giáo, có biểu tượng của sự cao quý, trong sạch của </span><i class="nl" style="left:11.781%;top:14.655%">
+</i><span data-w="0.77026" style="left:11.781%;top:14.655%;font-size:2.124cqw">tâm hồn. Do mọc từ bùn nhơ, ngâm mình trong nước, vươn lên trời cao, hoa sen còn biểu </span><i class="nl" style="left:11.781%;top:16.543%">
+</i><span data-w="0.77026" style="left:11.781%;top:16.543%;font-size:2.124cqw">tượng cho sự chân tu, thoát khỏi những hệ lụy của cuộc đời mà có phẩm hạnh. Trong </span><i class="nl" style="left:11.781%;top:18.430%">
+</i><span data-w="0.77026" style="left:11.781%;top:18.430%;font-size:2.124cqw">nghệ thuật tạo hình Phật giáo, chúng ta thường bắt gặp hình ảnh Đức Phật ngồi tọa thiền </span><i class="nl" style="left:11.781%;top:20.318%">
+</i><span data-w="0.77026" style="left:11.781%;top:20.318%;font-size:2.124cqw">hoặc đứng thuyết giảng trên toà sen. “Một trong nhiều ý nghĩa bông sen được nghĩ tới là: </span><i class="nl" style="left:11.781%;top:22.205%">
+</i><span data-w="0.77026" style="left:11.781%;top:22.205%;font-size:2.124cqw">nơi để sinh ra. Đó là một ý nghĩa bắt nguồn từ thời nguyên thuỷ. Chúng ta đã gặp những </span><i class="nl" style="left:11.781%;top:24.093%">
+</i><span data-w="0.77034" style="left:11.781%;top:24.093%;font-size:2.124cqw">hiện vật của thời đó về người đàn bà, mà bộ phận để sinh ra và bộ phận nuôi dưỡng được </span><i class="nl" style="left:11.781%;top:25.981%">
+</i><span data-w="0.77026" style="left:11.781%;top:25.981%;font-size:2.124cqw">cường điệu khá lớn, trong ý nghĩa cầu phồn thực - một mặt của hạnh phúc... Từ ý kiến </span><i class="nl" style="left:11.781%;top:27.868%">
+</i><span data-w="0.77034" style="left:11.781%;top:27.868%;font-size:2.124cqw">trên, có thể rút ra: hoa sen mang yếu tố âm. Vì thế trong kiến trúc người ta nhìn thấy đá </span><i class="nl" style="left:11.781%;top:29.756%">
+</i><span data-w="0.77026" style="left:11.781%;top:29.756%;font-size:2.124cqw">chân tảng chạm đài sen (âm) làm chỗ kê của chiếc cột (mang hình Linga - dương) như </span><i class="nl" style="left:11.781%;top:31.644%">
+</i><span data-w="0.68284" style="left:11.781%;top:31.644%;font-size:2.124cqw">một sự kết hợp của âm dương trong sự cầu mong vững bền và sinh sôi nảy nở”. </span><span data-w="0.00613" style="left:80.196%;top:31.612%;font-size:1.225cqw">4</span><span data-w="0.07451" style="left:81.356%;top:31.644%;font-size:2.124cqw">Hoa sen </span><i class="nl" style="left:11.781%;top:33.531%">
+</i><span data-w="0.77026" style="left:11.781%;top:33.531%;font-size:2.124cqw">được dùng làm mô típ trang trí chủ đạo trong chùa. Trong trang trí đình làng, hoa sen </span><i class="nl" style="left:11.781%;top:35.419%">
+</i><span data-w="0.77026" style="left:11.781%;top:35.419%;font-size:2.124cqw">được sử dụng nhiều trong những ngôi đình muộn. Tuy nhiên, chúng ta bắt gặp hình hoa </span><i class="nl" style="left:11.781%;top:37.306%">
+</i><span data-w="0.77026" style="left:11.781%;top:37.306%;font-size:2.124cqw">sen cách điệu, cây sen (hoa, lá, thân) tả thực trong hoạt cảnh tắm đầm sen trên gạch trang </span><i class="nl" style="left:11.781%;top:39.194%">
+</i><span data-w="0.77026" style="left:11.781%;top:39.194%;font-size:2.124cqw">trí vách tường đình Yên Sở (Hoài Đức, Hà Tây), hoa sen và rồng trên cốn đình Ngọc </span><i class="nl" style="left:11.781%;top:41.082%">
+</i><span data-w="0.06073" style="left:11.781%;top:41.082%;font-size:2.124cqw">Canh...</span><i class="nl" style="left:15.482%;top:44.787%">
+</i><span data-w="0.08489" style="left:15.482%;top:44.787%;font-size:2.124cqw">- Cây mai</span><i class="nl" style="left:15.482%;top:48.399%">
+</i><span data-w="0.22911" style="left:15.482%;top:48.399%;font-size:2.124cqw">Là cây trong Tứ quý, như: </span><span data-w="0.21250" style="left:38.456%;top:48.399%;font-size:2.124cqw">mai, liên (sen), cúc, trúc </span><span data-w="0.03603" style="left:59.755%;top:48.399%;font-size:2.124cqw">hay </span><span data-w="0.16001" style="left:63.358%;top:48.399%;font-size:2.124cqw">mai, lan, cúc, trúc </span><span data-w="0.04546" style="left:79.404%;top:48.399%;font-size:2.124cqw">hoặc </span><span data-w="0.04837" style="left:83.954%;top:48.399%;font-size:2.124cqw">tùng, </span><i class="nl" style="left:11.781%;top:50.286%">
+</i><span data-w="0.13410" style="left:11.781%;top:50.286%;font-size:2.124cqw">cúc, trúc, mai. </span><span data-w="0.63578" style="left:25.229%;top:50.286%;font-size:2.124cqw">Cây mai với thân rắn rỏi, phong sương, vững bền với thời gian (dương </span><i class="nl" style="left:11.781%;top:52.174%">
+</i><span data-w="0.77026" style="left:11.781%;top:52.174%;font-size:2.124cqw">tính) thì hoa mai trắng muốt lại biểu tượng cho sự trắng trong, tinh khiết (âm tính), nhưng </span><i class="nl" style="left:11.781%;top:54.061%">
+</i><span data-w="0.77034" style="left:11.781%;top:54.061%;font-size:2.124cqw">yếu đuối. Hoa mai mang lại điềm lành, hạnh phúc, mùa xuân, nhưng cũng nhắc nhở con </span><i class="nl" style="left:11.781%;top:55.949%">
+</i><span data-w="0.77026" style="left:11.781%;top:55.949%;font-size:2.124cqw">người về sự mong manh của vẻ đẹp, hạnh phúc trước thời gian “như bóng câu qua cửa”. </span><i class="nl" style="left:11.781%;top:57.837%">
+</i><span data-w="0.77034" style="left:11.781%;top:57.837%;font-size:2.124cqw">Người Trung Quốc đặc biệt yêu thích hoa mai. Ngay từ thời Thương Chu, hoa mai đã </span><i class="nl" style="left:11.781%;top:59.724%">
+</i><span data-w="0.77026" style="left:11.781%;top:59.724%;font-size:2.124cqw">được trồng rộng rãi với mục đích lấy quả làm gia vị chua. Đến thời Bắc Tống, thông qua </span><i class="nl" style="left:11.781%;top:61.612%">
+</i><span data-w="0.77026" style="left:11.781%;top:61.612%;font-size:2.124cqw">kỹ thuật chiết cây đã gây trồng nên giống “Tương Mai”, sắc nhị màu vàng nhạt, một bông </span><i class="nl" style="left:11.781%;top:63.500%">
+</i><span data-w="0.77026" style="left:11.781%;top:63.500%;font-size:2.124cqw">có đến 20 cánh, có tên là “thiên diệp hoàng hương mai”, có hương thơm và vẻ đẹp thầm </span><i class="nl" style="left:11.781%;top:65.387%">
+</i><span data-w="0.23629" style="left:11.781%;top:65.387%;font-size:2.124cqw">kín, trở thành một kỳ quan.</span><span data-w="0.00613" style="left:35.441%;top:65.356%;font-size:1.225cqw">5</span><span data-w="0.52108" style="left:36.691%;top:65.387%;font-size:2.124cqw">Trong mô típ Tứ quý, cây mai thường đứng bên cạnh đá và </span><i class="nl" style="left:11.781%;top:67.275%">
+</i><span data-w="0.69635" style="left:11.781%;top:67.275%;font-size:2.124cqw">thường xuất hiện trong chạm khắc trang trí ở những ngôi đình muộn thời Nguyễn.</span><i class="nl" style="left:15.482%;top:70.981%">
+</i><span data-w="0.08725" style="left:15.482%;top:70.981%;font-size:2.124cqw">- Cây trúc</span><i class="nl" style="left:15.482%;top:74.604%">
+</i><span data-w="0.73325" style="left:15.482%;top:74.604%;font-size:2.124cqw">Cây trúc là loại cây phổ biến trong trang trí ở nhiều nước như Trung Quốc, Nhật </span><i class="nl" style="left:11.781%;top:76.492%">
+</i><span data-w="0.77026" style="left:11.781%;top:76.492%;font-size:2.124cqw">Bản, Triều Tiên. Ở Việt Nam cây trúc được ưa thích vì vẻ đẹp và ý nghĩa của nó. Trong </span><i class="nl" style="left:11.781%;top:78.380%">
+</i><span data-w="0.77034" style="left:11.781%;top:78.380%;font-size:2.124cqw">nghệ thuật tạo hình, cây trúc là biểu tượng của người quân tử. Sống ngay thẳng không </span><i class="nl" style="left:11.781%;top:80.267%">
+</i><span data-w="0.77026" style="left:11.781%;top:80.267%;font-size:2.124cqw">khuất phục trước cường quyền và danh lợi. Đốt trúc rỗng (vô tâm) thể hiện sự trong sáng, </span><i class="nl" style="left:11.781%;top:82.155%">
+</i><span data-w="0.77026" style="left:11.781%;top:82.155%;font-size:2.124cqw">ngay thẳng, khiêm tốn, không vụ lợi. Có sức sống bền bỉ trước thiên nhiên khắc nghiệt, </span><i class="nl" style="left:11.781%;top:84.043%">
+</i><span data-w="0.77026" style="left:11.781%;top:84.043%;font-size:2.124cqw">nên cây trúc còn là biểu tượng của sự trường thọ. Trong chạm khắc trang trí đình làng, </span><i class="nl" style="left:11.781%;top:85.930%">
+</i><span data-w="0.76291" style="left:11.781%;top:85.930%;font-size:2.124cqw">cây trúc trong bộ Tứ quý biểu tượng cho mùa hạ. Cây trúc nhiều khi đứng một mình</span></div></div></section>
+<section class="trang" id="tr-5" data-tr="5"><div class="khung"><img src="anh/trang-5.webp" width="1020" height="1320" alt="" loading="lazy"><div class="chu"><span data-w="0.75426" style="left:11.781%;top:9.112%;font-size:2.124cqw">trong bố cục “trúc hoá rồng” như ở đình Thắng Núi (Bắc Giang). Đây là mô-típ trang trí </span><i class="nl" style="left:11.781%;top:11.000%">
+</i><span data-w="0.57882" style="left:11.781%;top:11.000%;font-size:2.124cqw">có tính biểu tượng cao, vừa là cây, vừa là vật, có tính lưỡng nguyên.</span><i class="nl" style="left:15.482%;top:14.705%">
+</i><span data-w="0.09200" style="left:15.482%;top:14.705%;font-size:2.124cqw">- Cây tùng</span><i class="nl" style="left:15.482%;top:18.317%">
+</i><span data-w="0.73325" style="left:15.482%;top:18.317%;font-size:2.124cqw">Biểu tượng của cây tùng là sự trường thọ, một ước vọng muôn đời của con người. </span><i class="nl" style="left:11.781%;top:20.204%">
+</i><span data-w="0.77026" style="left:11.781%;top:20.204%;font-size:2.124cqw">Cây tùng (hoặc bách, thông) luôn xanh tốt trong bốn mùa, có khả năng sống bền bỉ trong </span><i class="nl" style="left:11.781%;top:22.092%">
+</i><span data-w="0.77034" style="left:11.781%;top:22.092%;font-size:2.124cqw">môi trường thiên nhiên khắc nghiệt, cho nên tùng còn biểu tượng cho khí phách kiên </span><i class="nl" style="left:11.781%;top:23.979%">
+</i><span data-w="0.77026" style="left:11.781%;top:23.979%;font-size:2.124cqw">cường, không sợ hiểm nguy trước những thử thách của thiên nhiên và cuộc đời. Do sống </span><i class="nl" style="left:11.781%;top:25.867%">
+</i><span data-w="0.77026" style="left:11.781%;top:25.867%;font-size:2.124cqw">trên núi cao, nên cây tùng còn biểu tượng cho lối sống ẩn dật, lánh đời, nhưng kiêu hãnh </span><i class="nl" style="left:11.781%;top:27.755%">
+</i><span data-w="0.77026" style="left:11.781%;top:27.755%;font-size:2.124cqw">để giữ cho tâm hồn trong sạch. Trong Tứ quý, cây tùng biểu tượng của mùa đông. Tùng </span><i class="nl" style="left:11.781%;top:29.642%">
+</i><span data-w="0.77026" style="left:11.781%;top:29.642%;font-size:2.124cqw">thường đi với hạc, để tạo nên môtíp tùng - hạc có tính biểu tượng cao về sự trường thọ, </span><i class="nl" style="left:11.781%;top:31.530%">
+</i><span data-w="0.77026" style="left:11.781%;top:31.530%;font-size:2.124cqw">ngay thẳng và trong sạch. Mô típ Tứ quý này thường được trang trí ở những ngôi đình </span><i class="nl" style="left:11.781%;top:33.418%">
+</i><span data-w="0.11146" style="left:11.781%;top:33.418%;font-size:2.124cqw">thời Nguyễn.</span><i class="nl" style="left:15.482%;top:37.123%">
+</i><span data-w="0.08374" style="left:15.482%;top:37.123%;font-size:2.124cqw">- Cây đào</span><i class="nl" style="left:15.482%;top:40.734%">
+</i><span data-w="0.73341" style="left:15.482%;top:40.734%;font-size:2.124cqw">Cây đào là một trong những loại cây có vị trí quan trọng trong nhiều loại hình nghệ </span><i class="nl" style="left:11.781%;top:42.622%">
+</i><span data-w="0.77042" style="left:11.781%;top:42.622%;font-size:2.124cqw">thuật và tập quán, phong tục của nhiều nước ở phương Đông. Các nhà thực vật học cho </span><i class="nl" style="left:11.781%;top:44.510%">
+</i><span data-w="0.77042" style="left:11.781%;top:44.510%;font-size:2.124cqw">rằng cây đào có nguồn gốc từ Trung Quốc. Loại cây này được biết như loài cây cho trái </span><i class="nl" style="left:11.781%;top:46.397%">
+</i><span data-w="0.77042" style="left:11.781%;top:46.397%;font-size:2.124cqw">quý của chốn thần tiên, mọc ở khu vườn Tây Vương Mẫu, 3000 năm mới kết quả một </span><i class="nl" style="left:11.781%;top:48.285%">
+</i><span data-w="0.77042" style="left:11.781%;top:48.285%;font-size:2.124cqw">lần, ăn vào sẽ “trường sinh bất lão”. Cây đào có biểu tượng phổ biến là mùa xuân, mùa </span><i class="nl" style="left:11.781%;top:50.173%">
+</i><span data-w="0.77042" style="left:11.781%;top:50.173%;font-size:2.124cqw">bắt đầu của năm, mùa của sự phồn sinh, đem lại sinh lực và hạnh phúc mới. Hoa đào còn </span><i class="nl" style="left:11.781%;top:52.060%">
+</i><span data-w="0.77042" style="left:11.781%;top:52.060%;font-size:2.124cqw">là biểu tượng vẻ đẹp của người phụ nữ, nó tượng trưng cho gương mặt, cho nụ cười của </span><i class="nl" style="left:11.781%;top:53.948%">
+</i><span data-w="0.77042" style="left:11.781%;top:53.948%;font-size:2.124cqw">người con gái đẹp. Hoa đào còn mang lại tình yêu, hạnh phúc đôi lứa (được yêu nhiều = </span><i class="nl" style="left:11.781%;top:55.835%">
+</i><span data-w="0.77042" style="left:11.781%;top:55.835%;font-size:2.124cqw">đào hoa). Hình tượng cây đào cổ thụ mang biểu tượng của sự trường sinh. Trên cốn của </span><i class="nl" style="left:11.781%;top:57.723%">
+</i><span data-w="0.77042" style="left:11.781%;top:57.723%;font-size:2.124cqw">đình Dư Hàng (Hải Phòng) cây đào được bố cục uốn lượn trong hình chữ nhật dài, bên </span><i class="nl" style="left:11.781%;top:59.611%">
+</i><span data-w="0.77042" style="left:11.781%;top:59.611%;font-size:2.124cqw">cạnh cây tre. Trong chạm khắc trang trí đình làng, đào được cách điệu với môtíp “đào </span><i class="nl" style="left:11.781%;top:61.498%">
+</i><span data-w="0.71368" style="left:11.781%;top:61.498%;font-size:2.124cqw">hoá lân” hoặc “đào hoá rồng” ở những ngôi đình muộn. Đây là loại môtíp có tính </span><span data-w="0.05539" style="left:83.284%;top:61.498%;font-size:2.124cqw">lưỡng </span><i class="nl" style="left:11.781%;top:63.386%">
+</i><span data-w="0.06130" style="left:11.781%;top:63.386%;font-size:2.124cqw">nguyên</span><span data-w="0.19757" style="left:17.917%;top:63.386%;font-size:2.124cqw">: vừa là cây, vừa là vật.</span><i class="nl" style="left:15.482%;top:67.085%">
+</i><span data-w="0.08076" style="left:15.482%;top:67.085%;font-size:2.124cqw">-Hoa cúc</span><i class="nl" style="left:15.482%;top:70.697%">
+</i><span data-w="0.73317" style="left:15.482%;top:70.697%;font-size:2.124cqw">Hoa cúc với màu vàng rực rỡ, thuộc hành thổ, biểu tượng cho sự giàu sang, phú quý, </span><i class="nl" style="left:11.781%;top:72.584%">
+</i><span data-w="0.77018" style="left:11.781%;top:72.584%;font-size:2.124cqw">vương giả. Hoa cúc còn là biểu tượng của mùa thu, người xưa gọi tháng chín là “cúc </span><i class="nl" style="left:11.781%;top:74.472%">
+</i><span data-w="0.77018" style="left:11.781%;top:74.472%;font-size:2.124cqw">nguyệt”. Chữ cúc và chữ lưu (giữ lại) đều có cách phát âm giống nhau là Ju. Tháng chín </span><i class="nl" style="left:11.781%;top:76.359%">
+</i><span data-w="0.77018" style="left:11.781%;top:76.359%;font-size:2.124cqw">là “cửu” (Jiu) cũng đồng âm với từ “cửu” với nghĩa vĩnh cửu. Do đó, “cúc nguyệt” (cúc </span><i class="nl" style="left:11.781%;top:78.247%">
+</i><span data-w="0.77018" style="left:11.781%;top:78.247%;font-size:2.124cqw">tháng chín) có biểu tượng là lời chúc cho sự trường thọ, an khang, nhiều may mắn. Hoa </span><i class="nl" style="left:11.781%;top:80.135%">
+</i><span data-w="0.77026" style="left:11.781%;top:80.135%;font-size:2.124cqw">cúc còn biểu tượng cho sự an lạc, viên mãn, niềm vui. Đào Tiềm (365 - 427) là thi sỹ nổi </span><i class="nl" style="left:11.781%;top:82.022%">
+</i><span data-w="0.77026" style="left:11.781%;top:82.022%;font-size:2.124cqw">tiếng ở Trung Quốc đã cáo quan, về ở ẩn để làm thơ, vui thú với rượu, nhạc và trồng hoa </span><i class="nl" style="left:11.781%;top:83.910%">
+</i><span data-w="0.77018" style="left:11.781%;top:83.910%;font-size:2.124cqw">cúc. Hoa cúc là đề tài được sử dụng nhiều trong chạm khắc đình làng, dưới nhiều kiểu </span><i class="nl" style="left:11.781%;top:85.798%">
+</i><span data-w="0.77018" style="left:11.781%;top:85.798%;font-size:2.124cqw">thức như: cúc hoa, cúc dây, cúc leo... Ở ngôi đình sớm nhất, đình Thụy Phiêu (1531), trên </span><i class="nl" style="left:11.781%;top:87.685%">
+</i><span data-w="0.58197" style="left:11.781%;top:87.685%;font-size:2.124cqw">cột trốn vì nóc người thợ đã tạc một bông hoa cúc mãn khai khá lớn.</span></div></div></section>
+<section class="trang" id="tr-6" data-tr="6"><div class="khung"><img src="anh/trang-6.webp" width="1020" height="1320" alt="" loading="lazy"><div class="chu"><span data-w="0.31850" style="left:15.482%;top:9.156%;font-size:2.124cqw">3.2.3. Các mô típ trang trí động vật</span><i class="nl" style="left:15.482%;top:12.767%">
+</i><span data-w="0.73317" style="left:15.482%;top:12.767%;font-size:2.124cqw">Người xưa quan niệm loài động vật trong thiên nhiên được chia ra 5 loại gồm: lông </span><i class="nl" style="left:11.781%;top:14.655%">
+</i><span data-w="0.77010" style="left:11.781%;top:14.655%;font-size:2.124cqw">vũ (phượng hoàng), lông phủ (kỳ lân), lông trần (con người), loài có vẩy (con rồng) và </span><i class="nl" style="left:11.781%;top:16.543%">
+</i><span data-w="0.18740" style="left:11.781%;top:16.543%;font-size:2.124cqw">loài có mai (con rùa). </span><span data-w="0.07428" style="left:30.564%;top:16.543%;font-size:2.124cqw">Lục súc </span><span data-w="0.32693" style="left:38.007%;top:16.543%;font-size:2.124cqw">gồm: trâu (ngựa), bò, lợn, chó, dê, gà. </span><span data-w="0.08378" style="left:70.760%;top:16.543%;font-size:2.124cqw">Ngũ tính </span><span data-w="0.09624" style="left:79.150%;top:16.543%;font-size:2.124cqw">gồm 5 loại </span><i class="nl" style="left:11.781%;top:18.430%">
+</i><span data-w="0.77010" style="left:11.781%;top:18.430%;font-size:2.124cqw">thú, trừ con chó. Đó là các loại thú dùng để hiến sinh trong tế lễ thần linh. Trong điêu </span><i class="nl" style="left:11.781%;top:20.318%">
+</i><span data-w="0.38832" style="left:11.781%;top:20.318%;font-size:2.124cqw">khắc trang trí đình làng có 2 loại chủ yếu là </span><span data-w="0.07333" style="left:50.735%;top:20.318%;font-size:2.124cqw">linh thú </span><span data-w="0.30703" style="left:58.088%;top:20.318%;font-size:2.124cqw">(những con thú thiêng có tính biểu </span><i class="nl" style="left:11.781%;top:22.205%">
+</i><span data-w="0.18249" style="left:11.781%;top:22.205%;font-size:2.124cqw">tượng cao) và những </span><span data-w="0.11681" style="left:30.049%;top:22.205%;font-size:2.124cqw">loại thú khác </span><span data-w="0.47042" style="left:41.748%;top:22.205%;font-size:2.124cqw">mà việc sử dụng chúng trong các đồ án trang trí đã thể </span><i class="nl" style="left:11.781%;top:24.093%">
+</i><span data-w="0.61956" style="left:11.781%;top:24.093%;font-size:2.124cqw">hiện thông điệp có tính tư tưởng và quan niệm nghệ thuật của người xưa.</span><i class="nl" style="left:15.482%;top:27.805%">
+</i><span data-w="0.09556" style="left:15.482%;top:27.805%;font-size:2.124cqw">- Con rồng</span><i class="nl" style="left:15.482%;top:31.410%">
+</i><span data-w="0.73341" style="left:15.482%;top:31.410%;font-size:2.124cqw">Ở phương Đông, con rồng là con vật vũ trụ, linh thiêng, có sức mạnh. Nhưng nó </span><i class="nl" style="left:11.781%;top:33.298%">
+</i><span data-w="0.77042" style="left:11.781%;top:33.298%;font-size:2.124cqw">không khác thường, đáng sợ, có sức mạnh phi thường như con rồng phương Tây. Con </span><i class="nl" style="left:11.781%;top:35.185%">
+</i><span data-w="0.77042" style="left:11.781%;top:35.185%;font-size:2.124cqw">rồng phương Đông là con vật tổng hợp của nhiều con vật khác: thân rồng là loài bò sát, </span><i class="nl" style="left:11.781%;top:37.073%">
+</i><span data-w="0.77042" style="left:11.781%;top:37.073%;font-size:2.124cqw">gần với rắn, có vẩy như cá. Đầu rồng được hợp thành từ nhiều bộ phận của những con thú </span><i class="nl" style="left:11.781%;top:38.960%">
+</i><span data-w="0.14119" style="left:11.781%;top:38.960%;font-size:2.124cqw">khác nhau như: </span><span data-w="0.54111" style="left:25.923%;top:38.960%;font-size:2.124cqw">miệng lang, tai thú, trán lạc đà, mũi sư tử, móng chim ưng... </span><span data-w="0.08676" style="left:80.147%;top:38.960%;font-size:2.124cqw">Con rồng </span><i class="nl" style="left:11.781%;top:40.848%">
+</i><span data-w="0.77051" style="left:11.781%;top:40.848%;font-size:2.124cqw">thể hiện tư duy lưỡng phân lưỡng hợp của cư dân nông nghiệp: sống ở dưới nước như cá, </span><i class="nl" style="left:11.781%;top:42.736%">
+</i><span data-w="0.77042" style="left:11.781%;top:42.736%;font-size:2.124cqw">nhưng bay trên trời như chim, khạc ra lửa, sấm chớp để làm ra mưa bão. Là con vật đứng </span><i class="nl" style="left:11.781%;top:44.623%">
+</i><span data-w="0.77051" style="left:11.781%;top:44.623%;font-size:2.124cqw">đầu trong Tứ linh, con rồng là con vật huyền thoại, linh thiêng, đầy quyền uy, thường </span><i class="nl" style="left:11.781%;top:46.511%">
+</i><span data-w="0.77042" style="left:11.781%;top:46.511%;font-size:2.124cqw">được gắn với trời, vua. Từ đời Hán Cao tổ, con rồng 5 móng là biểu tượng cho uy quyền </span><i class="nl" style="left:11.781%;top:48.399%">
+</i><span data-w="0.77042" style="left:11.781%;top:48.399%;font-size:2.124cqw">cho vua - thiên tử. Hình tượng rồng có ở trên áo bào, ngai vàng và các vật dụng khác. </span><i class="nl" style="left:11.781%;top:50.286%">
+</i><span data-w="0.77042" style="left:11.781%;top:50.286%;font-size:2.124cqw">Hoàng tử, con trai trưởng kế vị ngai vàng cũng được sử dụng hình tượng rồng 5 móng, </span><i class="nl" style="left:11.781%;top:52.174%">
+</i><span data-w="0.77051" style="left:11.781%;top:52.174%;font-size:2.124cqw">nhưng từ con trai thứ 2, 3, 4 thì chỉ được dùng hình tượng rồng có 4 móng. Từ hoàng tử </span><i class="nl" style="left:11.781%;top:54.061%">
+</i><span data-w="0.77051" style="left:11.781%;top:54.061%;font-size:2.124cqw">thứ 5 trở đi và các đại quan thì chỉ được dùng các biểu tượng gần gũi với rồng, như con </span><i class="nl" style="left:11.781%;top:55.949%">
+</i><span data-w="0.64229" style="left:11.781%;top:55.949%;font-size:2.124cqw">giao hay con ly. Gần đây, giới khoa học có ý kiến khẳng định hình tượng </span><span data-w="0.04648" style="left:76.160%;top:55.949%;font-size:2.124cqw">rồng </span><span data-w="0.08015" style="left:80.809%;top:55.949%;font-size:2.124cqw">vốn xuất </span><i class="nl" style="left:11.781%;top:57.837%">
+</i><span data-w="0.77042" style="left:11.781%;top:57.837%;font-size:2.124cqw">phát từ vùng Đông Nam Á. D.V. Deopic (1993) cho biết: “rồng là con vật đặc thù chung </span><i class="nl" style="left:11.781%;top:59.724%">
+</i><span data-w="0.62141" style="left:11.781%;top:59.724%;font-size:2.124cqw">cho tất cả dân tộc Việt và chính từ đây nó đã đi vào văn hoá Trung Hoa”.</span><i class="nl" style="left:15.482%;top:63.386%">
+</i><span data-w="0.73350" style="left:15.482%;top:63.386%;font-size:2.124cqw">J. V. Chesnov (1976) thì cho biết: “hình tượng rồng phát sinh từ Đông Nam Á đã </span><i class="nl" style="left:11.781%;top:65.274%">
+</i><span data-w="0.77042" style="left:11.781%;top:65.274%;font-size:2.124cqw">thâm nhập đến những vùng xa xôi nhất của châu Âu”. Ở Việt Nam hình con cá sấu mang </span><i class="nl" style="left:11.781%;top:67.161%">
+</i><span data-w="0.77051" style="left:11.781%;top:67.161%;font-size:2.124cqw">dáng dấp con rồng đã là môtíp trang trí khá phổ biến trên các đồ đồng Đông Sơn. Cá sấu - </span><i class="nl" style="left:11.781%;top:69.049%">
+</i><span data-w="0.37107" style="left:11.781%;top:69.049%;font-size:2.124cqw">rồng là chúa tể vùng sông nước với cái tên </span><span data-w="0.22007" style="left:48.971%;top:69.049%;font-size:2.124cqw">Long Quân, Long Vương </span><span data-w="0.13848" style="left:70.997%;top:69.049%;font-size:2.124cqw">của người Việt, </span><span data-w="0.03954" style="left:84.869%;top:69.049%;font-size:2.124cqw">Bua </span><i class="nl" style="left:11.781%;top:70.936%">
+</i><span data-w="0.04149" style="left:11.781%;top:70.936%;font-size:2.124cqw">Khú </span><span data-w="0.72892" style="left:15.931%;top:70.936%;font-size:2.124cqw">(vua Sấu) ở người Mường. Chữ “rồng” (Việt) gần với từ cơn dông, dòng sông, hình </span><i class="nl" style="left:11.781%;top:72.824%">
+</i><span data-w="0.70784" style="left:11.781%;top:72.824%;font-size:2.124cqw">ảnh tượng trưng cho mây - mưa - sấm chớp. Chữ “long” (Hán Việt) bắt nguồn từ </span><span data-w="0.06021" style="left:82.802%;top:72.824%;font-size:2.124cqw">krong, </span><i class="nl" style="left:11.781%;top:74.712%">
+</i><span data-w="0.11859" style="left:11.781%;top:74.712%;font-size:2.124cqw">krông, klong </span><span data-w="0.65172" style="left:23.652%;top:74.712%;font-size:2.124cqw">trong tiếng Đông Nam Á cổ có nghĩa là “sông nước”. Rồng còn là biểu </span><i class="nl" style="left:11.781%;top:76.599%">
+</i><span data-w="0.77042" style="left:11.781%;top:76.599%;font-size:2.124cqw">tượng cội nguồn dân tộc. Người dân đất Việt nào cũng cho mình là con rồng, cháu tiên, </span><i class="nl" style="left:11.781%;top:78.487%">
+</i><span data-w="0.77042" style="left:11.781%;top:78.487%;font-size:2.124cqw">con của bố rồng Lạc và mẹ tiên Âu. “Rồng, cũng như nước, có đặc trưng nổi bật là khả </span><i class="nl" style="left:11.781%;top:80.375%">
+</i><span data-w="0.77051" style="left:11.781%;top:80.375%;font-size:2.124cqw">năng ứng biến (resiliance, redressement), như người Việt Nam vậy. Nó có nhiều trạng </span><i class="nl" style="left:11.781%;top:82.262%">
+</i><span data-w="0.77034" style="left:11.781%;top:82.262%;font-size:2.124cqw">thái, hay đúng hơn, thích nghi với nhiều trạng thái: ở dưới nước (tiềm long vu thuỷ), nó </span><i class="nl" style="left:11.781%;top:84.150%">
+</i><span data-w="0.77042" style="left:11.781%;top:84.150%;font-size:2.124cqw">giữ bầu nước của thiên hạ (Long vương). Nó có thể xuất hiện ở trên đất, trên đầm lầy </span><i class="nl" style="left:11.781%;top:86.037%">
+</i><span data-w="0.77042" style="left:11.781%;top:86.037%;font-size:2.124cqw">(hiện long vu điền, vu đại trạch) như một “điềm báo” mà Lý Thái Tổ khi dời đô từ Hoa </span><i class="nl" style="left:11.781%;top:87.925%">
+</i><span data-w="0.72407" style="left:11.781%;top:87.925%;font-size:2.124cqw">Lư ra Đại La, coi là điềm rồng vàng báo điều tốt đẹp. Nó có thể bay cao trên trời (phi</span></div></div></section>
+<section class="trang" id="tr-7" data-tr="7"><div class="khung"><img src="anh/trang-7.webp" width="1020" height="1320" alt="" loading="lazy"><div class="chu"><span data-w="0.77051" style="left:11.781%;top:9.112%;font-size:2.124cqw">long tại thiên) vùng vẫy trong mây (long vân khánh hội) gây mưa tưới nhuần đồng </span><i class="nl" style="left:11.781%;top:11.000%">
+</i><span data-w="0.07023" style="left:11.781%;top:11.000%;font-size:2.124cqw">ruộng”. </span><span data-w="0.00613" style="left:18.807%;top:10.968%;font-size:1.225cqw">7</span><span data-w="0.68799" style="left:20.016%;top:11.000%;font-size:2.124cqw">Trong điêu khắc trang trí đình làng, hình tượng rồng là mô típ trang trí chủ đạo </span><i class="nl" style="left:11.781%;top:12.887%">
+</i><span data-w="0.77042" style="left:11.781%;top:12.887%;font-size:2.124cqw">trong những ngôi đình từ thế kỷ XVI đến ngôi đình được dựng đầu thế kỷ XX. Con rồng </span><i class="nl" style="left:11.781%;top:14.775%">
+</i><span data-w="0.77051" style="left:11.781%;top:14.775%;font-size:2.124cqw">có mặt trong các đồ án trang trí từ bên ngoài, đến bên trong ngôi đình làng và thường ở vị </span><i class="nl" style="left:11.781%;top:16.662%">
+</i><span data-w="0.77042" style="left:11.781%;top:16.662%;font-size:2.124cqw">trí trung tâm. Ý nghĩa và biểu tượng rồng hoàn toàn ở ngôi đình làng là hoàn toàn khác </span><i class="nl" style="left:11.781%;top:18.550%">
+</i><span data-w="0.50759" style="left:11.781%;top:18.550%;font-size:2.124cqw">biệt với rồng Trung Hoa, biểu tượng của hoàng đế, thiên tử.</span><i class="nl" style="left:15.482%;top:22.256%">
+</i><span data-w="0.06957" style="left:15.482%;top:22.256%;font-size:2.124cqw">- Kỳ lân</span><i class="nl" style="left:15.482%;top:25.861%">
+</i><span data-w="0.73325" style="left:15.482%;top:25.861%;font-size:2.124cqw">Kỳ lân là một vật linh thiêng trong bộ Tứ linh. Lân là con vật báo hiệu điều tốt lành, </span><i class="nl" style="left:11.781%;top:27.748%">
+</i><span data-w="0.77034" style="left:11.781%;top:27.748%;font-size:2.124cqw">là biểu tượng cho sự trường thọ, sang quý, niềm hạnh phúc lớn lao. Kỳ lân khi xuất hiện </span><i class="nl" style="left:11.781%;top:29.636%">
+</i><span data-w="0.77026" style="left:11.781%;top:29.636%;font-size:2.124cqw">là báo hiệu sự ra đời của minh chúa, hay bậc hiền nhân quân tử. Sử sách Trung Hoa đã </span><i class="nl" style="left:11.781%;top:31.524%">
+</i><span data-w="0.77026" style="left:11.781%;top:31.524%;font-size:2.124cqw">chép rằng kỳ lân xuất hiện dưới thời vua Nghiêu, Thuấn, khi Khổng Tử ra đời. Kỳ lân </span><i class="nl" style="left:11.781%;top:33.411%">
+</i><span data-w="0.77026" style="left:11.781%;top:33.411%;font-size:2.124cqw">xuất hiện ở sông Hoàng Hà dưới thời vua Phục Hy và mang trên mình cuốn thư Hà Đồ. </span><i class="nl" style="left:11.781%;top:35.299%">
+</i><span data-w="0.77034" style="left:11.781%;top:35.299%;font-size:2.124cqw">Con đực được gọi là kỳ, con cái là lân. Giữa con lân, con nghê hay con xô không có sự </span><i class="nl" style="left:11.781%;top:37.186%">
+</i><span data-w="0.77026" style="left:11.781%;top:37.186%;font-size:2.124cqw">phân biệt rõ ràng. Trong điêu khắc trang trí đình làng, con lân không ở những vị trí trung </span><i class="nl" style="left:11.781%;top:39.074%">
+</i><span data-w="0.77026" style="left:11.781%;top:39.074%;font-size:2.124cqw">tâm, trang trọng như con rồng. Nó có mặt ở trên gác thờ, trên nóc đình, trên cửa nghi </span><i class="nl" style="left:11.781%;top:40.962%">
+</i><span data-w="0.43136" style="left:11.781%;top:40.962%;font-size:2.124cqw">môn... để tô điểm và canh chừng các thế lực tà ám.</span><i class="nl" style="left:15.482%;top:44.674%">
+</i><span data-w="0.04892" style="left:15.482%;top:44.674%;font-size:2.124cqw">- Rùa</span><i class="nl" style="left:15.482%;top:48.279%">
+</i><span data-w="0.73333" style="left:15.482%;top:48.279%;font-size:2.124cqw">Rùa có chiếc mai dạng mái vòm, là biểu tượng của bầu trời; bụng rùa phẳng được </span><i class="nl" style="left:11.781%;top:50.166%">
+</i><span data-w="0.77034" style="left:11.781%;top:50.166%;font-size:2.124cqw">biểu tượng cho mặt đất. Rùa là loài đứng đầu của loài vật có mai và vỏ. Nó có tuổi thọ </span><i class="nl" style="left:11.781%;top:52.054%">
+</i><span data-w="0.77026" style="left:11.781%;top:52.054%;font-size:2.124cqw">tưởng chừng như bất diệt, cho nên rùa là con vật thiêng, biểu tượng cho sự trường sinh, </span><i class="nl" style="left:11.781%;top:53.942%">
+</i><span data-w="0.40147" style="left:11.781%;top:53.942%;font-size:2.124cqw">bất lão, cho sinh lực và sự trường tồn vĩnh cửu.</span><i class="nl" style="left:15.482%;top:57.597%">
+</i><span data-w="0.73309" style="left:15.482%;top:57.597%;font-size:2.124cqw">“Ở Trung Quốc rùa cũng là biểu tượng của phương Bắc và mùa Đông, mà người ta </span><i class="nl" style="left:11.781%;top:59.484%">
+</i><span data-w="0.77010" style="left:11.781%;top:59.484%;font-size:2.124cqw">gắn với các tuần trăng... Sự trường thọ nổi tiếng gắn con rùa với ý tưởng bất tử, vốn đi </span><i class="nl" style="left:11.781%;top:61.372%">
+</i><span data-w="0.77018" style="left:11.781%;top:61.372%;font-size:2.124cqw">đôi với tính phì nhiêu của các nguồn nước khởi nguyên, do mặt trăng chi phối, khiến </span><i class="nl" style="left:11.781%;top:63.260%">
+</i><span data-w="0.77010" style="left:11.781%;top:63.260%;font-size:2.124cqw">người ta gắn những nét của rùa, căn cứ vào chức năng cõng vũ trụ của nó, cho nhiều vị </span><i class="nl" style="left:11.781%;top:65.147%">
+</i><span data-w="0.50033" style="left:11.781%;top:65.147%;font-size:2.124cqw">thần sáng thế, anh hùng khai hoá và tổ tiên huyền thoại”. </span><span data-w="0.00613" style="left:61.920%;top:65.116%;font-size:1.225cqw">8</span><span data-w="0.25580" style="left:63.170%;top:65.147%;font-size:2.124cqw">Con rùa linh thiêng được mô </span><i class="nl" style="left:11.781%;top:67.035%">
+</i><span data-w="0.77010" style="left:11.781%;top:67.035%;font-size:2.124cqw">tả có chiếc đầu rắn, cổ rồng, vai rộng. Ở đình làng, hình tượng rùa có mặt trong các bố </span><i class="nl" style="left:11.781%;top:68.923%">
+</i><span data-w="0.77010" style="left:11.781%;top:68.923%;font-size:2.124cqw">cục trang trí rùa - hạc (hạc đứng trên lưng rùa) - biểu tượng của sự trường tồn, vĩnh cửu, </span><i class="nl" style="left:11.781%;top:70.810%">
+</i><span data-w="0.77010" style="left:11.781%;top:70.810%;font-size:2.124cqw">đồng thời còn thể hiện sự chịu đựng, nhẫnnhịn bền bỉ .Dân gian có câu ca thật hồn nhiên </span><i class="nl" style="left:11.781%;top:72.698%">
+</i><span data-w="0.11209" style="left:11.781%;top:72.698%;font-size:2.124cqw">và hóm hỉnh:</span><i class="nl" style="left:15.482%;top:76.359%">
+</i><span data-w="0.25943" style="left:15.482%;top:76.359%;font-size:2.124cqw">Thương thay thân phận con rù</span><span data-w="0.00941" style="left:41.438%;top:76.359%;font-size:2.124cqw">a</span><span data-w="0.32834" style="left:42.377%;top:76.359%;font-size:2.124cqw">Lên đình hạc cưỡi, xuống chùa đội bia</span><span data-w="0.00531" style="left:75.229%;top:76.359%;font-size:2.124cqw">.</span><i class="nl" style="left:15.482%;top:80.053%">
+</i><span data-w="0.14445" style="left:15.482%;top:80.053%;font-size:2.124cqw">- Phượng hoàng</span><i class="nl" style="left:15.482%;top:83.683%">
+</i><span data-w="0.73301" style="left:15.482%;top:83.683%;font-size:2.124cqw">Ở Trung Quốc, phượng hoàng có nghĩa là vua của các loài chim. Phượng hoàng là </span><i class="nl" style="left:11.781%;top:85.570%">
+</i><span data-w="0.77002" style="left:11.781%;top:85.570%;font-size:2.124cqw">con vật thiêng, lông của nó có 5 màu, tiếng hót như nhạc và có 5 biến điệu diệu kỳ. </span><i class="nl" style="left:11.781%;top:87.458%">
+</i><span data-w="0.75479" style="left:11.781%;top:87.458%;font-size:2.124cqw">Phượng là con đực; hoàng là con cái, ít khi chúng xuất hiện cả cặp. Chim phượng là biểu</span></div></div></section>
+<section class="trang" id="tr-8" data-tr="8"><div class="khung"><img src="anh/trang-8.webp" width="1020" height="1320" alt="" loading="lazy"><div class="chu"><span data-w="0.77034" style="left:11.781%;top:9.112%;font-size:2.124cqw">tượng cho phúc lộc và sự sang quý. Chim hoàng là biểu tượng cho hoàng hậu, xuất hiện </span><i class="nl" style="left:11.781%;top:11.000%">
+</i><span data-w="0.77034" style="left:11.781%;top:11.000%;font-size:2.124cqw">bên cạnh hình tượng rồng của vua. Phượng hoàng là con vật hiền đức, báo hiệu điềm </span><i class="nl" style="left:11.781%;top:12.887%">
+</i><span data-w="0.77034" style="left:11.781%;top:12.887%;font-size:2.124cqw">lành. Theo truyền thuyết, phượng hoàng chỉ xuất hiện vào thời thịnh trị. Cư trú ở phía </span><i class="nl" style="left:11.781%;top:14.775%">
+</i><span data-w="0.77042" style="left:11.781%;top:14.775%;font-size:2.124cqw">Nam, do đó nó là biểu tượng của mặt trời, hơi ấm của mùa hạ và sự thu hoạch mùa màng. </span><i class="nl" style="left:11.781%;top:16.662%">
+</i><span data-w="0.77034" style="left:11.781%;top:16.662%;font-size:2.124cqw">Trong mối tương quan với con rồng, phượng biểu thị yếu tố âm về mặt giới tính. Trong </span><i class="nl" style="left:11.781%;top:18.550%">
+</i><span data-w="0.57432" style="left:11.781%;top:18.550%;font-size:2.124cqw">điêu khắc đình làng, con phượng thường đi với mây trong mô típ </span><span data-w="0.11411" style="left:69.338%;top:18.550%;font-size:2.124cqw">phượng mây </span><span data-w="0.08047" style="left:80.768%;top:18.550%;font-size:2.124cqw">(đình Lỗ </span><i class="nl" style="left:11.781%;top:20.438%">
+</i><span data-w="0.20815" style="left:11.781%;top:20.438%;font-size:2.124cqw">Hạnh, Bắc Giang) như </span><span data-w="0.15953" style="left:32.639%;top:20.438%;font-size:2.124cqw">tiên cưỡi phượng </span><span data-w="0.40188" style="left:48.627%;top:20.438%;font-size:2.124cqw">(đình Thổ Hà, đình Phù Lão, Bắc Giang... ), </span><i class="nl" style="left:11.781%;top:22.325%">
+</i><span data-w="0.77042" style="left:11.781%;top:22.325%;font-size:2.124cqw">hoặc dưới dạng tượng tròn như phượng đàn trên đầu dư (đình Chu Quyến, Hà Tây), hình </span><i class="nl" style="left:11.781%;top:24.213%">
+</i><span data-w="0.06557" style="left:11.781%;top:24.213%;font-size:2.124cqw">tượng “</span><span data-w="0.14272" style="left:18.350%;top:24.213%;font-size:2.124cqw">phượng hàm thư</span><span data-w="0.56185" style="left:32.631%;top:24.213%;font-size:2.124cqw">” như ở đình Ngọc Canh (Vĩnh Phúc ), đình Quảng Bá (Hà Nội, </span><i class="nl" style="left:11.781%;top:26.101%">
+</i><span data-w="0.11152" style="left:11.781%;top:26.101%;font-size:2.124cqw">thế kỷ XX)...</span><i class="nl" style="left:15.482%;top:29.800%">
+</i><span data-w="0.07428" style="left:15.482%;top:29.800%;font-size:2.124cqw">- Con cá</span><i class="nl" style="left:15.482%;top:33.424%">
+</i><span data-w="0.73325" style="left:15.482%;top:33.424%;font-size:2.124cqw">Ở phương Đông quan niệm con cá là con vật báo điềm lành. Người ta cũng cho rằng, </span><i class="nl" style="left:11.781%;top:35.311%">
+</i><span data-w="0.77026" style="left:11.781%;top:35.311%;font-size:2.124cqw">nhiều giống cá sống lâu và điều này con cá còn được gắn với biểu tượng của sự trường </span><i class="nl" style="left:11.781%;top:37.199%">
+</i><span data-w="0.77026" style="left:11.781%;top:37.199%;font-size:2.124cqw">thọ. Trong tiếng Hán, chữ “ngư” là cá với chữ “dư” là thừa thãi, có cách phát âm là “Yu” </span><i class="nl" style="left:11.781%;top:39.087%">
+</i><span data-w="0.77026" style="left:11.781%;top:39.087%;font-size:2.124cqw">rất giống nhau, cho nên con cá được xem như biểu tượng của sự dư thừa, sung túc, giàu </span><i class="nl" style="left:11.781%;top:40.974%">
+</i><span data-w="0.77026" style="left:11.781%;top:40.974%;font-size:2.124cqw">có. Từ thời đại Hùng Vương, con cá là nguồn thức ăn giàu đạm, có mặt trong bữa ăn </span><i class="nl" style="left:11.781%;top:42.862%">
+</i><span data-w="0.69090" style="left:11.781%;top:42.862%;font-size:2.124cqw">hàng ngày, được khảo cổ học minh xác qua những vết tích xương cá ở nơi cư trú.</span><i class="nl" style="left:15.482%;top:46.511%">
+</i><span data-w="0.73341" style="left:15.482%;top:46.511%;font-size:2.124cqw">“Hình ảnh cá được khắc vẽ trên đồ gốm Gò Chiền. Cũng vậy hình ảnh con cá, con ốc </span><i class="nl" style="left:11.781%;top:48.399%">
+</i><span data-w="0.77042" style="left:11.781%;top:48.399%;font-size:2.124cqw">đã được khắc vẽ, đúc tạc trên trống đồng, thố đồng, muôi đồng... Và hình ảnh con cá sau </span><i class="nl" style="left:11.781%;top:50.286%">
+</i><span data-w="0.77051" style="left:11.781%;top:50.286%;font-size:2.124cqw">này đã thấm sâu vào sinh hoạt của nhân dân, có mặt khắp nơi, cái mõ hình con cá ở điếm </span><i class="nl" style="left:11.781%;top:52.174%">
+</i><span data-w="0.77042" style="left:11.781%;top:52.174%;font-size:2.124cqw">làng Vân Nội, con cá chép thờ sơn son thếp vàng trong đền thờ Chử Đồng Tử ở xã Dạ </span><i class="nl" style="left:11.781%;top:54.061%">
+</i><span data-w="0.77042" style="left:11.781%;top:54.061%;font-size:2.124cqw">Trạch (Hải Hưng), ở hội làng Me (Hà Tây) người ta đã tế thần Tản Viên bằng cá nướng. </span><i class="nl" style="left:11.781%;top:55.949%">
+</i><span data-w="0.77051" style="left:11.781%;top:55.949%;font-size:2.124cqw">Rồi hình ảnh con cá và người đi câu xuất hiện ở vị trí thứ hai chỉ sau những người rước </span><i class="nl" style="left:11.781%;top:57.837%">
+</i><span data-w="0.63666" style="left:11.781%;top:57.837%;font-size:2.124cqw">bông lúa, đi cày, đi cấy, trong trình diễn trò Trám ở Tứ Xã (Vĩnh Phú)”.</span><span data-w="0.00613" style="left:75.678%;top:57.805%;font-size:1.225cqw">9</span><span data-w="0.11822" style="left:76.993%;top:57.837%;font-size:2.124cqw">Trong những </span><i class="nl" style="left:11.781%;top:59.724%">
+</i><span data-w="0.77042" style="left:11.781%;top:59.724%;font-size:2.124cqw">ngôi đình cổ thế kỷ XVI, như đình Tây Đằng, đình Lỗ Hạnh... hình tượng cá chép hoá </span><i class="nl" style="left:11.781%;top:61.612%">
+</i><span data-w="0.77042" style="left:11.781%;top:61.612%;font-size:2.124cqw">rồng đã được thể hiện khá phong phú, sinh động. Một con vật mang tính lưỡng nguyên, </span><i class="nl" style="left:11.781%;top:63.500%">
+</i><span data-w="0.77042" style="left:11.781%;top:63.500%;font-size:2.124cqw">đuôi là cá mà đầu đã thành rồng, trở thành gạch nối giữa cái thiêng và cái tục. Cá chép </span><i class="nl" style="left:11.781%;top:65.387%">
+</i><span data-w="0.45540" style="left:11.781%;top:65.387%;font-size:2.124cqw">còn có mặt trong các bố cục với hoa sen, sóng nước...</span><i class="nl" style="left:15.482%;top:69.093%">
+</i><span data-w="0.08609" style="left:15.482%;top:69.093%;font-size:2.124cqw">- Con hạc</span><i class="nl" style="left:15.482%;top:72.704%">
+</i><span data-w="0.73325" style="left:15.482%;top:72.704%;font-size:2.124cqw">Con hạc gắn liền với nhiều biểu tượng và truyền thuyết khác nhau. Người xưa quan </span><i class="nl" style="left:11.781%;top:74.592%">
+</i><span data-w="0.77026" style="left:11.781%;top:74.592%;font-size:2.124cqw">niệm có 4 loài hạc nổi tiếng, được phân biệt qua màu lông: đen, vàng, trắng, xanh. Trong </span><i class="nl" style="left:11.781%;top:76.479%">
+</i><span data-w="0.77026" style="left:11.781%;top:76.479%;font-size:2.124cqw">đó loài hạc đen là loài sống lâu nhất. Tuy nhiên, trong nghệ thuật tạo hình, con hạc </span><i class="nl" style="left:11.781%;top:78.367%">
+</i><span data-w="0.77026" style="left:11.781%;top:78.367%;font-size:2.124cqw">thường được thể hiện với bộ lông trắng muốt, biểu tượng cho sự cao quý, thanh khiết. </span><i class="nl" style="left:11.781%;top:80.255%">
+</i><span data-w="0.77026" style="left:11.781%;top:80.255%;font-size:2.124cqw">Đầu hạc màu đỏ, hành hoả, nơi tập trung khí dương, tạo nên sự bền bỉ và sức sống dẻo </span><i class="nl" style="left:11.781%;top:82.142%">
+</i><span data-w="0.77026" style="left:11.781%;top:82.142%;font-size:2.124cqw">dai. Hình tượng con hạc với với đôi cánh dang rộng bay trên trời xanh, thể hiện cảm hứng </span><i class="nl" style="left:11.781%;top:84.030%">
+</i><span data-w="0.77034" style="left:11.781%;top:84.030%;font-size:2.124cqw">thi ca và những ước vọng cao quý. Con hạc với đôi cánh dang rộng và một chân hơi co </span><i class="nl" style="left:11.781%;top:85.918%">
+</i><span data-w="0.77034" style="left:11.781%;top:85.918%;font-size:2.124cqw">lên, lại liên hệ với nghi lễ với người đã khuất. Con hạc thường xuất hiện trong điêu khắc </span><i class="nl" style="left:11.781%;top:87.805%">
+</i><span data-w="0.25842" style="left:11.781%;top:87.805%;font-size:2.124cqw">trang trí đình làng với mô típ </span><span data-w="0.08546" style="left:37.623%;top:87.805%;font-size:2.124cqw">hạc - rùa </span><span data-w="0.41877" style="left:46.168%;top:87.805%;font-size:2.124cqw">(tượng tròn, đặt hai ban thờ Thành Hoàng làng),</span></div></div></section>
+<section class="trang" id="tr-9" data-tr="9"><div class="khung"><img src="anh/trang-9.webp" width="1020" height="1320" alt="" loading="lazy"><div class="chu"><span data-w="0.77026" style="left:11.781%;top:9.112%;font-size:2.124cqw">biểu tượng của sự trường tồn, vĩnh cửu, có ý nghĩa về thời gian và trục vũ trụ. Trong </span><i class="nl" style="left:11.781%;top:11.000%">
+</i><span data-w="0.45791" style="left:11.781%;top:11.000%;font-size:2.124cqw">những chạm khắc, hạc thường xuất hiện với môtíp </span><span data-w="0.07645" style="left:57.688%;top:11.000%;font-size:2.124cqw">hạc tùng</span><span data-w="0.06150" style="left:65.343%;top:11.000%;font-size:2.124cqw">, hoặc </span><span data-w="0.16186" style="left:71.511%;top:11.000%;font-size:2.124cqw">hạc - thạch - tùng</span><span data-w="0.01062" style="left:87.737%;top:11.000%;font-size:2.124cqw">, </span><i class="nl" style="left:11.781%;top:12.887%">
+</i><span data-w="0.67250" style="left:11.781%;top:12.887%;font-size:2.124cqw">cũng có ý nghĩa và biểu tượng của sự trường thọ, bền vững, cao sang và an lạc.</span><i class="nl" style="left:15.482%;top:16.587%">
+</i><span data-w="0.07668" style="left:15.482%;top:16.587%;font-size:2.124cqw">- Con hổ</span><i class="nl" style="left:15.482%;top:20.210%">
+</i><span data-w="0.73341" style="left:15.482%;top:20.210%;font-size:2.124cqw">Hổ là mãnh thú thuộc loại lớn nhất trong họ mèo Felidae và đứng hàng thứ 3 trong </span><i class="nl" style="left:11.781%;top:22.098%">
+</i><span data-w="0.77042" style="left:11.781%;top:22.098%;font-size:2.124cqw">Thập nhị địa chi. Hổ đứng vào hàng ngũ chúa sơn lâm của các loại mãnh thú. Hình tượng </span><i class="nl" style="left:11.781%;top:23.986%">
+</i><span data-w="0.77042" style="left:11.781%;top:23.986%;font-size:2.124cqw">hổ chứa đựng nhiều sự ẩn dụ. Với người phương Bắc, hổ biểu tượng cho quyền uy, sự </span><i class="nl" style="left:11.781%;top:25.873%">
+</i><span data-w="0.77042" style="left:11.781%;top:25.873%;font-size:2.124cqw">dũng mãnh nơi chiến địa. Hổ trắng là hình ảnh của đấng minh quân, khác với biểu tượng </span><i class="nl" style="left:11.781%;top:27.761%">
+</i><span data-w="0.77051" style="left:11.781%;top:27.761%;font-size:2.124cqw">của phương Nam là con voi trắng (bạch tượng). Trong điện thờ của tín ngưỡng thờ Mẫu </span><i class="nl" style="left:11.781%;top:29.649%">
+</i><span data-w="0.77042" style="left:11.781%;top:29.649%;font-size:2.124cqw">có khu vực riêng để thờ Ngũ hổ (5 con hổ), còn được gọi là ông Năm Dinh. Hổ được </span><i class="nl" style="left:11.781%;top:31.536%">
+</i><span data-w="0.77042" style="left:11.781%;top:31.536%;font-size:2.124cqw">quan niệm là một mãnh lực siêu phàm có thể chống lại những thế lực ma quỷ. Ngũ hổ </span><i class="nl" style="left:11.781%;top:33.424%">
+</i><span data-w="0.77051" style="left:11.781%;top:33.424%;font-size:2.124cqw">trấn giữ ở 5 khu vực: Hoàng hổ trấn ở Trung khu (địa khu); Hắc hổ trấn ở Bắc khu (thuỷ </span><i class="nl" style="left:11.781%;top:35.311%">
+</i><span data-w="0.77042" style="left:11.781%;top:35.311%;font-size:2.124cqw">khu); Bạch hổ trấn ở Tây khu (kim khu); Xích hổ trấn ở Nam khu (hoả khu); Thanh hổ </span><i class="nl" style="left:11.781%;top:37.199%">
+</i><span data-w="0.77042" style="left:11.781%;top:37.199%;font-size:2.124cqw">trấn ở Đông khu (mộc khu) Trong đạo Phật, con hổ biểu tượng cho sức mạnh của niềm </span><i class="nl" style="left:11.781%;top:39.087%">
+</i><span data-w="0.77042" style="left:11.781%;top:39.087%;font-size:2.124cqw">tin, sự chiến thắng mọi trở ngại trên con đường tu chứng. Cho nên chúng ta thường thấy </span><i class="nl" style="left:11.781%;top:40.974%">
+</i><span data-w="0.77042" style="left:11.781%;top:40.974%;font-size:2.124cqw">hình tượng Bồ Tát, Văn Thù cưỡi trên lưng hổ, sư tử. Hình ảnh đó tượng trưng cho sự </span><i class="nl" style="left:11.781%;top:42.862%">
+</i><span data-w="0.77042" style="left:11.781%;top:42.862%;font-size:2.124cqw">diệt trừ được tham, sân, si và ác nghiệp, tu thành quả Phật. Trong ngôi đình Lỗ Hạnh (thế </span><i class="nl" style="left:11.781%;top:44.750%">
+</i><span data-w="0.77042" style="left:11.781%;top:44.750%;font-size:2.124cqw">kỷ XVI) có bức chạm con hổ với bộ mặt khá dữ tợn. Đình Tây Đằng (thế kỷ XVI) có </span><i class="nl" style="left:11.781%;top:46.637%">
+</i><span data-w="0.77042" style="left:11.781%;top:46.637%;font-size:2.124cqw">hình chạm người đánh hổ. Đặc biệt, bức chạm tiêu biểu cho chủ đề này là cảnh đấu hổ ở </span><i class="nl" style="left:11.781%;top:48.525%">
+</i><span data-w="0.77042" style="left:11.781%;top:48.525%;font-size:2.124cqw">đình Chẩy, xã Liêm Thuận, Thanh Liêm, Hà Nam (thế kỷ XVII). Cảnh tượng rất hào </span><i class="nl" style="left:11.781%;top:50.412%">
+</i><span data-w="0.77042" style="left:11.781%;top:50.412%;font-size:2.124cqw">hùng, con hổ với tư thế chồm lên rất dữ tợn, nhưng tuyệt vọng. Hình tượng hổ thường </span><i class="nl" style="left:11.781%;top:52.300%">
+</i><span data-w="0.69699" style="left:11.781%;top:52.300%;font-size:2.124cqw">được đắp nổi bằng vữa trên nghi môn, nhằm trấn trừ ma quỷ vào đình quấy nhiễu.</span><i class="nl" style="left:15.482%;top:56.000%">
+</i><span data-w="0.00707" style="left:15.482%;top:56.000%;font-size:2.124cqw">-</span><span data-w="0.08767" style="left:16.193%;top:56.000%;font-size:2.124cqw">Con ngựa</span><i class="nl" style="left:15.482%;top:59.611%">
+</i><span data-w="0.73325" style="left:15.482%;top:59.611%;font-size:2.124cqw">Con ngựa là hình tượng đặc trưng cho phương Bắc. Người Trung Quốc xếp con ngựa </span><i class="nl" style="left:11.781%;top:61.498%">
+</i><span data-w="0.77034" style="left:11.781%;top:61.498%;font-size:2.124cqw">vào hành hỏa, phương vị phương Nam. Trong lịch sử mỹ thuật Trung Quốc có những </span><i class="nl" style="left:11.781%;top:63.386%">
+</i><span data-w="0.77026" style="left:11.781%;top:63.386%;font-size:2.124cqw">danh họa nổi tiếng về vẽ ngựa, như Hàn Cán (thế kỷ VII), Triệu Mạnh Phú (thế kỷ XIII), </span><i class="nl" style="left:11.781%;top:65.274%">
+</i><span data-w="0.77034" style="left:11.781%;top:65.274%;font-size:2.124cqw">Từ Bi Hồng (thế kỷ XX). Con ngựa mang biểu tượng của sự dũng mãnh, trung thành và </span><i class="nl" style="left:11.781%;top:67.161%">
+</i><span data-w="0.77026" style="left:11.781%;top:67.161%;font-size:2.124cqw">tận tụy. Ngựa là con vật ăn cỏ, sống trên núi cao, uống nước ở suối, nên con ngựa còn </span><i class="nl" style="left:11.781%;top:69.049%">
+</i><span data-w="0.69433" style="left:11.781%;top:69.049%;font-size:2.124cqw">mang hình ảnh về sự thanh khiết, sang quý, không vướng những tục lụy của đời./.</span></div></div></section>
+</main>
+
+
+<!-- ── Chế độ 📄: TỰ VẼ bằng PDF.js ────────────────────────────────────────
+     KHÔNG dùng <iframe src="*.pdf">: Chrome có tuỳ chọn "Download PDFs instead
+     of automatically opening them", bật lên thì khung nhúng chỉ hiện một ô đen
+     kèm nút Open — và KHÔNG header nào đè được lựa chọn đó. Tự vẽ ra canvas thì
+     trình xem PDF của trình duyệt không tham gia, nên thiết lập kia vô hiệu.
+     Đây cũng là cách Canvas/Canvadocs làm.
+
+     PDF.js (0,51 MB sau gzip) chỉ tải khi bấm 📄. -->
+<main x-show="che === 'pdf'" x-cloak class="px-4 py-4">
+
+  <div class="no-print sticky top-[3.1rem] z-10 mb-3 flex items-center gap-2 flex-wrap
+              bg-white/95 backdrop-blur border border-slate-200 rounded-lg px-2 py-1.5">
+    <button @click="thuNho()" :disabled="tiLe <= 0.5" type="button" title="Thu nhỏ"
+            class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700 disabled:opacity-40">−</button>
+    <span class="text-xs text-slate-600 tabular-nums w-14 text-center"
+          x-text="Math.round(tiLe * 100) + '%'"></span>
+    <button @click="phongTo()" :disabled="tiLe >= 4" type="button" title="Phóng to"
+            class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700 disabled:opacity-40">+</button>
+    <button @click="vuaBeRong()" type="button"
+            class="px-3 py-2 text-xs font-medium rounded-lg border border-slate-300 text-slate-700">Vừa bề rộng</button>
+    <span x-show="soTrang" x-cloak class="ml-auto text-xs text-slate-500 tabular-nums"
+          x-text="soTrang + ' trang'"></span>
+    <a :href="pdfGoc" target="_blank" rel="noopener"
+       class="px-3 py-2 text-xs font-medium rounded-lg border border-slate-300 text-slate-700">Mở ở tab mới ↗</a>
+  </div>
+
+  <p x-show="pdfLoi" x-cloak
+     class="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-900">
+    <span x-text="pdfLoi"></span>
+    — <a :href="pdfGoc" target="_blank" rel="noopener" class="underline font-medium">mở bản PDF ở tab mới</a>.
+  </p>
+  <p x-show="!pdfLoi && !soTrang" x-cloak class="text-sm text-slate-500">Đang mở bản PDF…</p>
+
+  <div id="pdfjs" class="space-y-3"></div>
+
+</main>
+</div>
+</div>
+
+
+  <!-- ── Tra cứu: nút nổi + popup ──────────────────────────────────────────
+       Nút nổi chứ không tự bung popup: iOS dựng thanh Copy/Look Up của riêng nó
+       ngay dưới vùng chọn, hai thứ đè lên nhau và trẻ bấm nhầm liên tục.
+       @mousedown.prevent là BẮT BUỘC — thiếu nó thì cú nhấn vào nút tự xoá vùng
+       chọn trước khi @click chạy, và nút mở ra một popup rỗng. -->
+  <template x-if="tra.btn && !tra.show">
+    <button @mousedown.prevent @click="traMo()" type="button"
+            :style="'left:' + tra.btn.x + 'px; top:' + tra.btn.y + 'px'"
+            class="fixed z-40 -translate-x-1/2 px-3 py-1.5 rounded-full bg-indigo-600 text-white text-xs font-medium shadow-lg hover:bg-indigo-700">
+      🔎 Giải thích
+    </button>
+  </template>
+
+  <!-- Tấm trượt từ dưới lên trên điện thoại, hộp giữa màn hình trên máy tính.
+       Không neo popup vào vùng chọn: chữ nằm sát đáy màn hình thì popup neo theo
+       sẽ tràn ra ngoài, mà đó lại là chỗ trẻ hay bôi đen nhất. -->
+  <template x-if="tra.show">
+    <div @click="traDong()" @keydown.escape.window="traDong()"
+         class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 sm:p-4">
+      <div @click.stop data-tra-popup
+           class="w-full sm:max-w-lg max-h-[82vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl">
+
+        <div class="sticky top-0 flex items-start gap-2 px-4 py-3 border-b border-slate-100 bg-white">
+          <div class="flex-1 min-w-0">
+            <!-- Đoạn gốc GẬP LẠI còn 2 dòng. Người ta mở popup để đọc phần
+                 GIẢI THÍCH; chữ gốc thì vừa bôi đen xong nên đã biết rồi. Để nó
+                 nở tự do thì một đoạn 20 dòng đẩy hẳn phần giải thích khỏi màn
+                 hình — đã đo. Ngữ cảnh (câu chứa từ) gập chung luôn cho đỡ rối. -->
+            <p @click="moGoc = !moGoc"
+               class="font-semibold text-slate-900 break-words whitespace-pre-line cursor-pointer"
+               :class="moGoc ? 'max-h-60 overflow-y-auto' : 'line-clamp-2'"
+               x-text="tra.goc || tra.text"></p>
+            <p x-show="moGoc && tra.sent" x-cloak
+               class="mt-1 text-xs text-slate-400" x-text="tra.sent"></p>
+
+          </div>
+          <!-- Chọn ngôn ngữ phần giải thích. Mặc định là ngôn ngữ DẠY của môn
+               (`traNgonNgu()`), đổi thì nhớ riêng cho môn đó trong trình duyệt —
+               trẻ học Science bằng tiếng Anh nhưng Lịch sử bằng tiếng Việt. -->
+          <div class="shrink-0 flex rounded-lg border border-slate-200 overflow-hidden text-[0.7rem]">
+            <button @click="doiNn('vi')" type="button" title="Giải thích bằng tiếng Việt"
+                    class="px-2 py-1.5"
+                    :class="nnHienTai() === 'vi' ? 'bg-indigo-600 text-white'
+                                                 : 'text-slate-500 hover:bg-slate-50'">VI</button>
+            <button @click="doiNn('en')" type="button" title="Explain in English"
+                    class="px-2 py-1.5"
+                    :class="nnHienTai() === 'en' ? 'bg-indigo-600 text-white'
+                                                 : 'text-slate-500 hover:bg-slate-50'">EN</button>
+          </div>
+          <!-- Mở/thu đoạn gốc: KÝ HIỆU thôi, không chữ. Nó đứng cạnh 🔊 và ✕
+               nên hàng nút giữ được một nhịp, và không ăn mất chiều cao của
+               phần giải thích. -->
+          <button x-show="daiGoc" x-cloak @click="moGoc = !moGoc" type="button"
+                  :title="moGoc ? 'Thu gọn đoạn gốc' : 'Xem đầy đủ đoạn gốc'"
+                  class="shrink-0 w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100"
+                  x-text="moGoc ? '⌃' : '⌄'"></button>
+          <!-- Trần 200 ký tự là của /api/tts. Ẩn nút khi vượt, thay vì để bấm rồi
+               lặng lẽ rơi về giọng hệ điều hành — im lặng kiểu đó nhìn y hệt như
+               đang chạy bình thường, chỉ khác giọng. -->
+          <button x-show="canSpeak && tra.text.length <= 200" x-cloak
+                  @click="speak(tra.text, true)" type="button" title="Đọc to"
+                  class="shrink-0 w-8 h-8 rounded-full text-indigo-500 hover:bg-indigo-50">🔊</button>
+          <button @click="traDong()" type="button" title="Đóng"
+                  class="shrink-0 w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 text-lg leading-none">✕</button>
+        </div>
+
+        <!-- Khung xương chờ ~1,6s. Đo được: p50 1,56s cho từ, 1,85s cho đoạn. -->
+        <div x-show="tra.loading" class="px-4 py-5 space-y-2.5">
+          <div class="h-3 w-1/3 rounded bg-slate-200 animate-pulse"></div>
+          <div class="h-3 w-full rounded bg-slate-100 animate-pulse"></div>
+          <div class="h-3 w-5/6 rounded bg-slate-100 animate-pulse"></div>
+        </div>
+
+        <!-- Đầu mục khác nhau theo chế độ; phần thân (phan[]) DÙNG CHUNG cho cả
+             hai, và dùng chung luôn với nhánh offline. Chép bộ vẽ ra làm hai bản
+             là cách chắc chắn nhất để một bản lặng lẽ tụt lại sau. -->
+        <template x-if="!tra.loading && tra.data && tra.mode === 'word'">
+          <div class="px-4 pt-4 space-y-2">
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <span x-show="tra.data.loai" x-cloak class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600" x-text="tra.data.loai"></span>
+              <span x-show="tra.data.ipa" x-cloak class="font-mono text-slate-400" x-text="tra.data.ipa"></span>
+            </div>
+            <p x-show="tra.data.nghia" x-cloak class="text-lg font-semibold text-cyan-700" x-text="tra.data.nghia"></p>
+          </div>
+        </template>
+
+        <template x-if="!tra.loading && tra.data && tra.mode === 'text'">
+          <div class="px-4 pt-4">
+            <p class="text-slate-900 leading-relaxed" x-text="tra.data.dich"></p>
+          </div>
+        </template>
+
+        <template x-if="!tra.loading && tra.data && (tra.data.phan || []).length">
+          <div class="px-4 pt-3 space-y-3">
+            <template x-for="(ph, i) in tra.data.phan" :key="i">
+              <div class="rounded-lg border border-slate-200 overflow-hidden">
+                <p class="px-3 py-1.5 bg-slate-50 text-xs font-medium text-slate-500 uppercase tracking-wide"
+                   x-text="ph.tieu_de"></p>
+                <div class="px-3 py-2 space-y-2">
+                  <p class="text-slate-700 leading-relaxed" x-text="ph.noi_dung"></p>
+                  <template x-for="(v, k) in (ph.vi_du || [])" :key="k">
+                    <div class="border-l-2 border-indigo-200 pl-2.5">
+                      <p class="text-sm text-slate-600 italic" x-text="v.en"></p>
+                      <p x-show="v.vi" x-cloak class="text-sm text-cyan-700" x-text="v.vi"></p>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <template x-if="!tra.loading && tra.data && (tra.data.tu_kho || []).length">
+          <div class="px-4 pt-3 flex flex-wrap gap-1.5">
+            <template x-for="(w, i) in tra.data.tu_kho" :key="i">
+              <span class="px-2 py-1 rounded-lg bg-slate-100 text-xs">
+                <span class="font-medium text-slate-700" x-text="w.en"></span>
+                <span class="text-cyan-700" x-text="' · ' + w.vi"></span>
+              </span>
+            </template>
+          </div>
+        </template>
+
+        <div x-show="!tra.loading && tra.data && tra.data.luu_y" x-cloak class="px-4 pt-3">
+          <p class="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-900"
+             x-text="'⚠ ' + (tra.data ? tra.data.luu_y : '')"></p>
+        </div>
+
+        <div class="pb-1"></div>
+
+        <!-- Chỉ có glossary của bài, không gọi được Gemini. Nói ra, nhưng nói
+             nhẹ: đây là suy giảm mềm, không phải hỏng. -->
+        <p x-show="!tra.loading && tra.data && tra.data._offline" x-cloak
+           class="px-4 pb-3 text-xs text-slate-400"
+           x-text="'Nghĩa lấy từ học liệu của bài' + (tra.ly_do ? ' — ' + tra.ly_do : '.')"></p>
+
+        <p x-show="!tra.loading && traRong()" x-cloak class="px-4 py-5 text-sm text-slate-500"
+           x-text="tra.err || 'Không tìm thấy nghĩa của mục này.'"></p>
+
+        <!-- ── Hỏi tiếp về chính đoạn này ────────────────────────────────
+             Thay cho nút đổi chế độ cũ ("Giải nghĩa như một từ" / "Dịch cả cụm
+             này"): đổi chế độ chỉ là hỏi lại cùng một câu theo kiểu khác, còn
+             hỏi tiếp thì trả lời được thứ mà không schema cố định nào phủ hết.
+             Mỗi lượt hỏi tính vào ĐÚNG trần 300/ngày như một lượt tra. -->
+        <div x-show="!tra.loading && traKhoa()" x-cloak class="px-4 pb-4 pt-1">
+          <template x-for="(m, i) in tra.chat" :key="i">
+            <p class="mb-2 text-sm leading-relaxed"
+               :class="m.ai === 'em' ? 'text-right' : ''">
+              <span class="inline-block px-3 py-2 rounded-2xl max-w-[85%] text-left"
+                    :class="m.ai === 'em' ? 'bg-indigo-50 text-indigo-900'
+                                          : 'bg-slate-100 text-slate-700'"
+                    x-text="m.noi"></span>
+            </p>
+          </template>
+          <p x-show="tra.dangHoi" x-cloak class="mb-2 text-sm text-slate-400">Đang nghĩ…</p>
+          <form @submit.prevent="traHoi()" class="flex gap-2">
+            <input x-model="tra.hoi" type="text" maxlength="300"
+                   placeholder="Hỏi thêm về phần này…"
+                   class="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg border border-slate-300">
+            <button type="submit" :disabled="tra.dangHoi || !tra.hoi.trim()"
+                    class="shrink-0 px-3 py-2 text-sm rounded-lg bg-indigo-600 text-white
+                           disabled:bg-slate-200 disabled:text-slate-400">Hỏi</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </template>
+
+
+<script>
+  function docStore() {
+    // ⚠ Tài liệu PDF.js phải nằm NGOÀI state của Alpine. Alpine 3 bọc mọi thứ
+    // trong `x-data` bằng Proxy phản ứng, còn `PDFDocumentProxy` đọc trường
+    // riêng tư `#…` của chính nó — qua một Proxy thì JS ném
+    // "Cannot read private member #qs from an object whose class did not
+    // declare it" và trang chỉ hiện "Chưa mở được bản PDF". Để trong closure
+    // thì Alpine không với tới. Cùng lý do cho IntersectionObserver.
+    let _pdf = null, _oq = null, _kho = null;
+    let _sp = null, _kq = [];        // danh sách span + kết quả tìm
+    // Trang NEO của phiên tìm hiện tại. Đặt MỘT LẦN lúc bắt đầu gõ và giữ
+    // nguyên tới khi xoá ô tìm.
+    // ⚠ Không đọc `trangDang` ở mỗi lần gõ: mỗi ký tự gõ ra là một lượt tìm,
+    // mà tìm xong thì trang tự CUỘN tới kết quả — nên `trangDang` đã là chỗ
+    // máy đưa tới chứ không còn là chỗ người đang đọc. Lấy nó làm neo thì mỗi
+    // ký tự lại trôi thêm một đoạn, và càng gõ càng lạc khỏi chỗ xuất phát.
+    let _neo = null;
+    return {
+      
+      che: null,
+      chiDoc: false,
+      // Giá trị đi vào STATE, không nhúng thẳng `|tojson` vào thuộc tính HTML:
+      // `tojson` sinh chuỗi bọc nháy kép, mà thuộc tính cũng đóng bằng nháy kép
+      // → đứt thuộc tính và chết cả Alpine. Đã dính BA lần trong dự án này.
+      pdfGoc: "ban.pdf",
+      pdfJsUrl: "../../../../assets/pdf.e73f3ce5.mjs",
+      pdfWorkerUrl: "../../../../assets/pdf.worker.490b29ce.mjs",
+      tiLe: 1.2, soTrang: 0, pdfLoi: '', srcNang: '',
+      mlMo: false, trangDang: 0, moUnit: {}, mucDang: -1, unitDang: -1,
+      // Trang bắt đầu của từng unit — để tự mở đúng unit đang đọc.
+      unitTr: [1, 1, 1, 1, 3, 6],
+      // Trang mở đầu và CẤP của từng mục, theo đúng thứ tự vẽ ra. Cần cả hai
+      // để biết "đang đọc trang 15" thuộc mục nào: mục đang đọc là mục CUỐI
+      // CÙNG có trang mở đầu ≤ trang hiện tại, chứ không phải mục có trang mở
+      // đầu BẰNG trang hiện tại. Luật cũ (`===`) chỉ sáng đúng một trang duy
+      // nhất của mỗi mục, còn 9/10 thời gian đọc thì mục lục không sáng gì.
+      mlP: [1, 1, 1, 1, 3, 6],
+      // ⚠ `default=1`: mục lục một cấp KHÔNG có trường `c`, và `map` trả về
+      // `Undefined` — `tojson` nổ ngay lúc build, cả trang trắng.
+      mlC: [1, 1, 1, 1, 1, 1],
+      tim: '', soKq: 0, viTri: 0,
+      user: "pl", course: "viet-nam-hoc-5",
+      secret: localStorage.getItem('lms_key') || '',
+
+      // Nút loa trong popup tra cứu cần `canSpeak` + `speak`. Thiếu là popup
+      // dựng ra nhưng Alpine ném "canSpeak is not defined" mỗi lần vẽ lại.
+      get canSpeak() { return typeof window !== 'undefined' && ('speechSynthesis' in window || 'Audio' in window); },
+      _player: null, _blobs: {}, _blobKeys: [], _BLOB_MAX: 50,
+      _chamBlob(t) { const i = this._blobKeys.indexOf(t);
+        if (i >= 0) { this._blobKeys.splice(i, 1); this._blobKeys.push(t); } },
+      _nhoBlob(t, s) { this._blobs[t] = s; this._blobKeys.push(t);
+        while (this._blobKeys.length > this._BLOB_MAX) {
+          const cu = this._blobKeys.shift(); URL.revokeObjectURL(this._blobs[cu]); delete this._blobs[cu]; } },
+      async speak(text, tinCay) {
+        text = (text || '').trim(); if (!text) return;
+        if (this._player) { this._player.pause(); this._player = null; }
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        try {
+          let src = this._blobs[text];
+          if (src) { this._chamBlob(text); } else {
+            const h = (tinCay && this.traKhoa()) ? { headers: { 'x-progress-key': this.traKhoa() } } : undefined;
+            const r = await fetch('/api/tts?user=' + this.user + '&course=' + this.course
+                                  + '&text=' + encodeURIComponent(text), h);
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            src = URL.createObjectURL(await r.blob()); this._nhoBlob(text, src);
+          }
+          this._player = new Audio(src); await this._player.play();
+        } catch (e) { this.speakLocal(text); }
+      },
+      speakLocal(text) {
+        if (!('speechSynthesis' in window)) return;
+        const u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.rate = 0.9;
+        const v = window.speechSynthesis.getVoices().find(x => /^en[-_]US/i.test(x.lang));
+        if (v) u.voice = v;
+        window.speechSynthesis.speak(u);
+      },
+      init() {
+        // Nhớ lựa chọn, nhưng CHỈ khi người dùng tự bấm. Bản quét không có chế
+        // độ đọc nên bị ép sang PDF; ghi lựa chọn đó xuống thì một cuốn SGK đầu
+        // độc mọi tài liệu sau — đã đo: 7/9 tài liệu mở nhầm sang PDF.
+        if (this.chiDoc) { this.che = 'doc'; }
+        else if (this.che === null) {
+          let nho = null;
+          try { nho = localStorage.getItem('lms_doc_mode'); } catch (e) {}
+          this.che = nho === 'pdf' ? 'pdf' : 'doc';
+        }
+        if (this.che === 'pdf') this.moPdf();
+        this.$nextTick(() => { this.canhChuLuoi(); this.theoDoiTrang(); });
+        addEventListener('resize', () => { clearTimeout(this._h); this._h = setTimeout(() => this.canhChu(), 150); });
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => this.canhChu());
+      },
+      doiCheDo(c, luu) {
+        this.che = c;
+        if (c === 'pdf') this.moPdf();
+        if (luu) { try { localStorage.setItem('lms_doc_mode', c); } catch (e) {} }
+        if (c === 'doc') this.$nextTick(() => this.canhChuLuoi());
+      },
+
+      /** ── Tìm trong tài liệu ────────────────────────────────────────────
+       *
+       * Tìm THẲNG trên DOM, không dựng index và không tải thêm gì. Lớp chữ vốn
+       * đã nằm đủ trong DOM — đó là điều kiện bắt buộc để `getSelection()` với
+       * tới được — nên dữ liệu để tìm đã có sẵn, miễn phí.
+       *
+       * ⚠ Gom danh sách span MỘT LẦN rồi giữ lại. Một quyển 260 trang có
+       * 12.940 span; đọc `textContent` của từng cái ở mỗi lần gõ phím là bắt
+       * trình duyệt duyệt lại cả cây DOM cho từng ký tự.
+       *
+       * ⚠ Đánh dấu bằng CLASS, không chèn thẻ `<mark>`. Chèn thẻ là sửa DOM ở
+       * hàng trăm chỗ và dựng hình lại cả trang — đúng cái bẫy đã làm `canhChu`
+       * mất 115 giây. Chữ vốn trong suốt nên tô nền là đủ thành vệt đánh dấu.
+       *
+       * ⚠ Có TRẦN kết quả. Gõ một chữ cái trên sách 260 trang là hàng nghìn
+       * kết quả — đánh dấu hết thì vô nghĩa với người đọc mà lại nặng máy.
+       *
+       * Hạn chế đã biết: mỗi span là MỘT DÒNG của bản gốc, nên cụm từ bị ngắt
+       * qua hai dòng sẽ không khớp. Chấp nhận — đổi lại không tốn byte nào.
+       */
+      timKiem() {
+        if (!_sp) {
+          // `:not(.mo)` — bỏ qua số trang, tiêu đề chạy, dấu mờ. Không lọc
+          // thì tìm "Rocks" ra 30 kết quả trùng nhau ở tiêu đề chạy của từng
+          // trang trong unit đó, đẩy kết quả thật xuống dưới.
+          _sp = Array.from(document.querySelectorAll('.chu span:not(.mo)'))
+                     .map((e) => [e, (e.textContent || '').toLowerCase()]);
+        }
+        for (const e of _kq) e.classList.remove('tim', 'tim-nay');
+        _kq = [];
+        const q = (this.tim || '').trim().toLowerCase();
+        this.viTri = 0;
+        if (q.length < 2) { this.soKq = 0; _neo = null; return; }  // 1 ký tự thì vô nghĩa
+        if (_neo === null) _neo = this.trangDang || 1;
+        for (const [e, t] of _sp) {
+          if (t.includes(q)) {
+            _kq.push(e);
+            if (_kq.length >= 300) break;              // trần
+          }
+        }
+        for (const e of _kq) e.classList.add('tim');
+        this.soKq = _kq.length;
+        if (_kq.length) { this.viTri = this.chonKq(); this.toiKetQua(0); }
+      },
+
+      /** Kết quả nào đáng nhảy tới trước, tính từ chỗ người đang đọc.
+
+          Nhảy tới kết quả ĐẦU TIÊN của cả tài liệu là sai với cách người ta
+          thực sự tìm: đang đọc mục 3.2 mà gõ "mean" thì chỗ muốn tới là chỗ
+          gần đây, không phải trang 12. Thứ tự ưu tiên:
+            1. kết quả đầu tiên trong MỤC đang đọc;
+            2. nếu mục đó không có, kết quả đầu tiên trong UNIT đang đọc;
+            3. nếu unit cũng không có, kết quả GẦN trang đang đọc nhất.
+          Kết quả chọn ra có thể là cái thứ 5/8 — đó là ý đồ, và thanh `5/8`
+          trên nav nói rõ điều đó.
+
+          Tài liệu không có mục lục thì cả hai khoảng đều là vô hạn ⇒ rơi về
+          đúng hành vi cũ (kết quả đầu tiên). */
+      /** Trang neo của phiên tìm hiện tại — phơi ra để CHỐT đo được.
+          Không có nó thì bài test phải suy neo từ `trangDang`, mà `trangDang`
+          đã bị chính cú cuộn tới kết quả làm đổi — tức bài test đo một thứ
+          khác với thứ nó tưởng. */
+      neoTim() { return _neo; },
+
+      chonKq() {
+        const neo = _neo || this.trangDang || 1;
+        const tr = (e) => Number(e.closest('section.trang')?.dataset.tr || 0);
+        const P = this.mlP || [], C = this.mlC || [];
+        // Khoảng [đầu, cuối) của mục chứa trang neo. `chiUnit` thì bỏ qua mục
+        // cấp 2, nên ra khoảng của cả UNIT.
+        const khoang = (chiUnit) => {
+          let dau = 0, cuoi = Infinity;
+          for (let i = 0; i < P.length; i++) {
+            if (chiUnit && C[i] === 2) continue;
+            if (P[i] <= neo) dau = P[i];
+            else { cuoi = P[i]; break; }
+          }
+          return [dau, cuoi];
+        };
+        // `_kq` theo thứ tự DOM, mà DOM theo thứ tự trang ⇒ phần tử đầu của
+        // danh sách lọc cũng là kết quả sớm nhất trong khoảng.
+        const trong = ([a, b]) => {
+          for (let i = 0; i < _kq.length; i++) {
+            const p = tr(_kq[i]);
+            if (p >= a && p < b) return i;
+          }
+          return -1;
+        };
+        let k = trong(khoang(false));
+        if (k < 0) k = trong(khoang(true));
+        if (k >= 0) return k;
+        let tot = 0, gan = Infinity;
+        for (let i = 0; i < _kq.length; i++) {
+          const d = Math.abs(tr(_kq[i]) - neo);
+          if (d < gan) { gan = d; tot = i; }
+        }
+        return tot;
+      },
+
+      /** Nhảy tới kết quả kế tiếp (`b`=1), trước đó (-1), hoặc chính nó (0). */
+      toiKetQua(b) {
+        if (!_kq.length) return;
+        _kq[this.viTri]?.classList.remove('tim-nay');
+        this.viTri = (this.viTri + b + _kq.length) % _kq.length;
+        const e = _kq[this.viTri];
+        e.classList.add('tim-nay');
+        // Mở trang chứa nó ra trước đã: ảnh nạp lười nên khung có thể chưa cao
+        // đúng, và lớp chữ của trang đó có thể chưa được nắn.
+        const k = e.closest('.khung');
+        if (k) this.canhChu(k);
+        const h = document.querySelector('nav.sticky');
+        const off = h ? h.getBoundingClientRect().height : 0;
+        const r = e.getBoundingClientRect();
+        window.scrollTo({ top: Math.max(0, r.top + window.scrollY - off - 80),
+                          behavior: 'smooth' });
+      },
+
+      /** Mục lục → nhảy tới trang N, chạy ở CẢ hai chế độ.
+       *  Ở 📄 phải chờ PDF.js dựng xong khung, không thì chưa có gì để nhảy tới. */
+      async toiTrang(p) {
+        this.mlMo = false;
+        this.trangDang = p;
+        if (this.che === 'pdf') {
+          await this.moPdf();
+          await this.$nextTick();
+        }
+        const el = this.che === 'pdf'
+          ? document.querySelector('#pdfjs [data-trang="' + p + '"]')
+          : document.getElementById('tr-' + p);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      },
+
+      /** Tô đậm mục đang xem. Không có thì cây mục lục chỉ là danh sách link,
+       *  cuộn một lúc là không biết mình đang ở đâu. */
+      theoDoiTrang() {
+        const q = new IntersectionObserver((muc) => {
+          const thay = muc.filter((m) => m.isIntersecting)
+                          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+          if (!thay) return;
+          this.trangDang = Number(thay.target.dataset.tr || thay.target.dataset.trang);
+          // Mở sẵn unit chứa trang đang đọc. Không làm thì cuộn tới unit 5 mà
+          // cột mục lục vẫn đang mở unit 1 — cây nói một đằng, trang đi một nẻo.
+          let u = 0;
+          for (let i = 0; i < this.unitTr.length; i++) {
+            if (this.unitTr[i] <= this.trangDang) u = i + 1;
+          }
+          let a = -1, b = -1;
+          for (let i = 0; i < this.mlP.length; i++) {
+            if (this.mlP[i] > this.trangDang) break;
+            a = i;
+            if (this.mlC[i] !== 2) b = i;
+          }
+          this.mucDang = a;
+          this.unitDang = b;
+          if (u && !this.moUnit[u]) this.moUnit[u] = true;
+        }, { rootMargin: '-10% 0px -80% 0px' });
+        document.querySelectorAll('.trang[data-tr], #pdfjs [data-trang]')
+                .forEach((e) => q.observe(e));
+      },
+
+      /** Nạp PDF.js và dựng khung trang. Chỉ chạy MỘT lần, lúc bấm 📄. */
+      async moPdf() {
+        // Nhánh file nặng: không có #pdfjs, chỉ gắn src cho iframe rồi thôi.
+        if (!document.getElementById('pdfjs')) { this.srcNang = this.pdfGoc; return; }
+        if (_pdf || this.pdfLoi) return;
+        try {
+          const pdfjs = await import(this.pdfJsUrl);
+          pdfjs.GlobalWorkerOptions.workerSrc = this.pdfWorkerUrl;
+          _pdf = await pdfjs.getDocument({ url: this.pdfGoc }).promise;
+          this.soTrang = _pdf.numPages;
+          // `await` chứ không phải $nextTick rồi bỏ đó: `toiTrang()` gọi
+          // `moPdf()` xong là đi tìm khung trang ngay, mà `dungKhung()` còn
+          // phải chờ `getPage(1)`. Không chờ thì mục lục bấm vào không nhảy đi
+          // đâu cả — đo được ở tài liệu 18 trang.
+          await this.$nextTick();
+          await this.dungKhung();
+        } catch (e) {
+          // Nói đúng loại trục trặc, đừng chìa nguyên văn lỗi thư viện ra cho trẻ.
+          console.warn('PDF.js hỏng:', e);
+          this.pdfLoi = 'Chưa mở được bản PDF ngay trong trang';
+        }
+      },
+
+      /** Một khung trống cho mỗi trang; VẼ khi cuộn tới.
+       *  Vẽ hết ngay thì một cuốn 192 trang là 192 canvas trong bộ nhớ. */
+      async dungKhung() {
+        const ct = document.getElementById('pdfjs');
+        if (!ct || !_pdf) return;
+        ct.innerHTML = '';
+        if (_oq) _oq.disconnect();
+        _oq = new IntersectionObserver((muc) => {
+          muc.forEach((m) => { if (m.isIntersecting) this.veTrang(m.target); });
+        }, { rootMargin: '800px 0px' });
+        // ⚠ Ô giữ chỗ phải mang sẵn TỈ LỆ KHUNG. Để rỗng thì mọi ô cao 0px,
+        // cả tài liệu 96 trang dồn thành một vệt, và mục lục nhảy tới trang 40
+        // sẽ trượt sang chỗ khác — thanh cuộn còn giật mỗi lần vẽ xong một
+        // trang. Lấy khổ trang ĐẦU: một tài liệu hiếm khi trộn nhiều khổ, và
+        // lệch chút thì cũng chỉ lệch trước khi trang đó kịp vẽ.
+        const vp1 = (await _pdf.getPage(1)).getViewport({ scale: 1 });
+        _kho = [vp1.width, vp1.height];
+        for (let i = 1; i <= _pdf.numPages; i++) {
+          const d = document.createElement('div');
+          d.className = 'bg-white border border-slate-200 rounded-lg overflow-hidden mx-auto';
+          d.dataset.trang = String(i);
+          ct.appendChild(d);
+          _oq.observe(d);
+        }
+        this.coKhung();
+        this.theoDoiTrang();   // khung 📄 dựng sau init, phải đăng ký lại
+      },
+
+      /** Đặt kích thước ô giữ chỗ.
+       *
+       * ⚠ Phải rộng ĐÚNG bằng canvas sẽ vẽ ra, không phải rộng bằng cả cột.
+       * Canvas hiển thị ở `khổ trang × tiLe`, còn ô rỗng thì giãn hết cột — nên
+       * mỗi trang vẽ xong LẠI CO LẠI, đẩy mọi trang dưới nó lên. Đo được: mục
+       * lục nhảy tới trang 5 thì trượt 429px, trang 7 trượt 915px, và càng
+       * nhiều trang đã vẽ thì càng lệch. Thanh cuộn cũng giật theo.
+       */
+      coKhung() {
+        if (!_kho) return;
+        document.querySelectorAll('#pdfjs [data-trang]').forEach((e) => {
+          if (e.firstChild) return;             // đã vẽ, canvas tự quyết
+          e.style.width = (_kho[0] * this.tiLe) + 'px';
+          e.style.maxWidth = '100%';
+          e.style.aspectRatio = _kho[0] + ' / ' + _kho[1];
+        });
+      },
+
+      async veTrang(el) {
+        if (el.dataset.xong === '1' && el.dataset.tiLe === String(this.tiLe)) return;
+        el.dataset.xong = '1'; el.dataset.tiLe = String(this.tiLe);
+        const tr = await _pdf.getPage(Number(el.dataset.trang));
+        // Nhân theo devicePixelRatio để chữ không rỗ trên màn hình nét cao.
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const vp = tr.getViewport({ scale: this.tiLe * dpr });
+        const cv = document.createElement('canvas');
+        cv.width = vp.width; cv.height = vp.height;
+        cv.style.width = (vp.width / dpr) + 'px';
+        cv.style.height = 'auto';
+        cv.style.display = 'block';
+        cv.style.maxWidth = '100%';
+        await tr.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+        el.style.aspectRatio = ''; el.style.width = '';   // canvas tự quyết
+        el.replaceChildren(cv);
+      },
+
+      _veLai() {
+        document.querySelectorAll('#pdfjs [data-trang]').forEach((e) => {
+          e.dataset.xong = '';
+          const r = e.getBoundingClientRect();
+          if (r.top < innerHeight * 2 && r.bottom > -innerHeight) this.veTrang(e);
+        });
+      },
+      phongTo()   { this.tiLe = Math.min(4, +(this.tiLe + 0.25).toFixed(2)); this.coKhung(); this._veLai(); },
+      thuNho()    { this.tiLe = Math.max(0.5, +(this.tiLe - 0.25).toFixed(2)); this.coKhung(); this._veLai(); },
+      async vuaBeRong() {
+        if (!_pdf) return;
+        const w = (document.getElementById('pdfjs') || {}).clientWidth || 800;
+        const vp = (await _pdf.getPage(1)).getViewport({ scale: 1 });
+        this.tiLe = +(w / vp.width).toFixed(2);
+        this.coKhung();
+        this._veLai();
+      },
+      /* Kéo giãn từng đoạn cho khớp đúng bề rộng của nó trong ảnh. Cỡ chữ suy từ
+         PDF không bao giờ ra đúng bề rộng (font trong PDF khác font máy); không
+         sửa thì sai số dồn dần và cuối dòng lệch hẳn một hai từ.
+         ⚠ Đo bằng `offsetWidth`, KHÔNG phải `getBoundingClientRect()` — cái sau
+         đã tính cả transform của tổ tiên nên tỉ lệ ra sai hệ quy chiếu. */
+      /** Nắn bề rộng từng đoạn chữ cho khớp bản gốc.
+       *
+       * ⚠ BA LƯỢT tách bạch — ghi hết, ĐỌC hết, rồi ghi hết. Bản đầu ghi rồi
+       * đọc XEN KẼ từng span (`style.transform = ''` rồi `offsetWidth`), mà
+       * mỗi lần đọc sau một lần ghi là ép trình duyệt dựng lại bố cục ngay tại
+       * chỗ đó. Với một quyển sách 260 trang thì đó là **13.000 lượt dựng
+       * hình**. Đo trên hồ sơ điện thoại (CPU chậm 4×): mở sách mất **115
+       * giây**. Tách ba lượt thì chỉ còn ~3 lượt dựng hình cho mỗi trang.
+       */
+      /** Chỉ nắn những trang SẮP NHÌN THẤY, phần còn lại chờ cuộn tới.
+       *
+       * Một quyển 260 trang có 12.940 đoạn chữ; nắn hết ngay lúc mở là làm một
+       * đống việc cho 259 trang chưa ai đọc. Ảnh trang vốn đã nạp lười
+       * (`loading="lazy"`) — chỗ này chỉ là cho lớp chữ theo cùng nguyên tắc.
+       */
+      canhChuLuoi() {
+        if (this._ql) this._ql.disconnect();
+        this._ql = new IntersectionObserver((muc) => {
+          for (const m of muc) if (m.isIntersecting) this.canhChu(m.target);
+        }, { rootMargin: '1200px 0px' });
+        document.querySelectorAll('.khung').forEach((k) => this._ql.observe(k));
+      },
+
+      canhChu(chi) {
+        const ds = chi ? [chi] : Array.from(document.querySelectorAll('.khung'));
+        ds.forEach((k) => {
+          const w = k.clientWidth; if (!w) return;
+          const sp = Array.from(k.querySelectorAll('.chu span'));
+          for (const s of sp) s.style.transform = '';           // ghi hết
+          const rong = sp.map((s) => s.offsetWidth);            // ĐỌC hết
+          for (let i = 0; i < sp.length; i++) {                 // ghi hết
+            const dich = parseFloat(sp[i].dataset.w) * w;
+            if (dich && rong[i]) sp[i].style.transform = 'scaleX(' + (dich / rong[i]) + ')';
+          }
+        });
+      },
+      // Video YouTube: dựng khung LÚC BẤM, miền youtube-nocookie. Nhúng sẵn là
+      // mỗi lần mở trang lại gọi sang Google cho từng video dù không ai xem.
+      moVideo(e) {
+        const b = e.target.closest('.lk[data-vid]'); if (!b) return;
+        e.preventDefault();
+        const k = b.closest('.khung'); if (!k) return;
+        const o = (b.dataset.o || '0,0,100,100').split(',').map(Number);
+        const f = document.createElement('iframe');
+        f.className = 'yt';
+        f.allow = 'accelerometer; autoplay; encrypted-media; picture-in-picture; fullscreen';
+        f.allowFullscreen = true;
+        f.src = 'https://www.youtube-nocookie.com/embed/' + b.dataset.vid + '?autoplay=1&rel=0';
+        const w = Math.max(o[2], 56), h = Math.max(o[3], 42);
+        const x = Math.min(Math.max(o[0], 0), 100 - w), y = Math.min(Math.max(o[1], 0), 100 - h);
+        f.style.cssText = 'left:' + x + '%;top:' + y + '%;width:' + w + '%;height:' + h + '%';
+        b.remove(); k.appendChild(f);
+      },
+      // ── Năm hàm móc của `_tracuu.html` ────────────────────────────────────
+      // Trang đọc không có khái niệm/phạm vi; ngữ cảnh là tên môn + tên tài liệu.
+      
+      traNgonNgu() { return false ? 'en' : 'vi'; },
+      traTen() { return 'Môn: ' + "Vi\u1ec7t Nam H\u1ecdc 5" + '. Đang đọc tài liệu: ' + "Bai doc GV 3_Y nghia mot so motif dinh lang.docx" + '.'; },
+      traMucCtx() { return []; },
+      traDoc() { return null; },
+      traSec() { return ''; },
+      traKhoa() { return this.secret; },
+
+        // ── Tra cứu: bôi đen → nút 🔎 → popup ─────────────────────────────────
+        // Nghĩa của một từ phụ thuộc CÂU chứa nó và BÀI đang học, nên không dựng
+        // sẵn được: `sedimentary` trong bài về đá không giống ở chỗ khác. Vì vậy
+        // gọi Gemini lúc bấm, kèm thuật ngữ của mục đang mở.
+        moGoc: false,          // đoạn gốc trong popup đang mở rộng?
+        nnTra: '',             // ngôn ngữ giải thích: 'vi' | 'en'
+        tra: { btn: null, show: false, mode: 'word', text: '', goc: '', sent: '',
+               chat: [], hoi: '', dangHoi: false,
+               loading: false, err: '', ly_do: '', data: null },
+
+        /** Nới vùng chọn ra nguyên từ: kéo lệch nửa chữ vẫn tra đúng từ. */
+        _noRong(r) {
+          const W = /[A-Za-z0-9'’-]/;
+          try {
+            let n = r.startContainer, o = r.startOffset;
+            if (n.nodeType === 3) { while (o > 0 && W.test(n.data[o - 1])) o--; r.setStart(n, o); }
+            n = r.endContainer; o = r.endOffset;
+            if (n.nodeType === 3) {
+              // ⚠ Chrome trên WINDOWS gộp luôn KHOẢNG TRẮNG CUỐI vào vùng chọn
+              // khi nháy đúp — đó là quy ước chọn chữ của Windows; Chrome trên
+              // Linux/macOS thì không. Không cắt nó đi trước khi nới thì phép
+              // nới thấy ký tự kế tiếp là chữ và nuốt luôn từ sau: nháy đúp
+              // `Properties` trong "2.1 Properties of substances" ra
+              // **"Properties of"**. Người dùng báo; chạy trên Linux KHÔNG tái
+              // hiện được, phải tự đặt vùng chọn có kèm dấu cách mới thấy.
+              while (o > r.startOffset && /\s/.test(n.data[o - 1])) o--;
+              while (o < n.data.length && W.test(n.data[o])) o++;
+              r.setEnd(n, o);
+            }
+          } catch (e) { /* vùng chọn xuyên nhiều thẻ: giữ nguyên */ }
+          return r;
+        },
+
+        /** Câu chứa vùng chọn — để Gemini biết từ đó đang mang nghĩa nào. */
+        _cauChua(r, text) {
+          const h = r.commonAncestorContainer;
+          const t = ((h.nodeType === 3 ? h.parentElement : h)?.textContent || '').replace(/\s+/g, ' ');
+          const i = t.indexOf(text);
+          if (i < 0) return '';
+          let a = i, b = i + text.length;
+          while (a > 0 && !/[.!?]/.test(t[a - 1])) a--;
+          while (b < t.length && !/[.!?]/.test(t[b])) b++;
+          return t.slice(a, b + 1).trim().slice(0, 300);
+        },
+
+        /** Thuật ngữ của PHẠM VI đang mở. Đây là toàn bộ lý do dùng Gemini thay
+            vì một máy dịch thường: thiếu nó thì `igneous rock` ra "đá nham thạch"
+            chứ không phải "đá mácma" — vẫn trôi chảy, vẫn không ai thấy sai.
+
+            Dùng `scopedSummary` chứ KHÔNG so `x.concept === this.scope`: `scope`
+            là một UNIT, còn các mục tóm tắt là CON của unit đó. So bằng thì không
+            khớp mục nào, `ctx` còn trơ mỗi dòng tiêu đề, và tính năng lặng lẽ tụt
+            xuống đúng bằng một máy dịch thường. */
+        _traCtx() {
+          // Tên môn LUÔN có, kể cả khi chưa có học liệu ôn tập. Bản đầu thoát
+          // sớm khi thiếu học liệu và trả về ctx RỖNG — 11/17 môn rơi vào đó, và
+          // Gemini không biết đang học môn gì. Chỉ phần glossary mới phụ thuộc
+          // vào học liệu.
+          const tat = [];
+          for (const s of this.traMucCtx()) {
+            for (const g of s.glossary || []) tat.push([g.term, g.def || '']);
+            for (const w of s.words || []) for (const it of w.items || [])
+              tat.push([it.word, it.def || '']);
+          }
+          // Ưu tiên thuật ngữ CÓ MẶT ngay trong chỗ đang tra. Một unit có thể có
+          // hàng trăm thuật ngữ mà chỉ 20 dòng đầu lọt vào ctx; cắt theo thứ tự
+          // gốc thì đúng cái từ đang hỏi lại hay bị cắt mất.
+          const cho = (this.tra.sent + ' ' + this.tra.text).toLowerCase();
+          const hop = [], con = [];
+          for (const x of tat) (cho.includes((x[0] || '').toLowerCase()) ? hop : con).push(x);
+          // Dấu hai chấm, KHÔNG phải dấu bằng — và nhãn nói thẳng đây là ĐỊNH
+          // NGHĨA TIẾNG ANH. Bản đầu viết `crystal = The particular shaped
+          // structure of a mineral.` và trong một danh sách thuật ngữ thì `=`
+          // đọc ra là "dịch thành", nên Gemini dịch nguyên câu định nghĩa vào ô
+          // nghĩa: `crystal` ra "cấu trúc hình dạng đặc biệt của một loại khoáng
+          // vật" thay vì "tinh thể". Bỏ hẳn ctx đi thì lại ra đúng — tức ngữ
+          // cảnh đang LÀM HỎNG chính thứ nó sinh ra để cứu.
+          const ds = [...hop, ...con].slice(0, 20).map((x) => x[0] + ': ' + x[1]);
+          const dau = this.traTen();
+          return (dau + (ds.length
+            ? '\nĐịnh nghĩa TIẾNG ANH của các thuật ngữ trong mục (KHÔNG phải bản dịch):\n' + ds.join('\n')
+            : '')).slice(0, 1200);
+        },
+
+        /** Không có mạng / không có mã: vẫn tra được nếu từ đó là thuật ngữ của
+            bài. Lùi thầm, không báo lỗi — đúng nếp của cả dự án. */
+        _traOffline() {
+          const k = (this.tra.text || '').toLowerCase();
+          // Trả về ĐÚNG hình dạng mà Gemini trả về (`phan[]`), không phải một
+          // hình dạng riêng. Hai hình dạng thì phải có hai bộ vẽ, và hai bộ vẽ
+          // thì sớm muộn lệch nhau — mà nhánh offline là nhánh ít ai mở ra xem
+          // nhất, nên nó sẽ là cái lệch trước và lệch lâu nhất.
+          const khoi = (td, nd, en, vi) => ({
+            tieu_de: td, noi_dung: nd || '',
+            vi_du: en ? [{ en: en, vi: vi || '' }] : [],
+          });
+          for (const s of (this.traDoc()?.summary || [])) {
+            for (const g of s.glossary || []) if ((g.term || '').toLowerCase() === k)
+              return { tu: g.term, phan: [khoi('Trong học liệu', g.def, g.example, '')],
+                       _offline: true };
+            for (const w of s.words || []) for (const it of w.items || [])
+              if ((it.word || '').toLowerCase() === k)
+                return { tu: it.word, loai: it.pos || '', ipa: it.ipa || '',
+                         phan: [khoi('Trong học liệu', it.def, it.example, it.example_vi)],
+                         _offline: true };
+          }
+          return null;
+        },
+
+        /** Chạy mỗi lần vùng chọn đổi. Quyết định CÓ hiện nút hay không. */
+        chonDoi() {
+          const sel = window.getSelection();
+          this.tra.btn = null;
+          if (this.tra.show || !sel || sel.isCollapsed || !sel.rangeCount) return;
+          const r0 = sel.getRangeAt(0);
+          const h = r0.commonAncestorContainer;
+          const el = h.nodeType === 3 ? h.parentElement : h;
+          // Chỉ bắt trong vùng nội dung: bôi đen ở ô tìm kiếm hay thanh chế độ
+          // mà cũng hiện nút thì nút chắn mất đúng thứ người ta đang gõ.
+          if (!el || !el.closest || !el.closest('[data-tra]')) return;
+          // ⚠ PHẢI nhân bản. `getRangeAt(0)` trả về Range SỐNG của vùng
+          // chọn, nên `setStart`/`setEnd` trong `_noRong` sửa thẳng vùng
+          // người dùng ĐANG kéo — và thao tác đó chuẩn hoá chiều thành xuôi,
+          // tức lật điểm focus từ đầu xuống cuối. Kéo xuôi vô hại (focus vốn
+          // ở cuối); kéo NGƯỢC thì cú kéo tiếp theo tính từ chỗ khác và vùng
+          // chọn co lại. Người dùng báo: "kéo từ trên xuống thì được, từ dưới
+          // lên thì không".
+          //
+          // ⚠ Chuột mô phỏng chạy liền tay KHÔNG tái hiện được: handler chờ
+          // 120ms sau cú di chuyển CUỐI (mỗi `mousemove` gọi `clearTimeout`),
+          // nên nó chỉ chạy sau khi nhả chuột. Phải kéo có khựng >120ms giữa
+          // chừng, đúng nhịp tay người. Đo được: nghỉ 25ms/bước → hai chiều
+          // đều 370 ký tự; nghỉ 200ms/bước → xuống 370, LÊN CÒN 65.
+          const r = this._noRong(r0.cloneRange());
+          // Hai bản của cùng một đoạn, cố ý:
+          //  · `text`  — đã dồn khoảng trắng, dùng để GỌI API, đo độ dài, tra
+          //    glossary và làm khoá lịch sử. Giữ nguyên hành vi cũ.
+          //  · `goc`   — giữ nguyên xuống dòng, chỉ để HIỆN LẠI cho người đọc.
+          // Trước đây chỉ có bản dồn, nên bôi đen một khổ thơ hay một danh sách
+          // thì popup hiện một dòng dài dính liền, không còn nhận ra là đã chọn
+          // đúng chỗ nào.
+          const goc = (r.toString() || '').replace(/[ \t]+\n/g, '\n')
+                        .replace(/\n{3,}/g, '\n\n').trim();
+          const text = (r.toString() || '').replace(/\s+/g, ' ').trim();
+          if (!text || !/[A-Za-z]/.test(text) || text.length > 600) return;
+          const b = r.getBoundingClientRect();
+          if (!b.width && !b.height) return;
+          this.tra.text = text;
+          this.tra.goc = goc;
+          this.tra.sent = this._cauChua(r, text);
+          this.tra.mode = text.split(/\s+/).length <= 3 ? 'word' : 'text';
+          // Không có mã bí mật thì chỉ hiện nút khi tra offline ra được cái gì.
+          if (!this.traKhoa() && !this._traOffline()) return;
+          // Nhớ lại vùng chọn để `traDong()` dựng lại nút sau khi đóng popup.
+          this._traRg = r.cloneRange();
+          this.tra.btn = { x: Math.min(Math.max(b.left + b.width / 2, 60), innerWidth - 60),
+                           y: Math.min(b.bottom + 8, innerHeight - 44) };
+        },
+
+        /** Có gì để hiện trong popup không?
+
+            ⚠ KHÔNG hỏi `!tra.data`. Máy chủ có thể trả về 200 kèm một object
+            mà mọi trường đều rỗng; lúc đó `tra.data` là truthy nên dòng "Không
+            tìm thấy nghĩa" bị ẩn, mà cũng chẳng nhánh nào vẽ ra gì — popup chỉ
+            còn cái khung và một cái nút. Người dùng gửi ảnh chụp đúng cảnh đó
+            và hỏi "sao ấn giải thích không được". Im lặng kiểu này tệ hơn báo
+            lỗi: không ai biết nên thử lại hay đã hỏng. */
+        traRong() {
+          const d = this.tra.data;
+          if (!d) return true;
+          return !(d.nghia || d.dich || d.luu_y
+                   || (d.phan || []).length || (d.tu_kho || []).length);
+        },
+
+        /** Khoá nhớ lựa chọn ngôn ngữ — RIÊNG từng môn. Trẻ học Science
+            bằng tiếng Anh nhưng Lịch sử bằng tiếng Việt; một khoá chung là
+            đổi ở môn này thì môn kia cũng đổi theo. */
+        _nnKhoa() { return 'tra_nn:' + (this.course || 'chung'); },
+
+        /** Ngôn ngữ giải thích đang dùng. Thứ tự: lựa chọn đã lưu của MÔN NÀY
+            → mặc định do trang cung cấp (`traNgonNgu()`, thường là ngôn ngữ
+            dạy của môn) → tiếng Việt. */
+        nnHienTai() {
+          if (this.nnTra) return this.nnTra;
+          let luu = null;
+          try { luu = localStorage.getItem(this._nnKhoa()); } catch (e) {}
+          if (luu === 'vi' || luu === 'en') return (this.nnTra = luu);
+          const md = this.traNgonNgu ? this.traNgonNgu() : 'vi';
+          return (this.nnTra = md === 'en' ? 'en' : 'vi');
+        },
+
+        /** Đổi ngôn ngữ và HỎI LẠI ngay — đổi mà không tra lại thì người dùng
+            phải tự đoán là phải bấm gì nữa. */
+        doiNn(v) {
+          if (this.nnHienTai() === v) return;
+          this.nnTra = v;
+          try { localStorage.setItem(this._nnKhoa(), v); } catch (e) {}
+          this.tra.chat = [];
+          if (this.tra.show) this.traMo(this.tra.mode);
+        },
+
+        /** Đoạn gốc có dài quá 2 dòng không — chỉ khi đó mới hiện nút mở.
+            Đếm theo KÝ TỰ chứ không đo chiều cao thật: đo chiều cao phải chờ
+            vẽ xong rồi đọc lại DOM, tức một vòng layout nữa cho mỗi lần mở
+            popup, mà sai sót ở đây chỉ là thừa/thiếu một cái nút nhỏ. */
+        get daiGoc() {
+          const t = this.tra.goc || this.tra.text || '';
+          return t.length > 110 || t.includes('\n') || !!this.tra.sent;
+        },
+
+        async traHoi() {
+          const q = (this.tra.hoi || '').trim();
+          if (!q || this.tra.dangHoi || !this.traKhoa()) return;
+          this.tra.chat.push({ ai: 'em', noi: q });
+          this.tra.hoi = ''; this.tra.dangHoi = true;
+          try {
+            const r = await fetch('/api/lookup', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'x-progress-key': this.traKhoa() },
+              // Gửi kèm ĐOẠN GỐC và lịch sử: Worker không giữ trạng thái, cùng
+              // lý do đã buộc `ctx` phải do trình duyệt gửi lên.
+              body: JSON.stringify({
+                mode: 'chat', text: this.tra.text, sent: this.tra.sent,
+                ctx: this._traCtx(), hoi: q, nn: this.nnHienTai(),
+                // Bỏ lượt vừa đẩy vào — nó chính là `hoi`.
+                lich_su: this.tra.chat.slice(0, -1).slice(-6),
+                user: this.user, course: this.course, sec: this.traSec(),
+              }),
+            });
+            const b = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(b.error || ('HTTP ' + r.status));
+            const t = (b.data && b.data.tra_loi) || '';
+            // Trả về rỗng cũng phải NÓI RA, đừng đẩy một bong bóng trắng vào
+            // cuộc trò chuyện — cùng bài học với `traRong()`.
+            this.tra.chat.push({ ai: 'gs', noi: t || 'Chưa trả lời được câu này.' });
+          } catch (e) {
+            console.warn('hỏi tiếp hỏng:', String(e.message || e));
+            this.tra.chat.push({ ai: 'gs', noi: 'Chưa trả lời được lúc này, thử lại sau nhé.' });
+          }
+          this.tra.dangHoi = false;
+        },
+
+        async traMo(mode) {
+          if (mode) this.tra.mode = mode;
+          this.tra.show = true; this.tra.btn = null;
+          this.tra.chat = []; this.tra.hoi = ''; this.tra.dangHoi = false;
+          this.moGoc = false;
+          this.tra.err = ''; this.tra.ly_do = ''; this.tra.data = null; this.tra.loading = true;
+          // Trang có thể cần nạp học liệu trước (trang môn nạp LƯỜI, vì file
+          // study JSON tới ~200KB và phần lớn lượt vào trang môn không tra từ nào).
+          if (this.traSanSang) { try { await this.traSanSang(); } catch (e) {} }
+          if (!this.traKhoa()) {                      // chế độ chỉ đọc, không gọi API
+            this.tra.data = this._traOffline(); this.tra.loading = false; return;
+          }
+          // Có nhận được phản hồi HTTP hay không — dùng để nói ĐÚNG LOẠI trục
+          // trặc. Ném từ `fetch` là hỏng mạng; phản hồi không ok là dịch vụ lỗi.
+          let coPhanHoi = false;
+          try {
+            const r = await fetch('/api/lookup', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'x-progress-key': this.traKhoa() },
+              // `user`/`course`/`sec` chỉ để ghi dòng lịch sử trong D1 — Worker
+              // KHÔNG đưa chúng vào prompt gửi Google (test_lookup_route chốt).
+              body: JSON.stringify({ mode: this.tra.mode, text: this.tra.text,
+                                     sent: this.tra.sent, ctx: this._traCtx(),
+                                     nn: this.nnHienTai(),
+                                     user: this.user, course: this.course, sec: this.traSec() }),
+            });
+            coPhanHoi = true;
+            const b = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(b.error || ('HTTP ' + r.status));
+            this.tra.data = b.data;
+          } catch (e) {
+            // Lùi về glossary có sẵn. Chỉ báo lỗi khi lùi cũng không ra gì.
+            this.tra.data = this._traOffline();
+            // Hai yêu cầu kéo ngược nhau, và cả hai đều đúng:
+            //  · đừng chìa câu lỗi kỹ thuật ("Gemini lỗi 412") ra cho một đứa trẻ;
+            //  · đừng nói cứng "không có mạng" khi mạng vẫn tốt — nói sai lý do
+            //    còn tệ hơn không nói, vì người ta đi kiểm wifi thay vì kiểm dịch vụ.
+            // Giải bằng cách tách: hiện đúng LOẠI trục trặc bằng lời thường, còn
+            // nguyên văn thì đẩy ra console cho người lớn soi.
+            this.tra.ly_do = coPhanHoi ? 'tra cứu đang bận' : 'chưa có mạng';
+            console.warn('tra cứu hỏng:', String(e.message || e));
+            if (!this.tra.data) this.tra.err = 'Chưa tra được lúc này, thử lại sau nhé.';
+          }
+          this.tra.loading = false;
+        },
+
+        /** Đang có chữ được bôi đen? Thẻ ghi nhớ và ô đáp án là thẻ BẤM ĐƯỢC
+            bọc quanh chính phần chữ, nên kéo chọn trên đó sẽ lật thẻ lộ đáp án —
+            tức bôi đen để tra từ lại phá mất bài đang làm. */
+        dangBoiDen() {
+          const s = window.getSelection();
+          return !!(s && !s.isCollapsed && (s.toString() || '').trim());
+        },
+
+        /** Đăng ký nghe vùng chọn. Trang phải TỰ GỌI (trong `init()` hoặc
+            `x-init`) — để trong macro mà không gọi thì mọi thứ khác đều dựng
+            đúng, nút chỉ đơn giản không bao giờ hiện, và không có lỗi nào. */
+        // Nắn vùng chọn NHÌN THẤY ra biên từ. Trẻ kéo chuột hay thừa/thiếu
+        // vài ký tự ở hai đầu; nắn ra cả từ thì đỡ hẳn thao tác lại.
+        //
+        // ⚠ CHỈ chạy lúc NHẢ chuột, tuyệt đối không giữa lúc kéo. Sửa vùng
+        // chọn đang kéo làm nó chuẩn hoá chiều thành xuôi, tức lật điểm focus
+        // — đó đúng là lỗi "kéo chậm từ dưới lên thì mất vùng chọn" đã phải
+        // sửa bằng `cloneRange()`. Ở đây cú kéo đã xong nên đổi chiều vô hại.
+        //
+        // ⚠ `setTimeout(…, 0)`: để trình duyệt xử lý xong vùng chọn của chính
+        // nó rồi mới đụng vào.
+        //
+        // ⚠ Không đổi gì thì ĐỪNG gọi `addRange`: mỗi lần gọi là một lượt
+        // `selectionchange`, kéo theo một lượt `chonDoi()` vô ích.
+        nanBienTu() {
+          const sel = window.getSelection();
+          if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+          const r0 = sel.getRangeAt(0);
+          const h = r0.commonAncestorContainer;
+          const el = h.nodeType === 3 ? h.parentElement : h;
+          if (!el || !el.closest || !el.closest('[data-tra]')) return;
+          const r = this._noRong(r0.cloneRange());
+          if (r.startContainer === r0.startContainer && r.startOffset === r0.startOffset
+              && r.endContainer === r0.endContainer && r.endOffset === r0.endOffset) return;
+          try { sel.removeAllRanges(); sel.addRange(r); } catch (e) { /* bỏ qua */ }
+        },
+
+        traGan() {
+          if (typeof document === 'undefined' || this._traDaGan) return;
+          this._traDaGan = true;
+          for (const ev of ['mouseup', 'touchend']) {
+            document.addEventListener(ev, () => setTimeout(() => this.nanBienTu(), 0));
+          }
+          let hen = null;
+          // Gộp nhịp 120ms: kéo chọn trên điện thoại bắn hàng chục lượt mỗi giây.
+          // `selectionchange` bắn trên `document` và KHÔNG nổi lên window ở mọi
+          // trình duyệt, nên đừng thay bằng @selectionchange.window.
+          document.addEventListener('selectionchange', () => {
+            clearTimeout(hen);
+            hen = setTimeout(() => this.chonDoi(), 120);
+          });
+        },
+
+        /** Đóng popup và TRẢ LẠI nút 🔎 cho chỗ vừa chọn.
+
+            Trước đây đóng xong là nút biến mất, muốn xem lại phải bôi đen lại
+            từ đầu. Cú bấm để đóng (dù vào ✕ hay ra nền) tự xoá vùng chọn, nên
+            chỉ gọi `chonDoi()` thôi thì không đủ — phải ĐẶT LẠI vùng chọn đã
+            nhớ ở `chonDoi()` rồi mới tính lại vị trí nút. */
+        traDong() {
+          this.tra.show = false; this.tra.btn = null; this.tra.data = null;
+          this.tra.err = ''; this.tra.ly_do = '';
+          this.tra.chat = []; this.tra.hoi = ''; this.moGoc = false;
+          const rg = this._traRg;
+          setTimeout(() => {
+            if (rg) {
+              try {
+                const s = window.getSelection();
+                s.removeAllRanges(); s.addRange(rg);
+              } catch (e) { return; }
+            }
+            this.chonDoi();
+          }, 0);
+        },
+
+    };
+  }
+  document.addEventListener('click', (e) => {
+    const d = Alpine.$data(document.body);
+    if (d && d.moVideo) d.moVideo(e);
+  });
+</script>
+</body>
+</html>
