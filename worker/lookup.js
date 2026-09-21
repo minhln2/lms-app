@@ -331,10 +331,19 @@ export async function handleLookup(request, env) {
     // dịch tiếng Việt") thì chép lại gần nguyên văn đoạn gốc, mà đoạn gốc đã
     // nằm ngay phía trên trong popup. Cắt ở PROMPT chứ không chỉ ẩn ở giao
     // diện: ẩn thì vẫn trả tiền token cho thứ không ai đọc.
-    mode === "text" && mon_nn !== "en" &&
-      "MÔN DẠY BẰNG TIẾNG VIỆT — đoạn được hỏi vốn đã là tiếng Việt:\n"
-      + "· `tu_kho`: trả về mảng RỖNG [] — không có từ tiếng Anh nào để chú.\n"
-      + '· `dich`: trả về chuỗi RỖNG "" — đừng chép lại đoạn gốc.\n',
+    mode !== "chat" && mon_nn !== "en" &&
+      "MÔN DẠY BẰNG TIẾNG VIỆT — thứ được hỏi vốn đã là tiếng Việt:\n"
+      // ⚠ `vi_du` áp cho CẢ HAI chế độ, không riêng chế độ đoạn. Popup vẽ mỗi
+      // ví dụ thành hai dòng: `en` in nghiêng ở trên, `vi` ở dưới. Với môn
+      // tiếng Việt thì model tự DỊCH SANG TIẾNG ANH để lấp ô `en`, cho ra
+      // cảnh "Văn Lang: 7th century BC, Phong Châu, Hùng Vương." nằm ngay
+      // trên đúng câu đó bằng tiếng Việt. Người dùng gửi ảnh chụp đúng cảnh ấy.
+      + '· `vi_du`: viết ví dụ vào trường `vi`, để `en` là chuỗi RỖNG "". '
+      + "Ví dụ đã là tiếng Việt, KHÔNG dịch sang tiếng Anh.\n"
+      + (mode === "text"
+         ? "· `tu_kho`: trả về mảng RỖNG [] — không có từ tiếng Anh nào để chú.\n"
+           + '· `dich`: trả về chuỗi RỖNG "" — đừng chép lại đoạn gốc.\n'
+         : ""),
     // ⚠ Câu này đặt CUỐI CÙNG, sau SHAPE. Mọi mô tả trường ở trên đều viết
     // "tiếng Việt"; muốn đổi ngôn ngữ thì phải đè lên chúng, mà thứ nói sau
     // mới đè được thứ nói trước. Đặt trước SHAPE thì model theo SHAPE.

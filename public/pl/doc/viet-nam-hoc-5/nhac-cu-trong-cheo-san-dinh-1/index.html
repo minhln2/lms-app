@@ -238,8 +238,11 @@
           </div>
           <!-- Chọn ngôn ngữ phần giải thích. Mặc định là ngôn ngữ DẠY của môn
                (`traNgonNgu()`), đổi thì nhớ riêng cho môn đó trong trình duyệt —
-               trẻ học Science bằng tiếng Anh nhưng Lịch sử bằng tiếng Việt. -->
-          <div class="shrink-0 flex rounded-lg border border-slate-200 overflow-hidden text-[0.7rem]">
+               trẻ học Science bằng tiếng Anh nhưng Lịch sử bằng tiếng Việt.
+               Môn dạy bằng TIẾNG VIỆT thì không hiện: giải thích bài Tiếng Việt
+               hay Lịch sử bằng tiếng Anh không phục vụ việc gì. -->
+          <div x-show="traMonNn() === 'en'" x-cloak
+               class="shrink-0 flex rounded-lg border border-slate-200 overflow-hidden text-[0.7rem]">
             <button @click="doiNn('vi')" type="button" title="Giải thích bằng tiếng Việt"
                     class="px-2 py-1.5"
                     :class="nnHienTai() === 'vi' ? 'bg-indigo-600 text-white'
@@ -302,7 +305,10 @@
                   <p class="text-slate-700 leading-relaxed" x-text="ph.noi_dung"></p>
                   <template x-for="(v, k) in (ph.vi_du || [])" :key="k">
                     <div class="border-l-2 border-indigo-200 pl-2.5">
-                      <p class="text-sm text-slate-600 italic" x-text="v.en"></p>
+                      <!-- `en` rỗng ở môn tiếng Việt (xem `mon_nn` trong
+                           worker/lookup.js). Không có `x-show` thì còn lại một
+                           dòng trống, đẩy ví dụ lệch xuống mà không rõ vì sao. -->
+                      <p x-show="v.en" x-cloak class="text-sm text-slate-600 italic" x-text="v.en"></p>
                       <p x-show="v.vi" x-cloak class="text-sm text-cyan-700" x-text="v.vi"></p>
                     </div>
                   </template>
@@ -990,12 +996,17 @@
         // (trang môn không định nghĩa), nên mặc định là tiếng Việt.
         traMonNn() { return (this.traNgonNgu ? this.traNgonNgu() : 'vi') === 'en' ? 'en' : 'vi'; },
         nnHienTai() {
+          // ⚠ Môn dạy bằng tiếng Việt thì KHÔNG có lựa chọn — luôn tiếng Việt.
+          // Chốt ở ĐÂY chứ không chỉ ẩn nút: lựa chọn cũ có thể đã nằm trong
+          // localStorage từ trước (khoá theo môn, mà một môn có thể đổi ngôn
+          // ngữ dạy), và đọc lại nó thì nút biến mất nhưng phần giải thích
+          // vẫn ra tiếng Anh — hỏng theo kiểu không có cách nào sửa từ giao diện.
+          if (this.traMonNn() !== 'en') return 'vi';
           if (this.nnTra) return this.nnTra;
           let luu = null;
           try { luu = localStorage.getItem(this._nnKhoa()); } catch (e) {}
           if (luu === 'vi' || luu === 'en') return (this.nnTra = luu);
-          const md = this.traNgonNgu ? this.traNgonNgu() : 'vi';
-          return (this.nnTra = md === 'en' ? 'en' : 'vi');
+          return (this.nnTra = 'en');
         },
 
         /** Đổi ngôn ngữ và HỎI LẠI ngay — đổi mà không tra lại thì người dùng
