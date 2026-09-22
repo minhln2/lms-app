@@ -257,7 +257,13 @@
       <div @click.stop data-tra-popup
            class="w-full sm:max-w-lg max-h-[82vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl">
 
-        <div class="sticky top-0 flex items-start gap-2 px-4 py-3 border-b border-slate-100 bg-white">
+        <!-- ⚠ Mở rộng thì BỎ `sticky`. Đoạn gốc nở hết chiều cao mà thanh đầu
+             vẫn dính ở đỉnh thì nó che kín phần giải thích; kẹp lại bằng
+             `max-h-60 overflow-y-auto` thì thành thanh cuộn lồng trong thanh
+             cuộn (người dùng: "trông bị xấu"). Không dính nữa thì cả popup chỉ
+             còn MỘT thanh cuộn, đoạn gốc trôi lên theo khi đọc xuống. -->
+        <div class="top-0 flex items-start gap-2 px-4 py-3 border-b border-slate-100 bg-white"
+             :class="moGoc ? '' : 'sticky'">
           <div class="flex-1 min-w-0">
             <!-- Đoạn gốc GẬP LẠI còn 2 dòng. Người ta mở popup để đọc phần
                  GIẢI THÍCH; chữ gốc thì vừa bôi đen xong nên đã biết rồi. Để nó
@@ -265,9 +271,9 @@
                  hình — đã đo. Ngữ cảnh (câu chứa từ) gập chung luôn cho đỡ rối. -->
             <p @click="moGoc = !moGoc"
                class="font-semibold text-slate-900 break-words whitespace-pre-line cursor-pointer"
-               :class="moGoc ? 'max-h-60 overflow-y-auto' : 'line-clamp-2'"
+               :class="moGoc ? '' : 'line-clamp-2'"
                x-text="tra.goc || tra.text"></p>
-            <p x-show="moGoc && tra.sent" x-cloak
+            <p x-show="moGoc && sentThem" x-cloak
                class="mt-1 text-xs text-slate-400" x-text="tra.sent"></p>
 
           </div>
@@ -338,7 +344,7 @@
 
         <template x-if="!tra.loading && tra.data && tra.mode === 'text' && tra.data.dich">
           <div class="px-4 pt-4">
-            <p class="text-slate-900 leading-relaxed" x-text="tra.data.dich"></p>
+            <p class="text-slate-900 leading-relaxed whitespace-pre-line" x-text="traXuong(tra.data.dich)"></p>
           </div>
         </template>
 
@@ -349,7 +355,7 @@
                 <p class="px-3 py-1.5 bg-slate-50 text-xs font-medium text-slate-500 uppercase tracking-wide"
                    x-text="ph.tieu_de"></p>
                 <div class="px-3 py-2 space-y-2">
-                  <p class="text-slate-700 leading-relaxed" x-text="ph.noi_dung"></p>
+                  <p class="text-slate-700 leading-relaxed whitespace-pre-line" x-text="traXuong(ph.noi_dung)"></p>
                   <template x-for="(v, k) in (ph.vi_du || [])" :key="k">
                     <div class="border-l-2 border-indigo-200 pl-2.5">
                       <!-- `en` rỗng ở môn tiếng Việt (xem `mon_nn` trong
@@ -381,8 +387,8 @@
         </template>
 
         <div x-show="!tra.loading && tra.data && tra.data.luu_y" x-cloak class="px-4 pt-3">
-          <p class="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-900"
-             x-text="'⚠ ' + (tra.data ? tra.data.luu_y : '')"></p>
+          <p class="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-900 whitespace-pre-line"
+             x-text="'⚠ ' + traXuong(tra.data ? tra.data.luu_y : '')"></p>
         </div>
 
         <div class="pb-1"></div>
@@ -405,10 +411,10 @@
           <template x-for="(m, i) in tra.chat" :key="i">
             <p class="mb-2 text-sm leading-relaxed"
                :class="m.ai === 'em' ? 'text-right' : ''">
-              <span class="inline-block px-3 py-2 rounded-2xl max-w-[85%] text-left"
+              <span class="inline-block px-3 py-2 rounded-2xl max-w-[85%] text-left whitespace-pre-line"
                     :class="m.ai === 'em' ? 'bg-indigo-50 text-indigo-900'
                                           : 'bg-slate-100 text-slate-700'"
-                    x-text="m.noi"></span>
+                    x-text="traXuong(m.noi)"></span>
             </p>
           </template>
           <p x-show="tra.dangHoi" x-cloak class="mb-2 text-sm text-slate-400">Đang nghĩ…</p>
@@ -1097,6 +1103,33 @@
         // Ngôn ngữ DẠY của môn — cố định, khác `nnHienTai()` là lựa chọn của
         // người học. Trang nhúng có thể không định nghĩa `traNgonNgu()`
         // (trang môn không định nghĩa), nên mặc định là tiếng Việt.
+        /** Tách "a. … b. …" / "1. … 2. …" viết liền thành từng dòng.
+            Prompt đã dặn mỗi ý một dòng; đây là lưới phụ khi model quên.
+            Người dùng gửi ảnh khối 'Trả lời' + 'Vì sao' của một câu hỏi hai ý:
+            "a. Từ được lặp lại là từ 'Tre'. b. Việc lặp lại…" dồn một khối chữ.
+            Chỉ tách khi các dấu ý chạy ĐÚNG THỨ TỰ từ a (hoặc 1) và có ≥2 dấu —
+            một chữ "a." hay "5." lạc trong câu thì không đủ để tách.
+            Đã có sẵn `\n` thì model đã tự xuống dòng, để nguyên. */
+        traXuong(s) {
+          s = String(s ?? '');
+          if (!s || s.includes('\n')) return s;
+          for (const [re, dau] of [[/(^|\s)([a-h])[.)]\s/g, 'a'], [/(^|\s)(\d{1,2})[.)]\s/g, '1']]) {
+            const cho = []; let can = dau;
+            for (const m of s.matchAll(re)) {
+              if (m[2] !== can) continue;
+              cho.push(m.index + m[1].length);
+              can = dau === 'a' ? String.fromCharCode(can.charCodeAt(0) + 1) : String(+can + 1);
+            }
+            if (cho.length < 2) continue;
+            let r = s;
+            for (let i = cho.length - 1; i >= 0; i--) {
+              // Bỏ cả dấu phẩy/chấm phẩy nối ý: '1. think, 2. have' → dòng 'think' chứ không 'think,'.
+              if (cho[i] > 0) r = r.slice(0, cho[i]).replace(/[\s,;]+$/, '') + '\n' + r.slice(cho[i]);
+            }
+            return r;
+          }
+          return s;
+        },
         traMonNn() { return (this.traNgonNgu ? this.traNgonNgu() : 'vi') === 'en' ? 'en' : 'vi'; },
         nnHienTai() {
           // ⚠ Môn dạy bằng tiếng Việt thì KHÔNG có lựa chọn — luôn tiếng Việt.
@@ -1128,7 +1161,18 @@
             popup, mà sai sót ở đây chỉ là thừa/thiếu một cái nút nhỏ. */
         get daiGoc() {
           const t = this.tra.goc || this.tra.text || '';
-          return t.length > 110 || t.includes('\n') || !!this.tra.sent;
+          return t.length > 110 || t.includes('\n') || this.sentThem;
+        },
+
+        /** Câu chứa đoạn bôi đen có thêm gì NGOÀI chính đoạn đó không.
+            Bôi đen một từ thì câu chứa nó là ngữ cảnh đáng xem. Bôi đen cả đoạn
+            thì "câu chứa" chính là đoạn ấy, bị dàn phẳng rồi cắt ở 300 ký tự —
+            hiện ra là một khối chữ xám lặp lại đúng thứ vừa đọc ở trên (người
+            dùng gửi ảnh). Vẫn GỬI lên API như cũ; chỉ không vẽ lại. */
+        get sentThem() {
+          const n = (x) => (x || '').replace(/\s+/g, ' ').trim();
+          const c = n(this.tra.sent);
+          return !!c && !n(this.tra.goc || this.tra.text).includes(c);
         },
 
         async traHoi() {

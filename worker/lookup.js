@@ -165,6 +165,16 @@ const SHAPE = {
     'luu_y: chỗ dễ hiểu sai; để trống nếu không có.',
 };
 
+// Trình bày — dùng chung cho CẢ BA chế độ. Popup vẽ bằng `x-text` +
+// `whitespace-pre-line`: `\n` thành xuống dòng, còn markdown hiện nguyên
+// dấu `**`. Người dùng gửi ảnh câu hỏi hai ý: "a. … b. …" dồn thành một khối
+// chữ ở cả 'Trả lời' lẫn 'Vì sao'. Popup có lưới phụ (`traXuong`) cho lúc
+// model quên, nhưng nói thẳng ở đây vẫn là đường chính.
+const TRINH_BAY =
+  'Trình bày: văn bản có nhiều ý (a., b., …; 1., 2., …; các bước) thì MỖI Ý ' +
+  'MỘT DÒNG, xuống dòng bằng \\n trong chuỗi JSON. Không dùng markdown ' +
+  '(không **, #, gạch đầu dòng -).';
+
 // Chỉ để bài chốt soi được phần mô tả loại CÂU HỎI mà không phải dựng cả
 // một lượt gọi. Trả về đúng chuỗi đang dùng, không phải bản chép.
 export const SHAPE_TEXT = () => SHAPE.text;
@@ -339,6 +349,7 @@ export async function handleLookup(request, env) {
   const he = [HE, ctx && "Ngữ cảnh — định nghĩa TIẾNG ANH lấy từ sách, chỉ dùng để " +
     "biết từ đang mang nghĩa NÀO. Đây KHÔNG phải bản dịch, đừng chép lại:\n" + ctx,
     SHAPE[mode],
+    TRINH_BAY,
     // ⚠ Đặt SAU SHAPE, cùng lý do với phần ghi đè ngôn ngữ bên dưới: thứ nói
     // sau mới đè được thứ nói trước.
     //
