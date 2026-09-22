@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Maths Homework Week 5.docx · CIE Maths 1</title>
-<link rel="stylesheet" href="../../../../assets/tw.4f40ea63.css">
+<link rel="stylesheet" href="../../../../assets/tw.5e8ee1da.css">
 <style>
   [x-cloak] { display: none !important; }
   #pdf { width:100%; height:calc(100vh - 8.5rem); border:0; }
@@ -72,7 +72,20 @@
 
   /* Thanh nav dính cao ~3rem; không chừa thì mục lục nhảy tới trang nào là
      đầu trang đó chui xuống dưới nav. */
-  .trang, #pdfjs > [data-trang] { scroll-margin-top: 3.6rem; }
+  /* `--dau` = chiều cao THẬT của khối dính (breadcrumb + thanh nút), đo bằng
+     ResizeObserver trong `init()`. Không dùng một số rem cố định: breadcrumb
+     xuống dòng trên điện thoại, tên tài liệu dài thì xuống hai ba dòng. */
+  .trang, #pdfjs > [data-trang] { scroll-margin-top: calc(var(--dau, 3.4rem) + .2rem); }
+  .duoi-dau { top: calc(var(--dau, 3.4rem) + .25rem); }
+  @media (min-width: 1024px) {
+    aside.ml { top: calc(var(--dau, 3.4rem) + .6rem); }
+    aside.ml .ml-khung { max-height: calc(100vh - var(--dau, 3.4rem) - 1.5rem); }
+  }
+  /* Di động: mục lục là ngăn phủ ngay DƯỚI khối dính, cuộn riêng. */
+  @media (max-width: 1023px) {
+    aside.ml .ml-khung.mo { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+      top: var(--dau, 3.4rem); overflow-y: auto; border-radius: 0; }
+  }
   @media print {
     header, nav, .no-print { display: none !important; }
     body { background: #fff; }
@@ -97,6 +110,8 @@
 <body class="bg-slate-50 text-slate-800"
       x-data="docStore()" x-init="traGan()">
 
+
+<div id="dau" class="no-print sticky top-0 z-20">
 <header class="no-print bg-indigo-600 text-white">
   <div class="max-w-5xl mx-auto px-4 py-2 min-w-0">
     
@@ -111,6 +126,7 @@
 
 <nav class="no-print sticky top-0 z-20 bg-white border-b border-slate-200">
   <div class="max-w-5xl mx-auto px-4 py-2 flex items-center gap-2 flex-wrap">
+    
     
     <button @click="doiCheDo('doc', true)" :aria-pressed="String(che === 'doc')"
             :class="che === 'doc' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700'"
@@ -142,6 +158,7 @@
     
   </div>
 </nav>
+</div>
 
 <div class="max-w-5xl mx-auto lg:flex lg:gap-5 lg:items-start">
 
@@ -243,7 +260,7 @@
      PDF.js (0,51 MB sau gzip) chỉ tải khi bấm 📄. -->
 <main x-show="che === 'pdf'" x-cloak class="px-4 py-4">
 
-  <div class="no-print sticky top-[3.1rem] z-10 mb-3 flex items-center gap-2 flex-wrap
+  <div class="no-print sticky duoi-dau z-10 mb-3 flex items-center gap-2 flex-wrap
               bg-white/95 backdrop-blur border border-slate-200 rounded-lg px-2 py-1.5">
     <button @click="thuNho()" :disabled="tiLe <= 0.5" type="button" title="Thu nhỏ"
             class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700 disabled:opacity-40">−</button>
@@ -551,6 +568,11 @@
           this.che = nho === 'pdf' ? 'pdf' : 'doc';
         }
         if (this.che === 'pdf') this.moPdf();
+        const dau = document.getElementById('dau');
+        if (dau && window.ResizeObserver) {
+          new ResizeObserver(() => document.documentElement.style.setProperty(
+            '--dau', dau.getBoundingClientRect().height + 'px')).observe(dau);
+        }
         this.$nextTick(() => { this.canhChuLuoi(); this.theoDoiTrang(); });
         addEventListener('resize', () => { clearTimeout(this._h); this._h = setTimeout(() => this.canhChu(), 150); });
         if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => this.canhChu());
@@ -672,7 +694,7 @@
         // đúng, và lớp chữ của trang đó có thể chưa được nắn.
         const k = e.closest('.khung');
         if (k) this.canhChu(k);
-        const h = document.querySelector('nav.sticky');
+        const h = document.getElementById('dau');
         const off = h ? h.getBoundingClientRect().height : 0;
         const r = e.getBoundingClientRect();
         window.scrollTo({ top: Math.max(0, r.top + window.scrollY - off - 80),

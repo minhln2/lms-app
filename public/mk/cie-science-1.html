@@ -8,7 +8,7 @@
   <title>CIE Science 1 — MK</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.4f40ea63.css">
+  <link rel="stylesheet" href="../assets/tw.5e8ee1da.css">
   <script defer src="../assets/collapse.d0a27f2d.js"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>
@@ -344,6 +344,12 @@
           <p class="text-xs text-slate-500">1 tuần/bài · cập nhật 2026-09-18 17:33</p>
           
         </div>
+        
+        
+        <button @click="menuMo = !menuMo" type="button" :aria-expanded="String(menuMo)"
+                :class="menuMo ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700'"
+                class="lg:hidden shrink-0 px-3 py-2 text-xs font-medium rounded-lg border">☰ Mục lục</button>
+        
         <!-- Trên màn hẹp nút này xuống HÀNG RIÊNG (`w-full`), không thì nó ăn
              bề ngang của tiêu đề và tên môn bị cắt còn "CIE ES…". -->
         
@@ -440,13 +446,11 @@
        mục trên cùng, nên trông y như "môn này ít tuần". Cùng bài học đã ghi ở
        `toiMuc()` và đã giải ở study.html. -->
   
-  <aside class="no-print px-4 pt-6 lg:w-64 lg:shrink-0 lg:sticky lg:top-[var(--hdr)] lg:self-start lg:pr-0">
-    <button @click="menuMo = !menuMo" type="button" :aria-expanded="String(menuMo)"
-            class="lg:hidden w-full px-3 py-2 text-sm font-medium rounded-lg border border-slate-300 bg-white text-slate-700 text-left">
-      <span x-text="menuMo ? '▾' : '▸'"></span> Mục lục (1 phần)
-    </button>
-    <div :class="menuMo ? 'block' : 'hidden lg:block'"
-         class="mt-2 lg:mt-0 rounded-xl border border-slate-200 bg-white p-2 shadow-sm lg:max-h-[calc(100vh-var(--hdr)-3rem)] lg:overflow-y-auto">
+  <aside class="no-print lg:px-4 lg:pt-6 lg:w-64 lg:shrink-0 lg:sticky lg:top-[var(--hdr)] lg:self-start lg:pr-0"
+         @keydown.escape.window="menuMo = false">
+    
+    <div :class="menuMo ? 'block fixed inset-x-0 bottom-0 top-[var(--hdr)] z-30 overflow-y-auto rounded-none lg:static lg:rounded-xl' : 'hidden lg:block'"
+         class="rounded-xl border border-slate-200 bg-white p-2 shadow-sm lg:max-h-[calc(100vh-var(--hdr)-3rem)] lg:overflow-y-auto">
       <p class="px-2 pb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Mục lục</p>
       <ol class="space-y-0.5">
         
