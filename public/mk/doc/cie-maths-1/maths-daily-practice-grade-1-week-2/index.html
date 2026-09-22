@@ -419,10 +419,22 @@
           <!-- Mở/thu đoạn gốc: KÝ HIỆU thôi, không chữ. Nó đứng cạnh 🔊 và ✕
                nên hàng nút giữ được một nhịp, và không ăn mất chiều cao của
                phần giải thích. -->
+          <!-- ⚠ Dùng CHUNG hình mũi tên với nút gập của trang môn
+               (`templates/course.html`): cùng một chevron SVG xoay 180°, không
+               phải ký tự `⌄`/`⌃`. Hai lý do — ký tự đó nằm ở mỗi phông một
+               dáng khác nhau và thường lệch tâm ô (người dùng báo "trông
+               xấu"), còn dùng hai ký hiệu KHÁC nhau cho cùng một thao tác
+               mở/thu thì người đọc phải học hai lần. -->
           <button x-show="daiGoc" x-cloak @click="moGoc = !moGoc" type="button"
                   :title="moGoc ? 'Thu gọn đoạn gốc' : 'Xem đầy đủ đoạn gốc'"
-                  class="shrink-0 w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100"
-                  x-text="moGoc ? '⌃' : '⌄'"></button>
+                  class="shrink-0 w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100
+                         flex items-center justify-center">
+            <svg class="w-4 h-4 transition-transform duration-200"
+                 :class="moGoc ? 'rotate-180' : ''"
+                 fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
           <!-- Trần 200 ký tự là của /api/tts. Ẩn nút khi vượt, thay vì để bấm rồi
                lặng lẽ rơi về giọng hệ điều hành — im lặng kiểu đó nhìn y hệt như
                đang chạy bình thường, chỉ khác giọng. -->
@@ -966,7 +978,13 @@
       // ── Năm hàm móc của `_tracuu.html` ────────────────────────────────────
       // Trang đọc không có khái niệm/phạm vi; ngữ cảnh là tên môn + tên tài liệu.
       
-      traNgonNgu() { return true ? 'en' : 'vi'; },
+      // ⚠ Ngôn ngữ DẠY khai trong `config.json` (`nn`) THẮNG phép suy theo
+      // tiền tố slug. Suy từ slug là đoán, và nó đoán sai ngay lớp đầu tiên
+      // nằm ngoài LMS: Amslink dạy tiếng Anh (sách Close Up B1) nhưng slug
+      // không bắt đầu bằng `cie-` nên bị xếp vào nhóm tiếng Việt — mất ô chọn
+      // VI/EN, và luật "môn tiếng Việt thì bỏ `vi_du.en`" kích hoạt nên ví dụ
+      // chỉ còn một dòng tiếng Việt lẻ loi. Người dùng gửi ảnh chụp cảnh đó.
+      traNgonNgu() { return "en"; },
       traTen() { return 'Môn: ' + "CIE Maths 1" + '. Đang đọc tài liệu: ' + "Maths Daily Practice Grade 1 - Week 2.pptx" + '.'; },
       traMucCtx() { return []; },
       traDoc() { return null; },
@@ -1117,7 +1135,11 @@
           const goc = (r.toString() || '').replace(/[ \t]+\n/g, '\n')
                         .replace(/\n{3,}/g, '\n\n').trim();
           const text = (r.toString() || '').replace(/\s+/g, ' ').trim();
-          if (!text || !/[A-Za-z]/.test(text) || text.length > 600) return;
+          // ⚠ 1000 ký tự phải KHỚP `MAX.text` trong `worker/lookup.js`. Hai
+          // con số ở hai file, và lệch nhau thì hỏng lặng lẽ: trang cho hiện
+          // nút, Worker cắt cụt đoạn, model giải thích một câu bị chặt giữa
+          // chừng mà không ai biết. Đổi một chỗ thì đổi cả chỗ kia.
+          if (!text || !/[A-Za-z]/.test(text) || text.length > 1000) return;
           const b = r.getBoundingClientRect();
           if (!b.width && !b.height) return;
           this.tra.text = text;

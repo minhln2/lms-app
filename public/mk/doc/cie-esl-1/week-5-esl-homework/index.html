@@ -183,7 +183,8 @@
 </i><span data-w="0.15510" style="left:12.915%;top:76.759%;font-size:2.124cqw">2:00   (2 o’clock) </span><i class="nl" style="left:41.959%;top:76.759%">
 </i><span data-w="0.15510" style="left:41.959%;top:76.759%;font-size:2.124cqw">8:00   (8 o’clock) </span><i class="nl" style="left:71.003%;top:76.759%">
 </i><span data-w="0.15510" style="left:71.003%;top:76.759%;font-size:2.124cqw">3:00   (3 o’clock) </span><i class="nl" style="left:8.824%;top:82.898%">
-</i><span data-w="0.02124" style="left:8.824%;top:82.898%;font-size:2.124cqw">3.​</span><span data-w="0.82339" style="left:11.765%;top:82.898%;font-size:2.124cqw">Circle the vowels. There are 6:                                                                                                   /2 </span><i class="nl" style="left:8.483%;top:85.729%">
+</i><span data-w="0.02124" style="left:8.824%;top:82.898%;font-size:2.124cqw">3.​</span><span data-w="0.82339" style="left:11.765%;top:82.898%;font-size:2.124cqw">Circle the vowels. There are 6:                                                                                                   /2 </span><i class="nl" style="left:73.661%;top:85.659%">
+</i><span data-w="0.01517" style="left:73.661%;top:85.659%;font-size:2.124cqw">i </span><i class="nl" style="left:8.483%;top:85.729%">
 </i><span data-w="0.01947" style="left:8.483%;top:85.729%;font-size:2.124cqw">E </span><i class="nl" style="left:15.271%;top:85.729%">
 </i><span data-w="0.01238" style="left:15.271%;top:85.729%;font-size:2.124cqw">j </span><i class="nl" style="left:21.289%;top:85.729%">
 </i><span data-w="0.01947" style="left:21.289%;top:85.729%;font-size:2.124cqw">L </span><i class="nl" style="left:27.787%;top:85.729%">
@@ -193,8 +194,7 @@
 </i><span data-w="0.02065" style="left:47.150%;top:85.729%;font-size:2.124cqw">N </span><i class="nl" style="left:53.708%;top:85.729%">
 </i><span data-w="0.02183" style="left:53.708%;top:85.729%;font-size:2.124cqw">O </span><i class="nl" style="left:60.439%;top:85.729%">
 </i><span data-w="0.01712" style="left:60.439%;top:85.729%;font-size:2.124cqw">u </span><i class="nl" style="left:66.699%;top:85.729%">
-</i><span data-w="0.02183" style="left:66.699%;top:85.729%;font-size:2.124cqw">K </span><i class="nl" style="left:73.661%;top:85.659%">
-</i><span data-w="0.01517" style="left:73.661%;top:85.659%;font-size:2.124cqw">i </span><i class="nl" style="left:79.145%;top:85.729%">
+</i><span data-w="0.02183" style="left:66.699%;top:85.729%;font-size:2.124cqw">K </span><i class="nl" style="left:79.145%;top:85.729%">
 </i><span data-w="0.02535" style="left:79.145%;top:85.729%;font-size:2.124cqw">M </span><i class="nl" style="left:85.385%;top:85.729%">
 </i><span data-w="0.02065" style="left:85.385%;top:85.729%;font-size:2.124cqw">V </span><i class="nl" style="left:91.268%;top:85.729%">
 </i><span data-w="0.02065" style="left:91.268%;top:85.729%;font-size:2.124cqw">C </span><i class="nl" style="left:8.824%;top:92.591%">
@@ -371,10 +371,22 @@
           <!-- Mở/thu đoạn gốc: KÝ HIỆU thôi, không chữ. Nó đứng cạnh 🔊 và ✕
                nên hàng nút giữ được một nhịp, và không ăn mất chiều cao của
                phần giải thích. -->
+          <!-- ⚠ Dùng CHUNG hình mũi tên với nút gập của trang môn
+               (`templates/course.html`): cùng một chevron SVG xoay 180°, không
+               phải ký tự `⌄`/`⌃`. Hai lý do — ký tự đó nằm ở mỗi phông một
+               dáng khác nhau và thường lệch tâm ô (người dùng báo "trông
+               xấu"), còn dùng hai ký hiệu KHÁC nhau cho cùng một thao tác
+               mở/thu thì người đọc phải học hai lần. -->
           <button x-show="daiGoc" x-cloak @click="moGoc = !moGoc" type="button"
                   :title="moGoc ? 'Thu gọn đoạn gốc' : 'Xem đầy đủ đoạn gốc'"
-                  class="shrink-0 w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100"
-                  x-text="moGoc ? '⌃' : '⌄'"></button>
+                  class="shrink-0 w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100
+                         flex items-center justify-center">
+            <svg class="w-4 h-4 transition-transform duration-200"
+                 :class="moGoc ? 'rotate-180' : ''"
+                 fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
           <!-- Trần 200 ký tự là của /api/tts. Ẩn nút khi vượt, thay vì để bấm rồi
                lặng lẽ rơi về giọng hệ điều hành — im lặng kiểu đó nhìn y hệt như
                đang chạy bình thường, chỉ khác giọng. -->
@@ -918,7 +930,13 @@
       // ── Năm hàm móc của `_tracuu.html` ────────────────────────────────────
       // Trang đọc không có khái niệm/phạm vi; ngữ cảnh là tên môn + tên tài liệu.
       
-      traNgonNgu() { return true ? 'en' : 'vi'; },
+      // ⚠ Ngôn ngữ DẠY khai trong `config.json` (`nn`) THẮNG phép suy theo
+      // tiền tố slug. Suy từ slug là đoán, và nó đoán sai ngay lớp đầu tiên
+      // nằm ngoài LMS: Amslink dạy tiếng Anh (sách Close Up B1) nhưng slug
+      // không bắt đầu bằng `cie-` nên bị xếp vào nhóm tiếng Việt — mất ô chọn
+      // VI/EN, và luật "môn tiếng Việt thì bỏ `vi_du.en`" kích hoạt nên ví dụ
+      // chỉ còn một dòng tiếng Việt lẻ loi. Người dùng gửi ảnh chụp cảnh đó.
+      traNgonNgu() { return "en"; },
       traTen() { return 'Môn: ' + "CIE ESL 1" + '. Đang đọc tài liệu: ' + "Week 5 - ESL Homework.pdf" + '.'; },
       traMucCtx() { return []; },
       traDoc() { return null; },
@@ -1069,7 +1087,11 @@
           const goc = (r.toString() || '').replace(/[ \t]+\n/g, '\n')
                         .replace(/\n{3,}/g, '\n\n').trim();
           const text = (r.toString() || '').replace(/\s+/g, ' ').trim();
-          if (!text || !/[A-Za-z]/.test(text) || text.length > 600) return;
+          // ⚠ 1000 ký tự phải KHỚP `MAX.text` trong `worker/lookup.js`. Hai
+          // con số ở hai file, và lệch nhau thì hỏng lặng lẽ: trang cho hiện
+          // nút, Worker cắt cụt đoạn, model giải thích một câu bị chặt giữa
+          // chừng mà không ai biết. Đổi một chỗ thì đổi cả chỗ kia.
+          if (!text || !/[A-Za-z]/.test(text) || text.length > 1000) return;
           const b = r.getBoundingClientRect();
           if (!b.width && !b.height) return;
           this.tra.text = text;

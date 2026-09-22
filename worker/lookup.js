@@ -46,7 +46,10 @@ export const CAP = 300;
 
 /** Kẹp độ dài từng trường. Đầu ra mới là chỗ tốn tiền, nhưng đầu vào trôi nổi
  *  thì cũng kéo đầu ra dài theo. */
-const MAX = { word: 40, sent: 300, text: 600, ctx: 1200, hoi: 300, su: 1400 };
+// `text` 1000 khớp với hàng rào cùng tên ở `templates/_tracuu.html` — xem
+// ghi chú ở đó. Nâng từ 600 lên 1000 để bôi được trọn một bài tập điền chỗ
+// trống: đoạn người dùng thử (bài `Identical twins`, 8 chỗ trống) dài hơn 600.
+export const MAX = { word: 40, sent: 300, text: 1000, ctx: 1200, hoi: 300, su: 1400 };
 
 const json = (d, s = 200) =>
   new Response(JSON.stringify(d), {
@@ -138,18 +141,33 @@ const SHAPE = {
     'NẾU đoạn được hỏi là một CÂU HỎI hoặc ĐỀ BÀI (có dấu hỏi, hoặc mở đầu bằng ' +
     'Which/What/Why/How/Explain/Describe/Calculate/Circle/Tick/Name…), thì THAY ' +
     "khối 'Giảng lại' bằng hai khối theo đúng thứ tự:\n" +
-    "· 'Trả lời' — đáp án, ngắn gọn, đi thẳng vào việc. Trắc nghiệm thì nêu rõ " +
-    'phương án nào và nội dung của nó.\n' +
-    "· 'Vì sao' — LÝ DO, 2–4 câu, dẫn từ kiến thức trong bài ra đáp án. Đây mới " +
-    'là phần chính: nói rõ căn cứ để lần sau tự làm được, đừng chỉ khẳng định.\n' +
+    "· 'Trả lời' — CHỈ đáp án, ngắn nhất có thể. Bài điền chỗ trống thì liệt kê " +
+    "theo số thứ tự ('1. think, 2. have, 3. are'), không diễn giải gì thêm ở đây. " +
+    'Trắc nghiệm thì nêu rõ phương án nào và nội dung của nó.\n' +
+    "· 'Vì sao' — LÝ DO, được phép DÀI hơn 'Trả lời'. Dẫn từ kiến thức trong bài " +
+    'ra đáp án, đủ để lần sau tự làm được; nếu mỗi chỗ trống theo một quy tắc ' +
+    'khác nhau thì nói từng quy tắc. Đây mới là phần chính, đừng chỉ khẳng định.\n' +
+    // ⚠ Ba khoá phải RỖNG ở loại câu hỏi. Người dùng gửi ảnh một bài điền
+    // động từ: dưới cả 'Trả lời' lẫn 'Vì sao' đều có một dòng xanh lẻ loi
+    // ('Các chị em sinh đôi của mình là Katy và Sandy.') — đó là `vi_du` bị
+    // model dùng làm chỗ nhét BẢN DỊCH. Dịch một đề bài không giúp gì cho
+    // việc hiểu vì sao đáp án là `are` chứ không phải `is`; nó chỉ chen vào
+    // giữa lời giải. Bản dịch, khi cần, thuộc về loại ĐOẠN VĂN (khoá `dich`).
+    'Ở loại CÂU HỎI/ĐỀ BÀI, ba khoá sau phải RỖNG: `vi_du` = [] ở MỌI khối ' +
+    '(không dịch, không thêm câu mẫu), `dich` = "", `tu_kho` = [].\n' +
     '⚠ Câu hỏi trắc nghiệm mà đoạn được bôi đen KHÔNG kèm các phương án, hoặc câu ' +
     'hỏi cần số liệu/hình/bảng không có trong đoạn: ĐỪNG đoán. Nói rõ còn thiếu gì ' +
     "trong khối 'Trả lời' và giảng phần kiến thức liên quan ở khối 'Vì sao'.\n" +
     '⚠ Câu hỏi hỏi ý kiến riêng hoặc trải nghiệm của người học (What do you think…, ' +
-    'Describe your…): KHÔNG trả lời thay, mà gợi ý cách nghĩ và một ví dụ mẫu.\n' +
+    'Describe your…): KHÔNG trả lời thay, mà GỢI Ý CÁCH TRẢ LỜI — nêu vài hướng ' +
+    'có thể đi và một câu mẫu để bắt chước, rồi để người học tự viết.\n' +
     'tu_kho: tối đa 4 từ khó nhất; không có từ nào khó thì để mảng rỗng.\n' +
     'luu_y: chỗ dễ hiểu sai; để trống nếu không có.',
 };
+
+// Chỉ để bài chốt soi được phần mô tả loại CÂU HỎI mà không phải dựng cả
+// một lượt gọi. Trả về đúng chuỗi đang dùng, không phải bản chép.
+export const SHAPE_TEXT = () => SHAPE.text;
 
 const cut = (v, n) => (typeof v === "string" ? v.trim().slice(0, n) : "");
 
@@ -382,7 +400,15 @@ export async function handleLookup(request, env) {
           // token; 1500 là gấp hơn ba lần chỗ đó, nên không cắt vào bài thật,
           // mà vẫn ghìm một lượt trả lời chạy loạn ở ~47đ thay vì không trần.
           // Bị cắt thì JSON hỏng → 502, tức lộ ra chứ không âm thầm cụt.
-      maxOutputTokens: 1500,
+      // Nâng 1500 → 2500 cùng lúc với `MAX.text` 600 → 1000. Đây là chặn
+      // TRÊN cho MỘT lượt, không phải mức tiêu thụ: đầu ra dài nhất đo được
+      // vẫn là 460 token. Nhưng loại CÂU HỎI nay được phép giải thích dài
+      // hơn, và một bài 8 chỗ trống thì riêng phần đáp án đã mấy chục token —
+      // chạm trần thì JSON đứt giữa chừng và lượt tra trả 502, tức HỎNG HẲN
+      // chứ không cụt âm thầm. Giá của việc nâng: xấu nhất một lượt ~78đ thay
+      // vì ~47đ; trung bình thật đo được vẫn ~18đ. Trần 300 lượt/ngày vẫn là
+      // thứ chặn hoá đơn, và nó không đổi.
+      maxOutputTokens: 2500,
     },
     });
   } catch (e) {
