@@ -4385,6 +4385,11 @@
     // máy đưa tới chứ không còn là chỗ người đang đọc. Lấy nó làm neo thì mỗi
     // ký tự lại trôi thêm một đoạn, và càng gõ càng lạc khỏi chỗ xuất phát.
     let _neo = null;
+    // Máy đang TỰ cuộn (bấm mục lục, nhảy tới kết quả tìm). Cuộn mượt từ unit
+    // 1 tới unit 7 là lướt qua mọi trang ở giữa, và quan sát viên sẽ mở bung
+    // từng unit nó đi qua — tới nơi thì cả cây mục lục đã xoè hết. Trong lúc
+    // cờ này bật thì chỉ tô đậm, KHÔNG mở unit; hết cuộn mới mở đúng unit đích.
+    let _nhay = false, _hNhay = null, _lNhay = null;
     return {
       
       che: "doc",
@@ -4581,11 +4586,12 @@
         // đúng, và lớp chữ của trang đó có thể chưa được nắn.
         const k = e.closest('.khung');
         if (k) this.canhChu(k);
+        this._batNhay();
         const h = document.getElementById('dau');
         const off = h ? h.getBoundingClientRect().height : 0;
         const r = e.getBoundingClientRect();
         window.scrollTo({ top: Math.max(0, r.top + window.scrollY - off - 80),
-                          behavior: 'smooth' });
+                          behavior: this._kieuCuon(r.top) });
       },
 
       /** Mục lục → nhảy tới trang N, chạy ở CẢ hai chế độ.
@@ -4600,7 +4606,48 @@
         const el = this.che === 'pdf'
           ? document.querySelector('#pdfjs [data-trang="' + p + '"]')
           : document.getElementById('tr-' + p);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (!el) return;
+        this._batNhay();
+        el.scrollIntoView({ behavior: this._kieuCuon(el.getBoundingClientRect().top),
+                            block: 'start' });
+      },
+
+      /** Xa quá 2 màn hình thì nhảy THẲNG, gần thì cuộn mượt.
+       *  Cuộn mượt đi qua trang nào là trang đó lọt vào vùng `loading="lazy"`
+       *  và bị tải ảnh. Đo ở CIE Maths 5 Learner Book, trang 1 → trang 229:
+       *  mượt tải 80 ảnh (~5 MB), nhảy thẳng tải 7. Ở 📄 còn nặng hơn — trang
+       *  đi qua bị vẽ canvas và nắn lớp chữ. Gần thì vẫn mượt để người đọc
+       *  thấy mình vừa đi đâu. */
+      _kieuCuon(dy) {
+        return Math.abs(dy) > 2 * innerHeight ? 'instant' : 'smooth';
+      },
+
+      /** Bật cờ `_nhay`; tắt khi đã ~250ms không có sự kiện cuộn nào.
+       *  Không dùng `scrollend`: Safari cũ không có, và cuộn 0px (đã đứng sẵn
+       *  ở đích) thì nó không bắn — cờ kẹt bật mãi, unit không bao giờ tự mở. */
+      _batNhay() {
+        if (_lNhay) removeEventListener('scroll', _lNhay);
+        _nhay = true;
+        _lNhay = () => {
+          clearTimeout(_hNhay);
+          _hNhay = setTimeout(() => {
+            removeEventListener('scroll', _lNhay);
+            _lNhay = null; _nhay = false;
+            this._moUnitDang();
+          }, 250);
+        };
+        addEventListener('scroll', _lNhay, { passive: true });
+        _lNhay();
+      },
+
+      /** Mở sẵn unit chứa trang đang đọc. Không làm thì cuộn tới unit 5 mà
+       *  cột mục lục vẫn đang mở unit 1 — cây nói một đằng, trang đi một nẻo. */
+      _moUnitDang() {
+        let u = 0;
+        for (let i = 0; i < this.unitTr.length; i++) {
+          if (this.unitTr[i] <= this.trangDang) u = i + 1;
+        }
+        if (u && !this.moUnit[u]) this.moUnit[u] = true;
       },
 
       /** Tô đậm mục đang xem. Không có thì cây mục lục chỉ là danh sách link,
@@ -4611,12 +4658,6 @@
                           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
           if (!thay) return;
           this.trangDang = Number(thay.target.dataset.tr || thay.target.dataset.trang);
-          // Mở sẵn unit chứa trang đang đọc. Không làm thì cuộn tới unit 5 mà
-          // cột mục lục vẫn đang mở unit 1 — cây nói một đằng, trang đi một nẻo.
-          let u = 0;
-          for (let i = 0; i < this.unitTr.length; i++) {
-            if (this.unitTr[i] <= this.trangDang) u = i + 1;
-          }
           let a = -1, b = -1;
           for (let i = 0; i < this.mlP.length; i++) {
             if (this.mlP[i] > this.trangDang) break;
@@ -4625,7 +4666,7 @@
           }
           this.mucDang = a;
           this.unitDang = b;
-          if (u && !this.moUnit[u]) this.moUnit[u] = true;
+          if (!_nhay) this._moUnitDang();
         }, { rootMargin: '-10% 0px -80% 0px' });
         document.querySelectorAll('.trang[data-tr], #pdfjs [data-trang]')
                 .forEach((e) => q.observe(e));
