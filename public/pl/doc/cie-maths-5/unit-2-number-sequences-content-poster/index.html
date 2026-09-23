@@ -526,6 +526,8 @@
     // từng unit nó đi qua — tới nơi thì cả cây mục lục đã xoè hết. Trong lúc
     // cờ này bật thì chỉ tô đậm, KHÔNG mở unit; hết cuộn mới mở đúng unit đích.
     let _nhay = false, _hNhay = null, _lNhay = null;
+    // Bộ nghe cuộn của `theoDoiTrang()` — giữ để chỉ đăng ký một lần.
+    let _theoDoi = null;
     return {
       
       che: null,
@@ -790,25 +792,56 @@
       },
 
       /** Tô đậm mục đang xem. Không có thì cây mục lục chỉ là danh sách link,
-       *  cuộn một lúc là không biết mình đang ở đâu. */
+       *  cuộn một lúc là không biết mình đang ở đâu.
+       *  Đăng ký MỘT lần (lượt gọi sau chỉ tính lại — khung 📄 dựng sau init).
+       *
+       *  ⚠ Trang đang đọc = trang cắt ngang DÒNG ĐỌC đặt ngay dưới khối dính
+       *  (`#dau` + 12px), đo bằng px thật mỗi lần cuộn. KHÔNG dùng
+       *  IntersectionObserver với `rootMargin` phần trăm: bản cũ lấy dải
+       *  10–20% chiều cao màn hình, mà khối dính cao theo PX (~85px, xuống
+       *  dòng thì hơn). Màn thấp (390×844: 10% = 84px < 85px) thì mép trên
+       *  của dải chui vào dưới khối dính, vớ lấy vài px đáy trang TRƯỚC —
+       *  bấm "Bài 4" nhảy đúng trang 22 mà mục lục sáng "Bài 3". Đo ở SGK
+       *  Lịch sử và Địa lí 5: 27/28 mục sai ở 390×844, 27/28 ở 1280×720;
+       *  chỉ 1280×900 là thoát (10% = 90px > 85px) — đúng khổ bài test cũ. */
       theoDoiTrang() {
-        const q = new IntersectionObserver((muc) => {
-          const thay = muc.filter((m) => m.isIntersecting)
-                          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-          if (!thay) return;
-          this.trangDang = Number(thay.target.dataset.tr || thay.target.dataset.trang);
-          let a = -1, b = -1;
-          for (let i = 0; i < this.mlP.length; i++) {
-            if (this.mlP[i] > this.trangDang) break;
-            a = i;
-            if (this.mlC[i] !== 2) b = i;
-          }
-          this.mucDang = a;
-          this.unitDang = b;
-          if (!_nhay) this._moUnitDang();
-        }, { rootMargin: '-10% 0px -80% 0px' });
-        document.querySelectorAll('.trang[data-tr], #pdfjs [data-trang]')
-                .forEach((e) => q.observe(e));
+        if (!_theoDoi) {
+          let cho = false;
+          _theoDoi = () => {
+            if (cho) return;
+            cho = true;
+            requestAnimationFrame(() => { cho = false; this._tinhTrang(); });
+          };
+          addEventListener('scroll', _theoDoi, { passive: true });
+          addEventListener('resize', _theoDoi);
+        }
+        this._tinhTrang();
+      },
+
+      /** Tính `trangDang` / `mucDang` / `unitDang` từ vị trí thật của các trang. */
+      _tinhTrang() {
+        const ds = document.querySelectorAll(this.che === 'pdf' ? '#pdfjs [data-trang]'
+                                                                 : '.trang[data-tr]');
+        if (!ds.length) return;
+        const h = document.getElementById('dau');
+        const y = (h ? h.getBoundingClientRect().bottom : 0) + 12;
+        // Trang CUỐI CÙNG có mép trên ≤ dòng đọc. Trang xếp theo thứ tự DOM
+        // nên tìm nhị phân: ~7 lượt đo thay vì 120 cho một cuốn SGK.
+        let lo = 0, hi = ds.length - 1, k = 0;
+        while (lo <= hi) {
+          const m = (lo + hi) >> 1;
+          if (ds[m].getBoundingClientRect().top <= y) { k = m; lo = m + 1; } else hi = m - 1;
+        }
+        this.trangDang = Number(ds[k].dataset.tr || ds[k].dataset.trang);
+        let a = -1, b = -1;
+        for (let i = 0; i < this.mlP.length; i++) {
+          if (this.mlP[i] > this.trangDang) break;
+          a = i;
+          if (this.mlC[i] !== 2) b = i;
+        }
+        this.mucDang = a;
+        this.unitDang = b;
+        if (!_nhay) this._moUnitDang();
       },
 
       /** Nạp PDF.js và dựng khung trang. Chỉ chạy MỘT lần, lúc bấm 📄. */
