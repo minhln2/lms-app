@@ -9,7 +9,7 @@
   <title>Ôn tập · CIE Science 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.5e8ee1da.css">
+  <link rel="stylesheet" href="../assets/tw.28ff1e65.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -972,7 +972,39 @@
         },
 
         /** Chạy mỗi lần vùng chọn đổi. Quyết định CÓ hiện nút hay không. */
+        /** Điểm vào CHUNG cho mọi cách chọn: bôi đen và chọn vùng đều đổ vào
+            đây, nên popup, trần ký tự và lịch sử tra chỉ có một đường.
+
+            Trả về LÝ DO thay vì true/false: đường bôi đen im lặng khi đoạn quá
+            dài (nút không hiện là đủ), còn đường KÉO thì phải báo — người dùng
+            vừa chủ động kéo một vùng to mà không thấy gì thì tưởng hỏng.
+            `box` là hình chữ nhật vùng chọn theo toạ độ viewport. */
+        _traDat({ text, goc, sent, box, rg = null, vung = null }) {
+          // ⚠ 1000 ký tự phải KHỚP `MAX.text` trong `worker/lookup.js`. Lệch
+          // nhau thì hỏng lặng lẽ: trang cho hiện nút, Worker cắt cụt đoạn.
+          if (!text) return 'rong';
+          if (!/[A-Za-z]/.test(text)) return 'rong';
+          if (text.length > 1000) return 'dai';
+          this.tra.text = text;
+          this.tra.goc = goc;
+          this.tra.sent = sent || '';
+          this.tra.mode = text.split(/\s+/).length <= 3 ? 'word' : 'text';
+          // Không có mã bí mật thì chỉ hiện nút khi tra offline ra được cái gì.
+          if (!this.traKhoa() && !this._traOffline()) return 'khong-tra';
+          this._traRg = rg;
+          this._traVung = vung;
+          this.tra.btn = { x: Math.min(Math.max(box.left + box.width / 2, 60), innerWidth - 60),
+                           y: Math.min(box.bottom + 8, innerHeight - 44) };
+          return 'ok';
+        },
+
         chonDoi() {
+          // ⚠ Đang ở CHẾ ĐỘ CHỌN VÙNG thì đường bôi đen đứng ngoài. Cả hai cùng
+          // ghi vào `tra.*`, mà cú thả chuột của vùng kéo cũng bắn `mouseup` ở
+          // mức document → `chonDoi()` chạy, xoá `tra.btn` vừa đặt rồi trả về
+          // sớm (không có vùng chọn DOM nào để bôi), và nút 🔎 biến mất ngay
+          // sau khi kéo. Trang ôn tập không có `chonHoat` nên vô hại ở đó.
+          if (this.chonHoat) return;
           const sel = window.getSelection();
           this.tra.btn = null;
           if (this.tra.show || !sel || sel.isCollapsed || !sel.rangeCount) return;
@@ -1013,16 +1045,7 @@
           if (!text || !/[A-Za-z]/.test(text) || text.length > 1000) return;
           const b = r.getBoundingClientRect();
           if (!b.width && !b.height) return;
-          this.tra.text = text;
-          this.tra.goc = goc;
-          this.tra.sent = this._cauChua(r, text);
-          this.tra.mode = text.split(/\s+/).length <= 3 ? 'word' : 'text';
-          // Không có mã bí mật thì chỉ hiện nút khi tra offline ra được cái gì.
-          if (!this.traKhoa() && !this._traOffline()) return;
-          // Nhớ lại vùng chọn để `traDong()` dựng lại nút sau khi đóng popup.
-          this._traRg = r.cloneRange();
-          this.tra.btn = { x: Math.min(Math.max(b.left + b.width / 2, 60), innerWidth - 60),
-                           y: Math.min(b.bottom + 8, innerHeight - 44) };
+          this._traDat({ text, goc, sent: this._cauChua(r, text), box: b, rg: r.cloneRange() });
         },
 
         /** Có gì để hiện trong popup không?
@@ -1266,15 +1289,26 @@
           this.tra.show = false; this.tra.btn = null; this.tra.data = null;
           this.tra.err = ''; this.tra.ly_do = '';
           this.tra.chat = []; this.tra.hoi = ''; this.moGoc = false;
+          // ⚠ Chụp lại TRƯỚC khi xoá. Xoá `_traVung` ở đây rồi mới hỏi
+          // `this._traVung` trong `setTimeout` bên dưới thì nhánh khôi phục
+          // không bao giờ chạy — nút 🔎 mất hẳn sau khi đóng popup. Cùng lý do
+          // `rg` được chụp thành biến cục bộ.
           const rg = this._traRg;
+          const vung = this._traVung;
+          this._traVung = null;
           setTimeout(() => {
             if (rg) {
               try {
                 const s = window.getSelection();
                 s.removeAllRanges(); s.addRange(rg);
               } catch (e) { return; }
+              this.chonDoi();
+            } else if (vung && this.traVungLai) {
+              // Vùng KÉO không có Range nào để đặt lại (các ký tự được chọn
+              // không liền mạch trong DOM), nên đường này do trang nhúng tự vẽ
+              // lại. Xem `traVungLai()` trong `docview.html`.
+              this.traVungLai();
             }
-            this.chonDoi();
           }, 0);
         },
 
