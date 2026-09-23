@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>CIE Maths 5 — Workbook · CIE Maths 5</title>
-<link rel="stylesheet" href="../../../../assets/tw.28ff1e65.css">
+<link rel="stylesheet" href="../../../../assets/tw.f2ba323b.css">
 <style>
   [x-cloak] { display: none !important; }
   #pdf { width:100%; height:calc(100vh - 8.5rem); border:0; }
@@ -168,7 +168,7 @@
               class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700">›</button>
     </div>
     
-    <button x-show="che === 'doc'" x-cloak @click="chonHoat ? chonTat() : chonBat()"
+    <button x-show="che === 'doc'" x-cloak @click="chonHoat ? chonVe() : chonBat()"
             type="button" data-chon-nut
             :aria-pressed="String(chonHoat)" aria-label="Chọn vùng để tra cứu"
             :class="chonHoat ? 'bg-indigo-600 border-indigo-600 text-white'
@@ -911,7 +911,7 @@
 <main data-tra x-show="che === 'doc'"
       @pointerdown="chonDown($event)" @pointermove="chonMove($event)"
       @pointerup="chonUp($event)" @pointercancel="chonUp($event)"
-      :class="chonHoat ? 'chon-bat' : ''" class="px-4 py-4">
+      :class="(chonHoat ? 'chon-bat ' : '') + (chonHoat || chonText ? 'pb-16' : '')" class="px-4 py-4">
 
 <section class="trang" id="tr-1" data-tr="1"><div class="khung"><img src="anh/trang-1.webp" width="1036" height="1304" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.73010" style="left:13.495%;top:3.005%;font-size:1.610cqw">We are working with Cambridge Assessment International Education towards endorsement of this title.</span><i class="nl" style="left:32.232%;top:26.891%">
 </i><span data-w="0.35516" style="left:32.232%;top:26.891%;font-size:5.956cqw">CAMBRIDGE</span><i class="nl" style="left:8.726%;top:32.337%">
@@ -8950,7 +8950,7 @@
       pdfWorkerUrl: "../../../../assets/pdf.worker.490b29ce.mjs",
       tiLe: 1.2, soTrang: 0, pdfLoi: '', srcNang: '',
       mlMo: false, trangDang: 0, moUnit: {}, mucDang: -1, unitDang: -1,
-      chonHoat: false, chonBao: '', chonO: [], chonText: '', chonGoc: '',
+      chonHoat: false, chonBao: '', chonO: [], chonText: '', chonGoc: '', chonKq: '', dangBam: false,
       chonDang: null,
       // Trang bắt đầu của từng unit — để tự mở đúng unit đang đọc.
       unitTr: [9, 19, 33, 39, 49, 66, 78, 90, 99, 108, 120, 137, 147, 161, 172, 195, 200],
@@ -9021,6 +9021,7 @@
       },
       doiCheDo(c, luu) {
         this.che = c;
+        if (c !== 'doc' && (this.chonHoat || this.chonText)) this.chonTat();   // 📄 là canvas, không có lớp chữ
         if (c === 'pdf') this.moPdf();
         if (luu) { try { localStorage.setItem('lms_doc_mode', c); } catch (e) {} }
         if (c === 'doc') this.$nextTick(() => this.canhChuLuoi());
@@ -9385,27 +9386,125 @@
         b.remove(); k.appendChild(f);
       },
       // ── Chọn vùng ─────────────────────────────────────────────────────────
-      /** Bật/tắt chế độ chọn. Bật thì xoá vùng cũ — người dùng vừa bấm nút là
-          muốn chọn cái mới, không phải nối vào cái cũ. */
-      chonBat() { this.chonHoat = true; this.chonXoa(); },
-      chonTat() { this.chonHoat = false; this.chonDang = null; this.chonBao = ''; },
+      /** Vùng chọn là một TẬP KÝ TỰ (`_ky`, khoá `trang:span:vị trí`), không
+          phải một chuỗi nối dần. Nối chuỗi thì kéo chồng lên chỗ đã chọn là
+          lấy LẶP chữ đó (đo được: bôi hai lần một dòng → gửi đi hai lần câu
+          đó), và chữ xếp theo thứ tự KÉO chứ không theo thứ tự ĐỌC. Tập ký tự
+          thì chồng bao nhiêu lần cũng vậy; chuỗi luôn dựng lại từ tập theo
+          đúng thứ tự DOM (thứ tự đọc, ADR 0033/0034). */
+      /** HAI TẦNG, MỘT vùng chọn:
+          · tầng THƯỜNG — bôi đen như mọi trang web. Vùng bôi đen đang sống
+            (`_song`) cộng với phần đã chốt (`_ky`) là vùng chọn; dải đáy tự hiện
+            khi có chữ. Một ngón vẫn CUỘN được — đó là lý do không tự bật tầng
+            vẽ khi bôi đen: trẻ nhấn giữ bôi một từ rồi trang hết cuộn là hỏng.
+          · tầng VẼ (nút ▭) — thêm khoanh vùng và bút dẹt, cộng vào CÙNG tập.
+          Bật/tắt ▭ KHÔNG xoá vùng chọn: chuyển tầng chứ không bắt đầu lại. */
+      chonBat() { this._chotSong(); this._boBoiDen(); this.chonHoat = true; },
+      chonVe()  { this.chonHoat = false; this.chonDang = null; this.chonBao = ''; },
+      /** Thoát = XOÁ HẾT (✕, Esc, đóng popup, sang 📄). Để lại ô tô màu sau khi
+          thoát là rác trên trang mà không còn nút nào dọn được. */
+      chonTat() { this.chonVe(); this.chonXoa(); },
       chonXoa() {
-        this.chonO = []; this.chonText = ''; this.chonGoc = '';
+        this._ky = {}; this._song = null; this._songSent = '';
+        this.chonO = []; this.chonText = ''; this.chonGoc = ''; this.chonKq = '';
         this.tra.btn = null; this._traVung = null;
+        this._boBoiDen();
+        this._veChon();     // ⚠ phải GỠ các ô đã vẽ, đổi `chonO` thôi thì chúng còn nguyên
+      },
+      _boBoiDen() {
+        try { const s = getSelection(); if (s && !s.isCollapsed) s.removeAllRanges(); } catch (e) {}
+      },
+      /** Vùng bôi đen đang sống → chốt vào `_ky` (để còn vẽ ô màu khi trình
+          duyệt thôi tô nó). */
+      _chotSong() {
+        if (!this._song) return;
+        this._ky = { ...(this._ky || {}) };
+        for (const r of this._song) this._ky[r.k] = r;
+        this._song = null;
+        this._chonCapNhat();
+      },
+      /** Đường BÔI ĐEN của tầng thường — `chonDoi()` gọi, `r` đã nắn biên từ.
+       *
+       * ⚠ KHÔNG xoá vùng bôi đen của trình duyệt khi nhận: trên điện thoại hai
+       * tay nắm của nó là cách duy nhất để nới một cụm từ. Chỉ khi nó MẤT (bấm
+       * xuống để bôi chỗ khác, hoặc chạm) mới chốt vào `_ky` và vẽ ô màu. Bôi
+       * chỗ mới RỜI hẳn chỗ cũ cũng chốt chỗ cũ — Android đổi thẳng vùng chọn
+       * khi nhấn giữ từ khác, không qua trạng thái rỗng. Chồng lên nhau thì là
+       * đang NỚI/THU chính vùng đó, thay chứ không cộng. */
+      traNhanChon(r) {
+        if (!r) { this._chotSong(); return; }
+        const ky = this._kyTuRange(r);
+        if (!ky.length) return;
+        if (this._song) {
+          const cu = new Set(this._song.map((x) => x.k));
+          if (!ky.some((x) => cu.has(x.k))) this._chotSong();
+        }
+        this._song = ky;
+        this._songSent = this._cauChua(r, r.toString().replace(/\s+/g, ' ').trim());
+        const kq = this._chonCapNhat();
+        if (kq !== 'ok') this.chonNoi(this._chonLyDo(kq));
+      },
+      /** Ký tự của lớp chữ nằm TRỌN trong Range (cả hai mép ký tự trong vùng).
+          Vùng bôi đen có thể vắt nhiều trang — mỗi trang một lượt `_banGhi`. */
+      _kyTuRange(r) {
+        const ky = [];
+        for (const kh of document.querySelectorAll('main[data-tra] .khung')) {
+          if (!r.intersectsNode(kh)) continue;
+          const chon = [];
+          for (const sp of this._spans(kh)) {
+            const tn = sp.firstChild;
+            if (!tn || tn.nodeType !== 3 || !r.intersectsNode(tn)) continue;
+            for (let i = 0; i < tn.length; i++) {
+              if (!tn.data[i].trim()) continue;
+              if (r.comparePoint(tn, i) !== 0 || r.comparePoint(tn, i + 1) !== 0) continue;
+              const rg = document.createRange();
+              rg.setStart(tn, i); rg.setEnd(tn, i + 1);
+              const q = rg.getClientRects()[0];
+              if (q) chon.push({ sp, i, q });
+            }
+          }
+          ky.push(...this._banGhi(kh, chon));
+        }
+        return ky;
+      },
+      /** Dựng lại chuỗi, ô màu, và gọi `_traDat` từ `_ky` ∪ `_song`. Chỉ VẼ
+          phần đã chốt: phần đang bôi đen thì trình duyệt đang tự tô, vẽ thêm là
+          hai lớp màu chồng nhau. `sent` (câu chứa) chỉ có khi vùng chọn là
+          đúng một lượt bôi đen — ghép từ nhiều chỗ thì không có "câu chứa". */
+      _chonCapNhat() {
+        const tat = { ...(this._ky || {}) };
+        for (const r of this._song || []) tat[r.k] = r;
+        const gop = this._gopChon(Object.values(tat));
+        this.chonO = this._gopChon(Object.values(this._ky || {})).o;
+        this.chonText = gop.text; this.chonGoc = gop.goc;
+        const sent = this._song && !Object.keys(this._ky || {}).length ? this._songSent : '';
+        this.chonKq = gop.text
+          ? this._traDat({ text: gop.text, goc: gop.goc, sent, box: null, rg: null, vung: {} })
+          : '';
+        this._veChon();
+        return this.chonKq;
       },
       /** Báo một câu ngắn trong dải dưới đáy rồi tự tắt. */
       chonNoi(c) {
         this.chonBao = c;
         clearTimeout(this._hBao);
-        this._hBao = setTimeout(() => { this.chonBao = ''; }, 1500);
+        this._hBao = setTimeout(() => { this.chonBao = ''; }, 2500);
       },
-      /** `traDong()` gọi hàm này khi đóng popup mà vùng chọn không có Range
-          nào để đặt lại: vẽ lại các ô màu và trả nút 🔎 về chỗ cũ. */
-      traVungLai() {
-        this._veChon();
-        this._traVung = { tr: null };
-        if (this._hopChon) this.tra.btn = { x: this._hopChon.x, y: this._hopChon.y };
+      /** Nút 🔎 của chế độ chọn vùng nằm TRONG DẢI DƯỚI ĐÁY, không nổi cạnh
+          vùng chọn: nút nổi đặt theo toạ độ MÀN HÌNH còn ô tô màu nằm trên
+          TRANG, cuộn một cái là hai thứ lệch nhau. Ở dải đáy thì luôn thấy. */
+      chonGiai() {
+        if (this.chonKq === 'ok') { this.traMo(); return; }
+        this.chonNoi(this._chonLyDo(this.chonKq));
       },
+      _chonLyDo(kq) {
+        return { rong: 'Vùng này không có chữ để tra',
+                 dai: 'Vùng chọn quá dài (tối đa 1.000 ký tự)',
+                 'khong-tra': 'Chưa có mã tra cứu — nhập mã ở trang môn học trước' }[kq] || '';
+      },
+      /** `traDong()` gọi hàm này khi đóng popup của một vùng KÉO: xong một lượt
+          hỏi là thoát chế độ và xoá hết (người dùng đã chọn cách này). */
+      traVungDong() { this.chonTat(); },
       _veChon() {
         document.querySelectorAll('.khung > .chon-o').forEach((e) => e.remove());
         for (const o of this.chonO) {
@@ -9417,6 +9516,10 @@
           kh.appendChild(d);
         }
       },
+      /** Danh sách span của lớp chữ một trang — CHỈ MỘT cách lấy, vì chỉ số
+          trong danh sách này là một phần khoá của ký tự. Hai cách lọc khác
+          nhau là hai hệ chỉ số, và kéo chồng sẽ không nhận ra ký tự trùng. */
+      _spans(kh) { return [...kh.querySelectorAll('.chu span:not(.mo)')]; },
 
       /** Lấy chữ của một khung trang nằm trong `o` (toạ độ viewport).
        *
@@ -9426,14 +9529,11 @@
        * 31 ô = 615,0px so với bề rộng nhìn thấy 615,2px), nên KHÔNG cần đụng
        * vào `transform` — đụng vào là tốn 13.000 lượt dựng hình.
        *
-       * Trả `{text, goc, o}`: `o` là các ô ĐÃ CHỌN theo phần trăm khổ trang,
-       * gộp theo từng đoạn liền mạch (một `div` mỗi đoạn, không phải mỗi ký tự).
+       * Trả `{text, goc, o, ky}`: `ky` là các bản ghi ký tự để cộng vào tập.
        */
       _chonTrongO(kh, o) {
-        const kb = kh.getBoundingClientRect();
-        const spans = [...kh.querySelectorAll('.chu span:not(.mo)')];
         const chon = [];      // {sp, i, q} theo đúng thứ tự DOM
-        for (const sp of spans) {
+        for (const sp of this._spans(kh)) {
           const tn = sp.firstChild;
           if (!tn || tn.nodeType !== 3) continue;
           const b = sp.getBoundingClientRect();
@@ -9450,39 +9550,62 @@
               chon.push({ sp, i, q });
           }
         }
-        return this._gopChon(chon, kb);
+        const ky = this._banGhi(kh, chon);
+        return { ...this._gopChon(ky), ky };
       },
 
-      /** Gộp các ký tự đã chọn thành chuỗi + các ô tô màu.
-       *  Giữa hai span: cùng DÒNG thì nối bằng dấu cách, khác dòng thì xuống
-       *  dòng — cùng luật so lệch tâm y mà `_gom_dong_ocr` đang dùng. */
-      _gopChon(chon, kb) {
-        if (!chon.length) return { text: '', goc: '', o: [] };
+      /** Đổi ký tự vừa đo thành bản ghi KHÔNG phụ thuộc cuộn: toạ độ theo phần
+          trăm khổ trang, cùng đơn vị với ô tô màu. Nhờ vậy dựng lại chuỗi và ô
+          màu từ tập ký tự mà không phải đo lại (trang có thể đã cuộn đi xa). */
+      _banGhi(kh, chon) {
+        if (!chon.length) return [];
+        const kb = kh.getBoundingClientRect();
+        const tr = Number(kh.closest('section.trang').dataset.tr);
+        const so = new Map(this._spans(kh).map((s, k) => [s, k]));
+        const hop = new Map();
+        return chon.map(({ sp, i, q }) => {
+          let b = hop.get(sp);
+          if (!b) { b = sp.getBoundingClientRect(); hop.set(sp, b); }
+          const si = so.get(sp);
+          return { k: tr + ':' + si + ':' + i, tr, si, i, ch: sp.firstChild.data[i],
+                   x: (q.left - kb.left) / kb.width * 100, y: (q.top - kb.top) / kb.height * 100,
+                   w: q.width / kb.width * 100, h: q.height / kb.height * 100,
+                   sy: (b.top + b.height / 2 - kb.top) / kb.height * 100,
+                   sh: b.height / kb.height * 100 };
+        });
+      },
+
+      /** Dựng chuỗi + các ô tô màu từ một tập bản ghi ký tự.
+       *  Sắp theo (trang, span, vị trí) = thứ tự DOM = thứ tự đọc. Giữa hai
+       *  span: cùng DÒNG thì nối bằng dấu cách, khác dòng thì xuống dòng —
+       *  cùng luật so lệch tâm y mà `_gom_dong_ocr` đang dùng. Mỗi đoạn ký tự
+       *  LIỀN MẠCH là một ô màu; có khe thì cắt ô, không thì ô trùm lên cả
+       *  phần chữ chưa chọn nằm giữa. */
+      _gopChon(ky) {
+        if (!ky.length) return { text: '', goc: '', o: [] };
+        const ds = ky.slice().sort((a, b) => a.tr - b.tr || a.si - b.si || a.i - b.i);
         const phan = [], o = [];
         let truoc = null, doan = null;
         const chot = () => { if (doan) o.push(doan); doan = null; };
-        for (const c of chon) {
-          const b = c.sp.getBoundingClientRect();
-          const y = b.top + b.height / 2;
-          if (truoc && truoc.sp === c.sp && c.i === truoc.i + 1) {
-            phan.push(c.sp.firstChild.data[c.i]);              // liền mạch
+        for (const c of ds) {
+          const cungSp = truoc && truoc.tr === c.tr && truoc.si === c.si;
+          if (cungSp && c.i === truoc.i + 1) {
+            phan.push(c.ch);                                     // liền mạch
           } else {
-            if (truoc && truoc.sp === c.sp) phan.push(' ');     // có khe giữa
-            else if (truoc) phan.push(Math.abs(y - truoc.y) < b.height * 0.6 ? ' ' : '\n');
-            phan.push(c.sp.firstChild.data[c.i]);
-            if (truoc && truoc.sp !== c.sp) chot();
+            if (cungSp) phan.push(' ');                          // có khe
+            else if (truoc) phan.push(truoc.tr === c.tr &&
+                                      Math.abs(c.sy - truoc.sy) < c.sh * 0.6 ? ' ' : '\n');
+            phan.push(c.ch);
+            chot();
           }
-          const x0 = (c.q.left - kb.left) / kb.width * 100;
-          const y0 = (c.q.top - kb.top) / kb.height * 100;
-          const w = c.q.width / kb.width * 100, h = c.q.height / kb.height * 100;
-          if (!doan) doan = { x: x0, y: y0, w, h };
+          if (!doan) doan = { tr: c.tr, x: c.x, y: c.y, w: c.w, h: c.h };
           else {
-            const x1 = Math.max(doan.x + doan.w, x0 + w);
-            const y1 = Math.max(doan.y + doan.h, y0 + h);
-            doan.x = Math.min(doan.x, x0); doan.y = Math.min(doan.y, y0);
+            const x1 = Math.max(doan.x + doan.w, c.x + c.w);
+            const y1 = Math.max(doan.y + doan.h, c.y + c.h);
+            doan.x = Math.min(doan.x, c.x); doan.y = Math.min(doan.y, c.y);
             doan.w = x1 - doan.x; doan.h = y1 - doan.y;
           }
-          truoc = { sp: c.sp, i: c.i, y };
+          truoc = c;
         }
         chot();
         return { text: phan.join('').replace(/\s+/g, ' ').trim(),
@@ -9497,8 +9620,7 @@
        * thuộc con số nào của khổ trang.
        */
       _chonTheoNet(kh, diem) {
-        const kb = kh.getBoundingClientRect();
-        const spans = [...kh.querySelectorAll('.chu span:not(.mo)')]
+        const spans = this._spans(kh)
           .filter((sp) => sp.firstChild && sp.firstChild.nodeType === 3)
           .map((sp) => { const b = sp.getBoundingClientRect();
                          return { sp, b, y: b.top + b.height / 2 }; });
@@ -9530,7 +9652,8 @@
             if (cx >= g[0] && cx <= g[1]) chon.push({ sp: s.sp, i, q });
           }
         }
-        return this._gopChon(chon, kb);
+        const ky = this._banGhi(kh, chon);
+        return { ...this._gopChon(ky), ky };
       },
 
       /** Chiều cao một dòng chữ quanh toạ độ y — suy từ chính lớp chữ, không
@@ -9554,7 +9677,10 @@
       /** Bắt đầu kéo. Chỉ nhận khi đang bật chế độ và điểm bấm nằm TRONG một
        *  trang — bấm lên thanh đầu hay ra nền thì không tính. */
       chonDown(e) {
-        if (!this.chonHoat) return;
+        if (!this.chonHoat) {           // tầng thường: chỉ nhớ để nhận ra cú CHẠM
+          this._cham = { x: e.clientX, y: e.clientY };
+          return;
+        }
         if (e.pointerType === 'mouse' && e.button !== 0) return;
         const kh = e.target.closest && e.target.closest('.khung');
         if (!kh) return;
@@ -9593,14 +9719,19 @@
           this._diem.push({ x: e.clientX, y: e.clientY });
       },
       chonUp(e) {
+        if (!this.chonHoat) { this._chamThuong(e); return; }
         if (!this._ngon || !this._ngon.has(e.pointerId)) return;
         this._ngon.delete(e.pointerId);
         if (this._cuon) { if (this._ngon.size < 2) this._cuon = false; return; }
         const d = this.chonDang;
         this.chonDang = null;
         if (!d || !this._kh) return;
-        // Kéo quá ngắn (một cú bấm) thì không tạo vùng rỗng.
-        if (Math.abs(d.x1 - d.x0) < 6 && Math.abs(d.y1 - d.y0) < 6) return;
+        // MỘT CÚ CHẠM (không kéo) lên trang = bỏ vùng đã chọn, vẫn ở trong chế
+        // độ. Trên điện thoại không có Esc, đây là cách dọn nhanh nhất.
+        if (Math.abs(d.x1 - d.x0) < 6 && Math.abs(d.y1 - d.y0) < 6) {
+          if (e.type === 'pointerup' && this.chonText) this.chonXoa();
+          return;
+        }
         const b = this._kh.getBoundingClientRect();
         // ⚠ KẸP vào chính trang đang kéo: kéo lên thanh đầu hay xuống quá đáy
         // thì chỉ lấy phần nằm trong trang, không vớ chữ của trang bên cạnh.
@@ -9615,38 +9746,45 @@
         const kq = det
           ? this._chonTheoNet(this._kh, this._diem.concat([{ x: x1, y: y1 }]))
           : this._chonTrongO(this._kh, { left: x0, top: y0, right: x1, bottom: y1 });
-        if (!kq.text) { this.chonNoi('Vùng này không có chữ'); return; }
-        const tr = Number(this._kh.closest('section.trang').dataset.tr);
-        // Chụp lại phần ĐANG có, để lùi được nếu nét này làm vượt trần.
-        const cu = { text: this.chonText, goc: this.chonGoc, o: this.chonO };
-        this.chonO = this.chonO.concat(kq.o.map((q) => ({ ...q, tr })));
-        this.chonText = (this.chonText ? this.chonText + ' ' : '') + kq.text;
-        this.chonGoc = (this.chonGoc ? this.chonGoc + '\n' : '') + kq.goc;
-        this._veChon();
-        const hop = { left: x0, top: y0, width: x1 - x0, height: y1 - y0 };
-        this._hopChon = { x: Math.min(Math.max((x0 + x1) / 2, 60), innerWidth - 60),
-                          y: Math.min(y1 + 8, innerHeight - 44) };
-        // `_traDat` là chốt DUY NHẤT của trần 1.000 ký tự: nó trả 'dai' thì lùi
-        // lại như trước nét này rồi báo. Tự cắt ở đây trước khi gọi thì nhánh
-        // báo không bao giờ chạy (bẫy đã ghi trong sổ theo dõi).
-        const kq2 = this._traDat({ text: this.chonText, goc: this.chonGoc, sent: '',
-                                   box: hop, rg: null, vung: { tr } });
-        if (kq2 === 'dai') {
-          this.chonText = cu.text; this.chonGoc = cu.goc; this.chonO = cu.o;
-          this._veChon();
-          this.tra.btn = null;
-          this.chonNoi('Vùng chọn quá dài (tối đa 1.000 ký tự)');
-          if (this.chonText && this._hopChon)
-            this._traDat({ text: this.chonText, goc: this.chonGoc, sent: '',
-                           box: { left: this._hopChon.x, top: this._hopChon.y - 8,
-                                  width: 0, height: 0 }, rg: null, vung: { tr } });
-          return;
-        }
-        if (kq2 === 'rong') this.chonNoi('Vùng này không có chữ');
+        if (!kq.ky.length) { this.chonNoi('Vùng này không có chữ'); return; }
+        // HỢP vào tập đã có: ký tự đã chọn thì khoá trùng, không thêm lần nữa.
+        const cu = this._ky || {};
+        this._ky = { ...cu };
+        for (const r of kq.ky) this._ky[r.k] = r;
+        // `_traDat` (trong `_chonCapNhat`) là chốt DUY NHẤT của trần 1.000 ký
+        // tự: nó trả 'dai' thì lùi về như trước nét này rồi báo.
+        const kq2 = this._chonCapNhat();
+        if (kq2 === 'dai') { this._ky = cu; this._chonCapNhat(); }
+        if (kq2 !== 'ok') this.chonNoi(this._chonLyDo(kq2));
+      },
+      /** Tầng thường: một cú CHẠM (không kéo) lên trang = bỏ chọn.
+       *  ⚠ Chờ 350ms rồi mới hỏi vùng bôi đen: cú bấm đầu của một lần NHẤP ĐÚP
+       *  (chọn một từ) cũng là một cú chạm — xoá ngay thì nhấp đúp để cộng
+       *  thêm một từ lại xoá sạch phần đã chọn. Nhấn giữ trên điện thoại cũng
+       *  vậy: tới lúc hỏi thì vùng bôi đen đã có, không xoá. */
+      _chamThuong(e) {
+        const c = this._cham; this._cham = null;
+        if (!c || e.type !== 'pointerup' || !this.chonText) return;
+        if (Math.abs(e.clientX - c.x) > 6 || Math.abs(e.clientY - c.y) > 6) return;
+        if (e.target.closest && e.target.closest('a, button, .lk, .yt')) return;
+        setTimeout(() => {
+          const s = getSelection();
+          if (!this.tra.show && (!s || s.isCollapsed)) this.chonXoa();
+        }, 350);
       },
       traGanVung() {
+        // ⚠ ẨN dải đáy trong lúc đang NHẤN trên trang. Dải hiện lên GIỮA cú
+        // kéo bôi đen (vùng chọn đổi → `chonDoi` sau 120ms) nằm ngay dưới con
+        // trỏ ở mép màn hình, và vùng chọn nhảy vào nó: đo được focus rơi vào
+        // BUTTON, vùng chọn phình ra 143.773 ký tự (cả quyển sách). Chỉ tính cú
+        // nhấn TRONG nội dung — nhấn lên chính dải (nút 🔎) mà ẩn nó là mất cú bấm.
+        addEventListener('pointerdown', (e) => {
+          if (e.target.closest && e.target.closest('main[data-tra]')) this.dangBam = true;
+        }, true);
+        for (const ev of ['pointerup', 'pointercancel'])
+          addEventListener(ev, () => { this.dangBam = false; }, true);
         addEventListener('keydown', (e) => {
-          if (e.key === 'Escape' && this.chonHoat) { this.chonTat(); this.chonXoa(); }
+          if (e.key === 'Escape' && (this.chonHoat || this.chonText) && !this.tra.show) this.chonTat();
         });
       },
 
@@ -9797,8 +9935,16 @@
           if (!this.traKhoa() && !this._traOffline()) return 'khong-tra';
           this._traRg = rg;
           this._traVung = vung;
-          this.tra.btn = { x: Math.min(Math.max(box.left + box.width / 2, 60), innerWidth - 60),
-                           y: Math.min(box.bottom + 8, innerHeight - 44) };
+          // `box: null` = đường gọi tự lo chỗ đặt nút (chọn vùng: nút nằm ở
+          // dải dưới đáy). ⚠ `bottom` có thể THIẾU nếu ai đó truyền một ô tự
+          // dựng `{left, top, width, height}`: `undefined + 8` ra NaN, trình
+          // duyệt bỏ `top:NaNpx` và nút rơi xuống CUỐI TÀI LIỆU (đo được:
+          // top = 208.674px) — có trong DOM mà không ai nhìn thấy.
+          const day = box ? (box.bottom ?? box.top + box.height) : NaN;
+          this.tra.btn = Number.isFinite(day)
+            ? { x: Math.min(Math.max(box.left + box.width / 2, 60), innerWidth - 60),
+                y: Math.min(day + 8, innerHeight - 44) }
+            : null;
           return 'ok';
         },
 
@@ -9811,6 +9957,23 @@
           if (this.chonHoat) return;
           const sel = window.getSelection();
           this.tra.btn = null;
+          // Trang nhúng có móc `traNhanChon` thì TỰ GOM vùng bôi đen (trang đọc:
+          // bôi đen và kéo vùng đổ về MỘT tập ký tự, một nút 🔎 ở dải đáy — xem
+          // `traNhanChon()` trong `docview.html`). Ở đây chỉ còn việc lọc vùng
+          // nội dung và nắn biên từ; `r = null` nghĩa là vùng bôi đen vừa mất.
+          if (this.traNhanChon) {
+            if (this.tra.show || !sel) return;
+            let r = null;
+            if (!sel.isCollapsed && sel.rangeCount) {
+              const r0 = sel.getRangeAt(0);
+              const h = r0.commonAncestorContainer;
+              const el = h.nodeType === 3 ? h.parentElement : h;
+              // ⚠ cloneRange — cùng lý do như nhánh dưới (Range SỐNG).
+              if (el && el.closest && el.closest('[data-tra]')) r = this._noRong(r0.cloneRange());
+            }
+            this.traNhanChon(r);
+            return;
+          }
           if (this.tra.show || !sel || sel.isCollapsed || !sel.rangeCount) return;
           const r0 = sel.getRangeAt(0);
           const h = r0.commonAncestorContainer;
@@ -10107,11 +10270,11 @@
                 s.removeAllRanges(); s.addRange(rg);
               } catch (e) { return; }
               this.chonDoi();
-            } else if (vung && this.traVungLai) {
+            } else if (vung && this.traVungDong) {
               // Vùng KÉO không có Range nào để đặt lại (các ký tự được chọn
-              // không liền mạch trong DOM), nên đường này do trang nhúng tự vẽ
-              // lại. Xem `traVungLai()` trong `docview.html`.
-              this.traVungLai();
+              // không liền mạch trong DOM), nên trang nhúng tự quyết đóng xong
+              // làm gì. Xem `traVungDong()` trong `docview.html`.
+              this.traVungDong();
             }
           }, 0);
         },
@@ -10124,17 +10287,23 @@
   });
 </script>
 
-<div x-show="chonHoat" x-cloak data-chon-thanh
-     class="chon-thanh no-print fixed bottom-0 inset-x-0 z-30 flex items-center gap-3
+<div x-show="(chonHoat || chonText) && !dangBam" x-cloak data-chon-thanh
+     class="chon-thanh no-print select-none fixed bottom-0 inset-x-0 z-30 flex items-center gap-3
             px-4 py-2 bg-slate-900/90 text-white text-xs">
-  <span x-show="!chonBao">Kéo trên trang để chọn · cuộn bằng hai ngón</span>
+  <span x-show="chonHoat && !chonBao && !chonText">Kéo trên trang để chọn · cuộn bằng hai ngón</span>
   <span x-show="chonBao" x-text="chonBao" class="text-amber-300"></span>
-  <span x-show="chonText" x-cloak class="ml-auto tabular-nums text-slate-300"
-        x-text="chonText.length + ' ký tự'"></span>
+  <span x-show="chonText && !chonBao" x-cloak class="tabular-nums text-slate-300 whitespace-nowrap"
+        ><span x-text="chonText.length + ' ký tự'"></span><span class="hidden sm:inline"> · chạm lên trang để bỏ chọn</span></span>
+  <span class="ml-auto"></span>
+  
+  <button x-show="chonText" x-cloak @mousedown.prevent @click="chonGiai()" type="button"
+          data-chon-giai
+          :class="chonKq === 'ok' ? 'bg-indigo-500 hover:bg-indigo-400' : 'bg-slate-600'"
+          class="px-3 py-2 rounded-full font-medium whitespace-nowrap">🔎 Giải thích</button>
   <button x-show="chonText" x-cloak @click="chonXoa()" type="button"
-          class="px-2 py-1.5 rounded border border-slate-500">Xoá nét</button>
-  <button @click="chonTat()" type="button" data-chon-xong aria-label="Thoát chọn vùng"
-          class="w-8 h-8 rounded border border-slate-500">✕</button>
+          class="px-2 py-2 rounded border border-slate-500 whitespace-nowrap">Xoá</button>
+  <button @click="chonTat()" type="button" data-chon-xong aria-label="Bỏ chọn và thoát"
+          class="w-8 h-8 shrink-0 rounded border border-slate-500">✕</button>
 </div>
 </body>
 </html>

@@ -9,7 +9,7 @@
   <title>Ôn tập · CIE Science 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.28ff1e65.css">
+  <link rel="stylesheet" href="../assets/tw.f2ba323b.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -993,8 +993,16 @@
           if (!this.traKhoa() && !this._traOffline()) return 'khong-tra';
           this._traRg = rg;
           this._traVung = vung;
-          this.tra.btn = { x: Math.min(Math.max(box.left + box.width / 2, 60), innerWidth - 60),
-                           y: Math.min(box.bottom + 8, innerHeight - 44) };
+          // `box: null` = đường gọi tự lo chỗ đặt nút (chọn vùng: nút nằm ở
+          // dải dưới đáy). ⚠ `bottom` có thể THIẾU nếu ai đó truyền một ô tự
+          // dựng `{left, top, width, height}`: `undefined + 8` ra NaN, trình
+          // duyệt bỏ `top:NaNpx` và nút rơi xuống CUỐI TÀI LIỆU (đo được:
+          // top = 208.674px) — có trong DOM mà không ai nhìn thấy.
+          const day = box ? (box.bottom ?? box.top + box.height) : NaN;
+          this.tra.btn = Number.isFinite(day)
+            ? { x: Math.min(Math.max(box.left + box.width / 2, 60), innerWidth - 60),
+                y: Math.min(day + 8, innerHeight - 44) }
+            : null;
           return 'ok';
         },
 
@@ -1007,6 +1015,23 @@
           if (this.chonHoat) return;
           const sel = window.getSelection();
           this.tra.btn = null;
+          // Trang nhúng có móc `traNhanChon` thì TỰ GOM vùng bôi đen (trang đọc:
+          // bôi đen và kéo vùng đổ về MỘT tập ký tự, một nút 🔎 ở dải đáy — xem
+          // `traNhanChon()` trong `docview.html`). Ở đây chỉ còn việc lọc vùng
+          // nội dung và nắn biên từ; `r = null` nghĩa là vùng bôi đen vừa mất.
+          if (this.traNhanChon) {
+            if (this.tra.show || !sel) return;
+            let r = null;
+            if (!sel.isCollapsed && sel.rangeCount) {
+              const r0 = sel.getRangeAt(0);
+              const h = r0.commonAncestorContainer;
+              const el = h.nodeType === 3 ? h.parentElement : h;
+              // ⚠ cloneRange — cùng lý do như nhánh dưới (Range SỐNG).
+              if (el && el.closest && el.closest('[data-tra]')) r = this._noRong(r0.cloneRange());
+            }
+            this.traNhanChon(r);
+            return;
+          }
           if (this.tra.show || !sel || sel.isCollapsed || !sel.rangeCount) return;
           const r0 = sel.getRangeAt(0);
           const h = r0.commonAncestorContainer;
@@ -1303,11 +1328,11 @@
                 s.removeAllRanges(); s.addRange(rg);
               } catch (e) { return; }
               this.chonDoi();
-            } else if (vung && this.traVungLai) {
+            } else if (vung && this.traVungDong) {
               // Vùng KÉO không có Range nào để đặt lại (các ký tự được chọn
-              // không liền mạch trong DOM), nên đường này do trang nhúng tự vẽ
-              // lại. Xem `traVungLai()` trong `docview.html`.
-              this.traVungLai();
+              // không liền mạch trong DOM), nên trang nhúng tự quyết đóng xong
+              // làm gì. Xem `traVungDong()` trong `docview.html`.
+              this.traVungDong();
             }
           }, 0);
         },
