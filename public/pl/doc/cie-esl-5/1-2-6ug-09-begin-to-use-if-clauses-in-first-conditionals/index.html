@@ -1,0 +1,1934 @@
+
+
+
+
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>1-2. 6Ug.09 Begin to use if clauses in first conditionals..pptx · CIE ESL 5</title>
+<link rel="stylesheet" href="../../../../assets/tw.28ff1e65.css">
+<style>
+  [x-cloak] { display: none !important; }
+  #pdf { width:100%; height:calc(100vh - 8.5rem); border:0; }
+  .an { display:none !important; }
+  /* ── ảnh trang + lớp chữ trong suốt ─────────────────────────────────────
+     Toạ độ theo % và cỡ chữ theo `cqw` nên co giãn thuần CSS. KHÔNG nhân tỉ lệ
+     bằng JS trên cả khối rồi lại scaleX từng đoạn: hai tầng transform lồng nhau
+     đo bằng getBoundingClientRect (đã gồm transform cha) cho ra 2% số từ đúng chỗ. */
+  /* Nhãn "Trang 17/161" là của MÌNH, không phải nội dung sách. Để chọn được
+     thì kéo chuột qua hai trang liền nhau lại lôi luôn nó vào giữa đoạn chép
+     ra — người dùng báo đúng chuyện này. */
+  .stt { user-select:none; -webkit-user-select:none; }
+  .khung { position:relative; container-type:inline-size; overflow:hidden; }
+  /* ⚠ Ảnh trang phải TRONG SUỐT với chuột và ngón tay. Nó nằm dưới lớp chữ,
+     nhưng giữ để bôi đen thì trình duyệt vẫn bắt được nó và bung menu ảnh
+     ("Lưu ảnh", "Sao chép ảnh") — cú bôi đen đang dở bị huỷ, và người dùng
+     tưởng trang không cho chọn chữ. Bốn thuộc tính, mỗi cái chặn một đường:
+     `pointer-events` (chuột), `user-select` (kéo chọn), `-webkit-user-drag`
+     (kéo thả ảnh đi), `-webkit-touch-callout` (giữ lâu trên iOS).
+     Áp cho CẢ `img.dong` (GIF động): chúng cũng nằm dưới lớp chữ. */
+  .khung > img { display:block; width:100%; height:auto;
+                 pointer-events:none; user-select:none; -webkit-user-select:none;
+                 -webkit-user-drag:none; -webkit-touch-callout:none; }
+  .khung > img.dong { position:absolute; width:auto; height:auto; object-fit:fill; }
+  .chu { position:absolute; inset:0; }
+  /* Dấu mờ ("SAMPLE") và tiêu đề chạy: vẫn ở đó cho lớp chữ trung thực với
+     bản gốc, nhưng KHÔNG chắn tay người đọc. Thiếu dòng này thì kéo chuột qua
+     một câu trong sách lại chọn trúng chữ `SAMPLE` phủ kín trang. */
+  .chu span.mo { pointer-events: none; user-select: none; }
+  /* Dấu xuống dòng CHÉP ĐƯỢC giữa hai dòng chữ. Phải nằm TRONG LUỒNG và
+     chứa ký tự thật; `font-size:0` để nó không chiếm một pixel nào. Xem
+     `doc_view.py` cho ba cách đã thử và trượt. */
+  .chu i.nl { position:absolute; white-space:pre; font-size:0; }
+  .chu span { position:absolute; white-space:pre; color:transparent;
+              line-height:1; transform-origin:0 0; }
+  .chu span::selection { background:#6366f180; color:transparent; }
+  /* Kết quả tìm: chữ vốn trong suốt nên chỉ cần tô NỀN là thành vệt đánh dấu
+     nằm đúng trên chữ của ảnh trang. Không phải chèn thẻ, không phải đổi DOM —
+     một quyển sách có 13.000 span, đụng vào DOM là dựng hình lại cả trang. */
+  .chu span.tim     { background:#fde04780; }
+  .chu span.tim-nay { background:#fb923cc0; }
+  /* ── Chọn vùng ─────────────────────────────────────────────────────────
+     Ô màu của vùng đã chọn. Toạ độ theo PHẦN TRĂM khổ trang (cùng đơn vị với
+     lớp chữ) nên phóng to, thu nhỏ, xoay màn hình vẫn đúng chỗ mà không phải
+     tính lại. Nằm trên ảnh trang nhưng dưới `.lk` (nút liên kết). */
+  .chon-o { position:absolute; background:#6366f166; border-radius:2px;
+            pointer-events:none; z-index:2; }
+  /* Khung xem trước lúc đang kéo: nét đứt để phân biệt với vùng đã chốt. */
+  .chon-dang { position:fixed; border:1.5px dashed #4f46e5;
+               background:#6366f126; pointer-events:none; z-index:35; }
+  /* ⚠ Đang bật chế độ chọn vùng thì TẮT chọn chữ của trình duyệt, và chặn luôn
+     việc cuộn theo ngón. Kéo ngang qua một dòng chữ mà còn `user-select` thì
+     trình duyệt hiểu là kéo CHỌN VĂN BẢN và bắn `pointercancel` giữa chừng —
+     cú kéo của ta đứt làm đôi. Đo được: hộp chỉ còn 64×4px và 2 điểm lấy mẫu
+     thay vì cả dòng. */
+  .chon-bat, .chon-bat * { user-select:none; -webkit-user-select:none; }
+  .chon-bat .khung { touch-action:none; }
+  @media print { .chon-o, .chon-dang, .chon-thanh { display:none !important; } }
+  .lk { position:absolute; z-index:3; display:grid; place-items:center; border:0;
+        cursor:pointer; text-decoration:none; color:#fff; background:#ef4444;
+        box-shadow:0 2px 8px #0006; }
+  .lk.to  { width:14%; aspect-ratio:1.6; max-width:76px; border-radius:12px; font-size:1.6em; }
+  .lk.nho { width:32px; height:32px; border-radius:50%; font-size:.72em; margin-left:4px; }
+  .lk:hover { background:#dc2626; }
+  .khung .yt { position:absolute; z-index:4; border:0; border-radius:6px; }
+  /* ── In từ chế độ 📖 ──────────────────────────────────────────────────────
+     Để chế độ đọc TỰ IN ĐƯỢC, không phải nhờ trình xem PDF. Cần vậy vì Chrome
+     trên Windows có tuỳ chọn "Download PDFs instead of automatically opening
+     them"; bật lên thì khung PDF nhúng chỉ tải file về, và nút In của chế độ 📄
+     thành ngõ cụt đúng lúc cần nhất.
+     `size` phải khớp hướng giấy THẬT của tài liệu — CSS không trộn hướng giấy
+     giữa chừng được, nhưng mỗi trang đọc chỉ có một tài liệu nên một giá trị đủ.
+     Đo được khi chưa có phần này: PPTX 28 slide in ra 14 tờ vì slide ngang lọt
+     hai cái một tờ A4 dọc. */
+  
+  @page { size: 960pt 540pt; margin: 0; }
+
+  /* Thanh nav dính cao ~3rem; không chừa thì mục lục nhảy tới trang nào là
+     đầu trang đó chui xuống dưới nav. */
+  /* `--dau` = chiều cao THẬT của khối dính (breadcrumb + thanh nút), đo bằng
+     ResizeObserver trong `init()`. Không dùng một số rem cố định: breadcrumb
+     xuống dòng trên điện thoại, tên tài liệu dài thì xuống hai ba dòng. */
+  .trang, #pdfjs > [data-trang] { scroll-margin-top: calc(var(--dau, 3.4rem) + .2rem); }
+  .duoi-dau { top: calc(var(--dau, 3.4rem) + .25rem); }
+  @media (min-width: 1024px) {
+    aside.ml { top: calc(var(--dau, 3.4rem) + .6rem); }
+    aside.ml .ml-khung { max-height: calc(100vh - var(--dau, 3.4rem) - 1.5rem); }
+  }
+  /* Di động: mục lục là ngăn phủ ngay DƯỚI khối dính, cuộn riêng. */
+  @media (max-width: 1023px) {
+    aside.ml .ml-khung.mo { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+      top: var(--dau, 3.4rem); overflow-y: auto; border-radius: 0; }
+  }
+  @media print {
+    header, nav, .no-print { display: none !important; }
+    body { background: #fff; }
+    main { max-width: none !important; padding: 0 !important; }
+    .stt { display: none; }
+    /* Ép ảnh vừa ĐÚNG chiều cao tờ giấy. Để `width:100%` thôi thì tỉ lệ
+       khớp về lý thuyết nhưng làm tròn dưới một pixel vẫn đẩy sang tờ thứ hai —
+       đo được: 8 trang in ra 16 tờ, 18 trang ra 36, tức MỖI trang thừa một tờ
+       trắng. `height:100vh` + `overflow:hidden` cắt đúng chỗ đó. */
+    .trang { margin: 0; height: 100vh; overflow: hidden;
+             break-after: page; break-inside: avoid; }
+    .trang:last-child { break-after: auto; }
+    .khung { border: 0; border-radius: 0; height: 100vh; }
+    .khung > img { border-radius: 0; height: 100vh; width: auto;
+                   max-width: 100vw; margin: 0 auto; }
+    .lk { display: none !important; }   /* nút ▶ không có nghĩa trên giấy */
+  }
+</style>
+<script defer src="../../../../assets/collapse.d0a27f2d.js"></script>
+<script defer src="../../../../assets/alpine.63d2636a.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800"
+      x-data="docStore()" x-init="traGan(); traGanVung()">
+
+
+<div id="dau" class="no-print sticky top-0 z-20">
+<header class="no-print bg-indigo-600 text-white">
+  <div class="max-w-[76rem] mx-auto px-4 py-2 min-w-0">
+    
+    <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-indigo-200">
+  <a href="../../../../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">🏠 Home</a><span class="shrink-0 text-indigo-300">›</span>
+  <a href="../../../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">PL</a><span class="shrink-0 text-indigo-300">›</span>
+  <a href="../../../cie-esl-5.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">CIE ESL 5</a><span class="shrink-0 text-indigo-300">›</span>
+  <span aria-current="page" class="truncate font-medium text-white">1-2. 6Ug.09 Begin to use if clauses in first conditionals..pptx</span>
+</nav>
+  </div>
+</header>
+
+<nav class="no-print sticky top-0 z-20 bg-white border-b border-slate-200">
+  <div class="max-w-[76rem] mx-auto px-4 py-2 flex items-center gap-2 flex-wrap">
+    
+    <button @click="mlMo = !mlMo" type="button" :aria-expanded="String(mlMo)"
+            :class="mlMo ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700'"
+            class="lg:hidden px-3 py-2 text-xs font-medium rounded-lg border">☰ Mục lục</button>
+    
+    
+    
+    <button @click="doiCheDo('doc', true)" :aria-pressed="String(che === 'doc')"
+            :class="che === 'doc' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700'"
+            class="px-3 py-2 text-xs font-medium rounded-lg border">📖 Đọc &amp; giải thích</button>
+    
+    
+    
+    <button @click="doiCheDo('pdf', true)" :aria-pressed="String(che === 'pdf')"
+            :class="che === 'pdf' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700'"
+            class="px-3 py-2 text-xs font-medium rounded-lg border">📄 Bản PDF</button>
+    <a href="https://minhln2.github.io/lms/pl/materials/cie-esl-5/week-6-2-3-2-4/1-2. 6Ug.09 Begin to use if clauses in first conditionals..pptx" download
+       class="ml-auto px-3 py-2 text-xs font-medium rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">⬇ Tải file gốc</a>
+    
+    
+    
+    <div x-show="che === 'doc'" class="flex items-center gap-1">
+      <input type="search" x-model="tim" @input.debounce.250ms="timKiem()"
+             @keydown.enter.prevent="toiKetQua(1)"
+             @keydown.escape.prevent="tim=''; timKiem()"
+             placeholder="Tìm trong tài liệu…"
+             class="w-40 sm:w-56 px-2 py-2 text-xs rounded-lg border border-slate-300">
+      <span x-show="tim" x-cloak class="text-xs text-slate-500 tabular-nums w-14 text-center"
+            x-text="soKq ? (viTri + 1) + '/' + soKq : 'không có'"></span>
+      <button x-show="soKq" x-cloak @click="toiKetQua(-1)" type="button" title="Kết quả trước"
+              class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700">‹</button>
+      <button x-show="soKq" x-cloak @click="toiKetQua(1)" type="button" title="Kết quả sau"
+              class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700">›</button>
+    </div>
+    
+    <button x-show="che === 'doc'" x-cloak @click="chonHoat ? chonTat() : chonBat()"
+            type="button" data-chon-nut
+            :aria-pressed="String(chonHoat)" aria-label="Chọn vùng để tra cứu"
+            :class="chonHoat ? 'bg-indigo-600 border-indigo-600 text-white'
+                             : 'bg-white border-slate-300 text-slate-700'"
+            class="w-9 h-9 shrink-0 rounded-lg border text-sm">▭</button>
+    
+  </div>
+</nav>
+</div>
+
+<div class="max-w-[76rem] mx-auto lg:flex lg:gap-5 lg:items-start">
+
+
+
+<aside class="ml no-print select-none lg:pt-4 lg:w-60 lg:shrink-0 lg:sticky lg:pl-4 lg:pr-0"
+       @keydown.escape.window="mlMo = false">
+  <div :class="mlMo ? 'mo block' : 'hidden lg:block'"
+       class="ml-khung rounded-lg border border-slate-200 bg-white p-2 lg:overflow-y-auto">
+    <p class="px-2 pb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Mục lục</p>
+    
+    
+    
+    <ol class="space-y-0.5">
+      
+      
+        
+          
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          
+          
+          <span class="w-8 shrink-0" aria-hidden="true"></span>
+          
+          <button type="button" @click="toiTrang(1); moUnit[1] = true"
+                  :class="unitDang === 0 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">1</span>
+            <span class="min-w-0">English</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[1]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          
+          
+          <span class="w-8 shrink-0" aria-hidden="true"></span>
+          
+          <button type="button" @click="toiTrang(3); moUnit[2] = true"
+                  :class="unitDang === 1 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">3</span>
+            <span class="min-w-0">Retrieval Practice</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[2]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          
+          
+          <span class="w-8 shrink-0" aria-hidden="true"></span>
+          
+          <button type="button" @click="toiTrang(4); moUnit[3] = true"
+                  :class="unitDang === 2 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">4</span>
+            <span class="min-w-0">Starter – Correct the mistake in this sentence.</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[3]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          
+          
+          <span class="w-8 shrink-0" aria-hidden="true"></span>
+          
+          <button type="button" @click="toiTrang(5); moUnit[4] = true"
+                  :class="unitDang === 3 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">5</span>
+            <span class="min-w-0">Starter – Correct the mistake in this sentence. (2)</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[4]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          
+          
+          <span class="w-8 shrink-0" aria-hidden="true"></span>
+          
+          <button type="button" @click="toiTrang(6); moUnit[5] = true"
+                  :class="unitDang === 4 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">6</span>
+            <span class="min-w-0">Starter – Correct the mistake in this sentence. (3)</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[5]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          
+          
+          <span class="w-8 shrink-0" aria-hidden="true"></span>
+          
+          <button type="button" @click="toiTrang(7); moUnit[6] = true"
+                  :class="unitDang === 5 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">7</span>
+            <span class="min-w-0">The first conditional</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[6]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          
+          
+          <span class="w-8 shrink-0" aria-hidden="true"></span>
+          
+          <button type="button" @click="toiTrang(10); moUnit[7] = true"
+                  :class="unitDang === 6 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">10</span>
+            <span class="min-w-0">You can also use “unless” instead of “if you don’t”.</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[7]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          
+          
+          <span class="w-8 shrink-0" aria-hidden="true"></span>
+          
+          <button type="button" @click="toiTrang(13); moUnit[8] = true"
+                  :class="unitDang === 7 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">13</span>
+            <span class="min-w-0">Read your partner’s sentences.</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[8]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+      </ol></li>
+    </ol>
+  </div>
+</aside>
+
+<div class="min-w-0 lg:flex-1">
+
+<main data-tra x-show="che === 'doc'"
+      @pointerdown="chonDown($event)" @pointermove="chonMove($event)"
+      @pointerup="chonUp($event)" @pointercancel="chonUp($event)"
+      :class="chonHoat ? 'chon-bat' : ''" class="px-4 py-4">
+
+<section class="trang" id="tr-1" data-tr="1"><div class="khung"><img src="anh/trang-1.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.39223" style="left:28.727%;top:1.859%;font-size:10.001cqw">English </span><i class="nl" style="left:5.096%;top:42.008%">
+</i><span data-w="0.25569" style="left:5.096%;top:42.008%;font-size:4.166cqw">Monday 21</span><span data-w="0.02580" style="left:30.670%;top:42.703%;font-size:2.415cqw">st</span><span data-w="0.40263" style="left:33.257%;top:42.008%;font-size:4.166cqw"> September 2026</span><i class="nl" style="left:5.096%;top:61.710%">
+</i><span data-w="0.13857" style="left:5.096%;top:61.710%;font-size:4.166cqw">WALT:</span><i class="nl" style="left:5.096%;top:71.668%">
+</i><span class="mo" data-w="0.71419" style="left:5.096%;top:71.668%;font-size:3.334cqw">Begin to use if clauses in first conditionals.</span><i class="nl" style="left:75.664%;top:8.949%">
+</i><span data-w="0.14383" style="left:75.664%;top:8.949%;font-size:1.875cqw">Unit 2 – Sport</span></div></div></section>
+<section class="trang" id="tr-2" data-tr="2"><div class="khung"><img src="anh/trang-2.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.10715" style="left:2.427%;top:3.751%;font-size:2.917cqw">WALT: </span><span class="mo" data-w="0.62351" style="left:13.140%;top:3.751%;font-size:2.917cqw">Begin to use if clauses in first conditionals.</span><i class="nl" style="left:72.182%;top:48.865%">
+</i><span data-w="0.24321" style="left:72.182%;top:48.865%;font-size:2.917cqw">I can write my </span><i class="nl" style="left:71.618%;top:55.095%">
+</i><span data-w="0.25444" style="left:71.618%;top:55.095%;font-size:2.917cqw">own sentences </span><i class="nl" style="left:76.588%;top:61.325%">
+</i><span data-w="0.15502" style="left:76.588%;top:61.325%;font-size:2.917cqw">in all the </span><i class="nl" style="left:71.450%;top:67.554%">
+</i><span data-w="0.25783" style="left:71.450%;top:67.554%;font-size:2.917cqw">different forms </span><i class="nl" style="left:75.111%;top:73.784%">
+</i><span data-w="0.18460" style="left:75.111%;top:73.784%;font-size:2.917cqw">of the first </span><i class="nl" style="left:74.131%;top:80.013%">
+</i><span data-w="0.19406" style="left:74.131%;top:80.013%;font-size:2.917cqw">conditional.</span><i class="nl" style="left:12.481%;top:49.817%">
+</i><span data-w="0.10148" style="left:12.481%;top:49.817%;font-size:3.334cqw">I can </span><i class="nl" style="left:8.279%;top:56.934%">
+</i><span data-w="0.18545" style="left:8.279%;top:56.934%;font-size:3.334cqw">complete </span><i class="nl" style="left:5.099%;top:64.051%">
+</i><span data-w="0.24895" style="left:5.099%;top:64.051%;font-size:3.334cqw">sentences in </span><i class="nl" style="left:9.437%;top:71.169%">
+</i><span data-w="0.16231" style="left:9.437%;top:71.169%;font-size:3.334cqw">the first </span><i class="nl" style="left:5.855%;top:78.286%">
+</i><span data-w="0.22215" style="left:5.855%;top:78.286%;font-size:3.334cqw">conditional.</span><i class="nl" style="left:39.017%;top:55.095%">
+</i><span data-w="0.24321" style="left:39.017%;top:55.095%;font-size:2.917cqw">I can write my </span><i class="nl" style="left:38.453%;top:61.325%">
+</i><span data-w="0.25444" style="left:38.453%;top:61.325%;font-size:2.917cqw">own sentences </span><i class="nl" style="left:42.047%;top:67.554%">
+</i><span data-w="0.18259" style="left:42.047%;top:67.554%;font-size:2.917cqw">in the first </span><i class="nl" style="left:40.966%;top:73.784%">
+</i><span data-w="0.19406" style="left:40.966%;top:73.784%;font-size:2.917cqw">conditional.</span></div></div></section>
+<section class="trang" id="tr-3" data-tr="3"><div class="khung"><img src="anh/trang-3.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.10715" style="left:2.427%;top:3.751%;font-size:2.917cqw">WALT: </span><span class="mo" data-w="0.62351" style="left:13.140%;top:3.751%;font-size:2.917cqw">Begin to use if clauses in first conditionals.</span><i class="nl" style="left:2.714%;top:14.027%">
+</i><span data-w="0.37612" style="left:2.714%;top:14.027%;font-size:3.750cqw">Retrieval Practice</span></div></div></section>
+<section class="trang" id="tr-4" data-tr="4"><div class="khung"><img src="anh/trang-4.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.10715" style="left:2.427%;top:3.751%;font-size:2.917cqw">WALT: </span><span class="mo" data-w="0.62351" style="left:13.140%;top:3.751%;font-size:2.917cqw">Begin to use if clauses in first conditionals.</span><i class="nl" style="left:3.726%;top:17.873%">
+</i><span data-w="0.18390" style="left:3.726%;top:17.873%;font-size:4.583cqw">Starter</span><span data-w="0.67287" style="left:22.140%;top:17.873%;font-size:4.583cqw"> – Correct the mistake in this </span><i class="nl" style="left:3.726%;top:26.677%">
+</i><span data-w="0.22414" style="left:3.726%;top:26.677%;font-size:4.583cqw">sentence.</span><i class="nl" style="left:7.624%;top:42.087%">
+</i><span data-w="0.85810" style="left:7.624%;top:42.087%;font-size:4.583cqw">I think if you will join the sports club, </span><i class="nl" style="left:7.624%;top:50.907%">
+</i><span data-w="0.65734" style="left:7.624%;top:50.907%;font-size:4.583cqw">you will make lots of friends.</span></div></div></section>
+<section class="trang" id="tr-5" data-tr="5"><div class="khung"><img src="anh/trang-5.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.10715" style="left:2.427%;top:3.751%;font-size:2.917cqw">WALT: </span><span class="mo" data-w="0.62351" style="left:13.140%;top:3.751%;font-size:2.917cqw">Begin to use if clauses in first conditionals.</span><i class="nl" style="left:3.726%;top:17.873%">
+</i><span data-w="0.18390" style="left:3.726%;top:17.873%;font-size:4.583cqw">Starter</span><span data-w="0.67287" style="left:22.140%;top:17.873%;font-size:4.583cqw"> – Correct the mistake in this </span><i class="nl" style="left:3.726%;top:26.677%">
+</i><span data-w="0.22414" style="left:3.726%;top:26.677%;font-size:4.583cqw">sentence.</span><i class="nl" style="left:7.624%;top:42.087%">
+</i><span data-w="0.29998" style="left:7.624%;top:42.087%;font-size:4.583cqw">I think if you </span><span data-w="0.08932" style="left:37.662%;top:42.087%;font-size:4.583cqw">will</span><span data-w="0.35749" style="left:46.612%;top:42.087%;font-size:4.583cqw"> join the sports </span><i class="nl" style="left:7.624%;top:50.907%">
+</i><span data-w="0.78240" style="left:7.624%;top:50.907%;font-size:4.583cqw">club, you will make lots of friends.</span></div></div></section>
+<section class="trang" id="tr-6" data-tr="6"><div class="khung"><img src="anh/trang-6.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.10715" style="left:2.427%;top:3.751%;font-size:2.917cqw">WALT: </span><span class="mo" data-w="0.62351" style="left:13.140%;top:3.751%;font-size:2.917cqw">Begin to use if clauses in first conditionals.</span><i class="nl" style="left:3.726%;top:17.873%">
+</i><span data-w="0.18390" style="left:3.726%;top:17.873%;font-size:4.583cqw">Starter</span><span data-w="0.67287" style="left:22.140%;top:17.873%;font-size:4.583cqw"> – Correct the mistake in this </span><i class="nl" style="left:3.726%;top:26.677%">
+</i><span data-w="0.22414" style="left:3.726%;top:26.677%;font-size:4.583cqw">sentence.</span><i class="nl" style="left:7.624%;top:42.087%">
+</i><span data-w="0.76773" style="left:7.624%;top:42.087%;font-size:4.583cqw">I think if you join the sports club, </span><i class="nl" style="left:7.624%;top:50.907%">
+</i><span data-w="0.65734" style="left:7.624%;top:50.907%;font-size:4.583cqw">you will make lots of friends.</span></div></div></section>
+<section class="trang" id="tr-7" data-tr="7"><div class="khung"><img src="anh/trang-7.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.10715" style="left:2.427%;top:3.751%;font-size:2.917cqw">WALT: </span><span class="mo" data-w="0.62351" style="left:13.140%;top:3.751%;font-size:2.917cqw">Begin to use if clauses in first conditionals.</span><i class="nl" style="left:2.976%;top:15.179%">
+</i><span data-w="0.52054" style="left:2.976%;top:15.179%;font-size:4.583cqw">The first conditional</span><i class="nl" style="left:2.430%;top:30.274%">
+</i><span data-w="0.80728" style="left:2.430%;top:30.274%;font-size:4.583cqw">The sentence from the starter was </span><i class="nl" style="left:2.430%;top:39.094%">
+</i><span data-w="0.70820" style="left:2.430%;top:39.094%;font-size:4.583cqw">written in the first conditional. </span><i class="nl" style="left:9.210%;top:52.348%">
+</i><span data-w="0.71844" style="left:9.210%;top:52.348%;font-size:4.479cqw">I think if you join the sports </span><i class="nl" style="left:9.210%;top:59.229%">
+</i><span data-w="0.67481" style="left:9.210%;top:59.229%;font-size:4.479cqw">club, you will make lots of </span><i class="nl" style="left:9.210%;top:66.110%">
+</i><span data-w="0.19458" style="left:9.210%;top:66.110%;font-size:4.479cqw">friends.</span><i class="nl" style="left:3.316%;top:78.661%">
+</i><span data-w="0.71444" style="left:3.316%;top:78.661%;font-size:4.583cqw">What do you think the first </span><i class="nl" style="left:3.316%;top:87.480%">
+</i><span data-w="0.60312" style="left:3.316%;top:87.480%;font-size:4.583cqw">conditional is used for?</span></div></div></section>
+<section class="trang" id="tr-8" data-tr="8"><div class="khung"><img src="anh/trang-8.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.10715" style="left:2.427%;top:3.751%;font-size:2.917cqw">WALT: </span><span class="mo" data-w="0.62351" style="left:13.140%;top:3.751%;font-size:2.917cqw">Begin to use if clauses in first conditionals.</span><i class="nl" style="left:3.638%;top:15.116%">
+</i><span data-w="0.52054" style="left:3.638%;top:15.116%;font-size:4.583cqw">The first conditional</span><i class="nl" style="left:2.430%;top:29.952%">
+</i><span data-w="0.87273" style="left:2.430%;top:29.952%;font-size:3.750cqw">The first conditional is used to refer to a likely </span><i class="nl" style="left:2.430%;top:37.159%">
+</i><span data-w="0.76518" style="left:2.430%;top:37.159%;font-size:3.750cqw">outcome to a present or future situation.</span><i class="nl" style="left:6.759%;top:56.032%">
+</i><span data-w="0.86834" style="left:6.759%;top:56.032%;font-size:4.166cqw">If you study hard, you will do well in </span><i class="nl" style="left:6.759%;top:64.925%">
+</i><span data-w="0.20077" style="left:6.759%;top:64.925%;font-size:4.166cqw">the test.</span><i class="nl" style="left:8.651%;top:81.500%">
+</i><span data-w="0.29409" style="left:8.651%;top:81.500%;font-size:2.917cqw">Present or future </span><i class="nl" style="left:8.651%;top:87.729%">
+</i><span data-w="0.15718" style="left:8.651%;top:87.729%;font-size:2.917cqw">situation.</span><i class="nl" style="left:52.151%;top:81.500%">
+</i><span data-w="0.25897" style="left:52.151%;top:81.500%;font-size:2.917cqw">Likely outcome.</span></div></div></section>
+<section class="trang" id="tr-9" data-tr="9"><div class="khung"><img src="anh/trang-9.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.10715" style="left:2.427%;top:3.751%;font-size:2.917cqw">WALT: </span><span class="mo" data-w="0.62351" style="left:13.140%;top:3.751%;font-size:2.917cqw">Begin to use if clauses in first conditionals.</span><i class="nl" style="left:3.337%;top:15.383%">
+</i><span data-w="0.52054" style="left:3.337%;top:15.383%;font-size:4.583cqw">The first conditional</span><i class="nl" style="left:3.340%;top:28.193%">
+</i><span data-w="0.89178" style="left:3.340%;top:28.193%;font-size:3.750cqw">Use this sentence structure to share some first </span><i class="nl" style="left:3.340%;top:35.399%">
+</i><span data-w="0.75618" style="left:3.340%;top:35.399%;font-size:3.750cqw">conditional sentences with your partner.</span><i class="nl" style="left:14.347%;top:51.593%">
+</i><span data-w="0.85979" style="left:14.347%;top:51.593%;font-size:3.750cqw">If + present simple + then + future simp</span><i class="nl" style="left:3.328%;top:67.144%">
+</i><span data-w="0.16809" style="left:3.328%;top:67.144%;font-size:2.917cqw">Examples:</span><i class="nl" style="left:3.328%;top:73.374%">
+</i><span data-w="0.90036" style="left:3.328%;top:73.374%;font-size:2.917cqw">If you eat too many sweets, you won’t eat your dinner.</span><i class="nl" style="left:3.328%;top:85.833%">
+</i><span data-w="0.86474" style="left:3.328%;top:85.833%;font-size:2.917cqw">If you don’t brush your teeth, you will need to go to </span><i class="nl" style="left:3.328%;top:92.063%">
+</i><span data-w="0.19199" style="left:3.328%;top:92.063%;font-size:2.917cqw">the dentist.</span></div></div></section>
+<section class="trang" id="tr-10" data-tr="10"><div class="khung"><img src="anh/trang-10.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.07678" style="left:2.427%;top:3.860%;font-size:2.085cqw">WALT: </span><span class="mo" data-w="0.44683" style="left:10.101%;top:3.860%;font-size:2.085cqw">Begin to use if clauses in first conditionals.</span><i class="nl" style="left:2.427%;top:11.039%">
+</i><span data-w="0.52054" style="left:2.427%;top:11.039%;font-size:4.583cqw">The first conditional</span><i class="nl" style="left:2.430%;top:23.570%">
+</i><span data-w="0.30349" style="left:2.430%;top:23.570%;font-size:3.334cqw">You can also use “</span><span data-w="0.14298" style="left:32.805%;top:23.570%;font-size:3.334cqw">unless”</span><span data-w="0.20398" style="left:47.128%;top:23.570%;font-size:3.334cqw"> instead of “</span><span data-w="0.21658" style="left:67.552%;top:23.570%;font-size:3.334cqw">if you don’t</span><span data-w="0.02780" style="left:89.228%;top:23.570%;font-size:3.334cqw">”.</span><i class="nl" style="left:3.440%;top:37.857%">
+</i><span data-w="0.80420" style="left:3.440%;top:37.857%;font-size:3.334cqw">If the basketball team don’t improve their </span><i class="nl" style="left:3.440%;top:44.265%">
+</i><span data-w="0.79117" style="left:3.440%;top:44.265%;font-size:3.334cqw">defense, the won’t win the championship.</span><i class="nl" style="left:3.440%;top:60.784%">
+</i><span data-w="0.79133" style="left:3.440%;top:60.784%;font-size:3.334cqw">Unless the basketball team improve their </span><i class="nl" style="left:3.440%;top:67.192%">
+</i><span data-w="0.79117" style="left:3.440%;top:67.192%;font-size:3.334cqw">defense, the won’t win the championship.</span><i class="nl" style="left:3.440%;top:83.712%">
+</i><span data-w="0.66396" style="left:3.440%;top:83.712%;font-size:3.334cqw">The basketball team won’t win the </span><i class="nl" style="left:3.440%;top:90.120%">
+</i><span data-w="0.76840" style="left:3.440%;top:90.120%;font-size:3.334cqw">championship unless they improve their </span><i class="nl" style="left:3.440%;top:96.528%">
+</i><span data-w="0.14975" style="left:3.440%;top:96.528%;font-size:3.334cqw">defense</span></div></div></section>
+<section class="trang" id="tr-11" data-tr="11"><div class="khung"><img src="anh/trang-11.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.10715" style="left:2.427%;top:3.751%;font-size:2.917cqw">WALT: </span><span class="mo" data-w="0.62351" style="left:13.140%;top:3.751%;font-size:2.917cqw">Begin to use if clauses in first conditionals.</span></div></div></section>
+<section class="trang" id="tr-12" data-tr="12"><div class="khung"><img src="anh/trang-12.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.10715" style="left:2.427%;top:3.751%;font-size:2.917cqw">WALT: </span><span class="mo" data-w="0.62351" style="left:13.140%;top:3.751%;font-size:2.917cqw">Begin to use if clauses in first conditionals.</span></div></div></section>
+<section class="trang" id="tr-13" data-tr="13"><div class="khung"><img src="anh/trang-13.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.10715" style="left:2.427%;top:3.751%;font-size:2.917cqw">WALT: </span><span class="mo" data-w="0.62351" style="left:13.140%;top:3.751%;font-size:2.917cqw">Begin to use if clauses in first conditionals.</span><i class="nl" style="left:7.624%;top:18.966%">
+</i><span data-w="0.71815" style="left:7.624%;top:18.966%;font-size:4.583cqw">Read your partner’s sentences.</span><i class="nl" style="left:7.624%;top:37.721%">
+</i><span data-w="0.78742" style="left:7.624%;top:37.721%;font-size:3.750cqw">Be prepared to read your favourite to the </span><i class="nl" style="left:7.624%;top:44.928%">
+</i><span data-w="0.74609" style="left:7.624%;top:44.928%;font-size:3.750cqw">class and justify why it’s your favourite.</span><i class="nl" style="left:7.624%;top:63.044%">
+</i><span data-w="0.84385" style="left:7.624%;top:63.044%;font-size:3.750cqw">If you work hard, we will have time to play a </span><i class="nl" style="left:7.624%;top:70.250%">
+</i><span data-w="0.11816" style="left:7.624%;top:70.250%;font-size:3.750cqw">game.</span></div></div></section>
+
+<template x-if="chonDang">
+  <div class="chon-dang" :style="(() => {
+    // ⚠ HAI điều kiện, thiếu cái nào cũng hỏng theo cách khác nhau — đã trả giá
+    // bằng gần chục lượt dò:
+    //  · NULL-SAFE: Alpine đánh giá biểu thức này ngay lúc khởi tạo, khi
+    //    `chonDang` còn null. Thiếu dòng dưới thì nó NÉM lỗi, hàng đợi khởi tạo
+    //    của Alpine đứt giữa chừng, và hậu quả rơi vào chỗ KHÔNG LIÊN QUAN:
+    //    bài `test_docview` đỏ ở phần IN ẤN (88 trang in ra 44 tờ).
+    //  · KHÔNG quy về gốc `.khung`: khối này nằm ngay sau thân tài liệu (`doc.than`),
+    //    tức là ANH EM của các `section.trang`, nên `closest('.khung')` luôn trả
+    //    null và khung nét đứt không bao giờ hiện. `chonDang` vốn đã là toạ độ
+    //    viewport, và khối này là `position:fixed`, nên dùng thẳng.
+    if (!chonDang) return '';
+    const x0 = Math.min(chonDang.x0, chonDang.x1), x1 = Math.max(chonDang.x0, chonDang.x1);
+    const y0 = Math.min(chonDang.y0, chonDang.y1), y1 = Math.max(chonDang.y0, chonDang.y1);
+    return 'left:' + x0 + 'px;top:' + y0 + 'px;width:' + (x1 - x0) + 'px;height:' + (y1 - y0) + 'px';
+  })()"></div>
+</template>
+</main>
+
+
+<!-- ── Chế độ 📄: TỰ VẼ bằng PDF.js ────────────────────────────────────────
+     KHÔNG dùng <iframe src="*.pdf">: Chrome có tuỳ chọn "Download PDFs instead
+     of automatically opening them", bật lên thì khung nhúng chỉ hiện một ô đen
+     kèm nút Open — và KHÔNG header nào đè được lựa chọn đó. Tự vẽ ra canvas thì
+     trình xem PDF của trình duyệt không tham gia, nên thiết lập kia vô hiệu.
+     Đây cũng là cách Canvas/Canvadocs làm.
+
+     PDF.js (0,51 MB sau gzip) chỉ tải khi bấm 📄. -->
+<main x-show="che === 'pdf'" x-cloak class="px-4 py-4">
+
+  <div class="no-print sticky duoi-dau z-10 mb-3 flex items-center gap-2 flex-wrap
+              bg-white/95 backdrop-blur border border-slate-200 rounded-lg px-2 py-1.5">
+    <button @click="thuNho()" :disabled="tiLe <= 0.5" type="button" title="Thu nhỏ"
+            class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700 disabled:opacity-40">−</button>
+    <span class="text-xs text-slate-600 tabular-nums w-14 text-center"
+          x-text="Math.round(tiLe * 100) + '%'"></span>
+    <button @click="phongTo()" :disabled="tiLe >= 4" type="button" title="Phóng to"
+            class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700 disabled:opacity-40">+</button>
+    <button @click="vuaBeRong()" type="button"
+            class="px-3 py-2 text-xs font-medium rounded-lg border border-slate-300 text-slate-700">Vừa bề rộng</button>
+    <span x-show="soTrang" x-cloak class="ml-auto text-xs text-slate-500 tabular-nums"
+          x-text="soTrang + ' trang'"></span>
+    <a :href="pdfGoc" target="_blank" rel="noopener"
+       class="px-3 py-2 text-xs font-medium rounded-lg border border-slate-300 text-slate-700">Mở ở tab mới ↗</a>
+  </div>
+
+  <p x-show="pdfLoi" x-cloak
+     class="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-900">
+    <span x-text="pdfLoi"></span>
+    — <a :href="pdfGoc" target="_blank" rel="noopener" class="underline font-medium">mở bản PDF ở tab mới</a>.
+  </p>
+  <p x-show="!pdfLoi && !soTrang" x-cloak class="text-sm text-slate-500">Đang mở bản PDF…</p>
+
+  <div id="pdfjs" class="space-y-3"></div>
+
+</main>
+</div>
+</div>
+
+
+  <!-- ── Tra cứu: nút nổi + popup ──────────────────────────────────────────
+       Nút nổi chứ không tự bung popup: iOS dựng thanh Copy/Look Up của riêng nó
+       ngay dưới vùng chọn, hai thứ đè lên nhau và trẻ bấm nhầm liên tục.
+       @mousedown.prevent là BẮT BUỘC — thiếu nó thì cú nhấn vào nút tự xoá vùng
+       chọn trước khi @click chạy, và nút mở ra một popup rỗng. -->
+  <template x-if="tra.btn && !tra.show">
+    <button @mousedown.prevent @click="traMo()" type="button"
+            :style="'left:' + tra.btn.x + 'px; top:' + tra.btn.y + 'px'"
+            class="fixed z-40 -translate-x-1/2 px-3 py-1.5 rounded-full bg-indigo-600 text-white text-xs font-medium shadow-lg hover:bg-indigo-700">
+      🔎 Giải thích
+    </button>
+  </template>
+
+  <!-- Tấm trượt từ dưới lên trên điện thoại, hộp giữa màn hình trên máy tính.
+       Không neo popup vào vùng chọn: chữ nằm sát đáy màn hình thì popup neo theo
+       sẽ tràn ra ngoài, mà đó lại là chỗ trẻ hay bôi đen nhất. -->
+  <template x-if="tra.show">
+    <div @click="traDong()" @keydown.escape.window="traDong()"
+         class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 sm:p-4">
+      <div @click.stop data-tra-popup
+           class="w-full sm:max-w-lg max-h-[82vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl">
+
+        <!-- ⚠ Mở rộng thì BỎ `sticky`. Đoạn gốc nở hết chiều cao mà thanh đầu
+             vẫn dính ở đỉnh thì nó che kín phần giải thích; kẹp lại bằng
+             `max-h-60 overflow-y-auto` thì thành thanh cuộn lồng trong thanh
+             cuộn (người dùng: "trông bị xấu"). Không dính nữa thì cả popup chỉ
+             còn MỘT thanh cuộn, đoạn gốc trôi lên theo khi đọc xuống. -->
+        <div class="top-0 flex items-start gap-2 px-4 py-3 border-b border-slate-100 bg-white"
+             :class="moGoc ? '' : 'sticky'">
+          <div class="flex-1 min-w-0">
+            <!-- Đoạn gốc GẬP LẠI còn 2 dòng. Người ta mở popup để đọc phần
+                 GIẢI THÍCH; chữ gốc thì vừa bôi đen xong nên đã biết rồi. Để nó
+                 nở tự do thì một đoạn 20 dòng đẩy hẳn phần giải thích khỏi màn
+                 hình — đã đo. Ngữ cảnh (câu chứa từ) gập chung luôn cho đỡ rối. -->
+            <p @click="moGoc = !moGoc"
+               class="font-semibold text-slate-900 break-words whitespace-pre-line cursor-pointer"
+               :class="moGoc ? '' : 'line-clamp-2'"
+               x-text="tra.goc || tra.text"></p>
+            <p x-show="moGoc && sentThem" x-cloak
+               class="mt-1 text-xs text-slate-400" x-text="tra.sent"></p>
+
+          </div>
+          <!-- Chọn ngôn ngữ phần giải thích. Mặc định là ngôn ngữ DẠY của môn
+               (`traNgonNgu()`), đổi thì nhớ riêng cho môn đó trong trình duyệt —
+               trẻ học Science bằng tiếng Anh nhưng Lịch sử bằng tiếng Việt.
+               Môn dạy bằng TIẾNG VIỆT thì không hiện: giải thích bài Tiếng Việt
+               hay Lịch sử bằng tiếng Anh không phục vụ việc gì. -->
+          <div x-show="traMonNn() === 'en'" x-cloak
+               class="shrink-0 flex rounded-lg border border-slate-200 overflow-hidden text-[0.7rem]">
+            <button @click="doiNn('vi')" type="button" title="Giải thích bằng tiếng Việt"
+                    class="px-2 py-1.5"
+                    :class="nnHienTai() === 'vi' ? 'bg-indigo-600 text-white'
+                                                 : 'text-slate-500 hover:bg-slate-50'">VI</button>
+            <button @click="doiNn('en')" type="button" title="Explain in English"
+                    class="px-2 py-1.5"
+                    :class="nnHienTai() === 'en' ? 'bg-indigo-600 text-white'
+                                                 : 'text-slate-500 hover:bg-slate-50'">EN</button>
+          </div>
+          <!-- Mở/thu đoạn gốc: KÝ HIỆU thôi, không chữ. Nó đứng cạnh 🔊 và ✕
+               nên hàng nút giữ được một nhịp, và không ăn mất chiều cao của
+               phần giải thích. -->
+          <!-- ⚠ Dùng CHUNG hình mũi tên với nút gập của trang môn
+               (`templates/course.html`): cùng một chevron SVG xoay 180°, không
+               phải ký tự `⌄`/`⌃`. Hai lý do — ký tự đó nằm ở mỗi phông một
+               dáng khác nhau và thường lệch tâm ô (người dùng báo "trông
+               xấu"), còn dùng hai ký hiệu KHÁC nhau cho cùng một thao tác
+               mở/thu thì người đọc phải học hai lần. -->
+          <button x-show="daiGoc" x-cloak @click="moGoc = !moGoc" type="button"
+                  :title="moGoc ? 'Thu gọn đoạn gốc' : 'Xem đầy đủ đoạn gốc'"
+                  class="shrink-0 w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100
+                         flex items-center justify-center">
+            <svg class="w-4 h-4 transition-transform duration-200"
+                 :class="moGoc ? 'rotate-180' : ''"
+                 fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+          <!-- Trần 200 ký tự là của /api/tts. Ẩn nút khi vượt, thay vì để bấm rồi
+               lặng lẽ rơi về giọng hệ điều hành — im lặng kiểu đó nhìn y hệt như
+               đang chạy bình thường, chỉ khác giọng. -->
+          <button x-show="canSpeak && tra.text.length <= 200" x-cloak
+                  @click="speak(tra.text, true)" type="button" title="Đọc to"
+                  class="shrink-0 w-8 h-8 rounded-full text-indigo-500 hover:bg-indigo-50">🔊</button>
+          <button @click="traDong()" type="button" title="Đóng"
+                  class="shrink-0 w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 text-lg leading-none">✕</button>
+        </div>
+
+        <!-- Khung xương chờ ~1,6s. Đo được: p50 1,56s cho từ, 1,85s cho đoạn. -->
+        <div x-show="tra.loading" class="px-4 py-5 space-y-2.5">
+          <div class="h-3 w-1/3 rounded bg-slate-200 animate-pulse"></div>
+          <div class="h-3 w-full rounded bg-slate-100 animate-pulse"></div>
+          <div class="h-3 w-5/6 rounded bg-slate-100 animate-pulse"></div>
+        </div>
+
+        <!-- Đầu mục khác nhau theo chế độ; phần thân (phan[]) DÙNG CHUNG cho cả
+             hai, và dùng chung luôn với nhánh offline. Chép bộ vẽ ra làm hai bản
+             là cách chắc chắn nhất để một bản lặng lẽ tụt lại sau. -->
+        <template x-if="!tra.loading && tra.data && tra.mode === 'word'">
+          <div class="px-4 pt-4 space-y-2">
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <span x-show="tra.data.loai" x-cloak class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600" x-text="tra.data.loai"></span>
+              <span x-show="tra.data.ipa" x-cloak class="font-mono text-slate-400" x-text="tra.data.ipa"></span>
+            </div>
+            <p x-show="tra.data.nghia" x-cloak class="text-lg font-semibold text-cyan-700" x-text="tra.data.nghia"></p>
+          </div>
+        </template>
+
+        <template x-if="!tra.loading && tra.data && tra.mode === 'text' && tra.data.dich">
+          <div class="px-4 pt-4">
+            <p class="text-slate-900 leading-relaxed whitespace-pre-line" x-text="traXuong(tra.data.dich)"></p>
+          </div>
+        </template>
+
+        <template x-if="!tra.loading && tra.data && (tra.data.phan || []).length">
+          <div class="px-4 pt-3 space-y-3">
+            <template x-for="(ph, i) in tra.data.phan" :key="i">
+              <div class="rounded-lg border border-slate-200 overflow-hidden">
+                <p class="px-3 py-1.5 bg-slate-50 text-xs font-medium text-slate-500 uppercase tracking-wide"
+                   x-text="ph.tieu_de"></p>
+                <div class="px-3 py-2 space-y-2">
+                  <p class="text-slate-700 leading-relaxed whitespace-pre-line" x-text="traXuong(ph.noi_dung)"></p>
+                  <template x-for="(v, k) in (ph.vi_du || [])" :key="k">
+                    <div class="border-l-2 border-indigo-200 pl-2.5">
+                      <!-- `en` rỗng ở môn tiếng Việt (xem `mon_nn` trong
+                           worker/lookup.js). Không có `x-show` thì còn lại một
+                           dòng trống, đẩy ví dụ lệch xuống mà không rõ vì sao. -->
+                      <p x-show="v.en" x-cloak class="text-sm text-slate-600 italic" x-text="v.en"></p>
+                      <p x-show="v.vi" x-cloak class="text-sm text-cyan-700" x-text="v.vi"></p>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <!-- ⚠ Còn chặn thêm ở ĐÂY dù prompt đã dặn bỏ: model không phải lúc
+             nào cũng nghe, và một chip `dash · dấu gạch ngang` lọt ra trông y
+             như tính năng chứ không như lỗi. Hàng rào ở prompt để khỏi tốn
+             token, hàng rào ở đây để khỏi lọt. -->
+        <template x-if="!tra.loading && tra.data && traMonNn() === 'en' && (tra.data.tu_kho || []).length">
+          <div class="px-4 pt-3 flex flex-wrap gap-1.5">
+            <template x-for="(w, i) in tra.data.tu_kho" :key="i">
+              <span class="px-2 py-1 rounded-lg bg-slate-100 text-xs">
+                <span class="font-medium text-slate-700" x-text="w.en"></span>
+                <span class="text-cyan-700" x-text="' · ' + w.vi"></span>
+              </span>
+            </template>
+          </div>
+        </template>
+
+        <div x-show="!tra.loading && tra.data && tra.data.luu_y" x-cloak class="px-4 pt-3">
+          <p class="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-900 whitespace-pre-line"
+             x-text="'⚠ ' + traXuong(tra.data ? tra.data.luu_y : '')"></p>
+        </div>
+
+        <div class="pb-1"></div>
+
+        <!-- Chỉ có glossary của bài, không gọi được Gemini. Nói ra, nhưng nói
+             nhẹ: đây là suy giảm mềm, không phải hỏng. -->
+        <p x-show="!tra.loading && tra.data && tra.data._offline" x-cloak
+           class="px-4 pb-3 text-xs text-slate-400"
+           x-text="'Nghĩa lấy từ học liệu của bài' + (tra.ly_do ? ' — ' + tra.ly_do : '.')"></p>
+
+        <p x-show="!tra.loading && traRong()" x-cloak class="px-4 py-5 text-sm text-slate-500"
+           x-text="tra.err || 'Không tìm thấy nghĩa của mục này.'"></p>
+
+        <!-- ── Hỏi tiếp về chính đoạn này ────────────────────────────────
+             Thay cho nút đổi chế độ cũ ("Giải nghĩa như một từ" / "Dịch cả cụm
+             này"): đổi chế độ chỉ là hỏi lại cùng một câu theo kiểu khác, còn
+             hỏi tiếp thì trả lời được thứ mà không schema cố định nào phủ hết.
+             Mỗi lượt hỏi tính vào ĐÚNG trần 300/ngày như một lượt tra. -->
+        <div x-show="!tra.loading && traKhoa()" x-cloak class="px-4 pb-4 pt-1">
+          <template x-for="(m, i) in tra.chat" :key="i">
+            <p class="mb-2 text-sm leading-relaxed"
+               :class="m.ai === 'em' ? 'text-right' : ''">
+              <span class="inline-block px-3 py-2 rounded-2xl max-w-[85%] text-left whitespace-pre-line"
+                    :class="m.ai === 'em' ? 'bg-indigo-50 text-indigo-900'
+                                          : 'bg-slate-100 text-slate-700'"
+                    x-text="traXuong(m.noi)"></span>
+            </p>
+          </template>
+          <p x-show="tra.dangHoi" x-cloak class="mb-2 text-sm text-slate-400">Đang nghĩ…</p>
+          <form @submit.prevent="traHoi()" class="flex gap-2">
+            <input x-model="tra.hoi" type="text" maxlength="300"
+                   placeholder="Hỏi thêm về phần này…"
+                   class="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg border border-slate-300">
+            <button type="submit" :disabled="tra.dangHoi || !tra.hoi.trim()"
+                    class="shrink-0 px-3 py-2 text-sm rounded-lg bg-indigo-600 text-white
+                           disabled:bg-slate-200 disabled:text-slate-400">Hỏi</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </template>
+
+
+<script>
+  function docStore() {
+    // ⚠ Tài liệu PDF.js phải nằm NGOÀI state của Alpine. Alpine 3 bọc mọi thứ
+    // trong `x-data` bằng Proxy phản ứng, còn `PDFDocumentProxy` đọc trường
+    // riêng tư `#…` của chính nó — qua một Proxy thì JS ném
+    // "Cannot read private member #qs from an object whose class did not
+    // declare it" và trang chỉ hiện "Chưa mở được bản PDF". Để trong closure
+    // thì Alpine không với tới. Cùng lý do cho IntersectionObserver.
+    let _pdf = null, _oq = null, _kho = null;
+    let _sp = null, _kq = [];        // danh sách span + kết quả tìm
+    // Trang NEO của phiên tìm hiện tại. Đặt MỘT LẦN lúc bắt đầu gõ và giữ
+    // nguyên tới khi xoá ô tìm.
+    // ⚠ Không đọc `trangDang` ở mỗi lần gõ: mỗi ký tự gõ ra là một lượt tìm,
+    // mà tìm xong thì trang tự CUỘN tới kết quả — nên `trangDang` đã là chỗ
+    // máy đưa tới chứ không còn là chỗ người đang đọc. Lấy nó làm neo thì mỗi
+    // ký tự lại trôi thêm một đoạn, và càng gõ càng lạc khỏi chỗ xuất phát.
+    let _neo = null;
+    // Máy đang TỰ cuộn (bấm mục lục, nhảy tới kết quả tìm). Cuộn mượt từ unit
+    // 1 tới unit 7 là lướt qua mọi trang ở giữa, và quan sát viên sẽ mở bung
+    // từng unit nó đi qua — tới nơi thì cả cây mục lục đã xoè hết. Trong lúc
+    // cờ này bật thì chỉ tô đậm, KHÔNG mở unit; hết cuộn mới mở đúng unit đích.
+    let _nhay = false, _hNhay = null, _lNhay = null;
+    return {
+      
+      che: null,
+      chiDoc: false,
+      // Giá trị đi vào STATE, không nhúng thẳng `|tojson` vào thuộc tính HTML:
+      // `tojson` sinh chuỗi bọc nháy kép, mà thuộc tính cũng đóng bằng nháy kép
+      // → đứt thuộc tính và chết cả Alpine. Đã dính BA lần trong dự án này.
+      pdfGoc: "ban.pdf",
+      pdfJsUrl: "../../../../assets/pdf.e73f3ce5.mjs",
+      pdfWorkerUrl: "../../../../assets/pdf.worker.490b29ce.mjs",
+      tiLe: 1.2, soTrang: 0, pdfLoi: '', srcNang: '',
+      mlMo: false, trangDang: 0, moUnit: {}, mucDang: -1, unitDang: -1,
+      chonHoat: false, chonBao: '', chonO: [], chonText: '', chonGoc: '',
+      chonDang: null,
+      // Trang bắt đầu của từng unit — để tự mở đúng unit đang đọc.
+      unitTr: [1, 3, 4, 5, 6, 7, 10, 13],
+      // Trang mở đầu và CẤP của từng mục, theo đúng thứ tự vẽ ra. Cần cả hai
+      // để biết "đang đọc trang 15" thuộc mục nào: mục đang đọc là mục CUỐI
+      // CÙNG có trang mở đầu ≤ trang hiện tại, chứ không phải mục có trang mở
+      // đầu BẰNG trang hiện tại. Luật cũ (`===`) chỉ sáng đúng một trang duy
+      // nhất của mỗi mục, còn 9/10 thời gian đọc thì mục lục không sáng gì.
+      mlP: [1, 3, 4, 5, 6, 7, 10, 13],
+      // ⚠ `default=1`: mục lục một cấp KHÔNG có trường `c`, và `map` trả về
+      // `Undefined` — `tojson` nổ ngay lúc build, cả trang trắng.
+      mlC: [1, 1, 1, 1, 1, 1, 1, 1],
+      tim: '', soKq: 0, viTri: 0,
+      user: "pl", course: "cie-esl-5",
+      secret: localStorage.getItem('lms_key') || '',
+
+      // Nút loa trong popup tra cứu cần `canSpeak` + `speak`. Thiếu là popup
+      // dựng ra nhưng Alpine ném "canSpeak is not defined" mỗi lần vẽ lại.
+      get canSpeak() { return typeof window !== 'undefined' && ('speechSynthesis' in window || 'Audio' in window); },
+      _player: null, _blobs: {}, _blobKeys: [], _BLOB_MAX: 50,
+      _chamBlob(t) { const i = this._blobKeys.indexOf(t);
+        if (i >= 0) { this._blobKeys.splice(i, 1); this._blobKeys.push(t); } },
+      _nhoBlob(t, s) { this._blobs[t] = s; this._blobKeys.push(t);
+        while (this._blobKeys.length > this._BLOB_MAX) {
+          const cu = this._blobKeys.shift(); URL.revokeObjectURL(this._blobs[cu]); delete this._blobs[cu]; } },
+      async speak(text, tinCay) {
+        text = (text || '').trim(); if (!text) return;
+        if (this._player) { this._player.pause(); this._player = null; }
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        try {
+          let src = this._blobs[text];
+          if (src) { this._chamBlob(text); } else {
+            const h = (tinCay && this.traKhoa()) ? { headers: { 'x-progress-key': this.traKhoa() } } : undefined;
+            const r = await fetch('/api/tts?user=' + this.user + '&course=' + this.course
+                                  + '&text=' + encodeURIComponent(text), h);
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            src = URL.createObjectURL(await r.blob()); this._nhoBlob(text, src);
+          }
+          this._player = new Audio(src); await this._player.play();
+        } catch (e) { this.speakLocal(text); }
+      },
+      speakLocal(text) {
+        if (!('speechSynthesis' in window)) return;
+        const u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.rate = 0.9;
+        const v = window.speechSynthesis.getVoices().find(x => /^en[-_]US/i.test(x.lang));
+        if (v) u.voice = v;
+        window.speechSynthesis.speak(u);
+      },
+      init() {
+        // Nhớ lựa chọn, nhưng CHỈ khi người dùng tự bấm. Bản quét không có chế
+        // độ đọc nên bị ép sang PDF; ghi lựa chọn đó xuống thì một cuốn SGK đầu
+        // độc mọi tài liệu sau — đã đo: 7/9 tài liệu mở nhầm sang PDF.
+        if (this.chiDoc) { this.che = 'doc'; }
+        else if (this.che === null) {
+          let nho = null;
+          try { nho = localStorage.getItem('lms_doc_mode'); } catch (e) {}
+          this.che = nho === 'pdf' ? 'pdf' : 'doc';
+        }
+        if (this.che === 'pdf') this.moPdf();
+        const dau = document.getElementById('dau');
+        if (dau && window.ResizeObserver) {
+          new ResizeObserver(() => document.documentElement.style.setProperty(
+            '--dau', dau.getBoundingClientRect().height + 'px')).observe(dau);
+        }
+        this.$nextTick(() => { this.canhChuLuoi(); this.theoDoiTrang(); });
+        addEventListener('resize', () => { clearTimeout(this._h); this._h = setTimeout(() => this.canhChu(), 150); });
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => this.canhChu());
+      },
+      doiCheDo(c, luu) {
+        this.che = c;
+        if (c === 'pdf') this.moPdf();
+        if (luu) { try { localStorage.setItem('lms_doc_mode', c); } catch (e) {} }
+        if (c === 'doc') this.$nextTick(() => this.canhChuLuoi());
+      },
+
+      /** ── Tìm trong tài liệu ────────────────────────────────────────────
+       *
+       * Tìm THẲNG trên DOM, không dựng index và không tải thêm gì. Lớp chữ vốn
+       * đã nằm đủ trong DOM — đó là điều kiện bắt buộc để `getSelection()` với
+       * tới được — nên dữ liệu để tìm đã có sẵn, miễn phí.
+       *
+       * ⚠ Gom danh sách span MỘT LẦN rồi giữ lại. Một quyển 260 trang có
+       * 12.940 span; đọc `textContent` của từng cái ở mỗi lần gõ phím là bắt
+       * trình duyệt duyệt lại cả cây DOM cho từng ký tự.
+       *
+       * ⚠ Đánh dấu bằng CLASS, không chèn thẻ `<mark>`. Chèn thẻ là sửa DOM ở
+       * hàng trăm chỗ và dựng hình lại cả trang — đúng cái bẫy đã làm `canhChu`
+       * mất 115 giây. Chữ vốn trong suốt nên tô nền là đủ thành vệt đánh dấu.
+       *
+       * ⚠ Có TRẦN kết quả. Gõ một chữ cái trên sách 260 trang là hàng nghìn
+       * kết quả — đánh dấu hết thì vô nghĩa với người đọc mà lại nặng máy.
+       *
+       * Hạn chế đã biết: mỗi span là MỘT DÒNG của bản gốc, nên cụm từ bị ngắt
+       * qua hai dòng sẽ không khớp. Chấp nhận — đổi lại không tốn byte nào.
+       */
+      timKiem() {
+        if (!_sp) {
+          // `:not(.mo)` — bỏ qua số trang, tiêu đề chạy, dấu mờ. Không lọc
+          // thì tìm "Rocks" ra 30 kết quả trùng nhau ở tiêu đề chạy của từng
+          // trang trong unit đó, đẩy kết quả thật xuống dưới.
+          _sp = Array.from(document.querySelectorAll('.chu span:not(.mo)'))
+                     .map((e) => [e, (e.textContent || '').toLowerCase()]);
+        }
+        for (const e of _kq) e.classList.remove('tim', 'tim-nay');
+        _kq = [];
+        const q = (this.tim || '').trim().toLowerCase();
+        this.viTri = 0;
+        if (q.length < 2) { this.soKq = 0; _neo = null; return; }  // 1 ký tự thì vô nghĩa
+        if (_neo === null) _neo = this.trangDang || 1;
+        for (const [e, t] of _sp) {
+          if (t.includes(q)) {
+            _kq.push(e);
+            if (_kq.length >= 300) break;              // trần
+          }
+        }
+        for (const e of _kq) e.classList.add('tim');
+        this.soKq = _kq.length;
+        if (_kq.length) { this.viTri = this.chonKq(); this.toiKetQua(0); }
+      },
+
+      /** Kết quả nào đáng nhảy tới trước, tính từ chỗ người đang đọc.
+
+          Nhảy tới kết quả ĐẦU TIÊN của cả tài liệu là sai với cách người ta
+          thực sự tìm: đang đọc mục 3.2 mà gõ "mean" thì chỗ muốn tới là chỗ
+          gần đây, không phải trang 12. Thứ tự ưu tiên:
+            1. kết quả đầu tiên trong MỤC đang đọc;
+            2. nếu mục đó không có, kết quả đầu tiên trong UNIT đang đọc;
+            3. nếu unit cũng không có, kết quả GẦN trang đang đọc nhất.
+          Kết quả chọn ra có thể là cái thứ 5/8 — đó là ý đồ, và thanh `5/8`
+          trên nav nói rõ điều đó.
+
+          Tài liệu không có mục lục thì cả hai khoảng đều là vô hạn ⇒ rơi về
+          đúng hành vi cũ (kết quả đầu tiên). */
+      /** Trang neo của phiên tìm hiện tại — phơi ra để CHỐT đo được.
+          Không có nó thì bài test phải suy neo từ `trangDang`, mà `trangDang`
+          đã bị chính cú cuộn tới kết quả làm đổi — tức bài test đo một thứ
+          khác với thứ nó tưởng. */
+      neoTim() { return _neo; },
+
+      chonKq() {
+        const neo = _neo || this.trangDang || 1;
+        const tr = (e) => Number(e.closest('section.trang')?.dataset.tr || 0);
+        const P = this.mlP || [], C = this.mlC || [];
+        // Khoảng [đầu, cuối) của mục chứa trang neo. `chiUnit` thì bỏ qua mục
+        // cấp 2, nên ra khoảng của cả UNIT.
+        const khoang = (chiUnit) => {
+          let dau = 0, cuoi = Infinity;
+          for (let i = 0; i < P.length; i++) {
+            if (chiUnit && C[i] === 2) continue;
+            if (P[i] <= neo) dau = P[i];
+            else { cuoi = P[i]; break; }
+          }
+          return [dau, cuoi];
+        };
+        // `_kq` theo thứ tự DOM, mà DOM theo thứ tự trang ⇒ phần tử đầu của
+        // danh sách lọc cũng là kết quả sớm nhất trong khoảng.
+        const trong = ([a, b]) => {
+          for (let i = 0; i < _kq.length; i++) {
+            const p = tr(_kq[i]);
+            if (p >= a && p < b) return i;
+          }
+          return -1;
+        };
+        let k = trong(khoang(false));
+        if (k < 0) k = trong(khoang(true));
+        if (k >= 0) return k;
+        let tot = 0, gan = Infinity;
+        for (let i = 0; i < _kq.length; i++) {
+          const d = Math.abs(tr(_kq[i]) - neo);
+          if (d < gan) { gan = d; tot = i; }
+        }
+        return tot;
+      },
+
+      /** Nhảy tới kết quả kế tiếp (`b`=1), trước đó (-1), hoặc chính nó (0). */
+      toiKetQua(b) {
+        if (!_kq.length) return;
+        _kq[this.viTri]?.classList.remove('tim-nay');
+        this.viTri = (this.viTri + b + _kq.length) % _kq.length;
+        const e = _kq[this.viTri];
+        e.classList.add('tim-nay');
+        // Mở trang chứa nó ra trước đã: ảnh nạp lười nên khung có thể chưa cao
+        // đúng, và lớp chữ của trang đó có thể chưa được nắn.
+        const k = e.closest('.khung');
+        if (k) this.canhChu(k);
+        this._batNhay();
+        const h = document.getElementById('dau');
+        const off = h ? h.getBoundingClientRect().height : 0;
+        const r = e.getBoundingClientRect();
+        window.scrollTo({ top: Math.max(0, r.top + window.scrollY - off - 80),
+                          behavior: this._kieuCuon(r.top) });
+      },
+
+      /** Mục lục → nhảy tới trang N, chạy ở CẢ hai chế độ.
+       *  Ở 📄 phải chờ PDF.js dựng xong khung, không thì chưa có gì để nhảy tới. */
+      async toiTrang(p) {
+        this.mlMo = false;
+        this.trangDang = p;
+        if (this.che === 'pdf') {
+          await this.moPdf();
+          await this.$nextTick();
+        }
+        const el = this.che === 'pdf'
+          ? document.querySelector('#pdfjs [data-trang="' + p + '"]')
+          : document.getElementById('tr-' + p);
+        if (!el) return;
+        this._batNhay();
+        el.scrollIntoView({ behavior: this._kieuCuon(el.getBoundingClientRect().top),
+                            block: 'start' });
+      },
+
+      /** Xa quá 2 màn hình thì nhảy THẲNG, gần thì cuộn mượt.
+       *  Cuộn mượt đi qua trang nào là trang đó lọt vào vùng `loading="lazy"`
+       *  và bị tải ảnh. Đo ở CIE Maths 5 Learner Book, trang 1 → trang 229:
+       *  mượt tải 80 ảnh (~5 MB), nhảy thẳng tải 7. Ở 📄 còn nặng hơn — trang
+       *  đi qua bị vẽ canvas và nắn lớp chữ. Gần thì vẫn mượt để người đọc
+       *  thấy mình vừa đi đâu. */
+      _kieuCuon(dy) {
+        return Math.abs(dy) > 2 * innerHeight ? 'instant' : 'smooth';
+      },
+
+      /** Bật cờ `_nhay`; tắt khi đã ~250ms không có sự kiện cuộn nào.
+       *  Không dùng `scrollend`: Safari cũ không có, và cuộn 0px (đã đứng sẵn
+       *  ở đích) thì nó không bắn — cờ kẹt bật mãi, unit không bao giờ tự mở. */
+      _batNhay() {
+        if (_lNhay) removeEventListener('scroll', _lNhay);
+        _nhay = true;
+        _lNhay = () => {
+          clearTimeout(_hNhay);
+          _hNhay = setTimeout(() => {
+            removeEventListener('scroll', _lNhay);
+            _lNhay = null; _nhay = false;
+            this._moUnitDang();
+          }, 250);
+        };
+        addEventListener('scroll', _lNhay, { passive: true });
+        _lNhay();
+      },
+
+      /** Mở sẵn unit chứa trang đang đọc. Không làm thì cuộn tới unit 5 mà
+       *  cột mục lục vẫn đang mở unit 1 — cây nói một đằng, trang đi một nẻo. */
+      _moUnitDang() {
+        let u = 0;
+        for (let i = 0; i < this.unitTr.length; i++) {
+          if (this.unitTr[i] <= this.trangDang) u = i + 1;
+        }
+        if (u && !this.moUnit[u]) this.moUnit[u] = true;
+      },
+
+      /** Tô đậm mục đang xem. Không có thì cây mục lục chỉ là danh sách link,
+       *  cuộn một lúc là không biết mình đang ở đâu. */
+      theoDoiTrang() {
+        const q = new IntersectionObserver((muc) => {
+          const thay = muc.filter((m) => m.isIntersecting)
+                          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+          if (!thay) return;
+          this.trangDang = Number(thay.target.dataset.tr || thay.target.dataset.trang);
+          let a = -1, b = -1;
+          for (let i = 0; i < this.mlP.length; i++) {
+            if (this.mlP[i] > this.trangDang) break;
+            a = i;
+            if (this.mlC[i] !== 2) b = i;
+          }
+          this.mucDang = a;
+          this.unitDang = b;
+          if (!_nhay) this._moUnitDang();
+        }, { rootMargin: '-10% 0px -80% 0px' });
+        document.querySelectorAll('.trang[data-tr], #pdfjs [data-trang]')
+                .forEach((e) => q.observe(e));
+      },
+
+      /** Nạp PDF.js và dựng khung trang. Chỉ chạy MỘT lần, lúc bấm 📄. */
+      async moPdf() {
+        // Nhánh file nặng: không có #pdfjs, chỉ gắn src cho iframe rồi thôi.
+        if (!document.getElementById('pdfjs')) { this.srcNang = this.pdfGoc; return; }
+        if (_pdf || this.pdfLoi) return;
+        try {
+          const pdfjs = await import(this.pdfJsUrl);
+          pdfjs.GlobalWorkerOptions.workerSrc = this.pdfWorkerUrl;
+          _pdf = await pdfjs.getDocument({ url: this.pdfGoc }).promise;
+          this.soTrang = _pdf.numPages;
+          // `await` chứ không phải $nextTick rồi bỏ đó: `toiTrang()` gọi
+          // `moPdf()` xong là đi tìm khung trang ngay, mà `dungKhung()` còn
+          // phải chờ `getPage(1)`. Không chờ thì mục lục bấm vào không nhảy đi
+          // đâu cả — đo được ở tài liệu 18 trang.
+          await this.$nextTick();
+          await this.dungKhung();
+        } catch (e) {
+          // Nói đúng loại trục trặc, đừng chìa nguyên văn lỗi thư viện ra cho trẻ.
+          console.warn('PDF.js hỏng:', e);
+          this.pdfLoi = 'Chưa mở được bản PDF ngay trong trang';
+        }
+      },
+
+      /** Một khung trống cho mỗi trang; VẼ khi cuộn tới.
+       *  Vẽ hết ngay thì một cuốn 192 trang là 192 canvas trong bộ nhớ. */
+      async dungKhung() {
+        const ct = document.getElementById('pdfjs');
+        if (!ct || !_pdf) return;
+        ct.innerHTML = '';
+        if (_oq) _oq.disconnect();
+        _oq = new IntersectionObserver((muc) => {
+          muc.forEach((m) => { if (m.isIntersecting) this.veTrang(m.target); });
+        }, { rootMargin: '800px 0px' });
+        // ⚠ Ô giữ chỗ phải mang sẵn TỈ LỆ KHUNG. Để rỗng thì mọi ô cao 0px,
+        // cả tài liệu 96 trang dồn thành một vệt, và mục lục nhảy tới trang 40
+        // sẽ trượt sang chỗ khác — thanh cuộn còn giật mỗi lần vẽ xong một
+        // trang. Lấy khổ trang ĐẦU: một tài liệu hiếm khi trộn nhiều khổ, và
+        // lệch chút thì cũng chỉ lệch trước khi trang đó kịp vẽ.
+        const vp1 = (await _pdf.getPage(1)).getViewport({ scale: 1 });
+        _kho = [vp1.width, vp1.height];
+        for (let i = 1; i <= _pdf.numPages; i++) {
+          const d = document.createElement('div');
+          d.className = 'bg-white border border-slate-200 rounded-lg overflow-hidden mx-auto';
+          d.dataset.trang = String(i);
+          ct.appendChild(d);
+          _oq.observe(d);
+        }
+        this.coKhung();
+        this.theoDoiTrang();   // khung 📄 dựng sau init, phải đăng ký lại
+      },
+
+      /** Đặt kích thước ô giữ chỗ.
+       *
+       * ⚠ Phải rộng ĐÚNG bằng canvas sẽ vẽ ra, không phải rộng bằng cả cột.
+       * Canvas hiển thị ở `khổ trang × tiLe`, còn ô rỗng thì giãn hết cột — nên
+       * mỗi trang vẽ xong LẠI CO LẠI, đẩy mọi trang dưới nó lên. Đo được: mục
+       * lục nhảy tới trang 5 thì trượt 429px, trang 7 trượt 915px, và càng
+       * nhiều trang đã vẽ thì càng lệch. Thanh cuộn cũng giật theo.
+       */
+      coKhung() {
+        if (!_kho) return;
+        document.querySelectorAll('#pdfjs [data-trang]').forEach((e) => {
+          if (e.firstChild) return;             // đã vẽ, canvas tự quyết
+          e.style.width = (_kho[0] * this.tiLe) + 'px';
+          e.style.maxWidth = '100%';
+          e.style.aspectRatio = _kho[0] + ' / ' + _kho[1];
+        });
+      },
+
+      async veTrang(el) {
+        if (el.dataset.xong === '1' && el.dataset.tiLe === String(this.tiLe)) return;
+        el.dataset.xong = '1'; el.dataset.tiLe = String(this.tiLe);
+        const tr = await _pdf.getPage(Number(el.dataset.trang));
+        // Nhân theo devicePixelRatio để chữ không rỗ trên màn hình nét cao.
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const vp = tr.getViewport({ scale: this.tiLe * dpr });
+        const cv = document.createElement('canvas');
+        cv.width = vp.width; cv.height = vp.height;
+        cv.style.width = (vp.width / dpr) + 'px';
+        cv.style.height = 'auto';
+        cv.style.display = 'block';
+        cv.style.maxWidth = '100%';
+        await tr.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+        el.style.aspectRatio = ''; el.style.width = '';   // canvas tự quyết
+        el.replaceChildren(cv);
+      },
+
+      _veLai() {
+        document.querySelectorAll('#pdfjs [data-trang]').forEach((e) => {
+          e.dataset.xong = '';
+          const r = e.getBoundingClientRect();
+          if (r.top < innerHeight * 2 && r.bottom > -innerHeight) this.veTrang(e);
+        });
+      },
+      phongTo()   { this.tiLe = Math.min(4, +(this.tiLe + 0.25).toFixed(2)); this.coKhung(); this._veLai(); },
+      thuNho()    { this.tiLe = Math.max(0.5, +(this.tiLe - 0.25).toFixed(2)); this.coKhung(); this._veLai(); },
+      async vuaBeRong() {
+        if (!_pdf) return;
+        const w = (document.getElementById('pdfjs') || {}).clientWidth || 800;
+        const vp = (await _pdf.getPage(1)).getViewport({ scale: 1 });
+        this.tiLe = +(w / vp.width).toFixed(2);
+        this.coKhung();
+        this._veLai();
+      },
+      /* Kéo giãn từng đoạn cho khớp đúng bề rộng của nó trong ảnh. Cỡ chữ suy từ
+         PDF không bao giờ ra đúng bề rộng (font trong PDF khác font máy); không
+         sửa thì sai số dồn dần và cuối dòng lệch hẳn một hai từ.
+         ⚠ Đo bằng `offsetWidth`, KHÔNG phải `getBoundingClientRect()` — cái sau
+         đã tính cả transform của tổ tiên nên tỉ lệ ra sai hệ quy chiếu. */
+      /** Nắn bề rộng từng đoạn chữ cho khớp bản gốc.
+       *
+       * ⚠ BA LƯỢT tách bạch — ghi hết, ĐỌC hết, rồi ghi hết. Bản đầu ghi rồi
+       * đọc XEN KẼ từng span (`style.transform = ''` rồi `offsetWidth`), mà
+       * mỗi lần đọc sau một lần ghi là ép trình duyệt dựng lại bố cục ngay tại
+       * chỗ đó. Với một quyển sách 260 trang thì đó là **13.000 lượt dựng
+       * hình**. Đo trên hồ sơ điện thoại (CPU chậm 4×): mở sách mất **115
+       * giây**. Tách ba lượt thì chỉ còn ~3 lượt dựng hình cho mỗi trang.
+       */
+      /** Chỉ nắn những trang SẮP NHÌN THẤY, phần còn lại chờ cuộn tới.
+       *
+       * Một quyển 260 trang có 12.940 đoạn chữ; nắn hết ngay lúc mở là làm một
+       * đống việc cho 259 trang chưa ai đọc. Ảnh trang vốn đã nạp lười
+       * (`loading="lazy"`) — chỗ này chỉ là cho lớp chữ theo cùng nguyên tắc.
+       */
+      canhChuLuoi() {
+        if (this._ql) this._ql.disconnect();
+        this._ql = new IntersectionObserver((muc) => {
+          for (const m of muc) if (m.isIntersecting) this.canhChu(m.target);
+        }, { rootMargin: '1200px 0px' });
+        document.querySelectorAll('.khung').forEach((k) => this._ql.observe(k));
+      },
+
+      canhChu(chi) {
+        const ds = chi ? [chi] : Array.from(document.querySelectorAll('.khung'));
+        ds.forEach((k) => {
+          const w = k.clientWidth; if (!w) return;
+          const sp = Array.from(k.querySelectorAll('.chu span'));
+          for (const s of sp) s.style.transform = '';           // ghi hết
+          const rong = sp.map((s) => s.offsetWidth);            // ĐỌC hết
+          for (let i = 0; i < sp.length; i++) {                 // ghi hết
+            const dich = parseFloat(sp[i].dataset.w) * w;
+            if (dich && rong[i]) sp[i].style.transform = 'scaleX(' + (dich / rong[i]) + ')';
+          }
+        });
+      },
+      // Video YouTube: dựng khung LÚC BẤM, miền youtube-nocookie. Nhúng sẵn là
+      // mỗi lần mở trang lại gọi sang Google cho từng video dù không ai xem.
+      moVideo(e) {
+        const b = e.target.closest('.lk[data-vid]'); if (!b) return;
+        e.preventDefault();
+        const k = b.closest('.khung'); if (!k) return;
+        const o = (b.dataset.o || '0,0,100,100').split(',').map(Number);
+        const f = document.createElement('iframe');
+        f.className = 'yt';
+        f.allow = 'accelerometer; autoplay; encrypted-media; picture-in-picture; fullscreen';
+        f.allowFullscreen = true;
+        f.src = 'https://www.youtube-nocookie.com/embed/' + b.dataset.vid + '?autoplay=1&rel=0';
+        const w = Math.max(o[2], 56), h = Math.max(o[3], 42);
+        const x = Math.min(Math.max(o[0], 0), 100 - w), y = Math.min(Math.max(o[1], 0), 100 - h);
+        f.style.cssText = 'left:' + x + '%;top:' + y + '%;width:' + w + '%;height:' + h + '%';
+        b.remove(); k.appendChild(f);
+      },
+      // ── Chọn vùng ─────────────────────────────────────────────────────────
+      /** Bật/tắt chế độ chọn. Bật thì xoá vùng cũ — người dùng vừa bấm nút là
+          muốn chọn cái mới, không phải nối vào cái cũ. */
+      chonBat() { this.chonHoat = true; this.chonXoa(); },
+      chonTat() { this.chonHoat = false; this.chonDang = null; this.chonBao = ''; },
+      chonXoa() {
+        this.chonO = []; this.chonText = ''; this.chonGoc = '';
+        this.tra.btn = null; this._traVung = null;
+      },
+      /** Báo một câu ngắn trong dải dưới đáy rồi tự tắt. */
+      chonNoi(c) {
+        this.chonBao = c;
+        clearTimeout(this._hBao);
+        this._hBao = setTimeout(() => { this.chonBao = ''; }, 1500);
+      },
+      /** `traDong()` gọi hàm này khi đóng popup mà vùng chọn không có Range
+          nào để đặt lại: vẽ lại các ô màu và trả nút 🔎 về chỗ cũ. */
+      traVungLai() {
+        this._veChon();
+        this._traVung = { tr: null };
+        if (this._hopChon) this.tra.btn = { x: this._hopChon.x, y: this._hopChon.y };
+      },
+      _veChon() {
+        document.querySelectorAll('.khung > .chon-o').forEach((e) => e.remove());
+        for (const o of this.chonO) {
+          const kh = document.getElementById('tr-' + o.tr)?.querySelector('.khung');
+          if (!kh) continue;
+          const d = document.createElement('div');
+          d.className = 'chon-o';
+          d.style.cssText = `left:${o.x}%;top:${o.y}%;width:${o.w}%;height:${o.h}%`;
+          kh.appendChild(d);
+        }
+      },
+
+      /** Lấy chữ của một khung trang nằm trong `o` (toạ độ viewport).
+       *
+       * ⚠ TỪNG KÝ TỰ MỘT, không lấy ô của cả span: `Range.getClientRects()`
+       * trả một ô cho mỗi DÒNG, nên đo cả span thì kéo nửa dòng cũng vớ cả
+       * dòng. Đo được ô ký tự đã gồm phép nắn `scaleX` của `canhChu()` (tổng
+       * 31 ô = 615,0px so với bề rộng nhìn thấy 615,2px), nên KHÔNG cần đụng
+       * vào `transform` — đụng vào là tốn 13.000 lượt dựng hình.
+       *
+       * Trả `{text, goc, o}`: `o` là các ô ĐÃ CHỌN theo phần trăm khổ trang,
+       * gộp theo từng đoạn liền mạch (một `div` mỗi đoạn, không phải mỗi ký tự).
+       */
+      _chonTrongO(kh, o) {
+        const kb = kh.getBoundingClientRect();
+        const spans = [...kh.querySelectorAll('.chu span:not(.mo)')];
+        const chon = [];      // {sp, i, q} theo đúng thứ tự DOM
+        for (const sp of spans) {
+          const tn = sp.firstChild;
+          if (!tn || tn.nodeType !== 3) continue;
+          const b = sp.getBoundingClientRect();
+          if (b.bottom < o.top - 2 || b.top > o.bottom + 2 ||
+              b.right < o.left - 2 || b.left > o.right + 2) continue;
+          for (let i = 0; i < tn.length; i++) {
+            if (!tn.data[i].trim()) continue;      // khoảng trắng: không tính
+            const rg = document.createRange();
+            rg.setStart(tn, i); rg.setEnd(tn, i + 1);
+            const q = rg.getClientRects()[0];
+            if (!q) continue;
+            const cx = q.left + q.width / 2, cy = q.top + q.height / 2;
+            if (cx >= o.left && cx <= o.right && cy >= o.top && cy <= o.bottom)
+              chon.push({ sp, i, q });
+          }
+        }
+        return this._gopChon(chon, kb);
+      },
+
+      /** Gộp các ký tự đã chọn thành chuỗi + các ô tô màu.
+       *  Giữa hai span: cùng DÒNG thì nối bằng dấu cách, khác dòng thì xuống
+       *  dòng — cùng luật so lệch tâm y mà `_gom_dong_ocr` đang dùng. */
+      _gopChon(chon, kb) {
+        if (!chon.length) return { text: '', goc: '', o: [] };
+        const phan = [], o = [];
+        let truoc = null, doan = null;
+        const chot = () => { if (doan) o.push(doan); doan = null; };
+        for (const c of chon) {
+          const b = c.sp.getBoundingClientRect();
+          const y = b.top + b.height / 2;
+          if (truoc && truoc.sp === c.sp && c.i === truoc.i + 1) {
+            phan.push(c.sp.firstChild.data[c.i]);              // liền mạch
+          } else {
+            if (truoc && truoc.sp === c.sp) phan.push(' ');     // có khe giữa
+            else if (truoc) phan.push(Math.abs(y - truoc.y) < b.height * 0.6 ? ' ' : '\n');
+            phan.push(c.sp.firstChild.data[c.i]);
+            if (truoc && truoc.sp !== c.sp) chot();
+          }
+          const x0 = (c.q.left - kb.left) / kb.width * 100;
+          const y0 = (c.q.top - kb.top) / kb.height * 100;
+          const w = c.q.width / kb.width * 100, h = c.q.height / kb.height * 100;
+          if (!doan) doan = { x: x0, y: y0, w, h };
+          else {
+            const x1 = Math.max(doan.x + doan.w, x0 + w);
+            const y1 = Math.max(doan.y + doan.h, y0 + h);
+            doan.x = Math.min(doan.x, x0); doan.y = Math.min(doan.y, y0);
+            doan.w = x1 - doan.x; doan.h = y1 - doan.y;
+          }
+          truoc = { sp: c.sp, i: c.i, y };
+        }
+        chot();
+        return { text: phan.join('').replace(/\s+/g, ' ').trim(),
+                 goc: phan.join('').replace(/[ \t]+\n/g, '\n').trim(), o };
+      },
+
+      /** Nét dẹt: bám vào DÒNG GẦN NHẤT với từng điểm đã lấy mẫu.
+       *
+       * ⚠ Không dùng dải cao cố định. Đo trên trang dày chữ (khổ 900px): ô ký
+       * tự cao 20px còn khoảng cách hai dòng chỉ ~31px, nên dải 1,6 × ô ký tự
+       * (32px) trùm qua cả dòng trên lẫn dòng dưới. Luật "gần nhất" không phụ
+       * thuộc con số nào của khổ trang.
+       */
+      _chonTheoNet(kh, diem) {
+        const kb = kh.getBoundingClientRect();
+        const spans = [...kh.querySelectorAll('.chu span:not(.mo)')]
+          .filter((sp) => sp.firstChild && sp.firstChild.nodeType === 3)
+          .map((sp) => { const b = sp.getBoundingClientRect();
+                         return { sp, b, y: b.top + b.height / 2 }; });
+        const gan = new Map();                    // span → [x nhỏ nhất, x lớn nhất]
+        for (const p of diem) {
+          let tot = null, gan_nhat = Infinity;
+          for (const s of spans) {
+            if (s.b.bottom < p.y - s.b.height || s.b.top > p.y + s.b.height) continue;
+            const d = Math.abs(s.y - p.y);
+            if (d < gan_nhat) { gan_nhat = d; tot = s; }
+          }
+          if (!tot) continue;
+          const g = gan.get(tot.sp) || [Infinity, -Infinity];
+          g[0] = Math.min(g[0], p.x); g[1] = Math.max(g[1], p.x);
+          gan.set(tot.sp, g);
+        }
+        const chon = [];
+        for (const s of spans) {
+          const g = gan.get(s.sp);
+          if (!g) continue;
+          const tn = s.sp.firstChild;
+          for (let i = 0; i < tn.length; i++) {
+            if (!tn.data[i].trim()) continue;
+            const rg = document.createRange();
+            rg.setStart(tn, i); rg.setEnd(tn, i + 1);
+            const q = rg.getClientRects()[0];
+            if (!q) continue;
+            const cx = q.left + q.width / 2;
+            if (cx >= g[0] && cx <= g[1]) chon.push({ sp: s.sp, i, q });
+          }
+        }
+        return this._gopChon(chon, kb);
+      },
+
+      /** Chiều cao một dòng chữ quanh toạ độ y — suy từ chính lớp chữ, không
+       *  dùng hằng số, để phóng to/thu nhỏ đều đúng. */
+      _caoDong(kh, y) {
+        let cao = 0;
+        for (const sp of kh.querySelectorAll('.chu span:not(.mo)')) {
+          const b = sp.getBoundingClientRect();
+          if (y >= b.top - b.height && y <= b.bottom + b.height) cao = Math.max(cao, b.height);
+        }
+        return cao || 16;
+      },
+
+      /** Trọng tâm các ngón đang đặt trên màn hình. */
+      _trongTam() {
+        let x = 0, y = 0, n = 0;
+        for (const p of (this._ngon || new Map()).values()) { x += p.x; y += p.y; n++; }
+        return n ? { x: x / n, y: y / n } : null;
+      },
+
+      /** Bắt đầu kéo. Chỉ nhận khi đang bật chế độ và điểm bấm nằm TRONG một
+       *  trang — bấm lên thanh đầu hay ra nền thì không tính. */
+      chonDown(e) {
+        if (!this.chonHoat) return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        const kh = e.target.closest && e.target.closest('.khung');
+        if (!kh) return;
+        this._ngon = this._ngon || new Map();
+        this._ngon.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (this._ngon.size > 1) {
+          // Ngón thứ hai đặt xuống: HUỶ cú kéo dở (không giữ phần đã tô của nét
+          // đó) và chuyển sang cuộn. Trọng tâm đặt ngay ở đây để lần `pointermove`
+          // đầu tiên không nhảy một đoạn lớn.
+          this.chonDang = null;
+          this._cuon = true;
+          this._tam = this._trongTam();
+          return;
+        }
+        this._kh = kh; this._diem = [{ x: e.clientX, y: e.clientY }];
+        this.chonDang = { x0: e.clientX, y0: e.clientY, x1: e.clientX, y1: e.clientY };
+        try { e.target.setPointerCapture(e.pointerId); } catch (err) {}
+      },
+      chonMove(e) {
+        if (!this._ngon || !this._ngon.has(e.pointerId)) return;
+        const cu = this._ngon.get(e.pointerId);
+        this._ngon.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (this._cuon) {                       // hai ngón: cuộn theo TRỌNG TÂM
+          // ⚠ Trọng tâm, không phải ngón vừa di chuyển: hai ngón lệch nhịp mà
+          // cuộn theo một ngón thì trang nhảy gấp đôi quãng tay người đi. Đo
+          // được: chỉ ngón 2 đi 80px → cuộn 80px, đúng ra phải ~40px.
+          const tam = this._trongTam();
+          if (this._tam) window.scrollBy(0, -(tam.y - this._tam.y));
+          this._tam = tam;
+          return;
+        }
+        if (!this.chonDang) return;
+        this.chonDang.x1 = e.clientX; this.chonDang.y1 = e.clientY;
+        const cuoi = this._diem[this._diem.length - 1];
+        if (Math.abs(e.clientX - cuoi.x) + Math.abs(e.clientY - cuoi.y) > 4)
+          this._diem.push({ x: e.clientX, y: e.clientY });
+      },
+      chonUp(e) {
+        if (!this._ngon || !this._ngon.has(e.pointerId)) return;
+        this._ngon.delete(e.pointerId);
+        if (this._cuon) { if (this._ngon.size < 2) this._cuon = false; return; }
+        const d = this.chonDang;
+        this.chonDang = null;
+        if (!d || !this._kh) return;
+        // Kéo quá ngắn (một cú bấm) thì không tạo vùng rỗng.
+        if (Math.abs(d.x1 - d.x0) < 6 && Math.abs(d.y1 - d.y0) < 6) return;
+        const b = this._kh.getBoundingClientRect();
+        // ⚠ KẸP vào chính trang đang kéo: kéo lên thanh đầu hay xuống quá đáy
+        // thì chỉ lấy phần nằm trong trang, không vớ chữ của trang bên cạnh.
+        const x0 = Math.max(Math.min(d.x0, d.x1), b.left);
+        const x1 = Math.min(Math.max(d.x0, d.x1), b.right);
+        const y0 = Math.max(Math.min(d.y0, d.y1), b.top);
+        const y1 = Math.min(Math.max(d.y0, d.y1), b.bottom);
+        // "Kéo dẹt dọc theo một dòng" chính là một hình chữ nhật mỏng — nên
+        // một công cụ làm được cả hai: thấp hơn 1,6 lần dòng thì bám dòng,
+        // cao hơn thì khoanh cả khối.
+        const det = Math.abs(y1 - y0) < this._caoDong(this._kh, (y0 + y1) / 2) * 1.6;
+        const kq = det
+          ? this._chonTheoNet(this._kh, this._diem.concat([{ x: x1, y: y1 }]))
+          : this._chonTrongO(this._kh, { left: x0, top: y0, right: x1, bottom: y1 });
+        if (!kq.text) { this.chonNoi('Vùng này không có chữ'); return; }
+        const tr = Number(this._kh.closest('section.trang').dataset.tr);
+        // Chụp lại phần ĐANG có, để lùi được nếu nét này làm vượt trần.
+        const cu = { text: this.chonText, goc: this.chonGoc, o: this.chonO };
+        this.chonO = this.chonO.concat(kq.o.map((q) => ({ ...q, tr })));
+        this.chonText = (this.chonText ? this.chonText + ' ' : '') + kq.text;
+        this.chonGoc = (this.chonGoc ? this.chonGoc + '\n' : '') + kq.goc;
+        this._veChon();
+        const hop = { left: x0, top: y0, width: x1 - x0, height: y1 - y0 };
+        this._hopChon = { x: Math.min(Math.max((x0 + x1) / 2, 60), innerWidth - 60),
+                          y: Math.min(y1 + 8, innerHeight - 44) };
+        // `_traDat` là chốt DUY NHẤT của trần 1.000 ký tự: nó trả 'dai' thì lùi
+        // lại như trước nét này rồi báo. Tự cắt ở đây trước khi gọi thì nhánh
+        // báo không bao giờ chạy (bẫy đã ghi trong sổ theo dõi).
+        const kq2 = this._traDat({ text: this.chonText, goc: this.chonGoc, sent: '',
+                                   box: hop, rg: null, vung: { tr } });
+        if (kq2 === 'dai') {
+          this.chonText = cu.text; this.chonGoc = cu.goc; this.chonO = cu.o;
+          this._veChon();
+          this.tra.btn = null;
+          this.chonNoi('Vùng chọn quá dài (tối đa 1.000 ký tự)');
+          if (this.chonText && this._hopChon)
+            this._traDat({ text: this.chonText, goc: this.chonGoc, sent: '',
+                           box: { left: this._hopChon.x, top: this._hopChon.y - 8,
+                                  width: 0, height: 0 }, rg: null, vung: { tr } });
+          return;
+        }
+        if (kq2 === 'rong') this.chonNoi('Vùng này không có chữ');
+      },
+      traGanVung() {
+        addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && this.chonHoat) { this.chonTat(); this.chonXoa(); }
+        });
+      },
+
+      // ── Năm hàm móc của `_tracuu.html` ────────────────────────────────────
+      // Trang đọc không có khái niệm/phạm vi; ngữ cảnh là tên môn + tên tài liệu.
+      
+      // ⚠ Ngôn ngữ DẠY khai trong `config.json` (`nn`) THẮNG phép suy theo
+      // tiền tố slug. Suy từ slug là đoán, và nó đoán sai ngay lớp đầu tiên
+      // nằm ngoài LMS: Amslink dạy tiếng Anh (sách Close Up B1) nhưng slug
+      // không bắt đầu bằng `cie-` nên bị xếp vào nhóm tiếng Việt — mất ô chọn
+      // VI/EN, và luật "môn tiếng Việt thì bỏ `vi_du.en`" kích hoạt nên ví dụ
+      // chỉ còn một dòng tiếng Việt lẻ loi. Người dùng gửi ảnh chụp cảnh đó.
+      traNgonNgu() { return "en"; },
+      traTen() { return 'Môn: ' + "CIE ESL 5" + '. Đang đọc tài liệu: ' + "1-2. 6Ug.09 Begin to use if clauses in first conditionals..pptx" + '.'; },
+      traMucCtx() { return []; },
+      traDoc() { return null; },
+      traSec() { return ''; },
+      traKhoa() { return this.secret; },
+
+        // ── Tra cứu: bôi đen → nút 🔎 → popup ─────────────────────────────────
+        // Nghĩa của một từ phụ thuộc CÂU chứa nó và BÀI đang học, nên không dựng
+        // sẵn được: `sedimentary` trong bài về đá không giống ở chỗ khác. Vì vậy
+        // gọi Gemini lúc bấm, kèm thuật ngữ của mục đang mở.
+        moGoc: false,          // đoạn gốc trong popup đang mở rộng?
+        nnTra: '',             // ngôn ngữ giải thích: 'vi' | 'en'
+        tra: { btn: null, show: false, mode: 'word', text: '', goc: '', sent: '',
+               chat: [], hoi: '', dangHoi: false,
+               loading: false, err: '', ly_do: '', data: null },
+
+        /** Nới vùng chọn ra nguyên từ: kéo lệch nửa chữ vẫn tra đúng từ. */
+        _noRong(r) {
+          const W = /[A-Za-z0-9'’-]/;
+          try {
+            let n = r.startContainer, o = r.startOffset;
+            if (n.nodeType === 3) { while (o > 0 && W.test(n.data[o - 1])) o--; r.setStart(n, o); }
+            n = r.endContainer; o = r.endOffset;
+            if (n.nodeType === 3) {
+              // ⚠ Chrome trên WINDOWS gộp luôn KHOẢNG TRẮNG CUỐI vào vùng chọn
+              // khi nháy đúp — đó là quy ước chọn chữ của Windows; Chrome trên
+              // Linux/macOS thì không. Không cắt nó đi trước khi nới thì phép
+              // nới thấy ký tự kế tiếp là chữ và nuốt luôn từ sau: nháy đúp
+              // `Properties` trong "2.1 Properties of substances" ra
+              // **"Properties of"**. Người dùng báo; chạy trên Linux KHÔNG tái
+              // hiện được, phải tự đặt vùng chọn có kèm dấu cách mới thấy.
+              while (o > r.startOffset && /\s/.test(n.data[o - 1])) o--;
+              while (o < n.data.length && W.test(n.data[o])) o++;
+              r.setEnd(n, o);
+            }
+          } catch (e) { /* vùng chọn xuyên nhiều thẻ: giữ nguyên */ }
+          return r;
+        },
+
+        /** Câu chứa vùng chọn — để Gemini biết từ đó đang mang nghĩa nào. */
+        _cauChua(r, text) {
+          const h = r.commonAncestorContainer;
+          const t = ((h.nodeType === 3 ? h.parentElement : h)?.textContent || '').replace(/\s+/g, ' ');
+          const i = t.indexOf(text);
+          if (i < 0) return '';
+          let a = i, b = i + text.length;
+          while (a > 0 && !/[.!?]/.test(t[a - 1])) a--;
+          while (b < t.length && !/[.!?]/.test(t[b])) b++;
+          return t.slice(a, b + 1).trim().slice(0, 300);
+        },
+
+        /** Thuật ngữ của PHẠM VI đang mở. Đây là toàn bộ lý do dùng Gemini thay
+            vì một máy dịch thường: thiếu nó thì `igneous rock` ra "đá nham thạch"
+            chứ không phải "đá mácma" — vẫn trôi chảy, vẫn không ai thấy sai.
+
+            Dùng `scopedSummary` chứ KHÔNG so `x.concept === this.scope`: `scope`
+            là một UNIT, còn các mục tóm tắt là CON của unit đó. So bằng thì không
+            khớp mục nào, `ctx` còn trơ mỗi dòng tiêu đề, và tính năng lặng lẽ tụt
+            xuống đúng bằng một máy dịch thường. */
+        _traCtx() {
+          // Tên môn LUÔN có, kể cả khi chưa có học liệu ôn tập. Bản đầu thoát
+          // sớm khi thiếu học liệu và trả về ctx RỖNG — 11/17 môn rơi vào đó, và
+          // Gemini không biết đang học môn gì. Chỉ phần glossary mới phụ thuộc
+          // vào học liệu.
+          const tat = [];
+          for (const s of this.traMucCtx()) {
+            for (const g of s.glossary || []) tat.push([g.term, g.def || '']);
+            for (const w of s.words || []) for (const it of w.items || [])
+              tat.push([it.word, it.def || '']);
+          }
+          // Ưu tiên thuật ngữ CÓ MẶT ngay trong chỗ đang tra. Một unit có thể có
+          // hàng trăm thuật ngữ mà chỉ 20 dòng đầu lọt vào ctx; cắt theo thứ tự
+          // gốc thì đúng cái từ đang hỏi lại hay bị cắt mất.
+          const cho = (this.tra.sent + ' ' + this.tra.text).toLowerCase();
+          const hop = [], con = [];
+          for (const x of tat) (cho.includes((x[0] || '').toLowerCase()) ? hop : con).push(x);
+          // Dấu hai chấm, KHÔNG phải dấu bằng — và nhãn nói thẳng đây là ĐỊNH
+          // NGHĨA TIẾNG ANH. Bản đầu viết `crystal = The particular shaped
+          // structure of a mineral.` và trong một danh sách thuật ngữ thì `=`
+          // đọc ra là "dịch thành", nên Gemini dịch nguyên câu định nghĩa vào ô
+          // nghĩa: `crystal` ra "cấu trúc hình dạng đặc biệt của một loại khoáng
+          // vật" thay vì "tinh thể". Bỏ hẳn ctx đi thì lại ra đúng — tức ngữ
+          // cảnh đang LÀM HỎNG chính thứ nó sinh ra để cứu.
+          const ds = [...hop, ...con].slice(0, 20).map((x) => x[0] + ': ' + x[1]);
+          const dau = this.traTen();
+          return (dau + (ds.length
+            ? '\nĐịnh nghĩa TIẾNG ANH của các thuật ngữ trong mục (KHÔNG phải bản dịch):\n' + ds.join('\n')
+            : '')).slice(0, 1200);
+        },
+
+        /** Không có mạng / không có mã: vẫn tra được nếu từ đó là thuật ngữ của
+            bài. Lùi thầm, không báo lỗi — đúng nếp của cả dự án. */
+        _traOffline() {
+          const k = (this.tra.text || '').toLowerCase();
+          // Trả về ĐÚNG hình dạng mà Gemini trả về (`phan[]`), không phải một
+          // hình dạng riêng. Hai hình dạng thì phải có hai bộ vẽ, và hai bộ vẽ
+          // thì sớm muộn lệch nhau — mà nhánh offline là nhánh ít ai mở ra xem
+          // nhất, nên nó sẽ là cái lệch trước và lệch lâu nhất.
+          const khoi = (td, nd, en, vi) => ({
+            tieu_de: td, noi_dung: nd || '',
+            vi_du: en ? [{ en: en, vi: vi || '' }] : [],
+          });
+          for (const s of (this.traDoc()?.summary || [])) {
+            for (const g of s.glossary || []) if ((g.term || '').toLowerCase() === k)
+              return { tu: g.term, phan: [khoi('Trong học liệu', g.def, g.example, '')],
+                       _offline: true };
+            for (const w of s.words || []) for (const it of w.items || [])
+              if ((it.word || '').toLowerCase() === k)
+                return { tu: it.word, loai: it.pos || '', ipa: it.ipa || '',
+                         phan: [khoi('Trong học liệu', it.def, it.example, it.example_vi)],
+                         _offline: true };
+          }
+          return null;
+        },
+
+        /** Chạy mỗi lần vùng chọn đổi. Quyết định CÓ hiện nút hay không. */
+        /** Điểm vào CHUNG cho mọi cách chọn: bôi đen và chọn vùng đều đổ vào
+            đây, nên popup, trần ký tự và lịch sử tra chỉ có một đường.
+
+            Trả về LÝ DO thay vì true/false: đường bôi đen im lặng khi đoạn quá
+            dài (nút không hiện là đủ), còn đường KÉO thì phải báo — người dùng
+            vừa chủ động kéo một vùng to mà không thấy gì thì tưởng hỏng.
+            `box` là hình chữ nhật vùng chọn theo toạ độ viewport. */
+        _traDat({ text, goc, sent, box, rg = null, vung = null }) {
+          // ⚠ 1000 ký tự phải KHỚP `MAX.text` trong `worker/lookup.js`. Lệch
+          // nhau thì hỏng lặng lẽ: trang cho hiện nút, Worker cắt cụt đoạn.
+          if (!text) return 'rong';
+          if (!/[A-Za-z]/.test(text)) return 'rong';
+          if (text.length > 1000) return 'dai';
+          this.tra.text = text;
+          this.tra.goc = goc;
+          this.tra.sent = sent || '';
+          this.tra.mode = text.split(/\s+/).length <= 3 ? 'word' : 'text';
+          // Không có mã bí mật thì chỉ hiện nút khi tra offline ra được cái gì.
+          if (!this.traKhoa() && !this._traOffline()) return 'khong-tra';
+          this._traRg = rg;
+          this._traVung = vung;
+          this.tra.btn = { x: Math.min(Math.max(box.left + box.width / 2, 60), innerWidth - 60),
+                           y: Math.min(box.bottom + 8, innerHeight - 44) };
+          return 'ok';
+        },
+
+        chonDoi() {
+          // ⚠ Đang ở CHẾ ĐỘ CHỌN VÙNG thì đường bôi đen đứng ngoài. Cả hai cùng
+          // ghi vào `tra.*`, mà cú thả chuột của vùng kéo cũng bắn `mouseup` ở
+          // mức document → `chonDoi()` chạy, xoá `tra.btn` vừa đặt rồi trả về
+          // sớm (không có vùng chọn DOM nào để bôi), và nút 🔎 biến mất ngay
+          // sau khi kéo. Trang ôn tập không có `chonHoat` nên vô hại ở đó.
+          if (this.chonHoat) return;
+          const sel = window.getSelection();
+          this.tra.btn = null;
+          if (this.tra.show || !sel || sel.isCollapsed || !sel.rangeCount) return;
+          const r0 = sel.getRangeAt(0);
+          const h = r0.commonAncestorContainer;
+          const el = h.nodeType === 3 ? h.parentElement : h;
+          // Chỉ bắt trong vùng nội dung: bôi đen ở ô tìm kiếm hay thanh chế độ
+          // mà cũng hiện nút thì nút chắn mất đúng thứ người ta đang gõ.
+          if (!el || !el.closest || !el.closest('[data-tra]')) return;
+          // ⚠ PHẢI nhân bản. `getRangeAt(0)` trả về Range SỐNG của vùng
+          // chọn, nên `setStart`/`setEnd` trong `_noRong` sửa thẳng vùng
+          // người dùng ĐANG kéo — và thao tác đó chuẩn hoá chiều thành xuôi,
+          // tức lật điểm focus từ đầu xuống cuối. Kéo xuôi vô hại (focus vốn
+          // ở cuối); kéo NGƯỢC thì cú kéo tiếp theo tính từ chỗ khác và vùng
+          // chọn co lại. Người dùng báo: "kéo từ trên xuống thì được, từ dưới
+          // lên thì không".
+          //
+          // ⚠ Chuột mô phỏng chạy liền tay KHÔNG tái hiện được: handler chờ
+          // 120ms sau cú di chuyển CUỐI (mỗi `mousemove` gọi `clearTimeout`),
+          // nên nó chỉ chạy sau khi nhả chuột. Phải kéo có khựng >120ms giữa
+          // chừng, đúng nhịp tay người. Đo được: nghỉ 25ms/bước → hai chiều
+          // đều 370 ký tự; nghỉ 200ms/bước → xuống 370, LÊN CÒN 65.
+          const r = this._noRong(r0.cloneRange());
+          // Hai bản của cùng một đoạn, cố ý:
+          //  · `text`  — đã dồn khoảng trắng, dùng để GỌI API, đo độ dài, tra
+          //    glossary và làm khoá lịch sử. Giữ nguyên hành vi cũ.
+          //  · `goc`   — giữ nguyên xuống dòng, chỉ để HIỆN LẠI cho người đọc.
+          // Trước đây chỉ có bản dồn, nên bôi đen một khổ thơ hay một danh sách
+          // thì popup hiện một dòng dài dính liền, không còn nhận ra là đã chọn
+          // đúng chỗ nào.
+          const goc = (r.toString() || '').replace(/[ \t]+\n/g, '\n')
+                        .replace(/\n{3,}/g, '\n\n').trim();
+          const text = (r.toString() || '').replace(/\s+/g, ' ').trim();
+          // ⚠ 1000 ký tự phải KHỚP `MAX.text` trong `worker/lookup.js`. Hai
+          // con số ở hai file, và lệch nhau thì hỏng lặng lẽ: trang cho hiện
+          // nút, Worker cắt cụt đoạn, model giải thích một câu bị chặt giữa
+          // chừng mà không ai biết. Đổi một chỗ thì đổi cả chỗ kia.
+          if (!text || !/[A-Za-z]/.test(text) || text.length > 1000) return;
+          const b = r.getBoundingClientRect();
+          if (!b.width && !b.height) return;
+          this._traDat({ text, goc, sent: this._cauChua(r, text), box: b, rg: r.cloneRange() });
+        },
+
+        /** Có gì để hiện trong popup không?
+
+            ⚠ KHÔNG hỏi `!tra.data`. Máy chủ có thể trả về 200 kèm một object
+            mà mọi trường đều rỗng; lúc đó `tra.data` là truthy nên dòng "Không
+            tìm thấy nghĩa" bị ẩn, mà cũng chẳng nhánh nào vẽ ra gì — popup chỉ
+            còn cái khung và một cái nút. Người dùng gửi ảnh chụp đúng cảnh đó
+            và hỏi "sao ấn giải thích không được". Im lặng kiểu này tệ hơn báo
+            lỗi: không ai biết nên thử lại hay đã hỏng. */
+        traRong() {
+          const d = this.tra.data;
+          if (!d) return true;
+          return !(d.nghia || d.dich || d.luu_y
+                   || (d.phan || []).length || (d.tu_kho || []).length);
+        },
+
+        /** Khoá nhớ lựa chọn ngôn ngữ — RIÊNG từng môn. Trẻ học Science
+            bằng tiếng Anh nhưng Lịch sử bằng tiếng Việt; một khoá chung là
+            đổi ở môn này thì môn kia cũng đổi theo. */
+        _nnKhoa() { return 'tra_nn:' + (this.course || 'chung'); },
+
+        /** Ngôn ngữ giải thích đang dùng. Thứ tự: lựa chọn đã lưu của MÔN NÀY
+            → mặc định do trang cung cấp (`traNgonNgu()`, thường là ngôn ngữ
+            dạy của môn) → tiếng Việt. */
+        // Ngôn ngữ DẠY của môn — cố định, khác `nnHienTai()` là lựa chọn của
+        // người học. Trang nhúng có thể không định nghĩa `traNgonNgu()`
+        // (trang môn không định nghĩa), nên mặc định là tiếng Việt.
+        /** Tách "a. … b. …" / "1. … 2. …" viết liền thành từng dòng.
+            Prompt đã dặn mỗi ý một dòng; đây là lưới phụ khi model quên.
+            Người dùng gửi ảnh khối 'Trả lời' + 'Vì sao' của một câu hỏi hai ý:
+            "a. Từ được lặp lại là từ 'Tre'. b. Việc lặp lại…" dồn một khối chữ.
+            Chỉ tách khi các dấu ý chạy ĐÚNG THỨ TỰ từ a (hoặc 1) và có ≥2 dấu —
+            một chữ "a." hay "5." lạc trong câu thì không đủ để tách.
+            Đã có sẵn `\n` thì model đã tự xuống dòng, để nguyên. */
+        traXuong(s) {
+          s = String(s ?? '');
+          if (!s || s.includes('\n')) return s;
+          for (const [re, dau] of [[/(^|\s)([a-h])[.)]\s/g, 'a'], [/(^|\s)(\d{1,2})[.)]\s/g, '1']]) {
+            const cho = []; let can = dau;
+            for (const m of s.matchAll(re)) {
+              if (m[2] !== can) continue;
+              cho.push(m.index + m[1].length);
+              can = dau === 'a' ? String.fromCharCode(can.charCodeAt(0) + 1) : String(+can + 1);
+            }
+            if (cho.length < 2) continue;
+            let r = s;
+            for (let i = cho.length - 1; i >= 0; i--) {
+              // Bỏ cả dấu phẩy/chấm phẩy nối ý: '1. think, 2. have' → dòng 'think' chứ không 'think,'.
+              if (cho[i] > 0) r = r.slice(0, cho[i]).replace(/[\s,;]+$/, '') + '\n' + r.slice(cho[i]);
+            }
+            return r;
+          }
+          return s;
+        },
+        traMonNn() { return (this.traNgonNgu ? this.traNgonNgu() : 'vi') === 'en' ? 'en' : 'vi'; },
+        nnHienTai() {
+          // ⚠ Môn dạy bằng tiếng Việt thì KHÔNG có lựa chọn — luôn tiếng Việt.
+          // Chốt ở ĐÂY chứ không chỉ ẩn nút: lựa chọn cũ có thể đã nằm trong
+          // localStorage từ trước (khoá theo môn, mà một môn có thể đổi ngôn
+          // ngữ dạy), và đọc lại nó thì nút biến mất nhưng phần giải thích
+          // vẫn ra tiếng Anh — hỏng theo kiểu không có cách nào sửa từ giao diện.
+          if (this.traMonNn() !== 'en') return 'vi';
+          if (this.nnTra) return this.nnTra;
+          let luu = null;
+          try { luu = localStorage.getItem(this._nnKhoa()); } catch (e) {}
+          if (luu === 'vi' || luu === 'en') return (this.nnTra = luu);
+          return (this.nnTra = 'en');
+        },
+
+        /** Đổi ngôn ngữ và HỎI LẠI ngay — đổi mà không tra lại thì người dùng
+            phải tự đoán là phải bấm gì nữa. */
+        doiNn(v) {
+          if (this.nnHienTai() === v) return;
+          this.nnTra = v;
+          try { localStorage.setItem(this._nnKhoa(), v); } catch (e) {}
+          this.tra.chat = [];
+          if (this.tra.show) this.traMo(this.tra.mode);
+        },
+
+        /** Đoạn gốc có dài quá 2 dòng không — chỉ khi đó mới hiện nút mở.
+            Đếm theo KÝ TỰ chứ không đo chiều cao thật: đo chiều cao phải chờ
+            vẽ xong rồi đọc lại DOM, tức một vòng layout nữa cho mỗi lần mở
+            popup, mà sai sót ở đây chỉ là thừa/thiếu một cái nút nhỏ. */
+        get daiGoc() {
+          const t = this.tra.goc || this.tra.text || '';
+          return t.length > 110 || t.includes('\n') || this.sentThem;
+        },
+
+        /** Câu chứa đoạn bôi đen có thêm gì NGOÀI chính đoạn đó không.
+            Bôi đen một từ thì câu chứa nó là ngữ cảnh đáng xem. Bôi đen cả đoạn
+            thì "câu chứa" chính là đoạn ấy, bị dàn phẳng rồi cắt ở 300 ký tự —
+            hiện ra là một khối chữ xám lặp lại đúng thứ vừa đọc ở trên (người
+            dùng gửi ảnh). Vẫn GỬI lên API như cũ; chỉ không vẽ lại. */
+        get sentThem() {
+          const n = (x) => (x || '').replace(/\s+/g, ' ').trim();
+          const c = n(this.tra.sent);
+          return !!c && !n(this.tra.goc || this.tra.text).includes(c);
+        },
+
+        async traHoi() {
+          const q = (this.tra.hoi || '').trim();
+          if (!q || this.tra.dangHoi || !this.traKhoa()) return;
+          this.tra.chat.push({ ai: 'em', noi: q });
+          this.tra.hoi = ''; this.tra.dangHoi = true;
+          try {
+            const r = await fetch('/api/lookup', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'x-progress-key': this.traKhoa() },
+              // Gửi kèm ĐOẠN GỐC và lịch sử: Worker không giữ trạng thái, cùng
+              // lý do đã buộc `ctx` phải do trình duyệt gửi lên.
+              body: JSON.stringify({
+                mode: 'chat', text: this.tra.text, sent: this.tra.sent,
+                ctx: this._traCtx(), hoi: q, nn: this.nnHienTai(),
+                mon_nn: this.traMonNn(),
+                // Bỏ lượt vừa đẩy vào — nó chính là `hoi`.
+                lich_su: this.tra.chat.slice(0, -1).slice(-6),
+                user: this.user, course: this.course, sec: this.traSec(),
+              }),
+            });
+            const b = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(b.error || ('HTTP ' + r.status));
+            const t = (b.data && b.data.tra_loi) || '';
+            // Trả về rỗng cũng phải NÓI RA, đừng đẩy một bong bóng trắng vào
+            // cuộc trò chuyện — cùng bài học với `traRong()`.
+            this.tra.chat.push({ ai: 'gs', noi: t || 'Chưa trả lời được câu này.' });
+          } catch (e) {
+            console.warn('hỏi tiếp hỏng:', String(e.message || e));
+            this.tra.chat.push({ ai: 'gs', noi: 'Chưa trả lời được lúc này, thử lại sau nhé.' });
+          }
+          this.tra.dangHoi = false;
+        },
+
+        async traMo(mode) {
+          if (mode) this.tra.mode = mode;
+          this.tra.show = true; this.tra.btn = null;
+          this.tra.chat = []; this.tra.hoi = ''; this.tra.dangHoi = false;
+          this.moGoc = false;
+          this.tra.err = ''; this.tra.ly_do = ''; this.tra.data = null; this.tra.loading = true;
+          // Trang có thể cần nạp học liệu trước (trang môn nạp LƯỜI, vì file
+          // study JSON tới ~200KB và phần lớn lượt vào trang môn không tra từ nào).
+          if (this.traSanSang) { try { await this.traSanSang(); } catch (e) {} }
+          if (!this.traKhoa()) {                      // chế độ chỉ đọc, không gọi API
+            this.tra.data = this._traOffline(); this.tra.loading = false; return;
+          }
+          // Có nhận được phản hồi HTTP hay không — dùng để nói ĐÚNG LOẠI trục
+          // trặc. Ném từ `fetch` là hỏng mạng; phản hồi không ok là dịch vụ lỗi.
+          let coPhanHoi = false;
+          try {
+            const r = await fetch('/api/lookup', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'x-progress-key': this.traKhoa() },
+              // `user`/`course`/`sec` chỉ để ghi dòng lịch sử trong D1 — Worker
+              // KHÔNG đưa chúng vào prompt gửi Google (test_lookup_route chốt).
+              body: JSON.stringify({ mode: this.tra.mode, text: this.tra.text,
+                                     sent: this.tra.sent, ctx: this._traCtx(),
+                                     nn: this.nnHienTai(),
+                                     mon_nn: this.traMonNn(),
+                                     user: this.user, course: this.course, sec: this.traSec() }),
+            });
+            coPhanHoi = true;
+            const b = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error(b.error || ('HTTP ' + r.status));
+            this.tra.data = b.data;
+          } catch (e) {
+            // Lùi về glossary có sẵn. Chỉ báo lỗi khi lùi cũng không ra gì.
+            this.tra.data = this._traOffline();
+            // Hai yêu cầu kéo ngược nhau, và cả hai đều đúng:
+            //  · đừng chìa câu lỗi kỹ thuật ("Gemini lỗi 412") ra cho một đứa trẻ;
+            //  · đừng nói cứng "không có mạng" khi mạng vẫn tốt — nói sai lý do
+            //    còn tệ hơn không nói, vì người ta đi kiểm wifi thay vì kiểm dịch vụ.
+            // Giải bằng cách tách: hiện đúng LOẠI trục trặc bằng lời thường, còn
+            // nguyên văn thì đẩy ra console cho người lớn soi.
+            this.tra.ly_do = coPhanHoi ? 'tra cứu đang bận' : 'chưa có mạng';
+            console.warn('tra cứu hỏng:', String(e.message || e));
+            if (!this.tra.data) this.tra.err = 'Chưa tra được lúc này, thử lại sau nhé.';
+          }
+          this.tra.loading = false;
+        },
+
+        /** Đang có chữ được bôi đen? Thẻ ghi nhớ và ô đáp án là thẻ BẤM ĐƯỢC
+            bọc quanh chính phần chữ, nên kéo chọn trên đó sẽ lật thẻ lộ đáp án —
+            tức bôi đen để tra từ lại phá mất bài đang làm. */
+        dangBoiDen() {
+          const s = window.getSelection();
+          return !!(s && !s.isCollapsed && (s.toString() || '').trim());
+        },
+
+        /** Đăng ký nghe vùng chọn. Trang phải TỰ GỌI (trong `init()` hoặc
+            `x-init`) — để trong macro mà không gọi thì mọi thứ khác đều dựng
+            đúng, nút chỉ đơn giản không bao giờ hiện, và không có lỗi nào. */
+        // Nắn vùng chọn NHÌN THẤY ra biên từ. Trẻ kéo chuột hay thừa/thiếu
+        // vài ký tự ở hai đầu; nắn ra cả từ thì đỡ hẳn thao tác lại.
+        //
+        // ⚠ CHỈ chạy lúc NHẢ chuột, tuyệt đối không giữa lúc kéo. Sửa vùng
+        // chọn đang kéo làm nó chuẩn hoá chiều thành xuôi, tức lật điểm focus
+        // — đó đúng là lỗi "kéo chậm từ dưới lên thì mất vùng chọn" đã phải
+        // sửa bằng `cloneRange()`. Ở đây cú kéo đã xong nên đổi chiều vô hại.
+        //
+        // ⚠ `setTimeout(…, 0)`: để trình duyệt xử lý xong vùng chọn của chính
+        // nó rồi mới đụng vào.
+        //
+        // ⚠ Không đổi gì thì ĐỪNG gọi `addRange`: mỗi lần gọi là một lượt
+        // `selectionchange`, kéo theo một lượt `chonDoi()` vô ích.
+        nanBienTu() {
+          const sel = window.getSelection();
+          if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+          const r0 = sel.getRangeAt(0);
+          const h = r0.commonAncestorContainer;
+          const el = h.nodeType === 3 ? h.parentElement : h;
+          if (!el || !el.closest || !el.closest('[data-tra]')) return;
+          const r = this._noRong(r0.cloneRange());
+          if (r.startContainer === r0.startContainer && r.startOffset === r0.startOffset
+              && r.endContainer === r0.endContainer && r.endOffset === r0.endOffset) return;
+          try { sel.removeAllRanges(); sel.addRange(r); } catch (e) { /* bỏ qua */ }
+        },
+
+        traGan() {
+          if (typeof document === 'undefined' || this._traDaGan) return;
+          this._traDaGan = true;
+          for (const ev of ['mouseup', 'touchend']) {
+            document.addEventListener(ev, () => setTimeout(() => this.nanBienTu(), 0));
+          }
+          let hen = null;
+          // Gộp nhịp 120ms: kéo chọn trên điện thoại bắn hàng chục lượt mỗi giây.
+          // `selectionchange` bắn trên `document` và KHÔNG nổi lên window ở mọi
+          // trình duyệt, nên đừng thay bằng @selectionchange.window.
+          document.addEventListener('selectionchange', () => {
+            clearTimeout(hen);
+            hen = setTimeout(() => this.chonDoi(), 120);
+          });
+        },
+
+        /** Đóng popup và TRẢ LẠI nút 🔎 cho chỗ vừa chọn.
+
+            Trước đây đóng xong là nút biến mất, muốn xem lại phải bôi đen lại
+            từ đầu. Cú bấm để đóng (dù vào ✕ hay ra nền) tự xoá vùng chọn, nên
+            chỉ gọi `chonDoi()` thôi thì không đủ — phải ĐẶT LẠI vùng chọn đã
+            nhớ ở `chonDoi()` rồi mới tính lại vị trí nút. */
+        traDong() {
+          this.tra.show = false; this.tra.btn = null; this.tra.data = null;
+          this.tra.err = ''; this.tra.ly_do = '';
+          this.tra.chat = []; this.tra.hoi = ''; this.moGoc = false;
+          // ⚠ Chụp lại TRƯỚC khi xoá. Xoá `_traVung` ở đây rồi mới hỏi
+          // `this._traVung` trong `setTimeout` bên dưới thì nhánh khôi phục
+          // không bao giờ chạy — nút 🔎 mất hẳn sau khi đóng popup. Cùng lý do
+          // `rg` được chụp thành biến cục bộ.
+          const rg = this._traRg;
+          const vung = this._traVung;
+          this._traVung = null;
+          setTimeout(() => {
+            if (rg) {
+              try {
+                const s = window.getSelection();
+                s.removeAllRanges(); s.addRange(rg);
+              } catch (e) { return; }
+              this.chonDoi();
+            } else if (vung && this.traVungLai) {
+              // Vùng KÉO không có Range nào để đặt lại (các ký tự được chọn
+              // không liền mạch trong DOM), nên đường này do trang nhúng tự vẽ
+              // lại. Xem `traVungLai()` trong `docview.html`.
+              this.traVungLai();
+            }
+          }, 0);
+        },
+
+    };
+  }
+  document.addEventListener('click', (e) => {
+    const d = Alpine.$data(document.body);
+    if (d && d.moVideo) d.moVideo(e);
+  });
+</script>
+
+<div x-show="chonHoat" x-cloak data-chon-thanh
+     class="chon-thanh no-print fixed bottom-0 inset-x-0 z-30 flex items-center gap-3
+            px-4 py-2 bg-slate-900/90 text-white text-xs">
+  <span x-show="!chonBao">Kéo trên trang để chọn · cuộn bằng hai ngón</span>
+  <span x-show="chonBao" x-text="chonBao" class="text-amber-300"></span>
+  <span x-show="chonText" x-cloak class="ml-auto tabular-nums text-slate-300"
+        x-text="chonText.length + ' ký tự'"></span>
+  <button x-show="chonText" x-cloak @click="chonXoa()" type="button"
+          class="px-2 py-1.5 rounded border border-slate-500">Xoá nét</button>
+  <button @click="chonTat()" type="button" data-chon-xong aria-label="Thoát chọn vùng"
+          class="w-8 h-8 rounded border border-slate-500">✕</button>
+</div>
+</body>
+</html>
