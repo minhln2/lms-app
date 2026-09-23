@@ -181,7 +181,7 @@
               class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700">›</button>
     </div>
     
-    <button x-show="che === 'doc'" x-cloak @click="chonHoat ? chonVe() : chonBat()"
+    <button x-cloak @click="chonNut()"
             type="button" data-chon-nut
             :aria-pressed="String(chonHoat)" aria-label="Chọn vùng để tra cứu"
             :class="chonHoat ? 'bg-indigo-600 border-indigo-600 text-white'
@@ -1147,6 +1147,17 @@
           Bật/tắt ▭ KHÔNG xoá vùng chọn: chuyển tầng chứ không bắt đầu lại. */
       chonBat() { this._chotSong(); this._boBoiDen(); this.chonHoat = true; },
       chonVe()  { this.chonHoat = false; this.chonDang = null; this.chonBao = ''; },
+      /** Nút ▭. Ở 📄 thì sang 📖 trước (nhớ lựa chọn như bấm nút 📖), rồi bật
+          chọn sau khi lớp chữ đã hiện — `doiCheDo` nắn lớp chữ ở `$nextTick`. */
+      chonNut() {
+        if (this.chonHoat) { this.chonVe(); return; }
+        if (this.che !== 'doc') {
+          this.doiCheDo('doc', true);
+          this.$nextTick(() => this.chonBat());
+          return;
+        }
+        this.chonBat();
+      },
       /** Thoát = XOÁ HẾT (✕, Esc, đóng popup, sang 📄). Để lại ô tô màu sau khi
           thoát là rác trên trang mà không còn nút nào dọn được. */
       chonTat() { this.chonVe(); this.chonXoa(); },

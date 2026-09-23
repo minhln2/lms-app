@@ -137,7 +137,7 @@
 
 <div id="dau" class="no-print sticky top-0 z-20">
 <header class="no-print bg-indigo-600 text-white">
-  <div class="max-w-[76rem] mx-auto px-4 py-2 min-w-0">
+  <div class="max-w-5xl mx-auto px-4 py-2 min-w-0">
     
     <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-indigo-200">
   <a href="../../../../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">🏠 Home</a><span class="shrink-0 text-indigo-300">›</span>
@@ -149,11 +149,7 @@
 </header>
 
 <nav class="no-print sticky top-0 z-20 bg-white border-b border-slate-200">
-  <div class="max-w-[76rem] mx-auto px-4 py-2 flex items-center gap-2 flex-wrap">
-    
-    <button @click="mlMo = !mlMo" type="button" :aria-expanded="String(mlMo)"
-            :class="mlMo ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700'"
-            class="lg:hidden px-3 py-2 text-xs font-medium rounded-lg border">☰ Mục lục</button>
+  <div class="max-w-5xl mx-auto px-4 py-2 flex items-center gap-2 flex-wrap">
     
     
     
@@ -185,7 +181,7 @@
               class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700">›</button>
     </div>
     
-    <button x-show="che === 'doc'" x-cloak @click="chonHoat ? chonVe() : chonBat()"
+    <button x-cloak @click="chonNut()"
             type="button" data-chon-nut
             :aria-pressed="String(chonHoat)" aria-label="Chọn vùng để tra cứu"
             :class="chonHoat ? 'bg-indigo-600 border-indigo-600 text-white'
@@ -196,63 +192,7 @@
 </nav>
 </div>
 
-<div class="max-w-[76rem] mx-auto lg:flex lg:gap-5 lg:items-start">
-
-
-
-<aside class="ml no-print select-none lg:pt-4 lg:w-60 lg:shrink-0 lg:sticky lg:pl-4 lg:pr-0"
-       @keydown.escape.window="mlMo = false">
-  <div :class="mlMo ? 'mo block' : 'hidden lg:block'"
-       class="ml-khung rounded-lg border border-slate-200 bg-white p-2 lg:overflow-y-auto">
-    <p class="px-2 pb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Mục lục</p>
-    
-    
-    
-    <ol class="space-y-0.5">
-      
-      
-        
-          
-          
-      <li>
-        <div class="flex items-stretch gap-1">
-          
-          
-          <span class="w-8 shrink-0" aria-hidden="true"></span>
-          
-          <button type="button" @click="toiTrang(6); moUnit[1] = true"
-                  :class="unitDang === 0 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
-                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
-            <span class="tabular-nums text-slate-400 shrink-0">6</span>
-            <span class="min-w-0">6³ 6 × 6 × 6 7³ 8³ 9³ 10³ 11³ 8 125 27 64 280 122</span>
-          </button>
-        </div>
-        <ol x-show="moUnit[1]" x-cloak class="mt-0.5 space-y-0.5">
-        
-      
-        
-          </ol></li>
-          
-      <li>
-        <div class="flex items-stretch gap-1">
-          
-          
-          <span class="w-8 shrink-0" aria-hidden="true"></span>
-          
-          <button type="button" @click="toiTrang(7); moUnit[2] = true"
-                  :class="unitDang === 1 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
-                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
-            <span class="tabular-nums text-slate-400 shrink-0">7</span>
-            <span class="min-w-0">4³ = 54 + 25 + = 3³ - 25 = 5³ ³ - 10² = 243</span>
-          </button>
-        </div>
-        <ol x-show="moUnit[2]" x-cloak class="mt-0.5 space-y-0.5">
-        
-      
-      </ol></li>
-    </ol>
-  </div>
-</aside>
+<div class="max-w-5xl mx-auto lg:flex lg:gap-5 lg:items-start">
 
 <div class="min-w-0 lg:flex-1">
 
@@ -872,16 +812,16 @@
       chonHoat: false, chonBao: '', chonO: [], chonText: '', chonGoc: '', chonKq: '', dangBam: false,
       chonDang: null,
       // Trang bắt đầu của từng unit — để tự mở đúng unit đang đọc.
-      unitTr: [6, 7],
+      unitTr: [],
       // Trang mở đầu và CẤP của từng mục, theo đúng thứ tự vẽ ra. Cần cả hai
       // để biết "đang đọc trang 15" thuộc mục nào: mục đang đọc là mục CUỐI
       // CÙNG có trang mở đầu ≤ trang hiện tại, chứ không phải mục có trang mở
       // đầu BẰNG trang hiện tại. Luật cũ (`===`) chỉ sáng đúng một trang duy
       // nhất của mỗi mục, còn 9/10 thời gian đọc thì mục lục không sáng gì.
-      mlP: [6, 7],
+      mlP: [],
       // ⚠ `default=1`: mục lục một cấp KHÔNG có trường `c`, và `map` trả về
       // `Undefined` — `tojson` nổ ngay lúc build, cả trang trắng.
-      mlC: [1, 1],
+      mlC: [],
       tim: '', soKq: 0, viTri: 0,
       user: "pl", course: "cie-maths-5",
       secret: localStorage.getItem('lms_key') || '',
@@ -1351,6 +1291,17 @@
           Bật/tắt ▭ KHÔNG xoá vùng chọn: chuyển tầng chứ không bắt đầu lại. */
       chonBat() { this._chotSong(); this._boBoiDen(); this.chonHoat = true; },
       chonVe()  { this.chonHoat = false; this.chonDang = null; this.chonBao = ''; },
+      /** Nút ▭. Ở 📄 thì sang 📖 trước (nhớ lựa chọn như bấm nút 📖), rồi bật
+          chọn sau khi lớp chữ đã hiện — `doiCheDo` nắn lớp chữ ở `$nextTick`. */
+      chonNut() {
+        if (this.chonHoat) { this.chonVe(); return; }
+        if (this.che !== 'doc') {
+          this.doiCheDo('doc', true);
+          this.$nextTick(() => this.chonBat());
+          return;
+        }
+        this.chonBat();
+      },
       /** Thoát = XOÁ HẾT (✕, Esc, đóng popup, sang 📄). Để lại ô tô màu sau khi
           thoát là rác trên trang mà không còn nút nào dọn được. */
       chonTat() { this.chonVe(); this.chonXoa(); },
