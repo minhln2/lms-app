@@ -1365,7 +1365,21 @@
        * khi nhấn giữ từ khác, không qua trạng thái rỗng. Chồng lên nhau thì là
        * đang NỚI/THU chính vùng đó, thay chứ không cộng. */
       traNhanChon(r) {
-        if (!r) { this._chotSong(); return; }
+        if (!r) {
+          // ⚠ Vùng chọn co về ĐÚNG điểm neo của vùng đang sống = người dùng kéo
+          // ngược về chỗ bắt đầu trong CÙNG cú kéo → BỎ phần vừa tô, đừng chốt. Chỉ
+          // chốt khi vùng chọn mất vì bấm/nhấn chỗ KHÁC (người dùng báo: nhấn ở lề
+          // trái, tô vài từ, kéo về lề trái, thả → các từ đó vẫn bị chọn).
+          const s = getSelection();
+          const p = s && s.anchorNode ? this._diemChu(s.anchorNode, s.anchorOffset) : null;
+          if (p && this._songNeo && p[0] === this._songNeo[0] && p[1] === this._songNeo[1]) {
+            this._song = null; this._songNeo = null; this._songSent = '';
+            this._chonCapNhat();
+            return;
+          }
+          this._chotSong();
+          return;
+        }
         const ky = this._kyTuRange(r);
         if (!ky.length) return;
         // ⚠ CÙNG điểm neo = CÙNG một cú kéo → luôn THAY. Kéo lên rồi xuống qua
@@ -1725,6 +1739,10 @@
         d.dy = r ? r.dong.b.top : 0; d.dh = r ? r.dong.b.height : 0;
       },
       chonMove(e) {
+        // Tầng thường: nhớ là ĐÃ DI CHUYỂN, để kéo đi rồi về đúng chỗ bấm không bị
+        // coi là cú chạm "bỏ chọn" (xem `_chamThuong`).
+        if (!this.chonHoat && this._cham && !this._cham.di
+            && Math.hypot(e.clientX - this._cham.x, e.clientY - this._cham.y) > 6) this._cham.di = true;
         if (!this._ngon || !this._ngon.has(e.pointerId)) return;
         const cu = this._ngon.get(e.pointerId);
         this._ngon.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -1806,7 +1824,7 @@
        *  vậy: tới lúc hỏi thì vùng bôi đen đã có, không xoá. */
       _chamThuong(e) {
         const c = this._cham; this._cham = null;
-        if (!c || e.type !== 'pointerup' || !this.chonText) return;
+        if (!c || c.di || e.type !== 'pointerup' || !this.chonText) return;
         if (Math.abs(e.clientX - c.x) > 6 || Math.abs(e.clientY - c.y) > 6) return;
         if (e.target.closest && e.target.closest('a, button, .lk, .yt')) return;
         setTimeout(() => {
