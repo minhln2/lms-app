@@ -9,7 +9,7 @@
   <title>Ôn tập · CIE Science 1</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.f2ba323b.css">
+  <link rel="stylesheet" href="../assets/tw.2500d712.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -874,7 +874,9 @@
 
         /** Nới vùng chọn ra nguyên từ: kéo lệch nửa chữ vẫn tra đúng từ. */
         _noRong(r) {
-          const W = /[A-Za-z0-9'’-]/;
+          // Chữ của TỪ gồm mọi chữ cái Unicode + dấu kết hợp: bản ASCII cũ dừng ở
+          // "ệ" nên bôi từ dấu ":" của "chuyện:" ra "n: tình" (đo 2026-09-24).
+          const W = /[\p{L}\p{M}\p{N}'’-]/u;
           try {
             let n = r.startContainer, o = r.startOffset;
             if (n.nodeType === 3) { while (o > 0 && W.test(n.data[o - 1])) o--; r.setStart(n, o); }

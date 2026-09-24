@@ -2,6 +2,7 @@
 
 
 
+
 <!doctype html>
 <html lang="vi">
 <head>
@@ -9,7 +10,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>LMS preposition.docx · CIE ESL 5</title>
-<link rel="stylesheet" href="../../../../assets/tw.f2ba323b.css">
+<link rel="stylesheet" href="../../../../assets/tw.2500d712.css">
 <style>
   [x-cloak] { display: none !important; }
   #pdf { width:100%; height:calc(100vh - 8.5rem); border:0; }
@@ -39,6 +40,36 @@
      bản gốc, nhưng KHÔNG chắn tay người đọc. Thiếu dòng này thì kéo chuột qua
      một câu trong sách lại chọn trúng chữ `SAMPLE` phủ kín trang. */
   .chu span.mo { pointer-events: none; user-select: none; }
+  /* Vùng BẮT vô hình (đặc tả §3.7 — tay nắm cảm ứng). Chrome đặt đầu vùng chọn
+     vào ô chữ gần nhất theo đường chim bay; trúng pseudo-element của một span thì
+     nó quy về span đó: trúng `::before` → ĐẦU span, trúng `::after` → CUỐI span
+     (đo: pseudo là nội dung sinh ở đầu/cuối, KHÔNG phải vị trí theo x). Nên:
+       · bên trái dòng → đầu dòng (`::before`), bên phải → cuối dòng (`::after`);
+       · khe theo chiều tay nắm đang kéo — xuôi: khe PHÍA DƯỚI → cuối dòng vừa đi
+         qua; ngược (lớp `nguoc` trên main): khe PHÍA TRÊN → đầu dòng. Tức là với
+         tay nắm, ở khe thì lấy TRỌN dòng đã đi qua (chuột thì dừng ở x, §3.2).
+     Pseudo lớn nằm dưới pseudo nhỏ (z -2 dưới z -1); cả hai nằm DƯỚI chữ trong
+     stacking context riêng của span (`z-index:0`): đè lên chữ thì mọi cú bấm trúng
+     pseudo thay vì nút chữ và nháy đúp hết chọn được từ (đo: ca 9 đỏ).
+     Kích thước (`--bl --br --bu --bd`) do `_vungGhi()` tính từ mô hình hàng: ngang
+     tới nửa khe với span kế bên (hoặc mép trang), dọc tới hàng kế bên. Không dùng
+     `padding`: nó làm to hộp span (`getBoundingClientRect`, nền `.tim`). */
+  .chu span:not(.mo) { z-index:0; }
+  .chu span:not(.mo)::before, .chu span:not(.mo)::after { content:''; position:absolute; }
+  .chu span:not(.mo)::after { z-index:-2;
+    left:calc(-1 * var(--bl, 0px)); width:calc(100% + var(--bl, 0px) + var(--br, 0px));
+    top:0; height:calc(100% + var(--bd, 0px)); }
+  .chu span:not(.mo)::before { z-index:-1;
+    left:calc(-1 * var(--bl, 0px)); width:var(--bl, 0px); top:0; height:100%; }
+  main[data-tra].nguoc .chu span:not(.mo)::before { z-index:-2;
+    width:calc(100% + var(--bl, 0px) + var(--br, 0px));
+    top:calc(-1 * var(--bu, 0px)); height:calc(100% + var(--bu, 0px)); }
+  main[data-tra].nguoc .chu span:not(.mo)::after { z-index:-1;
+    left:100%; width:var(--br, 0px); top:0; height:100%; }
+  /* Chỗ KHÔNG có vùng bắt thì vùng chọn đứng yên thay vì nhảy lung tung.
+     ⚠ `i.nl` PHẢI chọn được: thiếu nó thì chép ra "biến hoá,tài năng" (đo). */
+  .khung { user-select:none; -webkit-user-select:none; }
+  .chu span:not(.mo), .chu i.nl { user-select:text; -webkit-user-select:text; }
   /* Dấu xuống dòng CHÉP ĐƯỢC giữa hai dòng chữ. Phải nằm TRONG LUỒNG và
      chứa ký tự thật; `font-size:0` để nó không chiếm một pixel nào. Xem
      `doc_view.py` cho ba cách đã thử và trượt. */
@@ -66,6 +97,7 @@
      cú kéo của ta đứt làm đôi. Đo được: hộp chỉ còn 64×4px và 2 điểm lấy mẫu
      thay vì cả dòng. */
   .chon-bat, .chon-bat * { user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
+  .chon-bat .chu span:not(.mo), .chon-bat .chu i.nl { user-select:none; -webkit-user-select:none; }
   /* Xem trước của BÚT: dải màu đúng trên dòng sẽ được chọn. */
   .chon-but { position:fixed; background:#6366f166; border-radius:2px;
               pointer-events:none; z-index:35; }
@@ -132,7 +164,7 @@
 <script defer src="../../../../assets/alpine.63d2636a.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800"
-      x-data="docStore()" x-init="traGan(); traGanVung()">
+      x-data="docStore()" x-init="traGan(); traGanVung(); chonChuGan()">
 
 
 <div id="dau" class="no-print sticky top-0 z-20">
@@ -1033,15 +1065,23 @@
       canhChu(chi) {
         const ds = chi ? [chi] : Array.from(document.querySelectorAll('.khung'));
         ds.forEach((k) => {
+          k._hang = null;                                       // mô hình hàng cũ theo khổ cũ
           const w = k.clientWidth; if (!w) return;
           const sp = Array.from(k.querySelectorAll('.chu span'));
           for (const s of sp) s.style.transform = '';           // ghi hết
           const rong = sp.map((s) => s.offsetWidth);            // ĐỌC hết
           for (let i = 0; i < sp.length; i++) {                 // ghi hết
             const dich = parseFloat(sp[i].dataset.w) * w;
-            if (dich && rong[i]) sp[i].style.transform = 'scaleX(' + (dich / rong[i]) + ')';
+            sp[i]._k = dich && rong[i] ? dich / rong[i] : 1;
+            if (dich && rong[i]) sp[i].style.transform = 'scaleX(' + sp[i]._k + ')';
           }
         });
+        // Vùng bắt (§3.7): ĐỌC mô hình hàng của mọi trang trước, GHI sau — một
+        // lượt dựng hình cho cả lô thay vì một lượt mỗi trang. Trang đang ẩn
+        // (chế độ 📄, bề rộng 0) bỏ qua: `doiCheDo('doc')` sẽ nắn lại.
+        const hien = ds.filter((k) => k.clientWidth);
+        const M = hien.map((k) => { k._hang = null; return this._hang(k); });
+        hien.forEach((k, i) => this._vungGhi(M[i]));
       },
       // Video YouTube: dựng khung LÚC BẤM, miền youtube-nocookie. Nhúng sẵn là
       // mỗi lần mở trang lại gọi sang Google cho từng video dù không ai xem.
@@ -1091,7 +1131,7 @@
           thoát là rác trên trang mà không còn nút nào dọn được. */
       chonTat() { this.chonVe(); this.chonXoa(); },
       chonXoa() {
-        this._ky = {}; this._song = null; this._songSent = '';
+        this._ky = {}; this._song = null; this._songSent = ''; this._songNeo = null;
         this.chonO = []; this.chonText = ''; this.chonGoc = ''; this.chonKq = '';
         this.tra.btn = null; this._traVung = null;
         this._boBoiDen();
@@ -1107,6 +1147,7 @@
         this._ky = { ...(this._ky || {}) };
         for (const r of this._song) this._ky[r.k] = r;
         this._song = null;
+        this._songNeo = null;
         this._chonCapNhat();
       },
       /** Đường BÔI ĐEN của tầng thường — `chonDoi()` gọi, `r` đã nắn biên từ.
@@ -1121,14 +1162,36 @@
         if (!r) { this._chotSong(); return; }
         const ky = this._kyTuRange(r);
         if (!ky.length) return;
-        if (this._song) {
+        // ⚠ CÙNG điểm neo = CÙNG một cú kéo → luôn THAY. Kéo lên rồi xuống qua
+        // đúng điểm bắt đầu thì vùng "trên" và vùng "dưới" không chung ký tự nào,
+        // và luật "rời hẳn thì chốt" đã chốt nhầm vùng trên (đo: 38 ký tự, tô
+        // hai lớp — người dùng gửi ảnh). Luật rời-hẳn chỉ dành cho lúc điểm neo
+        // ĐỔI: nhấn giữ từ khác trên Android, hoặc một cú kéo mới.
+        // ⚠ Chuẩn hoá điểm về (nút chữ, vị trí) rồi mới so: cùng một điểm neo
+        // Chrome lúc báo `(span, 0)` lúc báo `(text, 0)` (đo: lần đầu là span, sau
+        // khi đổi chiều là text). So `===` hay `comparePoint` đều thấy "khác neo"
+        // — theo chuẩn DOM `(span, 0)` đứng TRƯỚC `(text, 0)` — và chốt nhầm y như cũ.
+        const s = getSelection();
+        const neo = s && s.anchorNode ? this._diemChu(s.anchorNode, s.anchorOffset) : null;
+        const cungNeo = !!(neo && this._songNeo
+          && neo[0] === this._songNeo[0] && neo[1] === this._songNeo[1]);
+        if (this._song && !cungNeo) {
           const cu = new Set(this._song.map((x) => x.k));
           if (!ky.some((x) => cu.has(x.k))) this._chotSong();
         }
         this._song = ky;
+        this._songNeo = neo;
         this._songSent = this._cauChua(r, r.toString().replace(/\s+/g, ' ').trim());
         const kq = this._chonCapNhat();
         if (kq !== 'ok') this.chonNoi(this._chonLyDo(kq));
+      },
+      /** Điểm (nút, vị trí) → dạng chuẩn (nút CHỮ, vị trí) khi đi xuống được. */
+      _diemChu(n, o) {
+        while (n && n.nodeType === 1 && n.childNodes.length) {
+          if (o < n.childNodes.length) { n = n.childNodes[o]; o = 0; }
+          else { n = n.lastChild; o = n.nodeType === 3 ? n.length : n.childNodes.length; }
+        }
+        return [n, o];
       },
       /** Ký tự của lớp chữ nằm TRỌN trong Range (cả hai mép ký tự trong vùng).
           Vùng bôi đen có thể vắt nhiều trang — mỗi trang một lượt `_banGhi`. */
@@ -1556,6 +1619,292 @@
       traSec() { return ''; },
       traKhoa() { return this.secret; },
 
+        // ── Bôi đen qua khoảng trắng ──────────────────────────────────────────
+        _trangs() { return [...document.querySelectorAll('main[data-tra] .khung')]; },
+
+        /** Mô hình HÀNG của một trang. Hàng = các span có khoảng dọc chồng nhau
+            ≥ 50% chiều cao span; hai cột ngang nhau chung một hàng. Toạ độ px
+            tính từ góc khung, nên cuộn không làm cũ; `canhChu(kh)` và resize xoá.
+            ⚠ Nhớ trên CHÍNH phần tử (`kh._hang`), không trong state của Alpine:
+            state phản ứng bọc mảng span bằng Proxy và theo dõi mọi lần đọc —
+            vô ích cho dữ liệu chỉ để tính. Chỉ ĐỌC rect
+            (một lượt dựng hình mỗi trang), không đụng `transform`. */
+        _hang(kh) {
+          if (kh._hang) return kh._hang;
+          const K = kh.getBoundingClientRect();
+          const ds = [];
+          for (const sp of this._spans(kh)) {
+            const tn = sp.firstChild;
+            if (!tn || tn.nodeType !== 3 || !tn.data.trim()) continue;
+            const q = sp.getBoundingClientRect();
+            if (!q.width || !q.height) continue;
+            ds.push({ sp, l: q.left - K.left, r: q.right - K.left, t: q.top - K.top, b: q.bottom - K.top });
+          }
+          ds.sort((p, q) => p.t - q.t);
+          const hang = [];
+          for (const s of ds) {
+            // ⚠ So với TỪNG span của hàng, không với khoảng đã nới dần của hàng: một
+            // span cao (lỗi OCR, chữ to) nới hàng ra và hút cả cụm dòng bên cạnh vào
+            // làm một (đo: 50–65 hàng gộp sai mỗi quyển Amslink / ESL — review).
+            const h = hang.find((x) => x.spans.some((m) =>
+              Math.min(m.b, s.b) - Math.max(m.t, s.t) >= 0.5 * Math.min(m.b - m.t, s.b - s.t)));
+            if (h) { h.spans.push(s); h.t = Math.min(h.t, s.t); h.b = Math.max(h.b, s.b); }
+            else hang.push({ t: s.t, b: s.b, spans: [s] });
+          }
+          hang.sort((p, q) => p.t - q.t);
+          for (const h of hang) h.spans.sort((p, q) => p.l - q.l);
+          kh._hang = { w: K.width, h: K.height, hang };
+          return kh._hang;
+        },
+
+        /** Offset con trỏ trong span tại x (viewport): trước ký tự đầu tiên có
+            tâm nằm bên phải x. Ô ký tự đã gồm `scaleX` (ADR 0052). Tìm nhị phân. */
+        _viTri(sp, x) {
+          const tn = sp.firstChild, rg = document.createRange();
+          let lo = 0, hi = tn.length;
+          while (lo < hi) {
+            const m = (lo + hi) >> 1;
+            rg.setStart(tn, m); rg.setEnd(tn, m + 1);
+            const q = rg.getBoundingClientRect();
+            if (q.left + q.width / 2 > x) hi = m; else lo = m + 1;
+          }
+          return lo;
+        },
+
+        /** Trong hàng `h`: span gần `xp` nhất theo chiều ngang (toạ độ trang).
+            Bên trái span → đầu, bên phải → cuối, trong span → ký tự tại x. */
+        _trongHang(h, xp, K, yp) {
+          // Hoà theo chiều ngang (nhiều span cùng chứa x) thì lấy span gần y nhất —
+          // chọn theo mỗi chiều ngang thì "span đầu tiên theo l" thắng, sai dòng.
+          const dy = (c) => (yp === undefined ? 0 : Math.abs((c.t + c.b) / 2 - yp));
+          let s = h.spans[0], d = Infinity, e = Infinity;
+          for (const c of h.spans) {
+            const dc = xp < c.l ? c.l - xp : xp > c.r ? xp - c.r : 0;
+            if (dc < d - 0.5 || (Math.abs(dc - d) <= 0.5 && dy(c) < e)) { d = dc; e = dy(c); s = c; }
+          }
+          const tn = s.sp.firstChild, kh = s.sp.closest('.khung');
+          const off = xp <= s.l ? 0 : xp >= s.r ? tn.length : this._viTri(s.sp, xp + K.left);
+          return { node: tn, off, kh, t: h.t, b: h.b };
+        },
+
+        /** Hàng cuối cùng phía TRÊN y (y theo toạ độ trang `p`), lùi qua các trang trước. */
+        _hangTren(ds, p, yp, x) {
+          for (; p >= 0; p--, yp = Infinity) {
+            const K = ds[p].getBoundingClientRect(), H = this._hang(ds[p]).hang;
+            for (let j = H.length - 1; j >= 0; j--)
+              if (H[j].b < yp) return this._trongHang(H[j], Math.min(Math.max(x, K.left), K.right) - K.left, K);
+          }
+          return null;
+        },
+        /** Hàng đầu tiên phía DƯỚI y, tiến qua các trang sau. */
+        _hangDuoi(ds, p, yp, x) {
+          for (; p < ds.length; p++, yp = -Infinity) {
+            const K = ds[p].getBoundingClientRect(), H = this._hang(ds[p]).hang;
+            for (let j = 0; j < H.length; j++)
+              if (H[j].t > yp) return this._trongHang(H[j], Math.min(Math.max(x, K.left), K.right) - K.left, K);
+          }
+          return null;
+        },
+
+        /** LUẬT §3.2 — nơi DUY NHẤT. (x, y) viewport; `huong` so với ĐIỂM NEO:
+            'xuong' | 'len' | 'ngang'. Trả `Diem` hoặc null (ở khe mà chưa biết chiều).
+            · chạm một hàng → span gần nhất theo chiều ngang trong hàng đó;
+            · khe / vùng trống lớn / khe giữa hai trang: kéo xuống → hàng phía trên,
+              kéo lên → hàng phía dưới, cùng x;
+            · ngoài trang theo chiều ngang → kẹp x vào mép trang. */
+        _chieu(x, y, huong) {
+          const ds = this._trangs();
+          if (!ds.length) return null;
+          let lo = 0, hi = ds.length - 1;                 // trang đầu tiên có đáy ≥ y
+          while (lo < hi) {
+            const m = (lo + hi) >> 1;
+            if (ds[m].getBoundingClientRect().bottom < y) lo = m + 1; else hi = m;
+          }
+          const kh = ds[lo], K = kh.getBoundingClientRect();
+          const xk = Math.min(Math.max(x, K.left), K.right), yp = y - K.top, xp = xk - K.left;
+          const H = this._hang(kh).hang;
+          // Trên chữ (§3.2 dòng 1): điểm nằm trong hộp một span → CHÍNH span đó, khỏi
+          // bàn tới hàng. Nhiều hộp chồng nhau thì lấy span có tâm gần y nhất.
+          let tren = null;
+          for (const h of H) for (const c of h.spans) {
+            if (xp < c.l || xp > c.r || yp < c.t || yp > c.b) continue;
+            if (!tren || Math.abs((c.t + c.b) / 2 - yp) < Math.abs((tren.c.t + tren.c.b) / 2 - yp)) tren = { h, c };
+          }
+          if (tren) return this._trongHang({ t: tren.h.t, b: tren.h.b, spans: [tren.c] }, xp, K, yp);
+          const cham = H.filter((h) => yp >= h.t - 1 && yp <= h.b + 1);
+          if (cham.length) {
+            const g = (h) => Math.abs((h.t + h.b) / 2 - yp);
+            return this._trongHang(cham.reduce((a, c) => (g(c) < g(a) ? c : a)), xp, K, yp);
+          }
+          if (huong === 'xuong') return this._hangTren(ds, lo, yp, xk);
+          if (huong === 'len') return this._hangDuoi(ds, lo, yp, xk);
+          return null;
+        },
+
+        /** `Diem` của một vị trí có sẵn (điểm neo hiện tại, cho Shift+nhấp). */
+        _neoTu(node, off) {
+          const sp = node && (node.nodeType === 3 ? node.parentElement : node);
+          const kh = sp && sp.closest && sp.closest('main[data-tra] .khung');
+          if (!kh) return null;
+          const h = this._hang(kh).hang.find((x) => x.spans.some((s) => s.sp === sp));
+          return h ? { node, off, kh, t: h.t, b: h.b } : null;
+        },
+        /** GHI kích thước vùng bắt cho mọi span của một trang, từ mô hình hàng
+            `M` đã ĐỌC sẵn. Chỉ ghi, không đọc: `canhChu` đọc `_hang` của MỌI trang
+            trước rồi mới gọi hàm này cho từng trang — xen kẽ đọc/ghi qua 260 trang
+            là 260 lượt dựng hình (bẫy của `canhChu`, ADR 0052).
+            `::after` nằm TRONG span nên bị nắn theo `scaleX`: chiều ngang chia
+            cho `sp._k` (hệ số `canhChu` vừa ghi), chiều dọc giữ nguyên. */
+        _vungGhi(M) {
+          // ⚠ Giới hạn theo MỌI span, không chỉ span cùng HÀNG. Span nào cũng có
+          // `transform` nên là một lớp vẽ riêng: span sau trong DOM vẽ ĐÈ span trước,
+          // kể cả pseudo của nó. Nới tới "span kế bên cùng hàng" thì dòng ở cột bên
+          // cạnh lệch vài px (không cùng hàng) bị phủ và chấm vào chữ của nó lại trúng
+          // dòng khác (đo: 812 vùng bắt phủ chữ ở CIE Maths 1 LB; `test_lop_chu` đỏ).
+          //  · ngang: tới NỬA khe với span gần nhất có chồng DỌC với span này;
+          //  · dọc: tới hộp chữ gần nhất có chồng NGANG với phần đã nới ngang.
+          const S = M.hang.flatMap((h) => h.spans);
+          for (const s of S) {
+            let trai = s.l, phai = M.w - s.r;
+            for (const o of S) {
+              if (o === s || Math.min(s.b, o.b) - Math.max(s.t, o.t) <= 0) continue;
+              if (o.r <= s.l) trai = Math.min(trai, (s.l - o.r) / 2);
+              else if (o.l >= s.r) phai = Math.min(phai, (o.l - s.r) / 2);
+              else {                // chồng lên nhau (°C, dòng chấm "……"): không nới về phía nó
+                if (o.l < s.l) trai = 0;
+                if (o.r > s.r) phai = 0;
+              }
+            }
+            const L = s.l - trai, R = s.r + phai;
+            let duoi = M.h - s.b, tren = s.t;
+            for (const o of S) {
+              if (o === s || Math.min(R, o.r) - Math.max(L, o.l) <= 0) continue;
+              if (o.t >= s.b) duoi = Math.min(duoi, o.t - s.b);
+              else if (o.b <= s.t) tren = Math.min(tren, s.t - o.b);
+              else {
+                if (o.b > s.b) duoi = 0;
+                if (o.t < s.t) tren = 0;
+              }
+            }
+            const k = s.sp._k || 1, st = s.sp.style;
+            st.setProperty('--bl', Math.max(0, trai) / k + 'px');
+            st.setProperty('--br', Math.max(0, phai) / k + 'px');
+            st.setProperty('--bu', Math.max(0, tren) + 'px');
+            st.setProperty('--bd', Math.max(0, duoi) + 'px');
+          }
+        },
+
+        /** Bộ kéo CHUỘT của tầng thường (§3.2–3.3). Chặn `mousemove` gốc (pha
+            capture, `preventDefault`) rồi tự đặt vùng chọn bằng `setBaseAndExtent`.
+            Đã thử: trình duyệt giữ đúng chỗ mình đặt, neo không đổi, nháy đúp vẫn
+            chạy. Mousedown đơn cũng bị chặn (xem chỗ đó); nháy đúp/nháy ba thì không.
+            ⚠ Trạng thái cú kéo nằm trong CLOSURE, không trong state của Alpine:
+            mỗi `mousemove` ghi vào state phản ứng là một lượt theo dõi vô ích.
+            `window.__ccTat = true` tắt bộ kéo — CHỈ để test đo đường vùng bắt CSS. */
+        chonChuGan() {
+          if (typeof document === 'undefined' || this._ccDaGan) return;
+          this._ccDaGan = true;
+          let keo = null, raf = 0;
+          const ap = () => {
+            if (!keo) return;
+            let neo = keo.neo;
+            if (!neo) {
+              // Nhấn xuống ở KHE (§3.3): chờ hướng. Kéo xuống → neo = đầu hàng
+              // dưới; kéo lên → cuối hàng trên. Chỉ chốt khi chuột CHẠM hàng đó.
+              const y0 = keo.y0 - scrollY, dy = keo.y - y0;
+              const c = dy > 0 ? this._chieu(-Infinity, y0, 'len')
+                      : dy < 0 ? this._chieu(Infinity, y0, 'xuong') : null;
+              if (!c) return;
+              const Kc = c.kh.getBoundingClientRect();
+              if (dy > 0 ? keo.y < Kc.top + c.t : keo.y > Kc.top + c.b) return;
+              keo.neo = neo = c;
+            }
+            const K = neo.kh.getBoundingClientRect();
+            const huong = keo.y > K.top + neo.b ? 'xuong' : keo.y < K.top + neo.t ? 'len' : 'ngang';
+            const f = this._chieu(keo.x, keo.y, huong);
+            if (!f) return;
+            try { getSelection().setBaseAndExtent(neo.node, neo.off, f.node, f.off); } catch (e) { /* nút đã rời DOM */ }
+          };
+          // Tự cuộn (§3.4): chặn mousemove gốc là mất tự cuộn của trình duyệt.
+          // Trong BIÊN sát mép (mép trên = đáy thanh dính #dau) hoặc ra ngoài cửa sổ
+          // thì cuộn, nhanh dần tới 20px mỗi khung hình; mỗi khung hình tính lại
+          // vùng chọn. ⚠ Biên 16px, không phải 48px: 48px thì bôi một dòng gần đáy
+          // màn hình là trang tự trôi và vùng chọn chạy quá đích (đo:
+          // `keo_quet` cie-maths-5 tr72 nhả chuột cách đáy 43px → vớ dòng khác).
+          const lap = () => {
+            raf = 0;
+            if (!keo) return;
+            const dau = document.getElementById('dau');
+            const BIEN = 16;
+            const tren = (dau ? dau.getBoundingClientRect().bottom : 0) + BIEN, duoi = innerHeight - BIEN;
+            const v = keo.y < tren ? -Math.min(20, Math.ceil((tren - keo.y) / BIEN * 6))
+                    : keo.y > duoi ? Math.min(20, Math.ceil((keo.y - duoi) / BIEN * 6)) : 0;
+            if (!v) return;
+            scrollBy(0, v);
+            ap();
+            raf = requestAnimationFrame(lap);
+          };
+          document.addEventListener('mousedown', (e) => {
+            keo = null;
+            if (window.__ccTat || e.button !== 0 || e.detail >= 2 || this.chonHoat || this.tra.show
+                || e.ctrlKey || e.metaKey || e.altKey) return;
+            const t = e.target;
+            if (!t.closest || !t.closest('main[data-tra] .khung') || t.closest('a, button, .lk, .yt')) return;
+            if (e.shiftKey) {
+              const s = getSelection();
+              const neo = s && s.anchorNode && this._neoTu(s.anchorNode, s.anchorOffset);
+              if (!neo) return;
+              e.preventDefault();                     // Shift+nhấp gốc cũng vớ theo Euclid
+              keo = { neo, x: e.clientX, y: e.clientY, y0: e.clientY + scrollY };
+              ap();
+              return;
+            }
+            // ⚠ Chặn mousedown GỐC (chỉ cú bấm đơn): để Chrome khởi động cơ chế chọn
+            // chữ của nó thì nó ghi đè vùng mình đặt — chặn mousemove KHÔNG đủ khi
+            // Chrome đã sang đường kéo-thả (đo: `dragstart` → bị chặn → Chrome lùi
+            // về chọn chữ gốc, vẫn theo Euclid). Nháy đúp/nháy ba (`detail ≥ 2`)
+            // vẫn là của trình duyệt. Mất việc tự bỏ tiêu điểm ô tìm → tự làm.
+            e.preventDefault();
+            // Bỏ tiêu điểm của MỌI phần tử, không chỉ ô nhập: chặn mousedown gốc thì
+            // nút vừa bấm (🖍, mục lục) giữ tiêu điểm và Space/Enter bấm lại nó (review).
+            const a = document.activeElement;
+            if (a && a !== document.body && a.blur) a.blur();
+            // Cú nhấn MỚI = cú kéo mới: neo trùng chỗ (khoảng trắng nắn về cùng một
+            // điểm) không có nghĩa là cùng cú kéo — xoá dấu neo để lượt trước được
+            // chốt (cộng dồn, §3.5). Nhịp 120ms của `chonDoi` nuốt mất lúc thu về điểm.
+            this._songNeo = null;
+            const neo = this._chieu(e.clientX, e.clientY, 'ngang');
+            const s = getSelection();
+            if (neo) s.setBaseAndExtent(neo.node, neo.off, neo.node, neo.off); else s.removeAllRanges();
+            keo = { neo, x: e.clientX, y: e.clientY, y0: e.clientY + scrollY };
+          }, true);
+          document.addEventListener('mousemove', (e) => {
+            if (!keo) return;
+            if (!(e.buttons & 1)) { keo = null; return; }
+            e.preventDefault();                       // chặn phép chọn gốc (Euclid, §2.2)
+            keo.x = e.clientX; keo.y = e.clientY;
+            ap();
+            if (!raf) raf = requestAnimationFrame(lap);
+          }, true);
+          document.addEventListener('mouseup', () => { keo = null; cancelAnimationFrame(raf); raf = 0; }, true);
+          // ⚠ Chặn KÉO-THẢ chữ trong lúc đang kéo chọn. Mình tự đặt vùng chọn nên
+          // con trỏ nằm TRÊN chữ vừa chọn, và cú di kế tiếp Chrome hiểu là kéo-thả
+          // đoạn chữ đó: bắn `dragstart` rồi `pointercancel`, cú kéo đứt sau một
+          // bước (đo: vùng chọn kẹt ở "Nhâ").
+          document.addEventListener('dragstart', (e) => { if (keo) e.preventDefault(); }, true);
+          // Chiều của tay nắm đang kéo → chiều phủ khe của vùng bắt (§3.7).
+          // Range đặt end TRƯỚC start thì tự co về một điểm: dấu hiệu focus đứng trước neo.
+          document.addEventListener('selectionchange', () => {
+            const m = document.querySelector('main[data-tra]'), s = getSelection();
+            if (!m || !s || !s.rangeCount || s.isCollapsed) return;
+            const r = document.createRange();
+            r.setStart(s.anchorNode, s.anchorOffset); r.setEnd(s.focusNode, s.focusOffset);
+            m.classList.toggle('nguoc', r.collapsed);
+          });
+          addEventListener('scroll', () => ap(), { passive: true });
+        },
+
+
         // ── Tra cứu: bôi đen → nút 🔎 → popup ─────────────────────────────────
         // Nghĩa của một từ phụ thuộc CÂU chứa nó và BÀI đang học, nên không dựng
         // sẵn được: `sedimentary` trong bài về đá không giống ở chỗ khác. Vì vậy
@@ -1568,7 +1917,9 @@
 
         /** Nới vùng chọn ra nguyên từ: kéo lệch nửa chữ vẫn tra đúng từ. */
         _noRong(r) {
-          const W = /[A-Za-z0-9'’-]/;
+          // Chữ của TỪ gồm mọi chữ cái Unicode + dấu kết hợp: bản ASCII cũ dừng ở
+          // "ệ" nên bôi từ dấu ":" của "chuyện:" ra "n: tình" (đo 2026-09-24).
+          const W = /[\p{L}\p{M}\p{N}'’-]/u;
           try {
             let n = r.startContainer, o = r.startOffset;
             if (n.nodeType === 3) { while (o > 0 && W.test(n.data[o - 1])) o--; r.setStart(n, o); }
