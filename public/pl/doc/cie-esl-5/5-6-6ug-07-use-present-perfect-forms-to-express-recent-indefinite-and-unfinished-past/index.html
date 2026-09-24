@@ -1640,8 +1640,12 @@
        */
       _dongCuaNet(kh, diem) {
         if (!diem.length) return null;
-        const xs = diem.map((p) => p.x), ys = diem.map((p) => p.y);
-        const x0 = Math.min(...xs), x1 = Math.max(...xs), yDau = ys[0];
+        // ⚠ Bề ngang từ điểm ĐẦU tới điểm CUỐI (chỗ thả tay), không phải min/max
+        // mọi điểm đã đi qua: dải xem trước co lại khi kéo lùi, nên lấy theo cả
+        // đường đi thì chữ đã bị bỏ khỏi dải vẫn được chọn lúc thả (người dùng báo:
+        // kéo qua chữ rồi về khoảng trắng ban đầu — chữ vẫn bị chọn).
+        const ys = diem.map((p) => p.y), dau = diem[0], cuoi = diem[diem.length - 1];
+        const x0 = Math.min(dau.x, cuoi.x), x1 = Math.max(dau.x, cuoi.x), yDau = ys[0];
         const yMin = Math.min(...ys), yMax = Math.max(...ys);
         const spans = this._spans(kh)
           .filter((sp) => sp.firstChild && sp.firstChild.nodeType === 3)
@@ -1770,7 +1774,10 @@
         // độ. Trên điện thoại không có Esc, đây là cách dọn nhanh nhất. Giữ đủ
         // giờ (đã sang ⬚) rồi thả mà không kéo thì là đổi ý — không làm gì.
         if (Math.abs(d.x1 - d.x0) < 6 && Math.abs(d.y1 - d.y0) < 6) {
-          if (d.kieu !== 'khung' && e.type === 'pointerup' && this.chonText) this.chonXoa();
+          // ⚠ Chỉ là CHẠM khi chưa hề di chuyển. Kéo đi rồi quay về sát chỗ cũ là
+          // ĐỔI Ý — không chọn gì, và KHÔNG xoá phần đã chọn (bản đầu coi nó là cú
+          // chạm và xoá sạch).
+          if (!this._diChuyen && d.kieu !== 'khung' && e.type === 'pointerup' && this.chonText) this.chonXoa();
           return;
         }
         const b = this._kh.getBoundingClientRect();
@@ -1783,7 +1790,17 @@
         const kq = d.kieu === 'khung'
           ? this._chonTrongO(this._kh, { left: x0, top: y0, right: x1, bottom: y1 })
           : this._chonTheoNet(this._kh, this._diem.concat([{ x: d.x1, y: d.y1 }]));
-        if (!kq.ky.length) { this.chonNoi('Vùng này không có chữ'); return; }
+        if (!kq.ky.length) {
+          // Nét BÚT đã đi QUA chữ rồi lùi về khoảng trắng là đổi ý → im lặng. Kéo trên
+          // vùng thật sự trống (cả đường đi không phủ chữ nào) thì vẫn báo — người
+          // dùng không được bị bỏ mặc (`test_chon_vung` ca 14, 18).
+          const net = this._diem.concat([{ x: d.x1, y: d.y1 }]), xs = net.map((p) => p.x);
+          const caDuong = [{ x: Math.min(...xs), y: net[0].y }, ...net.slice(1, -1),
+                           { x: Math.max(...xs), y: net[net.length - 1].y }];
+          const daQuaChu = d.kieu === 'but' && this._chonTheoNet(this._kh, caDuong).ky.length;
+          if (!daQuaChu) this.chonNoi('Vùng này không có chữ');
+          return;
+        }
         // HỢP vào tập đã có: ký tự đã chọn thì khoá trùng, không thêm lần nữa.
         const cu = this._ky || {};
         this._ky = { ...cu };
