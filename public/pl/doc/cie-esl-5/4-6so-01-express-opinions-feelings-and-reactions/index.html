@@ -1285,7 +1285,11 @@
         const tat = { ...(this._ky || {}) };
         for (const r of this._song || []) tat[r.k] = r;
         const gop = this._gopChon(Object.values(tat));
-        this.chonO = this._gopChon(Object.values(this._ky || {})).o;
+        // Chỉ VẼ phần đã chốt mà vùng bôi đen đang sống KHÔNG phủ: vùng sống do trình
+        // duyệt tự tô, vẽ thêm ô màu lên chỗ chồng nhau là hai lớp màu (người dùng gửi
+        // ảnh LS&ĐL tr.47 — "dục, khoa" đậm gấp đôi sau khi bôi chồng lên nét cũ).
+        const song = new Set((this._song || []).map((r) => r.k));
+        this.chonO = this._gopChon(Object.values(this._ky || {}).filter((r) => !song.has(r.k))).o;
         this.chonText = gop.text; this.chonGoc = gop.goc;
         const sent = this._song && !Object.keys(this._ky || {}).length ? this._songSent : '';
         this.chonKq = gop.text
