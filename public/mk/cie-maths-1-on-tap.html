@@ -886,7 +886,10 @@ timMo: false,
 
         // ── Bốn hàm móc của `_tracuu.html` ───────────────────────────────────
         
-      traNgonNgu() { return false ? 'en' : 'vi'; },
+      // ⚠ Từng ghi cứng `false ? 'en' : 'vi'` (1ff03a1) → trang ôn tập LUÔN tiếng Việt, popup
+      // không bao giờ có nút VI/EN. Nay cùng công thức với trang đọc: `nn` khai trong config
+      // (ADR 0035) thắng, không có thì suy từ slug. `tojson` trong <script> — được.
+      traNgonNgu() { return "en"; },
       traTen()    { return 'Môn: CIE Maths 1. Mục đang học: '
                              + (this.conceptName(this.scope) || '—') + '.'; },
         traMucCtx() { return this.scopedSummary || []; },
