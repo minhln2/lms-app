@@ -11,7 +11,7 @@
   <title>Ôn tập · CIE ESL 1</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.3760865e.css">
+  <link rel="stylesheet" href="../assets/tw.c83fd5a5.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -279,6 +279,10 @@
         // trắc nghiệm. Khoá sau ghi đè khoá trước trong object literal.
         kw: '',
         get qq() { return (this.kw || '').trim().toLowerCase(); },
+        // Có chữ bôi đen tra được → hàng công cụ đổi sang [✕][💬 Giải thích] (ADR 0054).
+        // `tra.btn` chỉ được đặt khi vùng bôi đen hợp lệ VÀ tra được (`_traDat` = 'ok').
+        get coChon() { return !!this.tra.btn && !this.tra.show; },
+        boChonThanh() { const s = getSelection(); if (s) s.removeAllRanges(); this.tra.btn = null; },
 timMo: false,
       timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
       timDong() { this.kw = ''; this.timMo = false; },
@@ -1828,6 +1832,8 @@ timMo: false,
        rồi hàng tab chế độ. Mọi class Tailwind là literal. -->
   <nav x-show="ready && data" x-cloak class="bg-white border-b border-slate-200">
     <div class="max-w-5xl mx-auto px-3 sm:px-4 py-2 flex items-center gap-1.5 sm:gap-2">
+      
+      <div x-show="!coChon" class="contents">
       <button type="button" data-nut-menu :aria-expanded="String(navOpen)"
         @click="navOpen = !navOpen; if (navOpen) { locMo = false }"
         aria-label="Mục lục" title="Mục lục"
@@ -1864,6 +1870,18 @@ timMo: false,
         :class="[(soLoc) || locMo ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700',
                  timMo ? 'max-sm:hidden' : '', (false) ? 'invisible' : '']"
         class="h-9 min-w-9 shrink-0 px-2 rounded-lg border text-sm font-medium inline-flex items-center justify-center gap-1 whitespace-nowrap">⚙<span class="hidden lg:inline text-xs">Lọc</span><span x-show="soLoc" x-cloak data-so-loc class="text-xs tabular-nums" x-text="soLoc"></span></button>
+      </div>
+      <template x-if="coChon"><div class="contents">
+        <button type="button" data-chon-xong @mousedown.prevent @click="boChonThanh()"
+                aria-label="Bỏ chọn" title="Bỏ chọn"
+                class="w-9 h-9 shrink-0 rounded-lg border border-slate-300 text-slate-700">✕</button>
+        <button type="button" data-chon-giai @mousedown.prevent @click="traMo()"
+                class="flex-1 min-w-0 h-9 px-3 rounded-lg bg-indigo-600 border border-indigo-600 text-white text-xs font-medium
+                       inline-flex items-center gap-1.5 shadow">
+          <span class="shrink-0">💬 Giải thích</span>
+          <span class="min-w-0 truncate font-normal text-indigo-100" x-text="'“' + tra.text + '”'"></span>
+        </button>
+      </div></template>
     </div>
     
     <div class="max-w-5xl mx-auto px-3 sm:px-4 pb-2 flex items-center gap-1.5">
@@ -3063,13 +3081,7 @@ timMo: false,
        ngay dưới vùng chọn, hai thứ đè lên nhau và trẻ bấm nhầm liên tục.
        @mousedown.prevent là BẮT BUỘC — thiếu nó thì cú nhấn vào nút tự xoá vùng
        chọn trước khi @click chạy, và nút mở ra một popup rỗng. -->
-  <template x-if="tra.btn && !tra.show">
-    <button @mousedown.prevent @click="traMo()" type="button"
-            :style="'left:' + tra.btn.x + 'px; top:' + tra.btn.y + 'px'"
-            class="fixed z-40 -translate-x-1/2 px-3 py-1.5 rounded-full bg-indigo-600 text-white text-xs font-medium shadow-lg hover:bg-indigo-700">
-      🔎 Giải thích
-    </button>
-  </template>
+  
 
   <!-- Tấm trượt từ dưới lên trên điện thoại, hộp giữa màn hình trên máy tính.
        Không neo popup vào vùng chọn: chữ nằm sát đáy màn hình thì popup neo theo
