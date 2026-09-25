@@ -10,7 +10,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>K5_VNH_Bai 1.6_Phieu suy ngam.pdf · Việt Nam Học 5</title>
-<link rel="stylesheet" href="../../../../assets/tw.b4129989.css">
+<link rel="stylesheet" href="../../../../assets/tw.1e6720a1.css">
 <style>
   [x-cloak] { display: none !important; }
   #pdf { width:100%; height:calc(100vh - 8.5rem); border:0; }
@@ -631,6 +631,7 @@
       mlMo: false, trangDang: 0, moUnit: {}, mucDang: -1, unitDang: -1,
       chonHoat: false, chonBao: '', chonO: [], chonText: '', chonGoc: '', chonKq: '', timMo: false,
       chonLui: [],          // ↶: mỗi phần tử = các khoá ký tự MỘT nét (🖍/⬚) đã thêm
+      soiNet: false, soiDem: 0,   // chế độ soi nét (?soinet=1) — xem `_soiVe`
       chonDang: null,
       // Trang bắt đầu của từng unit — để tự mở đúng unit đang đọc.
       unitTr: [],
@@ -680,6 +681,10 @@
         window.speechSynthesis.speak(u);
       },
       init() {
+        try {
+          this.soiNet = new URLSearchParams(location.search).has('soinet');
+          if (this.soiNet) this.soiDem = JSON.parse(localStorage.getItem('lms_soinet') || '[]').length;
+        } catch (e) { this.soiNet = false; }
         // Nhớ lựa chọn, nhưng CHỈ khi người dùng tự bấm. Bản quét không có chế
         // độ đọc nên bị ép sang PDF; ghi lựa chọn đó xuống thì một cuốn SGK đầu
         // độc mọi tài liệu sau — đã đo: 7/9 tài liệu mở nhầm sang PDF.
@@ -1515,6 +1520,10 @@
         const buoc = kc.length ? kc[kc.length >> 1] : 1.8 * (cao.length ? cao[cao.length >> 1] : 16);
         kh._but = { tu, tam, buoc, theoHang, dong: null, moc: null, cho: null, quang: 0,
                     doan: new Map(), vao: new Map(), catTo: new Set(), prev: null, kq: new Set(), khoa: '' };
+        if (this.soiNet) {
+          document.querySelectorAll('.khung > svg.soi-net').forEach((e) => e.remove());
+          kh._but.soi = { t0: performance.now(), diem: [], kieu: this._kieuConTro || '' };
+        }
       },
       /** Thêm một điểm (toạ độ viewport) vào nét; trả true nếu tập từ được tô đổi. */
       _butThem(kh, p) {
@@ -1553,6 +1562,10 @@
             this._butCat(B, r, tai(l), tai(bb));
         }
         B.prev = { x, y };
+        if (B.soi) {
+          B.soi.diem.push([Math.round(x * 10) / 10, Math.round(y * 10) / 10, Math.round(performance.now() - B.soi.t0), B.dong]);
+          this._soiVe(kh);
+        }
         // Kết quả = (b) đã cắt ∪ (b) đang dở (nét dừng TRONG lõi) ∪ (a) các đoạn đi ngang.
         const kq = new Set(B.catTo);
         for (const [r, v] of B.vao) this._butCat(B, r, v, { x, y }, kq);
@@ -1606,6 +1619,72 @@
           kh.appendChild(d);
         }
       },
+      /** ── SOI NÉT (`?soinet=1`) ──────────────────────────────────────────────
+       *  Thu dữ liệu nét THẬT từ điện thoại: mô phỏng tay người không tái hiện được lỗi
+       *  người dùng gặp (lệch dòng, không bắt từ khi quẹt nhanh / ra biên — 2026-09-25).
+       *  Vẽ lớp soi (đường đi, dải dòng đang bám, lõi, chỗ chuyển dòng) và lưu 30 nét gần
+       *  nhất vào localStorage `lms_soinet` — kèm hình học dòng/từ quanh nét (hang, gl, gr,
+       *  el, er, chữ) để chạy lại nguyên xi qua các biến thể luật. Tắt mặc định. */
+      _soiVe(kh) {
+        const B = kh._but;
+        if (!B || !B.soi) return;
+        const K = kh.getBoundingClientRect(), NS = 'http://www.w3.org/2000/svg';
+        let s = kh.querySelector(':scope > svg.soi-net');
+        if (!s) {
+          s = document.createElementNS(NS, 'svg');
+          s.setAttribute('class', 'soi-net');
+          s.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5';
+          kh.appendChild(s);
+        }
+        s.setAttribute('viewBox', `0 0 ${K.width} ${K.height}`);
+        const d = B.soi.diem, W = K.width, b = B.buoc;
+        let h = '';
+        for (const r of new Set(d.map((p) => p[3]).filter((v) => v !== null))) {
+          const c = B.tam[r];
+          h += `<rect data-soi-dai x="0" y="${c - 0.5 * b}" width="${W}" height="${b}" fill="#facc15" fill-opacity="${r === B.dong ? 0.3 : 0.12}"/>`;
+          for (const y of [c - 0.3 * b, c + 0.3 * b])
+            h += `<line x1="0" x2="${W}" y1="${y}" y2="${y}" stroke="#a16207" stroke-width="0.7" stroke-dasharray="3 3"/>`;
+        }
+        h += `<polyline points="${d.map((p) => p[0] + ',' + p[1]).join(' ')}" fill="none" stroke="#dc2626" stroke-width="1.5"/>`;
+        for (let k = 1; k < d.length; k++)
+          if (d[k][3] !== d[k - 1][3] && d[k - 1][3] !== null) h += `<circle cx="${d[k][0]}" cy="${d[k][1]}" r="3" fill="#2563eb"/>`;
+        s.innerHTML = h;
+      },
+      _soiLuu(kh) {
+        const B = kh._but;
+        if (!B || !B.soi || B.soi.diem.length < 2) return;
+        const r1 = (v) => Math.round(v * 10) / 10, ys = B.soi.diem.map((p) => p[1]);
+        const yMin = Math.min(...ys) - 2 * B.buoc, yMax = Math.max(...ys) + 2 * B.buoc, gan = new Set();
+        B.tam.forEach((c, k) => { if (c >= yMin && c <= yMax) gan.add(k); });
+        for (const p of B.soi.diem) if (p[3] !== null) gan.add(p[3]);
+        const chu = (w) => w.sp.firstChild.data.slice(w.i, w.e);
+        const K = kh.getBoundingClientRect();
+        const ban = {
+          luc: new Date().toISOString(), trang: kh.closest('section.trang')?.dataset.tr, url: location.pathname,
+          khung: [r1(K.width), r1(K.height)], buoc: r1(B.buoc),
+          dong: [...gan].sort((a, c) => a - c).map((k) => [k, r1(B.tam[k])]),
+          tu: B.tu.filter((w) => gan.has(w.hang)).map((w) => [w.hang, r1(w.gl), r1(w.gr), r1(w.el), r1(w.er), chu(w)]),
+          diem: B.soi.diem,
+          ket_qua: [...B.kq].sort((a, c) => a - c).map((n) => chu(B.tu[n])).join(' '),
+          thiet_bi: { kieu: B.soi.kieu, w: innerWidth, h: innerHeight, dpr: devicePixelRatio,
+                      zoom: Math.round((window.visualViewport ? visualViewport.scale : 1) * 100) / 100, ua: navigator.userAgent },
+        };
+        let ds = [];
+        try { ds = JSON.parse(localStorage.getItem('lms_soinet') || '[]'); } catch (e) { ds = []; }
+        ds = [...ds, ban].slice(-30);
+        try { localStorage.setItem('lms_soinet', JSON.stringify(ds)); } catch (e) { /* đầy bộ nhớ: bỏ */ }
+        this.soiDem = ds.length;
+      },
+      async soiChep() {
+        const t = JSON.stringify({ phien: 1, net: JSON.parse(localStorage.getItem('lms_soinet') || '[]') });
+        try { await navigator.clipboard.writeText(t); this.chonNoi('Đã sao chép ' + this.soiDem + ' nét'); }
+        catch (e) { window.prompt('Sao chép dữ liệu nét:', t); }
+      },
+      soiXoa() {
+        try { localStorage.removeItem('lms_soinet'); } catch (e) { /* bỏ */ }
+        this.soiDem = 0;
+        document.querySelectorAll('.khung > svg.soi-net').forEach((e) => e.remove());
+      },
       _butXong(kh) {
         document.querySelectorAll('.khung > .chon-but').forEach((e) => e.remove());
         if (kh) kh._but = null;
@@ -1621,6 +1700,7 @@
       /** Bắt đầu kéo. Chỉ nhận khi đang bật chế độ và điểm bấm nằm TRONG một
        *  trang — bấm lên thanh đầu hay ra nền thì không tính. */
       chonDown(e) {
+        this._kieuConTro = e.pointerType;
         if (!this.chonHoat) {           // tầng thường: chỉ nhớ để nhận ra cú CHẠM
           this._cham = { x: e.clientX, y: e.clientY };
           return;
@@ -1731,7 +1811,7 @@
         const y1 = Math.min(Math.max(d.y0, d.y1), b.bottom);
         let kq;
         if (d.kieu === 'khung') kq = this._chonTrongO(this._kh, { left: x0, top: y0, right: x1, bottom: y1 });
-        else { kq = { ky: this._butKy(this._kh) }; this._butXong(this._kh); }
+        else { kq = { ky: this._butKy(this._kh) }; if (this.soiNet) this._soiLuu(this._kh); this._butXong(this._kh); }
         if (!kq.ky.length) { this.chonNoi('Vùng này không có chữ'); return; }
         // HỢP vào tập đã có: ký tự đã chọn thì khoá trùng, không thêm lần nữa.
         const cu = this._ky || {};
@@ -2553,5 +2633,12 @@
     if (d && d.moVideo) d.moVideo(e);
   });
 </script>
+
+<div x-show="soiNet" x-cloak class="no-print fixed bottom-2 left-2 z-40 flex items-center gap-2 rounded-lg
+     bg-slate-900/85 text-white text-xs px-2 py-1 select-none">
+  <span data-soi-dem x-text="soiDem + ' nét'"></span>
+  <button type="button" data-soi-chep @click="soiChep()" class="h-8 px-2 rounded bg-indigo-500">Sao chép dữ liệu nét</button>
+  <button type="button" data-soi-xoa @click="soiXoa()" class="h-8 px-2 rounded border border-slate-500">Xoá</button>
+</div>
 </body>
 </html>
