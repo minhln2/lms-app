@@ -105,7 +105,10 @@
   .chon-huy { position:fixed; z-index:36; pointer-events:none; width:28px; height:28px;
               display:grid; place-items:center; border-radius:9999px; font-size:16px;
               background:#fff; box-shadow:0 1px 6px #0004; }
-  .chon-bat .khung { touch-action:none; }
+  /* Một ngón = vẽ (không cuộn), nhưng hai ngón vẫn PHÓNG TO được (người dùng chọn
+     2026-09-25: chữ to thì bước dòng lớn, bút dễ trúng). ⚠ Headless Chromium không
+     giả lập được pinch — hành vi hai ngón trên máy thật phải thử tay. */
+  .chon-bat .khung { touch-action:pinch-zoom; }
   @media print { .chon-o, .chon-dang, .chon-but, .chon-huy { display:none !important; } }
   .lk { position:absolute; z-index:3; display:grid; place-items:center; border:0;
         cursor:pointer; text-decoration:none; color:#fff; background:#ef4444;
@@ -268,6 +271,10 @@
         <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
       <span class="hidden sm:inline">Giải thích</span>
     </button>
+    
+    <button @click="chonLuiNet()" type="button" data-chon-lui aria-label="Bỏ nét vừa tô" title="Bỏ nét vừa tô"
+            :class="[chonHoat && chonLui.length ? '' : 'invisible', timMo ? 'max-sm:hidden' : '']"
+            class="w-9 h-9 shrink-0 rounded-lg border border-slate-300 text-slate-700">↶</button>
     
     <button @click="chonTat()" type="button" data-chon-xong aria-label="Bỏ chọn và thoát" title="Bỏ chọn và thoát"
             :class="[(chonHoat || chonText) ? '' : 'invisible', timMo ? 'max-sm:hidden' : '']"
@@ -940,6 +947,7 @@
       tiLe: 1.2, soTrang: 0, pdfLoi: '', srcNang: '',
       mlMo: false, trangDang: 0, moUnit: {}, mucDang: -1, unitDang: -1,
       chonHoat: false, chonBao: '', chonO: [], chonText: '', chonGoc: '', chonKq: '', timMo: false,
+      chonLui: [],          // ↶: mỗi phần tử = các khoá ký tự MỘT nét (🖍/⬚) đã thêm
       chonDang: null,
       // Trang bắt đầu của từng unit — để tự mở đúng unit đang đọc.
       unitTr: [],
@@ -1444,11 +1452,21 @@
           thoát là rác trên trang mà không còn nút nào dọn được. */
       chonTat() { this.chonVe(); this.chonXoa(); },
       chonXoa() {
-        this._ky = {}; this._song = null; this._songSent = ''; this._songNeo = null;
+        this._ky = {}; this._song = null; this._songSent = ''; this._songNeo = null; this.chonLui = [];
         this.chonO = []; this.chonText = ''; this.chonGoc = ''; this.chonKq = '';
         this.tra.btn = null; this._traVung = null;
         this._boBoiDen();
         this._veChon();     // ⚠ phải GỠ các ô đã vẽ, đổi `chonO` thôi thì chúng còn nguyên
+      },
+      /** ↶ Bỏ đúng nét 🖍/⬚ vừa tô (người dùng chọn 2026-09-25: tay lệch trượt dòng
+          thì lùi một nét, không phải xoá hết làm lại). */
+      chonLuiNet() {
+        const cuoi = this.chonLui[this.chonLui.length - 1];
+        if (!cuoi) return;
+        this.chonLui = this.chonLui.slice(0, -1);
+        this._ky = { ...(this._ky || {}) };
+        for (const k of cuoi) delete this._ky[k];
+        this._chonCapNhat();
       },
       _boBoiDen() {
         try { const s = getSelection(); if (s && !s.isCollapsed) s.removeAllRanges(); } catch (e) {}
@@ -1747,76 +1765,113 @@
                  goc: phan.join('').replace(/[ \t]+\n/g, '\n').trim(), o };
       },
 
-      /** 🖍 BÚT — ĐẦU BÚT LÀ MỘT ĐIỂM, tô theo TỪ mà nét đi qua (người dùng chọn,
-       *  2026-09-25; thay luật "một nét = một dòng, dòng dưới điểm bắt đầu"):
-       *   · một ký tự "được đi qua" khi một ĐOẠN của nét (nối hai điểm chuột liên
-       *     tiếp — kéo nhanh không sót chữ) cắt ĐƯỜNG GIỮA dọc của ký tự, tại độ cao
-       *     nằm trong LÕI của dòng: dải căn giữa tâm dòng, cao = 60% BƯỚC DÒNG (tâm
-       *     dòng này → tâm dòng kề gần nhất), kẹp trong [60% ô chữ, 100% ô chữ]
-       *     (người dùng chốt cả hai cận); dòng không có dòng kề thì lõi = cả ô chữ. Lõi theo bước dòng thì giữa hai
-       *     dòng kề LUÔN còn vùng chết ≥ 40% bước dòng, kể cả khi OCR đặt ô chữ
-       *     sai to (LS&ĐL tr.49); lõi theo 60% ô chữ thì trên điện thoại chỉ còn
-       *     3,5–4px — ngón tay gần như không trúng (đo 2026-09-25);
-       *   · một từ được tô khi ≥ MỘT NỬA số ký tự của nó được đi qua — đúng luật
-       *     `_nguyenTu` của khung ⬚, nên dùng lại nó;
-       *   · đã tô là GIỮ trong cả nét: kéo ngược không bỏ tô (người dùng chọn).
-       *  Chạm = theo Ô ký tự của lớp chữ, không theo nét mực: chữ nhìn thấy là ẢNH,
-       *  lớp chữ trong suốt chỉ cho biết ô.
-       *  Hình học ký tự đo MỘT lần lúc đặt bút, theo toạ độ TRANG (cuộn giữa chừng
-       *  không làm cũ), và nằm trên CHÍNH phần tử khung (`kh._but`) — không để vào
-       *  state của Alpine (mỗi lần đọc bị theo dõi, hàng nghìn ký tự mỗi nét). */
+      /** 🖍 BÚT — luật LAI (người dùng chọn 2026-09-25, sau khi thử trên điện thoại).
+       *  Đo bằng nét mô phỏng tay người trên 3 trang, khổ 390px (bước dòng 10–12px):
+       *  luật "đầu bút một điểm" ăn 5% nét dọc, 77% nét chéo, 50–63% nét ngang khi
+       *  tay lệch σ 3–4,5px — ngón tay lệch gần bằng bước dòng, quyết dòng theo TỪNG
+       *  điểm thì hỏng. Luật lai: ngang 85% (σ 3px), dọc 98%, chéo 99%.
+       *   · nét THẤP (cao ≤ 1 bước dòng): chọn MỘT dòng cho cả nét — dòng có tâm gần
+       *     TRUNG VỊ độ cao mọi điểm (rung tay lên xuống triệt tiêu nhau); tô từ trên
+       *     dòng đó mà bề ngang nét phủ tới NỬA GIỮA từ (bỏ 25% mỗi bên);
+       *   · nét CAO (dọc, chéo qua nhiều dòng): tô từ mà một đoạn của nét cắt hình
+       *     NỬA GIỮA từ × LÕI dòng (lõi: 60% bước dòng, kẹp trong [60%, 100%] ô chữ);
+       *     phần đã tô lúc nét còn thấp được giữ lại;
+       *   · đã tô là giữ; xem trước theo từng từ; ↶ bỏ đúng nét vừa tô.
+       *  Chạm theo Ô chữ của lớp chữ (chữ nhìn thấy là ẢNH — không có nét mực).
+       *  Hình học TỪ đo MỘT lần lúc đặt bút, theo toạ độ TRANG, ở `kh._but` (không để
+       *  vào state của Alpine: mỗi lần đọc bị theo dõi). */
       _butBatDau(kh) {
-        const K = kh.getBoundingClientRect(), chars = [], rg = document.createRange();
-        // Bước dòng của từng span: khoảng cách từ tâm hàng của nó tới tâm hàng kề
-        // gần nhất (mô hình hàng `_hang`, toạ độ trang).
-        const H = this._hang(kh).hang, buoc = new Map();
-        H.forEach((h, j) => {
-          const tam = (x) => (x.t + x.b) / 2;
-          const kc = [H[j - 1], H[j + 1]].filter(Boolean).map((x) => Math.abs(tam(x) - tam(h))).filter((d) => d > 0);
-          for (const c of h.spans) buoc.set(c.sp, kc.length ? Math.min(...kc) : Infinity);
-        });
+        const K = kh.getBoundingClientRect(), H = this._hang(kh).hang, rg = document.createRange();
+        const tam = (h) => (h.t + h.b) / 2, hangCua = new Map(), kc = [];
+        H.forEach((h, j) => { for (const c of h.spans) hangCua.set(c.sp, j); });
+        for (let j = 1; j < H.length; j++) { const d = tam(H[j]) - tam(H[j - 1]); if (d > 0.5) kc.push(d); }
+        kc.sort((a, b) => a - b);
+        const tu = [];
         for (const sp of this._spans(kh)) {
-          const tn = sp.firstChild;
-          if (!tn || tn.nodeType !== 3) continue;
-          for (let i = 0; i < tn.length; i++) {
-            if (!tn.data[i].trim()) continue;
-            rg.setStart(tn, i); rg.setEnd(tn, i + 1);
-            const q = rg.getClientRects()[0];
-            if (!q || !q.width) continue;
-            // Nửa chiều cao lõi: 60% bước dòng, kẹp trong [60% ô chữ, 100% ô chữ].
-            const nua = Math.min(Math.max(0.3 * (buoc.get(sp) ?? Infinity), 0.3 * q.height), q.height / 2);
-            const tam = q.top - K.top + q.height / 2;
-            chars.push({ sp, i, x: q.left - K.left, y: q.top - K.top, w: q.width, h: q.height,
-                         lt: tam - nua, lb: tam + nua });
+          const tn = sp.firstChild, j = hangCua.get(sp);
+          if (!tn || tn.nodeType !== 3 || j === undefined) continue;
+          const buoc = Math.min(Infinity, ...[H[j - 1], H[j + 1]].filter(Boolean)
+            .map((x) => Math.abs(tam(x) - tam(H[j]))).filter((d) => d > 0.5));
+          const d = tn.data;
+          for (let i = 0; i < d.length;) {
+            if (!d[i].trim()) { i++; continue; }
+            let e = i; while (e < d.length && d[e].trim()) e++;
+            rg.setStart(tn, i); rg.setEnd(tn, e);
+            const q = rg.getBoundingClientRect();
+            if (q.width) {
+              const cy = q.top - K.top + q.height / 2;
+              const nua = Math.min(Math.max(0.3 * buoc, 0.3 * q.height), q.height / 2);
+              const l = q.left - K.left, w = q.width;
+              tu.push({ sp, i, e, hang: j, gl: l + w * 0.25, gr: l + w * 0.75, lt: cy - nua, lb: cy + nua });
+            }
+            i = e;
           }
         }
-        kh._but = { chars, qua: new Set() };
+        kh._but = { tu, tam: H.map(tam), buoc: kc.length ? kc[kc.length >> 1] : Infinity,
+                    pts: [], cao: new Set(), thapChot: null, kq: new Set(), khoa: '' };
       },
-      /** Cộng các ký tự mà đoạn p→q (toạ độ viewport) đi qua. Trả true nếu có thêm. */
-      _butDoan(kh, p, q) {
+      /** Thêm một điểm (toạ độ viewport) vào nét; trả true nếu tập từ được tô đổi. */
+      _butThem(kh, p) {
         const B = kh._but;
         if (!B) return false;
-        const K = kh.getBoundingClientRect();
-        const ax = p.x - K.left, ay = p.y - K.top, bx = q.x - K.left, by = q.y - K.top;
-        if (ax === bx) return false;                   // đoạn dọc: không cắt đường giữa dọc nào
-        let them = false;
-        for (let n = 0; n < B.chars.length; n++) {
-          if (B.qua.has(n)) continue;
-          const c = B.chars[n], cx = c.x + c.w / 2;
-          if ((ax - cx) * (bx - cx) > 0) continue;
-          const y = ay + (cx - ax) * (by - ay) / (bx - ax);
-          if (y >= c.lt && y <= c.lb) { B.qua.add(n); them = true; }
+        const K = kh.getBoundingClientRect(), q = { x: p.x - K.left, y: p.y - K.top };
+        const t = B.pts[B.pts.length - 1];
+        B.pts.push(q);
+        if (t) {                                           // đoạn t→q: luật nét CAO, cộng dồn
+          for (let n = 0; n < B.tu.length; n++) {
+            const w = B.tu[n];
+            if (!B.cao.has(n) && this._catHcn(t, q, w.gl, w.lt, w.gr, w.lb)) B.cao.add(n);
+          }
         }
-        return them;
+        const ys = B.pts.map((a) => a.y), xs = B.pts.map((a) => a.x);
+        const yMin = Math.min(...ys), yMax = Math.max(...ys);
+        let kq;
+        if (yMax - yMin > B.buoc) {                        // nét CAO
+          if (!B.thapChot) B.thapChot = new Set(B.kq);     // giữ phần đã tô lúc còn thấp
+          kq = new Set([...B.thapChot, ...B.cao]);
+        } else {                                           // nét THẤP: một dòng theo trung vị
+          const sx = [...ys].sort((a, b) => a - b), my = sx[sx.length >> 1];
+          let j = -1, dj = Infinity;
+          B.tam.forEach((c, k) => { const d = Math.abs(c - my); if (d < dj) { dj = d; j = k; } });
+          const lo = Math.min(...xs), hi = Math.max(...xs);
+          // Xa mọi dòng (trang một dòng: không có bước dòng → cho phép tới 40px) thì không tô.
+          const tran = Number.isFinite(B.buoc) ? 0.8 * B.buoc : 40;
+          kq = new Set();
+          if (j >= 0 && dj <= tran)
+            B.tu.forEach((w, n) => { if (w.hang === j && hi >= w.gl && lo <= w.gr) kq.add(n); });
+        }
+        const khoa = [...kq].sort((a, b) => a - b).join(',');
+        B.kq = kq;
+        if (khoa === B.khoa) return false;
+        B.khoa = khoa;
+        return true;
       },
-      /** Bản ghi các ký tự của những TỪ đã tô (≥ một nửa số ký tự được đi qua). */
+      /** Đoạn p→q có giao hình chữ nhật [L,R]×[T,B] không (Liang–Barsky). */
+      _catHcn(p, q, L, T, R, B) {
+        let u0 = 0, u1 = 1;
+        const dx = q.x - p.x, dy = q.y - p.y;
+        for (const [a, b] of [[-dx, p.x - L], [dx, R - p.x], [-dy, p.y - T], [dy, B - p.y]]) {
+          if (a === 0) { if (b < 0) return false; continue; }
+          const r = b / a;
+          if (a < 0) u0 = Math.max(u0, r); else u1 = Math.min(u1, r);
+          if (u0 > u1) return false;
+        }
+        return true;
+      },
+      /** Bản ghi ký tự của các từ đang được tô. */
       _butKy(kh) {
         const B = kh._but;
-        if (!B || !B.qua.size) return [];
-        const K = kh.getBoundingClientRect();
-        const chon = [...B.qua].map((n) => { const c = B.chars[n];
-          return { sp: c.sp, i: c.i, q: { left: K.left + c.x, top: K.top + c.y, width: c.w, height: c.h } }; });
-        return this._banGhi(kh, this._nguyenTu(chon));
+        if (!B || !B.kq.size) return [];
+        const chon = [], rg = document.createRange();
+        for (const n of B.kq) {
+          const w = B.tu[n], tn = w.sp.firstChild;
+          for (let k = w.i; k < w.e; k++) {
+            rg.setStart(tn, k); rg.setEnd(tn, k + 1);
+            const q = rg.getClientRects()[0];
+            if (q) chon.push({ sp: w.sp, i: k, q });
+          }
+        }
+        return this._banGhi(kh, chon);
       },
       /** Xem trước theo TỪNG TỪ: đúng những từ sẽ được chọn khi thả tay. */
       _butVe(kh) {
@@ -1874,6 +1929,7 @@
         this._diChuyen = false;
         this.chonDang = { x0: e.clientX, y0: e.clientY, x1: e.clientX, y1: e.clientY, kieu: 'but' };
         this._butBatDau(kh);
+        this._butThem(kh, { x: e.clientX, y: e.clientY });
         clearTimeout(this._hGiu);
         this._hGiu = setTimeout(() => {
           const d = this.chonDang;
@@ -1910,7 +1966,7 @@
         }
         const cuoi = this._diem[this._diem.length - 1];
         // Bút: MỌI đoạn, kể cả rất ngắn, đều được xét — bỏ đoạn ngắn là bỏ sót chữ.
-        if (d.kieu === 'but' && this._butDoan(this._kh, cuoi, { x: e.clientX, y: e.clientY }))
+        if (d.kieu === 'but' && this._butThem(this._kh, { x: e.clientX, y: e.clientY }))
           this._butVe(this._kh);
         this._diem.push({ x: e.clientX, y: e.clientY });
       },
@@ -1928,7 +1984,7 @@
         // giờ (đã sang ⬚) rồi thả mà không kéo thì là đổi ý — không làm gì.
         // Bút đã tô được từ thì giữ, kể cả khi thả ngay cạnh chỗ bắt đầu (đã tô là
         // giữ — người dùng chọn); bỏ qua luật "cú chạm / thả sát chỗ cũ" bên dưới.
-        const daTo = d.kieu === 'but' && this._kh._but && this._kh._but.qua.size;
+        const daTo = d.kieu === 'but' && this._kh._but && this._kh._but.kq.size;
         if (!daTo && Math.abs(d.x1 - d.x0) < 6 && Math.abs(d.y1 - d.y0) < 6) {
           this._butXong(this._kh);
           // ⚠ Chỉ là CHẠM khi chưa hề di chuyển. Kéo đi rồi quay về sát chỗ cũ mà
@@ -1951,10 +2007,13 @@
         const cu = this._ky || {};
         this._ky = { ...cu };
         for (const r of kq.ky) this._ky[r.k] = r;
+        // ↶ nhớ đúng phần nét NÀY thêm vào (chữ đã có trước nét thì không phải của nó).
+        const them = kq.ky.map((r) => r.k).filter((k) => !cu[k]);
+        if (them.length) this.chonLui = [...this.chonLui, them];
         // `_traDat` (trong `_chonCapNhat`) là chốt DUY NHẤT của trần 1.000 ký
         // tự: nó trả 'dai' thì lùi về như trước nét này rồi báo.
         const kq2 = this._chonCapNhat();
-        if (kq2 === 'dai') { this._ky = cu; this._chonCapNhat(); }
+        if (kq2 === 'dai') { this._ky = cu; this.chonLui = this.chonLui.slice(0, -1); this._chonCapNhat(); }
         if (kq2 !== 'ok') this.chonNoi(this._chonLyDo(kq2));
       },
       /** Tầng thường: một cú CHẠM (không kéo) lên trang = bỏ chọn.
