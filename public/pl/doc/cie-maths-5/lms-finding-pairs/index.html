@@ -10,7 +10,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>LMS Finding Pairs.pdf · CIE Maths 5</title>
-<link rel="stylesheet" href="../../../../assets/tw.2500d712.css">
+<link rel="stylesheet" href="../../../../assets/tw.b4129989.css">
 <style>
   [x-cloak] { display: none !important; }
   #pdf { width:100%; height:calc(100vh - 8.5rem); border:0; }
@@ -106,7 +106,7 @@
               display:grid; place-items:center; border-radius:9999px; font-size:16px;
               background:#fff; box-shadow:0 1px 6px #0004; }
   .chon-bat .khung { touch-action:none; }
-  @media print { .chon-o, .chon-dang, .chon-but, .chon-huy, .chon-thanh { display:none !important; } }
+  @media print { .chon-o, .chon-dang, .chon-but, .chon-huy { display:none !important; } }
   .lk { position:absolute; z-index:3; display:grid; place-items:center; border:0;
         cursor:pointer; text-decoration:none; color:#fff; background:#ef4444;
         box-shadow:0 2px 8px #0006; }
@@ -180,44 +180,71 @@
   </div>
 </header>
 
+
 <nav class="no-print sticky top-0 z-20 bg-white border-b border-slate-200">
-  <div class="max-w-5xl mx-auto px-4 py-2 flex items-center gap-2 flex-wrap">
+  <div class="max-w-5xl mx-auto px-3 sm:px-4 py-2 flex items-center gap-1.5 sm:gap-2">
     
     
     
     <button @click="doiCheDo('doc', true)" :aria-pressed="String(che === 'doc')"
-            :class="che === 'doc' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700'"
-            class="px-3 py-2 text-xs font-medium rounded-lg border">📖 Đọc &amp; giải thích</button>
+            aria-label="Đọc &amp; giải thích" title="Đọc &amp; giải thích"
+            :class="[che === 'doc' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700',
+                     timMo ? 'max-sm:hidden' : '']"
+            class="h-9 min-w-9 shrink-0 px-2 lg:px-3 text-xs font-medium rounded-lg border whitespace-nowrap">📖<span class="hidden lg:inline"> Đọc &amp; giải thích</span></button>
     
     
     
     <button @click="doiCheDo('pdf', true)" :aria-pressed="String(che === 'pdf')"
-            :class="che === 'pdf' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700'"
-            class="px-3 py-2 text-xs font-medium rounded-lg border">📄 Bản PDF</button>
-    <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-5-unit-4-2-representing-letters-as-quantities/LMS Finding Pairs.pdf" download
-       class="ml-auto px-3 py-2 text-xs font-medium rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">⬇ Tải file gốc</a>
+            aria-label="Bản PDF" title="Bản PDF"
+            :class="[che === 'pdf' ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700',
+                     timMo ? 'max-sm:hidden' : '']"
+            class="h-9 min-w-9 shrink-0 px-2 lg:px-3 text-xs font-medium rounded-lg border whitespace-nowrap">📄<span class="hidden lg:inline"> Bản PDF</span></button>
+    <a href="https://minhln2.github.io/lms/pl/materials/cie-maths-5/week-5-unit-4-2-representing-letters-as-quantities/LMS Finding Pairs.pdf" download aria-label="Tải file gốc" title="Tải file gốc"
+       :class="timMo ? 'max-sm:hidden' : ''"
+       class="h-9 min-w-9 shrink-0 px-2 lg:px-3 inline-flex items-center justify-center text-xs font-medium rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 whitespace-nowrap">⬇<span class="hidden lg:inline">&nbsp;Tải file gốc</span></a>
     
     
+    <div class="flex-1 min-w-0 flex items-center justify-end gap-1">
     
-    <div x-show="che === 'doc'" class="flex items-center gap-1">
-      <input type="search" x-model="tim" @input.debounce.250ms="timKiem()"
+      <div x-show="che === 'doc'" class="contents">
+      <button x-show="!timMo" @click="timMoRa()" type="button" data-tim-nut
+              aria-label="Tìm trong tài liệu" title="Tìm trong tài liệu"
+              :class="tim ? 'border-amber-400 bg-amber-50' : 'border-slate-300 bg-white'"
+              class="sm:hidden w-9 h-9 shrink-0 rounded-lg border text-slate-700 grid place-items-center">
+        
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      </button>
+      <input type="search" x-model="tim" @input.debounce.250ms="timKiem()" x-ref="timO"
              @keydown.enter.prevent="toiKetQua(1)"
-             @keydown.escape.prevent="tim=''; timKiem()"
-             placeholder="Tìm trong tài liệu…"
-             class="w-40 sm:w-56 px-2 py-2 text-xs rounded-lg border border-slate-300">
-      <span x-show="tim" x-cloak class="text-xs text-slate-500 tabular-nums w-14 text-center"
+             @keydown.escape.prevent="timDong()"
+             placeholder="Tìm trong tài liệu…" aria-label="Tìm trong tài liệu"
+             :class="timMo ? 'block' : 'hidden sm:block'"
+             class="flex-1 min-w-0 sm:max-w-56 h-9 px-2 text-xs rounded-lg border border-slate-300">
+      <span x-show="tim" x-cloak :class="timMo ? '' : 'max-sm:hidden'"
+            class="text-xs text-slate-500 tabular-nums w-14 shrink-0 text-center"
             x-text="soKq ? (viTri + 1) + '/' + soKq : 'không có'"></span>
       <button x-show="soKq" x-cloak @click="toiKetQua(-1)" type="button" title="Kết quả trước"
-              class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700">‹</button>
+              :class="timMo ? '' : 'max-sm:hidden'"
+              class="w-9 h-9 shrink-0 rounded-lg border border-slate-300 text-slate-700">‹</button>
       <button x-show="soKq" x-cloak @click="toiKetQua(1)" type="button" title="Kết quả sau"
-              class="w-9 h-9 rounded-lg border border-slate-300 text-slate-700">›</button>
+              :class="timMo ? '' : 'max-sm:hidden'"
+              class="w-9 h-9 shrink-0 rounded-lg border border-slate-300 text-slate-700">›</button>
+      <button x-show="timMo" x-cloak @click="timDong()" type="button" data-tim-dong
+              aria-label="Đóng ô tìm" title="Đóng ô tìm"
+              class="sm:hidden w-9 h-9 shrink-0 rounded-lg border border-slate-300 text-slate-700">✕</button>
+      </div>
+    
     </div>
+    
     
     <button x-cloak @click="chonNut()"
             type="button" data-chon-nut
             :aria-pressed="String(chonHoat)" aria-label="Bút dạ quang — chọn chữ để tra cứu" title="Bút dạ quang — chọn chữ để tra cứu"
-            :class="chonHoat ? 'bg-indigo-600 border-indigo-600 text-white'
-                             : 'bg-white border-slate-300 text-slate-700'"
+            :class="[chonHoat ? 'bg-indigo-600 border-indigo-600 text-white'
+                              : 'bg-white border-slate-300 text-slate-700',
+                     timMo ? 'max-sm:hidden' : '']"
             class="w-9 h-9 shrink-0 rounded-lg border grid place-items-center">
       
       <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none"
@@ -228,6 +255,33 @@
       </svg>
     </button>
     
+    <button x-show="che === 'doc'" @mousedown.prevent @click="chonGiai()" type="button"
+            data-chon-giai aria-label="Giải thích chữ đã chọn" title="Giải thích chữ đã chọn"
+            :class="[chonKq === 'ok' ? 'bg-indigo-600 border-indigo-600 text-white shadow'
+                                     : 'bg-white border-slate-300 text-slate-400',
+                     timMo ? 'max-sm:hidden' : '']"
+            class="h-9 min-w-9 shrink-0 px-2 sm:px-3 rounded-lg border text-xs font-medium
+                   inline-flex items-center justify-center gap-1 whitespace-nowrap">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+      <span class="hidden sm:inline">Giải thích</span>
+    </button>
+    
+    <button @click="chonTat()" type="button" data-chon-xong aria-label="Bỏ chọn và thoát" title="Bỏ chọn và thoát"
+            :class="[(chonHoat || chonText) ? '' : 'invisible', timMo ? 'max-sm:hidden' : '']"
+            class="w-9 h-9 shrink-0 rounded-lg border border-slate-300 text-slate-700">✕</button>
+    
+  </div>
+  
+  <div x-show="chonBao || (chonHoat && !chonText)" x-cloak data-chon-bao
+       class="absolute top-full inset-x-0 flex justify-center pointer-events-none select-none px-3 pt-1.5">
+    <span x-show="chonBao" x-text="chonBao"
+          class="px-3 py-1.5 rounded-full bg-slate-900/90 text-amber-300 text-xs shadow"></span>
+    <span x-show="!chonBao"
+          class="px-3 py-1.5 rounded-full bg-slate-900/85 text-white text-xs shadow"
+          >Kéo = 🖍 bút · Giữ rồi kéo = ⬚ khung · Hai ngón = cuộn</span>
   </div>
 </nav>
 </div>
@@ -634,7 +688,7 @@
       pdfWorkerUrl: "../../../../assets/pdf.worker.490b29ce.mjs",
       tiLe: 1.2, soTrang: 0, pdfLoi: '', srcNang: '',
       mlMo: false, trangDang: 0, moUnit: {}, mucDang: -1, unitDang: -1,
-      chonHoat: false, chonBao: '', chonO: [], chonText: '', chonGoc: '', chonKq: '', dangBam: false,
+      chonHoat: false, chonBao: '', chonO: [], chonText: '', chonGoc: '', chonKq: '', timMo: false,
       chonDang: null,
       // Trang bắt đầu của từng unit — để tự mở đúng unit đang đọc.
       unitTr: [],
@@ -753,7 +807,7 @@
         }
         for (const e of _kq) e.classList.add('tim');
         this.soKq = _kq.length;
-        if (_kq.length) { this.viTri = this.chonKq(); this.toiKetQua(0); }
+        if (_kq.length) { this.viTri = this.timUuTien(); this.toiKetQua(0); }
       },
 
       /** Kết quả nào đáng nhảy tới trước, tính từ chỗ người đang đọc.
@@ -775,7 +829,7 @@
           khác với thứ nó tưởng. */
       neoTim() { return _neo; },
 
-      chonKq() {
+      timUuTien() {
         const neo = _neo || this.trangDang || 1;
         const tr = (e) => Number(e.closest('section.trang')?.dataset.tr || 0);
         const P = this.mlP || [], C = this.mlC || [];
@@ -1117,8 +1171,8 @@
           đúng thứ tự DOM (thứ tự đọc, ADR 0033/0034). */
       /** HAI TẦNG, MỘT vùng chọn:
           · tầng THƯỜNG — bôi đen như mọi trang web. Vùng bôi đen đang sống
-            (`_song`) cộng với phần đã chốt (`_ky`) là vùng chọn; dải đáy tự hiện
-            khi có chữ. Một ngón vẫn CUỘN được — đó là lý do không tự bật tầng
+            (`_song`) cộng với phần đã chốt (`_ky`) là vùng chọn; nút Giải thích sáng
+            lên khi có chữ. Một ngón vẫn CUỘN được — đó là lý do không tự bật tầng
             vẽ khi bôi đen: trẻ nhấn giữ bôi một từ rồi trang hết cuộn là hỏng.
           · tầng VẼ (nút ▭) — thêm khoanh vùng và bút dẹt, cộng vào CÙNG tập.
           Bật/tắt ▭ KHÔNG xoá vùng chọn: chuyển tầng chứ không bắt đầu lại. */
@@ -1259,18 +1313,32 @@
         this._veChon();
         return this.chonKq;
       },
-      /** Báo một câu ngắn trong dải dưới đáy rồi tự tắt. */
+      /** Báo một câu ngắn nổi dưới thanh công cụ rồi tự tắt. */
       chonNoi(c) {
         this.chonBao = c;
         clearTimeout(this._hBao);
         this._hBao = setTimeout(() => { this.chonBao = ''; }, 2500);
       },
-      /** Nút 🔎 của chế độ chọn vùng nằm TRONG DẢI DƯỚI ĐÁY, không nổi cạnh
-          vùng chọn: nút nổi đặt theo toạ độ MÀN HÌNH còn ô tô màu nằm trên
-          TRANG, cuộn một cái là hai thứ lệch nhau. Ở dải đáy thì luôn thấy. */
+      /** Nút Giải thích nằm TRÊN THANH CÔNG CỤ, không nổi cạnh vùng chọn: nút
+          nổi đặt theo toạ độ MÀN HÌNH còn ô tô màu nằm trên TRANG, cuộn một cái
+          là hai thứ lệch nhau; lại bị thanh chọn chữ của iPhone che. Dải đáy
+          (bản trước) thì bị thẻ tra nhanh của Chrome Android che. */
       chonGiai() {
         if (this.chonKq === 'ok') { this.traMo(); return; }
-        this.chonNoi(this._chonLyDo(this.chonKq));
+        this.chonNoi(this.chonText ? this._chonLyDo(this.chonKq)
+                                   : 'Bôi đen, hoặc bấm 🖍 rồi kéo qua chữ, để chọn chữ cần giải thích');
+      },
+      /** Ô tìm ở khổ hẹp: kính lúp → ô gõ chiếm cả hàng. `$nextTick` vì ô còn
+          `hidden` tới lượt vẽ sau — focus một phần tử ẩn là không có gì xảy ra
+          (và bàn phím điện thoại không bật lên). */
+      timMoRa() {
+        this.timMo = true;
+        this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus());
+      },
+      /** Đóng ô tìm = xoá luôn từ khoá: ô đã thu về kính lúp thì các vệt vàng
+          còn lại trên trang không có chỗ nào để tắt. */
+      timDong() {
+        this.tim = ''; this.timKiem(); this.timMo = false;
       },
       _chonLyDo(kq) {
         return { rong: 'Vùng này không có chữ để tra',
@@ -1635,16 +1703,6 @@
         }, 350);
       },
       traGanVung() {
-        // ⚠ ẨN dải đáy trong lúc đang NHẤN trên trang. Dải hiện lên GIỮA cú
-        // kéo bôi đen (vùng chọn đổi → `chonDoi` sau 120ms) nằm ngay dưới con
-        // trỏ ở mép màn hình, và vùng chọn nhảy vào nó: đo được focus rơi vào
-        // BUTTON, vùng chọn phình ra 143.773 ký tự (cả quyển sách). Chỉ tính cú
-        // nhấn TRONG nội dung — nhấn lên chính dải (nút 🔎) mà ẩn nó là mất cú bấm.
-        addEventListener('pointerdown', (e) => {
-          if (e.target.closest && e.target.closest('main[data-tra]')) this.dangBam = true;
-        }, true);
-        for (const ev of ['pointerup', 'pointercancel'])
-          addEventListener(ev, () => { this.dangBam = false; }, true);
         addEventListener('keydown', (e) => {
           if (e.key === 'Escape' && (this.chonHoat || this.chonText) && !this.tra.show) this.chonTat();
         });
@@ -2436,24 +2494,5 @@
     if (d && d.moVideo) d.moVideo(e);
   });
 </script>
-
-<div x-show="(chonHoat || chonText) && !dangBam" x-cloak data-chon-thanh
-     class="chon-thanh no-print select-none fixed bottom-0 inset-x-0 z-30 flex items-center gap-3
-            px-4 py-2 bg-slate-900/90 text-white text-xs">
-  <span x-show="chonHoat && !chonBao && !chonText">Kéo = 🖍 bút · Giữ rồi kéo = ⬚ khung · Hai ngón = cuộn</span>
-  <span x-show="chonBao" x-text="chonBao" class="text-amber-300"></span>
-  <span x-show="chonText && !chonBao" x-cloak class="tabular-nums text-slate-300 whitespace-nowrap"
-        ><span x-text="chonText.length + ' ký tự'"></span><span class="hidden sm:inline"> · chạm lên trang để bỏ chọn</span></span>
-  <span class="ml-auto"></span>
-  
-  <button x-show="chonText" x-cloak @mousedown.prevent @click="chonGiai()" type="button"
-          data-chon-giai
-          :class="chonKq === 'ok' ? 'bg-indigo-500 hover:bg-indigo-400' : 'bg-slate-600'"
-          class="px-3 py-2 rounded-full font-medium whitespace-nowrap">🔎 Giải thích</button>
-  <button x-show="chonText" x-cloak @click="chonXoa()" type="button"
-          class="px-2 py-2 rounded border border-slate-500 whitespace-nowrap">Xoá</button>
-  <button @click="chonTat()" type="button" data-chon-xong aria-label="Bỏ chọn và thoát"
-          class="w-8 h-8 shrink-0 rounded border border-slate-500">✕</button>
-</div>
 </body>
 </html>
