@@ -13,7 +13,7 @@
   <title>Ôn tập · CIE Science 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.c83fd5a5.css">
+  <link rel="stylesheet" href="../assets/tw.6c3c3ff9.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -2536,9 +2536,10 @@ timMo: false,
   <!-- Thanh công cụ chung (ADR 0054): ☰ · công tắc · 🔍 (chỉ Tóm tắt) · ⚙ theo chế độ,
        rồi hàng tab chế độ. Mọi class Tailwind là literal. -->
   <nav x-show="ready && data" x-cloak class="bg-white border-b border-slate-200">
-    <div class="max-w-5xl mx-auto px-3 sm:px-4 py-2 flex items-center gap-1.5 sm:gap-2">
+    <div class="max-w-5xl mx-auto px-2 sm:px-4 py-2 flex items-center gap-1.5 sm:gap-2">
       
-      <div x-show="!coChon" class="contents">
+      
+      <div x-show="!(coChon || chonHoat)" class="contents">
       <button type="button" data-nut-menu :aria-expanded="String(navOpen)"
         @click="navOpen = !navOpen; if (navOpen) { locMo = false }"
         aria-label="Mục lục" title="Mục lục"
@@ -2575,30 +2576,71 @@ timMo: false,
         :class="[(soLoc) || locMo ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700',
                  timMo ? 'max-sm:hidden' : '', (false) ? 'invisible' : '']"
         class="h-9 min-w-9 shrink-0 px-2 rounded-lg border text-sm font-medium inline-flex items-center justify-center gap-1 whitespace-nowrap">⚙<span class="hidden lg:inline text-xs">Lọc</span><span x-show="soLoc" x-cloak data-so-loc class="text-xs tabular-nums" x-text="soLoc"></span></button>
-      </div>
-      <template x-if="coChon"><div class="contents">
-        <button type="button" data-chon-xong @mousedown.prevent @click="boChonThanh()"
-                aria-label="Bỏ chọn" title="Bỏ chọn"
-                class="w-9 h-9 shrink-0 rounded-lg border border-slate-300 text-slate-700">✕</button>
-        <button type="button" data-chon-giai @mousedown.prevent @click="traMo()"
-                class="flex-1 min-w-0 h-9 px-3 rounded-lg bg-indigo-600 border border-indigo-600 text-white text-xs font-medium
-                       inline-flex items-center gap-1.5 shadow">
-          <span class="shrink-0">💬 Giải thích</span>
-          <span class="min-w-0 truncate font-normal text-indigo-100" x-text="'“' + tra.text + '”'"></span>
+        <button type="button" data-chon-nut @mousedown.prevent @click="chonNut()"
+                :aria-pressed="String(chonHoat)" aria-label="Bút dạ quang — chọn chữ để giải thích" title="Bút dạ quang — chọn chữ để giải thích"
+                :class="chonHoat ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700'"
+                class="w-9 h-9 shrink-0 rounded-lg border grid place-items-center">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 21.5h9" stroke="#facc15" stroke-width="3.5" stroke-opacity=".95"/>
+            <path d="m9 11-6 6v3h9l3-3"/>
+            <path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/>
+          </svg>
         </button>
+      </div>
+      <template x-if="coChon || chonHoat"><div class="contents">
+        <button type="button" data-chon-xong @mousedown.prevent @click="chonTat(); boChonThanh()"
+                aria-label="Bỏ chọn và thoát" title="Bỏ chọn và thoát"
+                class="w-9 h-9 shrink-0 rounded-lg border border-slate-300 text-slate-700">✕</button>
+        <button type="button" data-chon-lui @mousedown.prevent @click="chonLuiNet()"
+                aria-label="Bỏ nét vừa tô" title="Bỏ nét vừa tô"
+                :class="chonHoat && chonLui.length ? '' : 'invisible'"
+                class="w-9 h-9 shrink-0 rounded-lg border border-slate-300 text-slate-700">↶</button>
+        <button type="button" data-chon-nut @mousedown.prevent @click="chonNut()"
+                :aria-pressed="String(chonHoat)" aria-label="Bút dạ quang — chọn chữ để giải thích" title="Bút dạ quang — chọn chữ để giải thích"
+                :class="chonHoat ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700'"
+                class="w-9 h-9 shrink-0 rounded-lg border grid place-items-center">
+          <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 21.5h9" stroke="#facc15" stroke-width="3.5" stroke-opacity=".95"/>
+            <path d="m9 11-6 6v3h9l3-3"/>
+            <path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/>
+          </svg>
+        </button>
+        
+        <template x-if="coChon">
+          <button type="button" data-chon-giai @mousedown.prevent @click="traMo()"
+                  class="flex-1 min-w-0 h-9 px-3 rounded-lg bg-indigo-600 border border-indigo-600 text-white text-xs font-medium
+                         inline-flex items-center gap-1.5 shadow">
+            <span class="shrink-0">💬 Giải thích</span>
+            <span class="min-w-0 truncate font-normal text-indigo-100" x-text="'“' + tra.text + '”'"></span>
+          </button>
+        </template>
+        <template x-if="!coChon">
+          <button type="button" data-chon-giai @mousedown.prevent
+                  @click="chonNoi('Kéo qua chữ để tô, hoặc giữ 0,4 giây rồi kéo để khoanh vùng')"
+                  class="flex-1 min-w-0 h-9 px-3 rounded-lg border bg-white border-slate-300 text-slate-400 text-xs font-medium
+                         inline-flex items-center gap-1.5">💬 Giải thích</button>
+        </template>
       </div></template>
     </div>
     
-    <div class="max-w-5xl mx-auto px-3 sm:px-4 pb-2 flex items-center gap-1.5">
+    <div class="max-w-5xl mx-auto px-2 sm:px-4 pb-2 flex items-center gap-1 sm:gap-1.5">
       <template x-for="m in [{k:'summary', n:'📄 Tóm tắt', t:'📄 Tóm tắt'}, {k:'cards', n:'🃏 Thẻ', t:'🃏 Thẻ ghi nhớ'},
                              {k:'quiz', n:'✍️ Trắc nghiệm', t:'✍️ Trắc nghiệm'}, {k:'hist', n:'📒 Từ tra', t:'📒 Từ đã tra'}]" :key="m.k">
         <button @click="go(m.k)" data-tab type="button"
                 :class="mode === m.k ? 'bg-indigo-600 text-white border-indigo-600'
                                      : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
-                class="px-2.5 sm:px-3 py-2 text-xs font-medium rounded-full border whitespace-nowrap transition-colors"><span :class="m.n === m.t ? '' : 'sm:hidden'" x-text="m.n"></span><span x-show="m.n !== m.t" class="hidden sm:inline" x-text="m.t"></span></button>
+                class="px-2 sm:px-3 py-2 text-xs font-medium rounded-full border whitespace-nowrap transition-colors"><span :class="m.n === m.t ? '' : 'sm:hidden'" x-text="m.n"></span><span x-show="m.n !== m.t" class="hidden sm:inline" x-text="m.t"></span></button>
       </template>
     </div>
   </nav>
+  
+  <div x-show="chonBao || (chonHoat && !chonText)" x-cloak data-chon-bao
+       class="no-print absolute inset-x-0 top-full flex justify-center pointer-events-none select-none px-3 pt-1.5 z-20">
+    <span x-show="chonBao" x-text="chonBao" class="px-3 py-1.5 rounded-full bg-slate-900/90 text-amber-300 text-xs shadow"></span>
+    <span x-show="!chonBao" class="px-3 py-1.5 rounded-full bg-slate-900/85 text-white text-xs shadow">Kéo = 🖍 bút · Giữ rồi kéo = ⬚ khung · Hai ngón = cuộn</span>
+  </div>
   <div x-show="locMo" x-cloak data-ngan-loc @keydown.escape.window="locMo = false"
      class="no-print absolute inset-x-0 top-full z-30">
   <div @click="locMo = false" class="absolute inset-x-0 top-0 h-screen bg-slate-900/30"></div>
