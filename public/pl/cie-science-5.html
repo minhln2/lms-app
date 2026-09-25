@@ -319,7 +319,7 @@
     // Nhãn loại mục để dòng "Đang lọc" gọi tên chip đang bật. (tojson trong <script> — được.)
     var LOAI = { "assignment": "\ud83d\udcdd b\u00e0i t\u1eadp", };
     var TIEN_DO_KEY = "pl/80432/";
-    var TONG_MUC = 9;
+    var TONG_MUC = 11;
     var CO_HW = false;
     /** State của TRANG MÔN. Trước đây nằm thẳng trong `x-data` của <body>; nay phải là hàm vì
         ô tìm dùng chung (`_timkiem.html`) chèn thêm thành viên — nhét vào thuộc tính HTML là
@@ -503,10 +503,10 @@ timMo: false,
         <li x-show="mucHien(1, f)">
           <button type="button" @click="toiMuc(1); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
-            <span class="min-w-0 flex-1">Unit 2 – Materials: Properties and Changes (Grade 5)</span>
+            <span class="min-w-0 flex-1">Unit 1 - The Human Body (Grade 5)</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/8'"></span>
+                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/2'"></span>
             </template>
           </button>
         </li>
@@ -514,10 +514,10 @@ timMo: false,
         <li x-show="mucHien(2, f)">
           <button type="button" @click="toiMuc(2); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
-            <span class="min-w-0 flex-1">Books (Grade 5)</span>
+            <span class="min-w-0 flex-1">Unit 2 – Materials: Properties and Changes (Grade 5)</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-2'), p.done) + '/0'"></span>
+                    x-text="moduleDone(document.getElementById('mod-2'), p.done) + '/8'"></span>
             </template>
           </button>
         </li>
@@ -525,10 +525,21 @@ timMo: false,
         <li x-show="mucHien(3, f)">
           <button type="button" @click="toiMuc(3); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
+            <span class="min-w-0 flex-1">Books (Grade 5)</span>
+            <template x-if="p.online">
+              <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
+                    x-text="moduleDone(document.getElementById('mod-3'), p.done) + '/0'"></span>
+            </template>
+          </button>
+        </li>
+        
+        <li x-show="mucHien(4, f)">
+          <button type="button" @click="toiMuc(4); menuMo = false"
+                  class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
             <span class="min-w-0 flex-1">Scientific Inquiry</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-3'), p.done) + '/1'"></span>
+                    x-text="moduleDone(document.getElementById('mod-4'), p.done) + '/1'"></span>
             </template>
           </button>
         </li>
@@ -590,7 +601,181 @@ timMo: false,
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: true }"
              x-effect="if (q || filtering) open = true"
-             id="mod-1" data-module data-title="Unit 2 – Materials: Properties and Changes (Grade 5)"
+             id="mod-1" data-module data-title="Unit 1 - The Human Body (Grade 5)"
+             x-show="moduleMatches($el, f)"
+             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <button @click="open = !open"
+              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
+        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
+             :class="open ? 'rotate-90' : ''"
+             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">Unit 1 - The Human Body (Grade 5)</span>
+        <template x-if="p.online">
+          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 2
+                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/2'"></span>
+        </template>
+        <span class="text-xs text-slate-400 shrink-0">2 mục</span>
+      </button>
+
+      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-item data-title="Grade 5 1.1 W2 PowerPoint and Quiz " data-type="assignment" data-sec="0"
+             data-pkey="pl/80432/7836356" data-hash="e8a069498280ef13c09ad5d47834bd9aeadcdc70" data-ts="1790333323000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/80432/7836356'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80432/7836356'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80432/7836356']; $el.indeterminate = !!p.redo['pl/80432/7836356']"
+                     @change="await p.toggle('pl/80432/7836356', 'e8a069498280ef13c09ad5d47834bd9aeadcdc70'); $el.checked = !!p.done['pl/80432/7836356']; $el.indeterminate = !!p.redo['pl/80432/7836356']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài tập">📝</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Grade 5 1.1 W2 PowerPoint and Quiz </span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài tập</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80432/7836356', 'e8a069498280ef13c09ad5d47834bd9aeadcdc70')">
+                  <button @click.stop="p.seen('pl/80432/7836356', 'e8a069498280ef13c09ad5d47834bd9aeadcdc70')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 25/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80432/assignments/2678514" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Powerpoint -https://docs.google.com/presentation/d/1E4UHV6bBhbDYOT48mFzbnITQERBX9yYr_BlnRPjIXAE/edit?usp=sharing. </p>
+<p>KaHoot- <a href="https://create.kahoot.it/share/circulatory-system/26c733cf-cacc-4d9e-80b4-5a5fa4762130" rel="noopener" target="_blank">https://create.kahoot.it/share/circulatory-system/26c733cf-cacc-4d9e-80b4-5a5fa4762130</a>.</p>
+<p>Game <a target="_blank">Pin-https://kahoot.it/?pin=102143&amp;refer_method=link</a>. 102143</p>
+<p>Quiz - <a href="https://wordwall.net/play/34445/518/831" rel="noopener" target="_blank">https://wordwall.net/play/34445/518/831</a> (Teacher Quiz), <a href="https://wordwall.net/play/34449/480/997" rel="noopener" target="_blank">https://wordwall.net/play/34449/480/997</a> (Teacher Quiz 2)</p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Circulatory System Vocabulary" data-type="assignment" data-sec="0"
+             data-pkey="pl/80432/8895033" data-hash="a14bfc904fa37701cb405346fe39a336fd19db11" data-ts="1790333285000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/80432/8895033'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80432/8895033'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80432/8895033']; $el.indeterminate = !!p.redo['pl/80432/8895033']"
+                     @change="await p.toggle('pl/80432/8895033', 'a14bfc904fa37701cb405346fe39a336fd19db11'); $el.checked = !!p.done['pl/80432/8895033']; $el.indeterminate = !!p.redo['pl/80432/8895033']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài tập">📝</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Circulatory System Vocabulary</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài tập</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80432/8895033', 'a14bfc904fa37701cb405346fe39a336fd19db11')">
+                  <button @click.stop="p.seen('pl/80432/8895033', 'a14bfc904fa37701cb405346fe39a336fd19db11')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 25/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80432/assignments/3057752" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><a class="instructure_file_link instructure_scribd_file inline_disabled" data-canvas-previewable="false" href="doc/cie-science-5/g5-homework-circulatory-system-diffit/index.html" target="_blank" title="G5_Homework_Circulatory_System_-_Diffit.pdf">G5_Homework_Circulatory_System_-_Diffit.pdf</a></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+      </div>
+    </section>
+    
+    <!-- Một Tuần học / Bài học -->
+    <section x-data="{ open: false }"
+             x-effect="if (q || filtering) open = true"
+             id="mod-2" data-module data-title="Unit 2 – Materials: Properties and Changes (Grade 5)"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -1229,7 +1414,7 @@ timMo: false,
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: false }"
              x-effect="if (q || filtering) open = true"
-             id="mod-2" data-module data-title="Books (Grade 5)"
+             id="mod-3" data-module data-title="Books (Grade 5)"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -1260,7 +1445,7 @@ timMo: false,
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: false }"
              x-effect="if (q || filtering) open = true"
-             id="mod-3" data-module data-title="Scientific Inquiry"
+             id="mod-4" data-module data-title="Scientific Inquiry"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
