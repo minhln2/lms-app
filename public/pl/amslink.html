@@ -1,4 +1,6 @@
 
+
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -8,7 +10,7 @@
   <title>Amslink — PL</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.1e6720a1.css">
+  <link rel="stylesheet" href="../assets/tw.3760865e.css">
   <script defer src="../assets/collapse.d0a27f2d.js"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>
@@ -113,9 +115,12 @@
           truoc = cao;
           return requestAnimationFrame(thu);
         }
-        const h = document.querySelector('header');
+        const h = document.getElementById('hdr');
+        const vv = window.visualViewport;
         const off = h ? h.getBoundingClientRect().height : 0;
-        const y = el.getBoundingClientRect().top + window.scrollY - off - 8;
+        // Khi phóng to, phần đang nhìn lệch khỏi đỉnh layout viewport `vv.offsetTop` — tiêu
+        // đề phải về ngay dưới thanh CỦA PHẦN ĐANG NHÌN (ADR 0054), không phải của layout.
+        const y = el.getBoundingClientRect().top + window.scrollY - (vv ? vv.offsetTop : 0) - off - 8;
         window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
       };
       requestAnimationFrame(thu);
@@ -310,45 +315,86 @@
         },
       };
     }
+
+    // Nhãn loại mục để dòng "Đang lọc" gọi tên chip đang bật. (tojson trong <script> — được.)
+    var LOAI = {  };
+    var TIEN_DO_KEY = "pl//";
+    var TONG_MUC = 0;
+    var CO_HW = false;
+    /** State của TRANG MÔN. Trước đây nằm thẳng trong `x-data` của <body>; nay phải là hàm vì
+        ô tìm dùng chung (`_timkiem.html`) chèn thêm thành viên — nhét vào thuộc tính HTML là
+        vỡ cú pháp khi có nháy kép (bài học của progressStore). */
+    function trangMon() {
+      return {
+        q: '', types: [], hw: false, todo: false, recent7: false, menuMo: false, locMo: false,
+        p: progressStore(),
+timMo: false,
+      timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
+      timDong() { this.q = ''; this.timMo = false; },
+        toggle(t) { this.types.includes(t) ? this.types.splice(this.types.indexOf(t), 1) : this.types.push(t); },
+        get filtering() { return this.types.length > 0 || this.hw || this.todo || this.recent7; },
+        get f() { return { q: this.q, types: this.types, hw: this.hw, todo: this.todo, recent7: this.recent7, done: this.p.done }; },
+        get soLoc() { return this.types.length + (this.hw ? 1 : 0) + (this.todo ? 1 : 0) + (this.recent7 ? 1 : 0); },
+        get tenLoc() {
+          return [...(this.recent7 ? ['7 ngày'] : []), ...(this.hw ? ['Homework'] : []),
+                  ...(this.todo ? ['Chưa học'] : []), ...this.types.map((t) => LOAI[t] || t)];
+        },
+        boLoc() { this.types = []; this.hw = false; this.todo = false; this.recent7 = false; },
+        get daHoc() { return Object.keys(this.p.done).filter((k) => k.startsWith(TIEN_DO_KEY)).length; },
+        get tienDo() {
+          if (this.recent7) { const s = recentStats(this.p.done); return s.done + '/' + s.total + ' · 7 ngày'; }
+          return this.daHoc + '/' + TONG_MUC;
+        },
+        get tienDoPct() {
+          return this.recent7 ? recentPct(this.p.done) : (TONG_MUC ? Math.round(this.daHoc / TONG_MUC * 100) : 0);
+        },
+        /** "Tuần này": mục mới = mục chip 7 ngày giữ lại; bài tập chưa xong = mục chip Homework
+            giữ lại, trong 7 ngày, chưa tick. `hw` null khi không có nhóm Homework hoặc chưa có
+            tiến độ — dòng khi đó chỉ nói số mục mới. Tính lúc mở trang (ADR 0046). */
+        get tuanNay() {
+          const els = recentItems();
+          const hw = CO_HW && this.p.online
+            ? els.filter((e) => e.dataset.hw === '1' && !this.p.done[e.dataset.pkey]).length : null;
+          return { moi: els.length, hw };
+        },
+        xemTuanNay() { this.recent7 = true; if (this.p.online) this.todo = true; },
+      };
+    }
   </script>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen"
-      x-data="{ q: '', types: [], hw: false, todo: false, recent7: false, menuMo: false, p: progressStore(),
-                toggle(t) { this.types.includes(t) ? this.types.splice(this.types.indexOf(t), 1) : this.types.push(t) },
-                get filtering() { return this.types.length > 0 || this.hw || this.todo || this.recent7 },
-                get f() { return { q: this.q, types: this.types, hw: this.hw, todo: this.todo, recent7: this.recent7, done: this.p.done } } }"
+      x-data="trangMon()"
       x-init="p.init()">
 
-  <!-- Header dính, chứa tìm kiếm + Expand/Collapse All -->
-  <header id="hdr" class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
-    <div class="max-w-[72rem] mx-auto px-4 py-3">
-      <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-slate-500">
-  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
-  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">PL</a><span class="shrink-0 text-slate-300">›</span>
-  <span aria-current="page" class="truncate font-medium text-slate-700">Amslink</span>
+  
+  <header id="hdr" data-bam="thanh" class="sticky top-0 z-10 bg-white border-b border-slate-200 shadow-sm">
+    <div class="bg-indigo-600">
+      <div class="max-w-[72rem] mx-auto px-4 py-2 min-w-0">
+        <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-indigo-200">
+  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">🏠 Home</a><span class="shrink-0 text-indigo-300">›</span>
+  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">PL</a><span class="shrink-0 text-indigo-300">›</span>
+  <span aria-current="page"  class="truncate font-medium text-white">Amslink</span>
 </nav>
-      <div class="mt-1.5 flex items-center gap-3 flex-wrap">
-        <div class="min-w-0 flex-1">
-          <!-- Tên môn `truncate`, link `shrink-0`: tên dài bao nhiêu cũng không
-               đẩy được link ra khỏi màn hình, và link không bao giờ chen làm tên
-               môn bị cắt sớm. -->
-          <div class="flex flex-wrap items-baseline gap-x-2 min-w-0">
-            <h1 class="text-lg font-bold text-slate-900 truncate">Amslink</h1>
-            
-          </div>
+      </div>
+    </div>
+    <div class="max-w-[72rem] mx-auto px-3 sm:px-4">
+      
+      <div class="pt-2 flex items-start sm:items-center gap-2">
+        <h1 class="min-w-0 flex-1 sm:flex-initial text-lg font-bold text-slate-900 leading-snug break-words">Amslink</h1>
+        <div class="shrink-0 flex flex-col items-end gap-1 mt-1 sm:mt-0 sm:contents">
           
-          <p class="text-xs text-slate-500">lớp tiếng Anh ngoài trường</p>
           
         </div>
-        
-        
-        <!-- Trên màn hẹp nút này xuống HÀNG RIÊNG (`w-full`), không thì nó ăn
-             bề ngang của tiêu đề và tên môn bị cắt còn "CIE ES…". -->
-        
       </div>
       
       
+      <p class="text-xs text-slate-500">lớp tiếng Anh ngoài trường</p>
+      
+      
+      <div class="pb-2"></div>
+      
     </div>
+    
   </header>
 
   <div class="max-w-[72rem] mx-auto lg:flex lg:gap-5 lg:items-start">
@@ -362,6 +408,8 @@
   
 
   <main class="min-w-0 lg:flex-1 px-4 py-6 space-y-4">
+
+    
 
     
     
@@ -394,8 +442,8 @@
     Cập nhật tự động · bản lưu offline
   </footer>
   <!-- Chiều cao header dính ĐO bằng ResizeObserver, không viết cứng: chip lọc
-       xuống dòng ở màn hẹp và tên môn dài hai dòng đều đổi con số này (đo: 175px
-       ở 1280px, 259px ở 390px). Cùng khuôn với study.html. -->
+       xuống dòng ở màn hẹp và tên môn dài hai dòng đều đổi con số này (ADR 0054:
+       ~137px ở 390px, ~147px khi tên môn dài; trước đó 259px). Cùng khuôn với study.html. -->
   <script>
     (function () {
       var h = document.getElementById('hdr');
@@ -408,5 +456,45 @@
       else addEventListener('resize', do_);
     })();
   </script>
+  <script>
+  (function () {
+    var vv = window.visualViewport;
+    if (!vv) return;
+    var hen = 0, cham = false, dung = 0;
+    function dat() {
+      hen = 0;
+      var s = vv.scale, phong = s > 1.01;
+      document.querySelectorAll('[data-bam]').forEach(function (e) {
+        // Chỉ bám THANH (data-bam="thanh") và lớp phủ đang `fixed` (ngăn mở ở màn hẹp).
+        // ≥1024px cột mục lục là cột cố định trong luồng: bám nó là một cột 256px đè lên
+        // chính chữ vừa phóng (duyệt nhánh 2026-09-25).
+        var ghim = phong && (e.dataset.bam === 'thanh' || getComputedStyle(e).position === 'fixed');
+        if (!ghim) { e.style.transform = ''; e.style.transformOrigin = ''; e.style.opacity = ''; return; }
+        e.style.transform = '';
+        var r = e.getBoundingClientRect();
+        e.style.transformOrigin = (-r.left) + 'px ' + (-r.top) + 'px';
+        e.style.transform = 'translate(' + vv.offsetLeft + 'px,' + vv.offsetTop + 'px) scale(' + (1 / s) + ')';
+        e.style.opacity = cham ? '0' : '';
+      });
+    }
+    function lich() { if (!hen) hen = requestAnimationFrame(dat); }
+    vv.addEventListener('resize', lich);
+    vv.addEventListener('scroll', lich);
+    addEventListener('scroll', lich, { passive: true });
+    addEventListener('touchstart', function (e) {
+      if (vv.scale <= 1.01 || (e.target.closest && e.target.closest('[data-bam]'))) return;
+      cham = true; clearTimeout(dung); lich();
+    }, { passive: true });
+    addEventListener('touchend', function (e) {
+      if (e.touches && e.touches.length) return;
+      clearTimeout(dung);
+      dung = setTimeout(function () { cham = false; lich(); }, 120);
+    }, { passive: true });
+    // Ngăn mở/đóng bằng đổi class → đặt lại (ngăn vừa hiện chưa có transform).
+    new MutationObserver(lich).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+    window.bamKhungNhin = dat;
+    lich();
+  })();
+</script>
 </body>
 </html>

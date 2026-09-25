@@ -1,4 +1,6 @@
 
+
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -8,7 +10,7 @@
   <title>CIE Science 5 — PL</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.1e6720a1.css">
+  <link rel="stylesheet" href="../assets/tw.3760865e.css">
   <script defer src="../assets/collapse.d0a27f2d.js"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>
@@ -113,9 +115,12 @@
           truoc = cao;
           return requestAnimationFrame(thu);
         }
-        const h = document.querySelector('header');
+        const h = document.getElementById('hdr');
+        const vv = window.visualViewport;
         const off = h ? h.getBoundingClientRect().height : 0;
-        const y = el.getBoundingClientRect().top + window.scrollY - off - 8;
+        // Khi phóng to, phần đang nhìn lệch khỏi đỉnh layout viewport `vv.offsetTop` — tiêu
+        // đề phải về ngay dưới thanh CỦA PHẦN ĐANG NHÌN (ADR 0054), không phải của layout.
+        const y = el.getBoundingClientRect().top + window.scrollY - (vv ? vv.offsetTop : 0) - off - 8;
         window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
       };
       requestAnimationFrame(thu);
@@ -310,118 +315,172 @@
         },
       };
     }
+
+    // Nhãn loại mục để dòng "Đang lọc" gọi tên chip đang bật. (tojson trong <script> — được.)
+    var LOAI = { "assignment": "\ud83d\udcdd b\u00e0i t\u1eadp", };
+    var TIEN_DO_KEY = "pl/80432/";
+    var TONG_MUC = 9;
+    var CO_HW = false;
+    /** State của TRANG MÔN. Trước đây nằm thẳng trong `x-data` của <body>; nay phải là hàm vì
+        ô tìm dùng chung (`_timkiem.html`) chèn thêm thành viên — nhét vào thuộc tính HTML là
+        vỡ cú pháp khi có nháy kép (bài học của progressStore). */
+    function trangMon() {
+      return {
+        q: '', types: [], hw: false, todo: false, recent7: false, menuMo: false, locMo: false,
+        p: progressStore(),
+timMo: false,
+      timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
+      timDong() { this.q = ''; this.timMo = false; },
+        toggle(t) { this.types.includes(t) ? this.types.splice(this.types.indexOf(t), 1) : this.types.push(t); },
+        get filtering() { return this.types.length > 0 || this.hw || this.todo || this.recent7; },
+        get f() { return { q: this.q, types: this.types, hw: this.hw, todo: this.todo, recent7: this.recent7, done: this.p.done }; },
+        get soLoc() { return this.types.length + (this.hw ? 1 : 0) + (this.todo ? 1 : 0) + (this.recent7 ? 1 : 0); },
+        get tenLoc() {
+          return [...(this.recent7 ? ['7 ngày'] : []), ...(this.hw ? ['Homework'] : []),
+                  ...(this.todo ? ['Chưa học'] : []), ...this.types.map((t) => LOAI[t] || t)];
+        },
+        boLoc() { this.types = []; this.hw = false; this.todo = false; this.recent7 = false; },
+        get daHoc() { return Object.keys(this.p.done).filter((k) => k.startsWith(TIEN_DO_KEY)).length; },
+        get tienDo() {
+          if (this.recent7) { const s = recentStats(this.p.done); return s.done + '/' + s.total + ' · 7 ngày'; }
+          return this.daHoc + '/' + TONG_MUC;
+        },
+        get tienDoPct() {
+          return this.recent7 ? recentPct(this.p.done) : (TONG_MUC ? Math.round(this.daHoc / TONG_MUC * 100) : 0);
+        },
+        /** "Tuần này": mục mới = mục chip 7 ngày giữ lại; bài tập chưa xong = mục chip Homework
+            giữ lại, trong 7 ngày, chưa tick. `hw` null khi không có nhóm Homework hoặc chưa có
+            tiến độ — dòng khi đó chỉ nói số mục mới. Tính lúc mở trang (ADR 0046). */
+        get tuanNay() {
+          const els = recentItems();
+          const hw = CO_HW && this.p.online
+            ? els.filter((e) => e.dataset.hw === '1' && !this.p.done[e.dataset.pkey]).length : null;
+          return { moi: els.length, hw };
+        },
+        xemTuanNay() { this.recent7 = true; if (this.p.online) this.todo = true; },
+      };
+    }
   </script>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen"
-      x-data="{ q: '', types: [], hw: false, todo: false, recent7: false, menuMo: false, p: progressStore(),
-                toggle(t) { this.types.includes(t) ? this.types.splice(this.types.indexOf(t), 1) : this.types.push(t) },
-                get filtering() { return this.types.length > 0 || this.hw || this.todo || this.recent7 },
-                get f() { return { q: this.q, types: this.types, hw: this.hw, todo: this.todo, recent7: this.recent7, done: this.p.done } } }"
+      x-data="trangMon()"
       x-init="p.init()">
 
-  <!-- Header dính, chứa tìm kiếm + Expand/Collapse All -->
-  <header id="hdr" class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
-    <div class="max-w-[72rem] mx-auto px-4 py-3">
-      <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-slate-500">
-  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
-  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">PL</a><span class="shrink-0 text-slate-300">›</span>
-  <span aria-current="page" class="truncate font-medium text-slate-700">CIE Science 5</span>
+  
+  <header id="hdr" data-bam="thanh" class="sticky top-0 z-10 bg-white border-b border-slate-200 shadow-sm">
+    <div class="bg-indigo-600">
+      <div class="max-w-[72rem] mx-auto px-4 py-2 min-w-0">
+        <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-indigo-200">
+  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">🏠 Home</a><span class="shrink-0 text-indigo-300">›</span>
+  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">PL</a><span class="shrink-0 text-indigo-300">›</span>
+  <span aria-current="page"  class="truncate font-medium text-white">CIE Science 5</span>
 </nav>
-      <div class="mt-1.5 flex items-center gap-3 flex-wrap">
-        <div class="min-w-0 flex-1">
-          <!-- Tên môn `truncate`, link `shrink-0`: tên dài bao nhiêu cũng không
-               đẩy được link ra khỏi màn hình, và link không bao giờ chen làm tên
-               môn bị cắt sớm. -->
-          <div class="flex flex-wrap items-baseline gap-x-2 min-w-0">
-            <h1 class="text-lg font-bold text-slate-900 truncate">CIE Science 5</h1>
-            
-            <a href="https://lms.vinschool.edu.vn/courses/80432/modules" target="_blank" rel="noopener noreferrer"
-               title="Mở trang Các học phần của môn này trên LMS (cần đăng nhập)"
-               class="shrink-0 text-xs text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2 whitespace-nowrap">Xem trang gốc ↗</a>
-            
+      </div>
+    </div>
+    <div class="max-w-[72rem] mx-auto px-3 sm:px-4">
+      
+      <div class="pt-2 flex items-start sm:items-center gap-2">
+        <h1 class="min-w-0 flex-1 sm:flex-initial text-lg font-bold text-slate-900 leading-snug break-words">CIE Science 5</h1>
+        <div class="shrink-0 flex flex-col items-end gap-1 mt-1 sm:mt-0 sm:contents">
+          
+          <a href="https://lms.vinschool.edu.vn/courses/80432/modules" target="_blank" rel="noopener noreferrer"
+             title="Mở trang Các học phần của môn này trên LMS (cần đăng nhập)"
+             class="shrink-0 text-xs text-indigo-500 hover:text-indigo-700 hover:underline py-2 -my-2 whitespace-nowrap"><span class="lg:hidden">Trang gốc ↗</span><span class="hidden lg:inline">Xem trang gốc ↗</span></a>
+          
+          
+          <div x-show="p.ready && p.online" x-cloak data-tien-do
+               class="sm:ml-auto flex items-center gap-2 text-xs text-slate-500 whitespace-nowrap">
+            <span x-show="p.saving" x-cloak class="text-indigo-500">đang lưu…</span>
+            <span x-show="p.err" x-cloak class="text-rose-600 max-w-[10rem] truncate" x-text="p.err"></span>
+            <span class="tabular-nums" x-text="tienDo"></span><span x-show="!recent7" class="hidden lg:inline">đã học</span>
+            <div class="w-14 lg:w-36 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+              <div class="h-full bg-emerald-500 transition-all duration-300" :style="'width: ' + tienDoPct + '%'"></div>
+            </div>
           </div>
           
-          <p class="text-xs text-slate-500">3 tuần/bài · cập nhật 2026-09-15 17:31</p>
-          
         </div>
-        
-        
-        <button @click="menuMo = !menuMo" type="button" :aria-expanded="String(menuMo)"
-                :class="menuMo ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700'"
-                class="lg:hidden shrink-0 px-3 py-2 text-xs font-medium rounded-lg border">☰ Mục lục</button>
-        
-        <!-- Trên màn hẹp nút này xuống HÀNG RIÊNG (`w-full`), không thì nó ăn
-             bề ngang của tiêu đề và tên môn bị cắt còn "CIE ES…". -->
-        
-        <div class="w-full sm:w-auto shrink-0">
-          <a href="cie-science-5-on-tap.html"
-             class="inline-block px-3 py-2 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
-            📖 Ôn tập
-          </a>
-        </div>
-        
       </div>
       
       
-      <div class="mt-2 flex items-center gap-2">
-        <div class="relative flex-1">
-          <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
-          </svg>
-          <input type="search" x-model="q" placeholder="Tìm bài học nhanh..."
-                 class="w-full pl-9 pr-3 py-1.5 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-400">
-        </div>
-        <button @click="$dispatch('expand-all')"
-                class="px-3 py-2 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 whitespace-nowrap">
-          Mở rộng hết
-        </button>
-        <button @click="$dispatch('collapse-all')"
-                class="px-3 py-2 text-xs font-medium rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300 whitespace-nowrap">
-          Thu gọn hết
-        </button>
-      </div>
-
-      <!-- Bộ lọc: Homework (lọc riêng) + loại nội dung -->
-      <div class="mt-2 flex items-center gap-1.5 flex-wrap">
+      
+      <div class="py-2 flex items-center gap-1.5 sm:gap-2">
+        <button type="button" data-nut-menu :aria-expanded="String(menuMo)"
+        @click="menuMo = !menuMo; if (menuMo) { locMo = false }"
+        aria-label="Mục lục" title="Mục lục"
+        :class="[menuMo ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700',
+                 timMo ? 'max-sm:hidden' : '']"
+        class="lg:hidden h-9 min-w-9 shrink-0 px-2 sm:px-3 text-xs font-medium rounded-lg border whitespace-nowrap">☰<span class="hidden sm:inline"> Mục lục</span></button>
+        <span data-cong-tac :class="timMo ? 'max-sm:hidden' : ''"
+      class="inline-flex shrink-0 rounded-lg border border-indigo-200 overflow-hidden text-xs font-semibold">
+  <a href="cie-science-5.html" aria-current="page"
+     class="h-9 px-2.5 inline-flex items-center gap-1 whitespace-nowrap bg-indigo-600 text-white">📚 Bài học</a>
+  <a href="cie-science-5-on-tap.html" 
+     class="h-9 px-2.5 inline-flex items-center gap-1 whitespace-nowrap bg-white text-indigo-700 hover:bg-indigo-50">🧠 Ôn tập</a>
+</span>
         
+        <div data-tim class="flex-1 min-w-0 flex items-center justify-end gap-1" :class="(false) ? 'invisible' : ''">
+  <button x-show="!timMo" @click="timMoRa()" type="button" data-tim-nut
+          aria-label="Tìm bài học…" title="Tìm bài học…"
+          :class="q ? 'border-amber-400 bg-amber-50' : 'border-slate-300 bg-white'"
+          class="sm:hidden w-9 h-9 shrink-0 rounded-lg border text-slate-700 grid place-items-center">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+  </button>
+  <input type="search" x-model="q" x-ref="timO"
+         @keydown.escape.prevent="timDong()"
+         placeholder="Tìm bài học…" aria-label="Tìm bài học…"
+         :class="timMo ? 'block' : 'hidden sm:block'"
+         class="flex-1 min-w-0 sm:max-w-56 lg:max-w-md h-9 px-2 text-xs rounded-lg border border-slate-300 bg-white">
+  <button x-show="timMo" x-cloak @click="timDong()" type="button" data-tim-dong
+          aria-label="Đóng ô tìm" title="Đóng ô tìm"
+          class="sm:hidden w-9 h-9 shrink-0 rounded-lg border border-slate-300 text-slate-700">✕</button>
+</div>
+        <button type="button" data-nut-loc :aria-expanded="String(locMo)" aria-label="Lọc" title="Lọc"
+        @click="locMo = !locMo; if (locMo) { menuMo = false }"
+        :class="[(soLoc) || locMo ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700',
+                 timMo ? 'max-sm:hidden' : '', (false) ? 'invisible' : '']"
+        class="h-9 min-w-9 shrink-0 px-2 rounded-lg border text-sm font-medium inline-flex items-center justify-center gap-1 whitespace-nowrap">⚙<span class="hidden lg:inline text-xs">Lọc</span><span x-show="soLoc" x-cloak data-so-loc class="text-xs tabular-nums" x-text="soLoc"></span></button>
         
-        <button @click="toggle('assignment')"
-                :class="types.includes('assignment') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
-                class="px-2.5 py-2 text-xs rounded-full border transition-colors">
-          📝 bài tập
-        </button>
-        
-        <button @click="recent7 = !recent7"
-                :class="recent7 ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-700 border-amber-300 hover:border-amber-500'"
-                class="px-2.5 py-2 text-xs font-medium rounded-full border transition-colors">
-          🕓 7 ngày
-        </button>
-        <template x-if="p.online">
-          <button @click="todo = !todo"
-                  :class="todo ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-700 border-emerald-300 hover:border-emerald-500'"
-                  class="px-2.5 py-2 text-xs font-medium rounded-full border transition-colors">
-            ○ Chưa học
-          </button>
-        </template>
-        <button x-show="filtering" x-cloak @click="types = []; hw = false; todo = false; recent7 = false"
-                class="px-2 py-1 text-xs text-slate-500 hover:text-indigo-600 underline">
-          Bỏ lọc
-        </button>
-      </div>
-
-      <!-- Tiến độ toàn môn + trạng thái lưu -->
-      <div x-show="p.ready && p.online" x-cloak class="mt-2 flex items-center gap-2 text-xs">
-        <div class="flex-1 h-1.5 rounded-full bg-slate-200 overflow-hidden">
-          <div class="h-full bg-emerald-500 transition-all duration-300"
-               :style="'width: ' + (recent7 ? recentPct(p.done) : Math.round(Object.keys(p.done).filter(k => k.startsWith('pl/80432/')).length / 9 * 100)) + '%'"></div>
-        </div>
-        <span class="text-slate-500 whitespace-nowrap"
-              x-text="recent7 ? (recentStats(p.done).done + '/' + recentStats(p.done).total + ' trong 7 ngày') : (Object.keys(p.done).filter(k => k.startsWith('pl/80432/')).length + '/9 đã học')"></span>
-        <span x-show="p.saving" x-cloak class="text-indigo-500">đang lưu…</span>
-        <span x-show="p.err" x-cloak class="text-rose-600" x-text="p.err"></span>
       </div>
       
     </div>
+    
+    <div x-show="locMo" x-cloak data-ngan-loc @keydown.escape.window="locMo = false"
+     class="no-print absolute inset-x-0 top-full z-30">
+  <div @click="locMo = false" class="absolute inset-x-0 top-0 h-screen bg-slate-900/30"></div>
+  <div class="relative bg-white border-b border-slate-200 shadow-lg">
+    <div class="max-w-[72rem] mx-auto px-4 py-3 space-y-3">
+      
+      <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Hay dùng</p>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" @click="recent7 = !recent7"
+                :class="recent7 ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-700 border-amber-300 hover:border-amber-500'"
+                class="px-3 py-2 text-xs font-medium rounded-full border">🕓 7 ngày</button>
+        
+        <template x-if="p.online">
+          <button type="button" @click="todo = !todo"
+                  :class="todo ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-700 border-emerald-300 hover:border-emerald-500'"
+                  class="px-3 py-2 text-xs font-medium rounded-full border">○ Chưa học</button>
+        </template>
+      </div>
+      <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Loại mục</p>
+      <div class="flex flex-wrap gap-2">
+        
+        <button type="button" @click="toggle('assignment')"
+                :class="types.includes('assignment') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
+                class="px-3 py-2 text-xs rounded-full border">📝 bài tập</button>
+        
+      </div>
+    
+      <div class="flex justify-between text-sm">
+        <button type="button" data-bo-loc @click="boLoc()" class="px-2 py-2 -mx-2 text-slate-500 hover:text-indigo-600">Bỏ lọc</button>
+        <button type="button" data-loc-xong @click="locMo = false" class="px-2 py-2 -mx-2 font-semibold text-indigo-600">Xong</button>
+      </div>
+    </div>
+  </div>
+</div>
+    
   </header>
 
   <div class="max-w-[72rem] mx-auto lg:flex lg:gap-5 lg:items-start">
@@ -436,7 +495,7 @@
   <aside class="no-print lg:px-4 lg:pt-6 lg:w-64 lg:shrink-0 lg:sticky lg:top-[var(--hdr)] lg:self-start lg:pr-0"
          @keydown.escape.window="menuMo = false">
     
-    <div :class="menuMo ? 'block fixed inset-x-0 bottom-0 top-[var(--hdr)] z-30 overflow-y-auto rounded-none lg:static lg:rounded-xl' : 'hidden lg:block'"
+    <div data-bam :class="menuMo ? 'block fixed inset-x-0 bottom-0 top-[var(--hdr)] z-30 overflow-y-auto rounded-none lg:static lg:rounded-xl' : 'hidden lg:block'"
          class="rounded-xl border border-slate-200 bg-white p-2 shadow-sm lg:max-h-[calc(100vh-var(--hdr)-3rem)] lg:overflow-y-auto">
       <p class="px-2 pb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Mục lục</p>
       <ol class="space-y-0.5">
@@ -482,6 +541,21 @@
   <main class="min-w-0 lg:flex-1 px-4 py-6 space-y-4">
 
     
+    <div x-show="soLoc" x-cloak data-dong-loc
+     class="no-print flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-900">
+  <span class="min-w-0"><b>Đang lọc:</b> <span x-text="(tenLoc).join(' · ')"></span></span>
+  <button type="button" data-bo-loc @click="boLoc()" class="ml-auto shrink-0 px-2 py-2 -my-2 font-semibold hover:text-indigo-600">✕ Bỏ lọc</button>
+</div>
+    
+    <div x-show="!soLoc && tuanNay.moi" x-cloak data-tuan-nay
+         class="no-print flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+      <span class="min-w-0"><b>Tuần này:</b>
+        <span x-text="tuanNay.moi + ' mục mới' + (tuanNay.hw !== null ? ' · ' + tuanNay.hw + ' bài tập chưa xong' : '')"></span></span>
+      <button type="button" data-xem-tuan @click="xemTuanNay()" class="ml-auto shrink-0 px-2 py-2 -my-2 font-semibold hover:text-amber-700">Xem ›</button>
+    </div>
+    
+
+    
     
     <section class="bg-white rounded-xl shadow-sm border border-amber-200 overflow-hidden">
       <div class="px-4 py-3 bg-amber-50 border-b border-amber-200">
@@ -515,8 +589,6 @@
     
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: true }"
-             @expand-all.window="open = true"
-             @collapse-all.window="open = false"
              x-effect="if (q || filtering) open = true"
              id="mod-1" data-module data-title="Unit 2 – Materials: Properties and Changes (Grade 5)"
              x-show="moduleMatches($el, f)"
@@ -547,7 +619,6 @@
              
              x-show="itemMatches($el, f)"
              x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
              class="group" :class="p.done['pl/80432/8807688'] ? 'bg-emerald-50/60' : ''">
           <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
             <!-- Đánh dấu đã học -->
@@ -621,7 +692,6 @@
              
              x-show="itemMatches($el, f)"
              x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
              class="group" :class="p.done['pl/80432/7836353'] ? 'bg-emerald-50/60' : ''">
           <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
             <!-- Đánh dấu đã học -->
@@ -703,7 +773,6 @@
              
              x-show="itemMatches($el, f)"
              x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
              class="group" :class="p.done['pl/80432/7836352'] ? 'bg-emerald-50/60' : ''">
           <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
             <!-- Đánh dấu đã học -->
@@ -785,7 +854,6 @@
              
              x-show="itemMatches($el, f)"
              x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
              class="group" :class="p.done['pl/80432/8638992'] ? 'bg-emerald-50/60' : ''">
           <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
             <!-- Đánh dấu đã học -->
@@ -860,7 +928,6 @@
              
              x-show="itemMatches($el, f)"
              x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
              class="group" :class="p.done['pl/80432/7836351'] ? 'bg-emerald-50/60' : ''">
           <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
             <!-- Đánh dấu đã học -->
@@ -939,7 +1006,6 @@
              
              x-show="itemMatches($el, f)"
              x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
              class="group" :class="p.done['pl/80432/7836350'] ? 'bg-emerald-50/60' : ''">
           <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
             <!-- Đánh dấu đã học -->
@@ -1019,7 +1085,6 @@
              
              x-show="itemMatches($el, f)"
              x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
              class="group" :class="p.done['pl/80432/7836354'] ? 'bg-emerald-50/60' : ''">
           <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
             <!-- Đánh dấu đã học -->
@@ -1091,7 +1156,6 @@
              
              x-show="itemMatches($el, f)"
              x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
              class="group" :class="p.done['pl/80432/7836355'] ? 'bg-emerald-50/60' : ''">
           <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
             <!-- Đánh dấu đã học -->
@@ -1164,8 +1228,6 @@
     
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: false }"
-             @expand-all.window="open = true"
-             @collapse-all.window="open = false"
              x-effect="if (q || filtering) open = true"
              id="mod-2" data-module data-title="Books (Grade 5)"
              x-show="moduleMatches($el, f)"
@@ -1197,8 +1259,6 @@
     
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: false }"
-             @expand-all.window="open = true"
-             @collapse-all.window="open = false"
              x-effect="if (q || filtering) open = true"
              id="mod-3" data-module data-title="Scientific Inquiry"
              x-show="moduleMatches($el, f)"
@@ -1229,7 +1289,6 @@
              
              x-show="itemMatches($el, f)"
              x-data="{ o: false }"
-             @expand-all.window="o = true" @collapse-all.window="o = false"
              class="group" :class="p.done['pl/80432/7836333'] ? 'bg-emerald-50/60' : ''">
           <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
             <!-- Đánh dấu đã học -->
@@ -1314,8 +1373,8 @@
     Cập nhật tự động · bản lưu offline
   </footer>
   <!-- Chiều cao header dính ĐO bằng ResizeObserver, không viết cứng: chip lọc
-       xuống dòng ở màn hẹp và tên môn dài hai dòng đều đổi con số này (đo: 175px
-       ở 1280px, 259px ở 390px). Cùng khuôn với study.html. -->
+       xuống dòng ở màn hẹp và tên môn dài hai dòng đều đổi con số này (ADR 0054:
+       ~137px ở 390px, ~147px khi tên môn dài; trước đó 259px). Cùng khuôn với study.html. -->
   <script>
     (function () {
       var h = document.getElementById('hdr');
@@ -1328,5 +1387,45 @@
       else addEventListener('resize', do_);
     })();
   </script>
+  <script>
+  (function () {
+    var vv = window.visualViewport;
+    if (!vv) return;
+    var hen = 0, cham = false, dung = 0;
+    function dat() {
+      hen = 0;
+      var s = vv.scale, phong = s > 1.01;
+      document.querySelectorAll('[data-bam]').forEach(function (e) {
+        // Chỉ bám THANH (data-bam="thanh") và lớp phủ đang `fixed` (ngăn mở ở màn hẹp).
+        // ≥1024px cột mục lục là cột cố định trong luồng: bám nó là một cột 256px đè lên
+        // chính chữ vừa phóng (duyệt nhánh 2026-09-25).
+        var ghim = phong && (e.dataset.bam === 'thanh' || getComputedStyle(e).position === 'fixed');
+        if (!ghim) { e.style.transform = ''; e.style.transformOrigin = ''; e.style.opacity = ''; return; }
+        e.style.transform = '';
+        var r = e.getBoundingClientRect();
+        e.style.transformOrigin = (-r.left) + 'px ' + (-r.top) + 'px';
+        e.style.transform = 'translate(' + vv.offsetLeft + 'px,' + vv.offsetTop + 'px) scale(' + (1 / s) + ')';
+        e.style.opacity = cham ? '0' : '';
+      });
+    }
+    function lich() { if (!hen) hen = requestAnimationFrame(dat); }
+    vv.addEventListener('resize', lich);
+    vv.addEventListener('scroll', lich);
+    addEventListener('scroll', lich, { passive: true });
+    addEventListener('touchstart', function (e) {
+      if (vv.scale <= 1.01 || (e.target.closest && e.target.closest('[data-bam]'))) return;
+      cham = true; clearTimeout(dung); lich();
+    }, { passive: true });
+    addEventListener('touchend', function (e) {
+      if (e.touches && e.touches.length) return;
+      clearTimeout(dung);
+      dung = setTimeout(function () { cham = false; lich(); }, 120);
+    }, { passive: true });
+    // Ngăn mở/đóng bằng đổi class → đặt lại (ngăn vừa hiện chưa có transform).
+    new MutationObserver(lich).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+    window.bamKhungNhin = dat;
+    lich();
+  })();
+</script>
 </body>
 </html>

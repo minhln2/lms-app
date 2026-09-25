@@ -1,5 +1,7 @@
 
 
+
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -9,7 +11,7 @@
   <title>Ôn tập · CIE Science 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.1e6720a1.css">
+  <link rel="stylesheet" href="../assets/tw.3760865e.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -48,6 +50,7 @@
         // nhảy vào một unit không thuộc môn đó, hoặc tệ hơn là trang trắng.
         scopeKey: 'lms_scope:cie-science-5',
         navOpen: false,         // ngăn kéo cây trên màn hình hẹp
+        locMo: false,           // ngăn ⚙ (ADR 0054)
         queue: [], at: 0, picked: null, answered: false, wrongAgain: 0,
         log: [], shownAt: 0,
 
@@ -276,6 +279,28 @@
         // trắc nghiệm. Khoá sau ghi đè khoá trước trong object literal.
         kw: '',
         get qq() { return (this.kw || '').trim().toLowerCase(); },
+timMo: false,
+      timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
+      timDong() { this.kw = ''; this.timMo = false; },
+        // Số BỘ LỌC của chế độ đang mở (tuỳ chọn In/Tự đọc/sắp xếp không tính) — số trên ⚙
+        // và dòng "Đang lọc" (ADR 0054). `kinds` chỉ gồm chip có trong phạm vi (ADR 0047).
+        get soLoc() {
+          if (this.mode === 'summary') return this.kinds.filter((kd) => this.filt[kd.k]).length + (this.onlyNew ? 1 : 0);
+          if (this.mode === 'cards' || this.mode === 'quiz') return this.skipKnown ? 1 : 0;
+          return 0;
+        },
+        get tenLoc() {
+          if (this.mode === 'summary')
+            return [...(this.onlyNew ? ['Chưa thuộc'] : []), ...this.kinds.filter((kd) => this.filt[kd.k]).map((kd) => kd.t)];
+          return this.skipKnown && (this.mode === 'cards' || this.mode === 'quiz') ? ['Chưa thuộc'] : [];
+        },
+        boLoc() {
+          if (this.mode === 'summary') {
+            for (const k of Object.keys(this.filt)) this.filt[k] = false;
+            localStorage.setItem('lms_pick', JSON.stringify(this.filt));
+            if (this.onlyNew) this.toggleOnlyNew();
+          } else if (this.skipKnown) this.toggleSkip();
+        },
         // Số mẩu còn lại trong MỘT lá sau khi lọc. Chỉ đếm loại ĐANG HIỆN, nên
         // dùng được cho cả ô tìm lẫn chip. Danh sách dưới đây phải soi đúng các
         // khối mà lá thật sự vẽ ra (mỗi dòng ứng với một `x-if="show.…"` trong
@@ -1784,54 +1809,127 @@
        offset cho thanh dưới — con số đó sai ngay khi tên môn dài xuống hai dòng
        trên màn hẹp, và sai lặng lẽ (hai thanh chồng lên nhau). Bọc chung thì
        trình duyệt tự tính. -->
-  <div id="hdr" class="no-print sticky top-0 z-30">
+  <div id="hdr" data-bam="thanh" class="no-print sticky top-0 z-30">
   <header class="no-print bg-indigo-600 text-white">
-    <!-- Một dòng duy nhất: đường dẫn đã kết thúc bằng "📖 Ôn tập" nên tiêu đề
-         riêng chỉ là nhắc lại, mà header dính thì mỗi dòng thừa đều ăn vào phần
-         nội dung đang đọc. -->
+    <!-- Một dòng duy nhất. Nấc cuối là PHẦN ĐANG HỌC (ADR 0054): công tắc Bài học |
+         Ôn tập đã nói đang ở ôn tập, còn nút ☰ chỉ còn biểu tượng — cuộn sâu vẫn biết
+         mình đang ở unit nào nhờ dòng này. -->
     <div class="max-w-5xl mx-auto px-4 py-2 min-w-0">
       <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-indigo-200">
   <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">🏠 Home</a><span class="shrink-0 text-indigo-300">›</span>
   <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">PL</a><span class="shrink-0 text-indigo-300">›</span>
   <a href="cie-science-5.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">CIE Science 5</a><span class="shrink-0 text-indigo-300">›</span>
-  <span aria-current="page" class="truncate font-medium text-white">📖 Ôn tập</span>
+  <span aria-current="page" x-text="data ? scopeName : &#39;📖 Ôn tập&#39;" class="truncate font-medium text-white">📖 Ôn tập</span>
 </nav>
     </div>
   </header>
 
-  <!-- Thanh chế độ. Mọi class Tailwind ở đây là literal — nội dung đến từ JSON
-       nhưng class thì phải nằm sẵn trong HTML để Tailwind quét thấy lúc build. -->
+  <!-- Thanh công cụ chung (ADR 0054): ☰ · công tắc · 🔍 (chỉ Tóm tắt) · ⚙ theo chế độ,
+       rồi hàng tab chế độ. Mọi class Tailwind là literal. -->
   <nav x-show="ready && data" x-cloak class="bg-white border-b border-slate-200">
-    <div class="max-w-5xl mx-auto px-4 py-2 flex items-center gap-1.5 overflow-x-auto">
-      <!-- In: chỉ ở trang tóm tắt. `order-last ml-auto` đẩy sang phải, cùng chỗ
-           với ô Tự đọc — hai thứ này không bao giờ hiện cùng lúc vì mỗi cái thuộc
-           một mode. In ĐÚNG những gì đang thấy, kể cả khi đang lọc: bấm In mà ra
-           nội dung khác trên màn hình thì khó hiểu hơn là in thiếu. -->
-      <button x-show="mode === 'summary'" @click="printSheet()" type="button" title="In trang này"
-              class="order-last ml-auto shrink-0 px-2.5 py-2 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:border-indigo-400">🖨 In</button>
-      <!-- Tự đọc mặt trước khi hiện thẻ/câu mới. Nhớ lựa chọn trong localStorage. -->
-      <label x-show="canSpeak && (mode === 'cards' || mode === 'quiz')" class="order-last ml-auto shrink-0 flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer select-none">
-        <input type="checkbox" :checked="autoSpeak" @change="toggleAuto()" class="accent-indigo-600">
-        🔊 Tự đọc
-      </label>
-      <!-- Màn hẹp: nút mở cây. Màn rộng: cây đã hiện sẵn nên ẩn nút đi. -->
-      <button @click="navOpen = !navOpen"
-              class="lg:hidden shrink-0 px-2.5 py-2 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:border-indigo-400">
-        ☰ <span x-text="scopeName"></span>
-      </button>
-      <span class="lg:hidden w-px h-4 bg-slate-200 shrink-0"></span>
-      <template x-for="m in [
-          {k:'summary', t:'📄 Tóm tắt'},
-          {k:'cards',   t:'🃏 Thẻ ghi nhớ'}, {k:'quiz', t:'✍️ Trắc nghiệm'},
-                    {k:'hist',    t:'📒 Từ đã tra'}]" :key="m.k">
-        <button @click="go(m.k)"
+    <div class="max-w-5xl mx-auto px-3 sm:px-4 py-2 flex items-center gap-1.5 sm:gap-2">
+      <button type="button" data-nut-menu :aria-expanded="String(navOpen)"
+        @click="navOpen = !navOpen; if (navOpen) { locMo = false }"
+        aria-label="Mục lục" title="Mục lục"
+        :class="[navOpen ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700',
+                 timMo ? 'max-sm:hidden' : '']"
+        class="lg:hidden h-9 min-w-9 shrink-0 px-2 sm:px-3 text-xs font-medium rounded-lg border whitespace-nowrap">☰<span class="hidden sm:inline"> Mục lục</span></button>
+      <span data-cong-tac :class="timMo ? 'max-sm:hidden' : ''"
+      class="inline-flex shrink-0 rounded-lg border border-indigo-200 overflow-hidden text-xs font-semibold">
+  <a href="cie-science-5.html" 
+     class="h-9 px-2.5 inline-flex items-center gap-1 whitespace-nowrap bg-white text-indigo-700 hover:bg-indigo-50">📚 Bài học</a>
+  <a href="cie-science-5-on-tap.html" aria-current="page"
+     class="h-9 px-2.5 inline-flex items-center gap-1 whitespace-nowrap bg-indigo-600 text-white">🧠 Ôn tập</a>
+</span>
+      <div data-tim class="flex-1 min-w-0 flex items-center justify-end gap-1" :class="(mode !== &#39;summary&#39;) ? 'invisible' : ''">
+  <button x-show="!timMo" @click="timMoRa()" type="button" data-tim-nut
+          aria-label="Tìm trong bài…" title="Tìm trong bài…"
+          :class="kw ? 'border-amber-400 bg-amber-50' : 'border-slate-300 bg-white'"
+          class="sm:hidden w-9 h-9 shrink-0 rounded-lg border text-slate-700 grid place-items-center">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+  </button>
+  <input type="search" x-model="kw" x-ref="timO"
+         @keydown.escape.prevent="timDong()"
+         placeholder="Tìm trong bài…" aria-label="Tìm trong bài…"
+         :class="timMo ? 'block' : 'hidden sm:block'"
+         class="flex-1 min-w-0 sm:max-w-56 lg:max-w-md h-9 px-2 text-xs rounded-lg border border-slate-300 bg-white">
+  <button x-show="timMo" x-cloak @click="timDong()" type="button" data-tim-dong
+          aria-label="Đóng ô tìm" title="Đóng ô tìm"
+          class="sm:hidden w-9 h-9 shrink-0 rounded-lg border border-slate-300 text-slate-700">✕</button>
+</div>
+      <button type="button" data-nut-loc :aria-expanded="String(locMo)" aria-label="Lọc" title="Lọc"
+        @click="locMo = !locMo; if (locMo) { navOpen = false }"
+        :class="[(soLoc) || locMo ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700',
+                 timMo ? 'max-sm:hidden' : '', (false) ? 'invisible' : '']"
+        class="h-9 min-w-9 shrink-0 px-2 rounded-lg border text-sm font-medium inline-flex items-center justify-center gap-1 whitespace-nowrap">⚙<span class="hidden lg:inline text-xs">Lọc</span><span x-show="soLoc" x-cloak data-so-loc class="text-xs tabular-nums" x-text="soLoc"></span></button>
+    </div>
+    
+    <div class="max-w-5xl mx-auto px-3 sm:px-4 pb-2 flex items-center gap-1.5">
+      <template x-for="m in [{k:'summary', n:'📄 Tóm tắt', t:'📄 Tóm tắt'}, {k:'cards', n:'🃏 Thẻ', t:'🃏 Thẻ ghi nhớ'},
+                             {k:'quiz', n:'✍️ Trắc nghiệm', t:'✍️ Trắc nghiệm'}, {k:'hist', n:'📒 Từ tra', t:'📒 Từ đã tra'}]" :key="m.k">
+        <button @click="go(m.k)" data-tab type="button"
                 :class="mode === m.k ? 'bg-indigo-600 text-white border-indigo-600'
                                      : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
-                class="px-3 py-2 text-xs font-medium rounded-full border whitespace-nowrap transition-colors"
-                x-text="m.t"></button>
+                class="px-2.5 sm:px-3 py-2 text-xs font-medium rounded-full border whitespace-nowrap transition-colors"><span :class="m.n === m.t ? '' : 'sm:hidden'" x-text="m.n"></span><span x-show="m.n !== m.t" class="hidden sm:inline" x-text="m.t"></span></button>
       </template>
     </div>
   </nav>
+  <div x-show="locMo" x-cloak data-ngan-loc @keydown.escape.window="locMo = false"
+     class="no-print absolute inset-x-0 top-full z-30">
+  <div @click="locMo = false" class="absolute inset-x-0 top-0 h-screen bg-slate-900/30"></div>
+  <div class="relative bg-white border-b border-slate-200 shadow-lg">
+    <div class="max-w-5xl mx-auto px-4 py-3 space-y-3">
+      
+    <template x-if="mode === 'summary'"><div class="space-y-3">
+      <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Hay dùng</p>
+      <div class="flex flex-wrap gap-2">
+        <button x-show="canMark" type="button" data-loc-chua-thuoc @click="toggleOnlyNew()" :aria-pressed="String(onlyNew)"
+                :class="onlyNew ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-700 border-emerald-300'"
+                class="px-3 py-2 text-xs font-medium rounded-full border">○ Chưa thuộc</button>
+      </div>
+      <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Loại nội dung</p>
+      <div class="flex flex-wrap gap-2">
+        <template x-for="kd in kinds" :key="kd.k">
+          <button type="button" :data-loc-kind="kd.k" @click="toggleShow(kd.k)" :class="filt[kd.k] ? kd.on : kd.off"
+                  class="px-3 py-2 text-xs font-medium rounded-full border" x-text="kd.t"></button>
+        </template>
+      </div>
+      <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Tuỳ chọn</p>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" data-loc-in @click="locMo = false; printSheet()"
+                class="px-3 py-2 text-xs font-medium rounded-full border border-slate-300 text-slate-700">🖨 In trang này</button>
+      </div>
+    </div></template>
+    <template x-if="mode === 'cards' || mode === 'quiz'"><div class="space-y-3">
+      <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Hay dùng</p>
+      <div class="flex flex-wrap gap-2">
+        <button x-show="online && modeItems.length" type="button" data-loc-chua-thuoc @click="toggleSkip()" :aria-pressed="String(skipKnown)"
+                :class="skipKnown ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-indigo-700 border-indigo-300'"
+                class="px-3 py-2 text-xs font-medium rounded-full border">○ Chưa thuộc<span x-show="skipKnown" class="font-normal" x-text="' · còn ' + poolItems.length + '/' + modeItems.length"></span></button>
+      </div>
+      <p x-show="canSpeak" class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Tuỳ chọn</p>
+      <div x-show="canSpeak" class="flex flex-wrap gap-2">
+        <button type="button" data-loc-tu-doc @click="toggleAuto()" :aria-pressed="String(autoSpeak)"
+                :class="autoSpeak ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'"
+                class="px-3 py-2 text-xs font-medium rounded-full border">🔊 Tự đọc</button>
+      </div>
+    </div></template>
+    <template x-if="mode === 'hist'"><div class="space-y-3">
+      <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Tuỳ chọn</p>
+      <button type="button" data-loc-sap @click="hist.sort = hist.sort === 'n' ? 'ts' : 'n'"
+              class="px-3 py-2 text-xs font-medium rounded-full border border-slate-300 text-slate-700"
+              x-text="hist.sort === 'n' ? '↓ Tra nhiều nhất' : '↓ Mới nhất'"></button>
+    </div></template>
+  
+      <div class="flex justify-between text-sm">
+        <button type="button" data-bo-loc @click="boLoc()" class="px-2 py-2 -mx-2 text-slate-500 hover:text-indigo-600">Bỏ lọc</button>
+        <button type="button" data-loc-xong @click="locMo = false" class="px-2 py-2 -mx-2 font-semibold text-indigo-600">Xong</button>
+      </div>
+    </div>
+  </div>
+</div>
   </div><!-- /bọc sticky -->
 
   <div class="max-w-5xl mx-auto lg:flex lg:gap-6 lg:px-4">
@@ -1856,7 +1954,7 @@
            lg:max-h + overflow-y    — cây ESL 5 cao 5121px, cao hơn màn hình thì
                                       "dính" chỉ dính được cái đáy, vô dụng. Phải
                                       cho nó thanh cuộn riêng. -->
-    <aside x-show="navOpen" x-cloak
+    <aside x-show="navOpen" x-cloak data-bam
            :class="navOpen ? 'fixed inset-y-0 left-0 w-72 z-30 overflow-y-auto shadow-xl' : ''"
            class="no-print lg:!block lg:sticky lg:top-[var(--hdr)] lg:self-start lg:max-h-[calc(100vh-var(--hdr))] lg:overflow-y-auto lg:w-60 lg:shrink-0 lg:z-auto lg:shadow-none bg-white lg:bg-transparent p-4 lg:pl-0 lg:py-6">
       <p class="text-xs font-bold uppercase tracking-wide text-slate-400 mb-1.5">Môn học</p>
@@ -1961,14 +2059,13 @@
           <button @click="askSecret()" class="underline hover:text-indigo-600">Nhập mã bí mật</button>
           để lưu kết quả và được gợi ý ôn đúng chỗ hay sai.
         </p>
-        <!-- Lọc + mở bảng trạng thái. Class ở ST là literal để Tailwind quét thấy. -->
+        <div class="mt-3"><div x-show="soLoc" x-cloak data-dong-loc
+     class="no-print flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-900">
+  <span class="min-w-0"><b>Đang lọc:</b> <span x-text="(tenLoc).join(' · ')"></span></span>
+  <button type="button" data-bo-loc @click="boLoc()" class="ml-auto shrink-0 px-2 py-2 -my-2 font-semibold hover:text-indigo-600">✕ Bỏ lọc</button>
+</div></div>
+        <!-- Mở bảng trạng thái. "Chỉ mục chưa thuộc" đã vào ngăn ⚙ (ADR 0054). -->
         <div x-show="online && modeItems.length" x-cloak class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-          <label class="flex items-center gap-1.5 text-sm text-slate-600 cursor-pointer select-none">
-            <input type="checkbox" :checked="skipKnown" @change="toggleSkip()" class="accent-indigo-600">
-            Chỉ mục chưa thuộc
-            <span x-show="skipKnown" x-cloak class="text-xs text-slate-400"
-                  x-text="'(còn ' + poolItems.length + '/' + modeItems.length + ')'"></span>
-          </label>
           <button @click="showList = !showList"
                   class="ml-auto text-sm text-slate-500 hover:text-indigo-600 underline"
                   x-text="showList ? 'Ẩn danh sách' : '📋 Xem danh sách'"></button>
@@ -2198,38 +2295,16 @@
          nằm sẵn ở đây.                                                        -->
     <template x-if="ready && data && mode === 'summary'">
     <div class="space-y-5">
-      <!-- Tìm theo từ khoá. Lọc từng mẩu nội dung chứ không lọc cả mục, nên gõ
-           "oxygen" là chỉ còn đúng những chỗ nhắc tới oxygen. -->
-      <div class="no-print relative">
-        <input type="search" x-model="kw" placeholder="Tìm trong bài… (từ vựng, ý, ví dụ)"
-               class="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 bg-white text-sm
-                      placeholder:text-slate-400 focus:outline-none focus:border-indigo-500">
-        <svg class="absolute left-2.5 top-2.5 w-4 h-4 text-slate-400" fill="none" stroke="currentColor"
-             stroke-width="2" viewBox="0 0 24 24">
-          <circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M20 20l-3.5-3.5"/>
-        </svg>
-      </div>
       <p x-show="filtering && !shownSummary.length" x-cloak
          class="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
         Không có mục nào khớp<template x-if="qq"><span> «<span x-text="kw"></span>»</span></template>.
       </p>
 
-      <!-- Lọc loại nội dung + bật chi tiết. Class ở KINDS là literal để Tailwind quét thấy. -->
-      <div class="no-print flex flex-wrap items-center gap-1.5">
-        <template x-for="kd in kinds" :key="kd.k">
-          <button @click="toggleShow(kd.k)" :class="filt[kd.k] ? kd.on : kd.off"
-                  class="px-2.5 py-2 text-xs font-medium rounded-full border transition-colors" x-text="kd.t"></button>
-        </template>
-        <div class="ml-auto flex items-center gap-3">
-          <!-- Ẩn hẳn phần ĐÃ tick: từ đã thuộc biến mất, lá/mục tick đủ cả cụm thì
-               biến mất luôn cả khối. Chỉ hiện khi ghi được — không ghi được thì
-               chẳng có gì đã thuộc để mà lọc. -->
-          <label x-show="canMark" x-cloak class="flex items-center gap-1.5 text-xs text-emerald-700 cursor-pointer select-none">
-            <input type="checkbox" :checked="onlyNew" @change="toggleOnlyNew()" class="accent-emerald-600">
-            🙈 Ẩn đã thuộc
-          </label>
-        </div>
-      </div>
+      <div x-show="soLoc" x-cloak data-dong-loc
+     class="no-print flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-900">
+  <span class="min-w-0"><b>Đang lọc:</b> <span x-text="(tenLoc).join(' · ')"></span></span>
+  <button type="button" data-bo-loc @click="boLoc()" class="ml-auto shrink-0 px-2 py-2 -my-2 font-semibold hover:text-indigo-600">✕ Bỏ lọc</button>
+</div>
       <p x-show="!scopedSummary.length" x-cloak
          class="rounded-lg bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-500">
         Chưa có tóm tắt cho phần này.
@@ -2943,9 +3018,6 @@
         <p class="text-sm text-slate-500 flex-1">
           <span class="font-semibold text-slate-700" x-text="hist.rows.length"></span> từ đã tra
         </p>
-        <button @click="hist.sort = hist.sort === 'n' ? 'ts' : 'n'" type="button"
-                class="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:border-indigo-400"
-                x-text="hist.sort === 'n' ? '↓ Tra nhiều nhất' : '↓ Mới nhất'"></button>
         <button @click="loadHist()" type="button" title="Tải lại"
                 class="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-slate-300 text-slate-700 hover:border-indigo-400">⟳</button>
       </div>
@@ -3217,5 +3289,45 @@
       else addEventListener('resize', do_);
     })();
   </script>
+<script>
+  (function () {
+    var vv = window.visualViewport;
+    if (!vv) return;
+    var hen = 0, cham = false, dung = 0;
+    function dat() {
+      hen = 0;
+      var s = vv.scale, phong = s > 1.01;
+      document.querySelectorAll('[data-bam]').forEach(function (e) {
+        // Chỉ bám THANH (data-bam="thanh") và lớp phủ đang `fixed` (ngăn mở ở màn hẹp).
+        // ≥1024px cột mục lục là cột cố định trong luồng: bám nó là một cột 256px đè lên
+        // chính chữ vừa phóng (duyệt nhánh 2026-09-25).
+        var ghim = phong && (e.dataset.bam === 'thanh' || getComputedStyle(e).position === 'fixed');
+        if (!ghim) { e.style.transform = ''; e.style.transformOrigin = ''; e.style.opacity = ''; return; }
+        e.style.transform = '';
+        var r = e.getBoundingClientRect();
+        e.style.transformOrigin = (-r.left) + 'px ' + (-r.top) + 'px';
+        e.style.transform = 'translate(' + vv.offsetLeft + 'px,' + vv.offsetTop + 'px) scale(' + (1 / s) + ')';
+        e.style.opacity = cham ? '0' : '';
+      });
+    }
+    function lich() { if (!hen) hen = requestAnimationFrame(dat); }
+    vv.addEventListener('resize', lich);
+    vv.addEventListener('scroll', lich);
+    addEventListener('scroll', lich, { passive: true });
+    addEventListener('touchstart', function (e) {
+      if (vv.scale <= 1.01 || (e.target.closest && e.target.closest('[data-bam]'))) return;
+      cham = true; clearTimeout(dung); lich();
+    }, { passive: true });
+    addEventListener('touchend', function (e) {
+      if (e.touches && e.touches.length) return;
+      clearTimeout(dung);
+      dung = setTimeout(function () { cham = false; lich(); }, 120);
+    }, { passive: true });
+    // Ngăn mở/đóng bằng đổi class → đặt lại (ngăn vừa hiện chưa có transform).
+    new MutationObserver(lich).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+    window.bamKhungNhin = dat;
+    lich();
+  })();
+</script>
 </body>
 </html>
