@@ -1728,33 +1728,37 @@
                  goc: phan.join('').replace(/[ \t]+\n/g, '\n').trim(), o };
       },
 
-      /** 🖍 BÚT — luật LAI (người dùng chọn 2026-09-25, sau khi thử trên điện thoại).
-       *  Đo bằng nét mô phỏng tay người trên 3 trang, khổ 390px (bước dòng 10–12px):
-       *  luật "đầu bút một điểm" ăn 5% nét dọc, 77% nét chéo, 50–63% nét ngang khi
-       *  tay lệch σ 3–4,5px — ngón tay lệch gần bằng bước dòng, quyết dòng theo TỪNG
-       *  điểm thì hỏng. Luật lai: ngang 85% (σ 3px), dọc 98%, chéo 99%.
-       *   · nét THẤP (cao ≤ 1 bước dòng): chọn MỘT dòng cho cả nét — dòng có tâm gần
-       *     TRUNG VỊ độ cao mọi điểm (rung tay lên xuống triệt tiêu nhau); tô từ trên
-       *     dòng đó mà bề ngang nét phủ tới NỬA GIỮA từ (bỏ 25% mỗi bên);
-       *   · nét CAO (dọc, chéo qua nhiều dòng): tô từ mà một đoạn của nét cắt hình
-       *     NỬA GIỮA từ × LÕI dòng (lõi: 60% bước dòng, kẹp trong [60%, 100%] ô chữ);
-       *     phần đã tô lúc nét còn thấp được giữ lại;
-       *   · đã tô là giữ; xem trước theo từng từ; ↶ bỏ đúng nét vừa tô.
-       *  Chạm theo Ô chữ của lớp chữ (chữ nhìn thấy là ẢNH — không có nét mực).
-       *  Hình học TỪ đo MỘT lần lúc đặt bút, theo toạ độ TRANG, ở `kh._but` (không để
-       *  vào state của Alpine: mỗi lần đọc bị theo dõi). */
+      /** 🖍 BÚT — "BẮT DÒNG rồi BÁM" (người dùng thiết kế 2026-09-25, sau luật lai:
+       *  nét ngang dài hay lọt từ khi tay TRÔI dần — đo 390px: trôi 0,7 bước dòng lọt
+       *  29%, trôi 1,2 bước lọt 72%). Máy trạng thái trên toạ độ TRANG; `buoc` = trung
+       *  vị bước dòng của trang; LÕI dòng = ±0,3·buoc quanh tâm dòng.
+       *   · BẮT: chưa bám dòng nào thì điểm vào DẢI ±0,5·buoc quanh tâm một dòng là bắt
+       *     dòng đó (dải rộng hơn lõi — neo ở khoảng trắng vẫn bắt được từ đầu tiên).
+       *   · BÁM: chỉ CHUYỂN sang dòng E khi bút vào LÕI của E VÀ (i) CỐ Ý: đã rời dải
+       *     dòng cũ và từ lần cuối còn trong lõi dòng cũ, dịch dọc ≥ ½ dịch ngang (bôi
+       *     chéo, kéo xuống); hoặc (ii) TRÔI LÂU: đi ngang trong lõi E ≥ 6·buoc
+       *     (mô phỏng: 4 → trôi 1,2 bước lọt 16%; 6 → 11%, loại nét khác không đổi).
+       *   · TÔ (a) NGANG: trên mỗi đoạn bám một dòng mà đi NGANG (dịch dọc ≤ 0,4·dịch
+       *     ngang, hoặc dài ≥ 2·buoc), bề ngang phủ tới NỬA GIỮA từ nào thì tô từ đó.
+       *   · TÔ (b) CẮT LÕI: nét đi trong lõi một dòng đủ SÂU (≥ 0,35 chiều cao lõi, đo
+       *     tại MÉP lõi — điểm chuột thưa) và đủ DỐC (dịch dọc ≥ ½ dịch ngang) → tô từ
+       *     giao đoạn x nét quét qua lõi; vùng của từ tính CẢ nửa khoảng trắng hai bên
+       *     (trần: một chiều cao dòng — không vươn qua khe giữa hai cột).
+       *  Mô phỏng 120 nét/loại × 3 trang (390px): trôi 0,7 → lọt 9%, nhầm 6%; trôi
+       *  1,2 → lọt 11%, nhầm 7%; chéo 3 dòng → lọt 11%, nhầm 1%; dọc qua khoảng
+       *  trắng → lọt 0%. Đã tô là giữ; xem trước theo từng từ; ↶ bỏ đúng nét vừa tô.
+       *  Chạm theo Ô chữ của lớp chữ (chữ nhìn thấy là ẢNH). Hình học đo MỘT lần lúc
+       *  đặt bút, ở `kh._but` (không để vào state của Alpine). */
       _butBatDau(kh) {
         const K = kh.getBoundingClientRect(), H = this._hang(kh).hang, rg = document.createRange();
-        const tam = (h) => (h.t + h.b) / 2, hangCua = new Map(), kc = [];
+        const tam = H.map((h) => (h.t + h.b) / 2), hangCua = new Map(), kc = [], cao = [];
         H.forEach((h, j) => { for (const c of h.spans) hangCua.set(c.sp, j); });
-        for (let j = 1; j < H.length; j++) { const d = tam(H[j]) - tam(H[j - 1]); if (d > 0.5) kc.push(d); }
+        for (let j = 1; j < tam.length; j++) { const d = tam[j] - tam[j - 1]; if (d > 0.5) kc.push(d); }
         kc.sort((a, b) => a - b);
         const tu = [];
         for (const sp of this._spans(kh)) {
           const tn = sp.firstChild, j = hangCua.get(sp);
           if (!tn || tn.nodeType !== 3 || j === undefined) continue;
-          const buoc = Math.min(Infinity, ...[H[j - 1], H[j + 1]].filter(Boolean)
-            .map((x) => Math.abs(tam(x) - tam(H[j]))).filter((d) => d > 0.5));
           const d = tn.data;
           for (let i = 0; i < d.length;) {
             if (!d[i].trim()) { i++; continue; }
@@ -1762,46 +1766,81 @@
             rg.setStart(tn, i); rg.setEnd(tn, e);
             const q = rg.getBoundingClientRect();
             if (q.width) {
-              const cy = q.top - K.top + q.height / 2;
-              const nua = Math.min(Math.max(0.3 * buoc, 0.3 * q.height), q.height / 2);
               const l = q.left - K.left, w = q.width;
-              tu.push({ sp, i, e, hang: j, gl: l + w * 0.25, gr: l + w * 0.75, lt: cy - nua, lb: cy + nua });
+              tu.push({ sp, i, e, hang: j, l, r: l + w, gl: l + w * 0.25, gr: l + w * 0.75, h: q.height });
+              cao.push(q.height);
             }
             i = e;
           }
         }
-        kh._but = { tu, tam: H.map(tam), buoc: kc.length ? kc[kc.length >> 1] : Infinity,
-                    pts: [], cao: new Set(), thapChot: null, kq: new Set(), khoa: '' };
+        // Vùng của từ cho luật CẮT LÕI: tới nửa khoảng trắng với từ kề bên trong cùng hàng
+        // (trần một chiều cao dòng — không vươn qua khe giữa hai cột). Phía KHÔNG có từ kề
+        // (đầu/cuối dòng) chỉ nới NỬA khoảng trắng giữa các từ của dòng (trung vị): bên
+        // trái từ đầu dòng là phần THỤT đầu dòng, không phải khoảng trắng giữa hai từ —
+        // nới cả chiều cao dòng thì nét chéo neo ở chỗ thụt (LS&ĐL tr.10 "Quốc ca") tô luôn
+        // từ đầu dòng khi chưa kéo tới nó.
+        const theoHang = new Map();
+        tu.forEach((w, n) => { if (!theoHang.has(w.hang)) theoHang.set(w.hang, []); theoHang.get(w.hang).push(n); });
+        for (const ds of theoHang.values()) {
+          ds.sort((a, b) => tu[a].l - tu[b].l);
+          const khe = ds.slice(1).map((n, k) => tu[n].l - tu[ds[k]].r).filter((g) => g > 0).sort((a, b) => a - b);
+          ds.forEach((n, k) => {
+            const w = tu[n], tr = k ? tu[ds[k - 1]] : null, sau = k + 1 < ds.length ? tu[ds[k + 1]] : null;
+            const nua = (khe.length ? khe[khe.length >> 1] : 0.3 * w.h) / 2;
+            w.el = tr ? Math.max((tr.r + w.l) / 2, w.l - w.h) : w.l - nua;
+            w.er = sau ? Math.min((w.r + sau.l) / 2, w.r + w.h) : w.r + nua;
+          });
+        }
+        cao.sort((a, b) => a - b);
+        const buoc = kc.length ? kc[kc.length >> 1] : 1.8 * (cao.length ? cao[cao.length >> 1] : 16);
+        kh._but = { tu, tam, buoc, theoHang, dong: null, moc: null, cho: null, quang: 0,
+                    doan: new Map(), vao: new Map(), catTo: new Set(), prev: null, kq: new Set(), khoa: '' };
       },
       /** Thêm một điểm (toạ độ viewport) vào nét; trả true nếu tập từ được tô đổi. */
       _butThem(kh, p) {
         const B = kh._but;
-        if (!B) return false;
-        const K = kh.getBoundingClientRect(), q = { x: p.x - K.left, y: p.y - K.top };
-        const t = B.pts[B.pts.length - 1];
-        B.pts.push(q);
-        if (t) {                                           // đoạn t→q: luật nét CAO, cộng dồn
-          for (let n = 0; n < B.tu.length; n++) {
-            const w = B.tu[n];
-            if (!B.cao.has(n) && this._catHcn(t, q, w.gl, w.lt, w.gr, w.lb)) B.cao.add(n);
-          }
+        if (!B || !B.tam.length) return false;
+        const K = kh.getBoundingClientRect(), x = p.x - K.left, y = p.y - K.top;
+        const { tam, buoc } = B, prev = B.prev;
+        const gan = (yy) => { let j = 0; for (let k = 1; k < tam.length; k++) if (Math.abs(tam[k] - yy) < Math.abs(tam[j] - yy)) j = k; return j; };
+        const loi = (r) => [tam[r] - 0.3 * buoc, tam[r] + 0.3 * buoc];
+        const moDoan = (r) => { if (!B.doan.has(r)) B.doan.set(r, []); B.doan.get(r).push([x, y, x, y]); };
+        const j = gan(y), [lt, lb] = loi(j);
+        if (B.dong === null) {                                    // BẮT
+          if (Math.abs(tam[j] - y) <= 0.5 * buoc) { B.dong = j; B.moc = { x, y }; moDoan(j); }
+        } else if (j !== B.dong && y >= lt && y <= lb) {          // trong lõi dòng KHÁC
+          const dx = prev ? Math.abs(x - prev.x) : 0;
+          B.quang = B.cho === j ? B.quang + dx : dx; B.cho = j;
+          const coY = B.moc && Math.abs(y - tam[B.dong]) > 0.5 * buoc
+                      && Math.abs(y - B.moc.y) >= 0.5 * Math.abs(x - B.moc.x);
+          if (coY || B.quang >= 6 * buoc) { B.dong = j; B.cho = null; B.quang = 0; moDoan(j); }
+        } else { B.cho = null; B.quang = 0; }
+        if (B.dong !== null) {
+          const [l0, b0] = loi(B.dong);
+          if (y >= l0 && y <= b0) B.moc = { x, y };
+          const d = B.doan.get(B.dong).at(-1);
+          d[0] = Math.min(d[0], x); d[2] = Math.max(d[2], x); d[1] = Math.min(d[1], y); d[3] = Math.max(d[3], y);
         }
-        const ys = B.pts.map((a) => a.y), xs = B.pts.map((a) => a.x);
-        const yMin = Math.min(...ys), yMax = Math.max(...ys);
-        let kq;
-        if (yMax - yMin > B.buoc) {                        // nét CAO
-          if (!B.thapChot) B.thapChot = new Set(B.kq);     // giữ phần đã tô lúc còn thấp
-          kq = new Set([...B.thapChot, ...B.cao]);
-        } else {                                           // nét THẤP: một dòng theo trung vị
-          const sx = [...ys].sort((a, b) => a - b), my = sx[sx.length >> 1];
-          let j = -1, dj = Infinity;
-          B.tam.forEach((c, k) => { const d = Math.abs(c - my); if (d < dj) { dj = d; j = k; } });
-          const lo = Math.min(...xs), hi = Math.max(...xs);
-          // Xa mọi dòng (trang một dòng: không có bước dòng → cho phép tới 40px) thì không tô.
-          const tran = Number.isFinite(B.buoc) ? 0.8 * B.buoc : 40;
-          kq = new Set();
-          if (j >= 0 && dj <= tran)
-            B.tu.forEach((w, n) => { if (w.hang === j && hi >= w.gl && lo <= w.gr) kq.add(n); });
+        // (b) CẮT LÕI — theo dõi vào/ra lõi của dòng gần điểm, nội suy tại MÉP lõi.
+        for (const r of new Set(prev ? [gan(prev.y), j] : [j])) {
+          const [l, bb] = loi(r), cin = y >= l && y <= bb, pin = !!prev && prev.y >= l && prev.y <= bb;
+          const tai = (m) => ({ x: prev.x + (m - prev.y) / (y - prev.y) * (x - prev.x), y: m });
+          if (cin && !B.vao.has(r)) B.vao.set(r, !prev || pin ? { x, y } : tai(prev.y < l ? l : bb));
+          if (prev && pin && !cin && B.vao.has(r)) {
+            this._butCat(B, r, B.vao.get(r), tai(y < l ? l : bb)); B.vao.delete(r);
+          }
+          if (prev && !pin && !cin && (prev.y - l) * (y - l) < 0 && (prev.y - bb) * (y - bb) < 0)
+            this._butCat(B, r, tai(l), tai(bb));
+        }
+        B.prev = { x, y };
+        // Kết quả = (b) đã cắt ∪ (b) đang dở (nét dừng TRONG lõi) ∪ (a) các đoạn đi ngang.
+        const kq = new Set(B.catTo);
+        for (const [r, v] of B.vao) this._butCat(B, r, v, { x, y }, kq);
+        for (const [r, ds] of B.doan) {
+          for (const [x0, y0, x1, y1] of ds) {
+            if (y1 - y0 > 0.4 * Math.max(x1 - x0, 1e-9) && x1 - x0 < 2 * buoc) continue;
+            for (const n of B.theoHang.get(r) || []) { const w = B.tu[n]; if (x1 >= w.gl && x0 <= w.gr) kq.add(n); }
+          }
         }
         const khoa = [...kq].sort((a, b) => a - b).join(',');
         B.kq = kq;
@@ -1809,17 +1848,17 @@
         B.khoa = khoa;
         return true;
       },
-      /** Đoạn p→q có giao hình chữ nhật [L,R]×[T,B] không (Liang–Barsky). */
-      _catHcn(p, q, L, T, R, B) {
-        let u0 = 0, u1 = 1;
-        const dx = q.x - p.x, dy = q.y - p.y;
-        for (const [a, b] of [[-dx, p.x - L], [dx, R - p.x], [-dy, p.y - T], [dy, B - p.y]]) {
-          if (a === 0) { if (b < 0) return false; continue; }
-          const r = b / a;
-          if (a < 0) u0 = Math.max(u0, r); else u1 = Math.min(u1, r);
-          if (u0 > u1) return false;
-        }
-        return true;
+      /** Luật (b): đoạn a→b trong lõi dòng r đủ sâu (≥ 35% chiều cao lõi) và đủ dốc (dịch
+       *  dọc ≥ ½ dịch ngang) → tô các từ có vùng GIAO đoạn x mà nét quét qua lõi. Đoạn đó
+       *  hẹp (độ dốc giới hạn nó ≤ 2 lần chiều cao lõi) nên nhiều nhất hai từ ở chỗ giáp
+       *  ranh. ⚠ Không lấy riêng x GIỮA đoạn: rơi đúng ranh giới cuối từ/cuối dòng là lọt;
+       *  và ngưỡng sâu 40% làm lọt dòng ĐẦU của nét chéo (đặt bút lệch tâm dòng 1px vì
+       *  rung — đo: 2,8px < 2,95px ở 390px). */
+      _butCat(B, r, a, b, vao = B.catTo) {
+        const dy = Math.abs(b.y - a.y);
+        if (dy < 0.35 * 0.6 * B.buoc || dy < 0.5 * Math.abs(b.x - a.x)) return;
+        const x0 = Math.min(a.x, b.x), x1 = Math.max(a.x, b.x);
+        for (const n of B.theoHang.get(r) || []) { const w = B.tu[n]; if (x1 >= w.el && x0 <= w.er) vao.add(n); }
       },
       /** Bản ghi ký tự của các từ đang được tô. */
       _butKy(kh) {
@@ -1929,8 +1968,16 @@
         }
         const cuoi = this._diem[this._diem.length - 1];
         // Bút: MỌI đoạn, kể cả rất ngắn, đều được xét — bỏ đoạn ngắn là bỏ sót chữ.
-        if (d.kieu === 'but' && this._butThem(this._kh, { x: e.clientX, y: e.clientY }))
-          this._butVe(this._kh);
+        if (d.kieu === 'but') {
+          // ⚠ Đọc cả các điểm trình duyệt đã GỘP vào sự kiện này: máy bận hay vuốt nhanh
+          // trên điện thoại thì một `pointermove` mang nhiều điểm, chỉ lấy điểm cuối là nét
+          // thưa — nét dọc/chéo hụt lõi dòng (đo: chạy song song, dọc qua khoảng trắng lọt
+          // 0% → 29%).
+          const ds = (e.getCoalescedEvents && e.getCoalescedEvents()) || [];
+          let doi = false;
+          for (const c of ds.length ? ds : [e]) doi = this._butThem(this._kh, { x: c.clientX, y: c.clientY }) || doi;
+          if (doi) this._butVe(this._kh);
+        }
         this._diem.push({ x: e.clientX, y: e.clientY });
       },
       chonUp(e) {
