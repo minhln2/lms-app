@@ -2171,9 +2171,12 @@ timMo: false,
        *     ≥ 2·buoc) phủ tới NỬA GIỮA từ nào thì tô từ đó.
        *   · TÔ (b) CẮT LÕI (chỉ khi KHÔNG khoá): đoạn nét trong lõi đủ SÂU và DỐC → xem `_butCat`.
        *   · ZÍC-ZẮC (2026-09-26, nét 13): đang bám dòng mà QUAY ĐẦU (`_butQuay`) → từ đó bỏ
-       *     máy trạng thái trên, mỗi LƯỢT ngang là một dòng — dòng gần trung vị độ cao của
-       *     lượt (`_butLuot`). Khoá đo góc từ chỗ bắt nên lượt quay về ở dòng dưới vẫn
-       *     "≤ 20°" và bị giữ ở dòng cũ: tô 4 dòng được 2.
+       *     máy trạng thái trên, mỗi LƯỢT ngang là một dòng (không bao giờ hai — người dùng
+       *     chốt), tô trọn bề ngang lượt. Khoá đo góc từ chỗ bắt nên lượt quay về ở dòng dưới
+       *     vẫn "≤ 20°" và bị giữ ở dòng cũ: tô 4 dòng được 2.
+       *     Dòng của lượt = BÁM ĐẦU LƯỢT (2026-09-27, `_butLuotDiem`/`_butLuotChon`): 2·buoc
+       *     đầu tiên trong vùng chữ; dòng đã tô nhường dòng chưa tô gần ≤ 0,8·buoc. Trung vị
+       *     CẢ lượt thì đoạn chéo lúc chuyển dòng kéo lệch (tr.84: lọt dòng 8 hai lần).
        *  Đã tô là giữ; xem trước theo từng từ; ↶ bỏ đúng nét vừa tô. Chạm theo Ô chữ của lớp
        *  chữ (chữ nhìn thấy là ẢNH). Hình học đo MỘT lần lúc đặt bút, ở `kh._but` (không để
        *  vào state của Alpine). */
@@ -2222,7 +2225,7 @@ timMo: false,
         return { tu, tam, buoc, theoHang, khuc, chinhXac: kieu === 'mouse' || kieu === 'pen',
                  dong: null, lan: 0, gom: [], ug: [], x0: null, y0: null, O: null, moc: null, tt: null,
                  hop: null, doan: new Map(), vao: new Map(), catTo: new Set(), catCho: new Set(), prev: null, kq: new Set(), khoa: '',
-                 dinh: null, chieu: 0, sau: [], zz: false, luot: [] };
+                 dinh: null, chieu: 0, sau: [], zz: false, luot: [], lg: null };
       },
       /** Máy trạng thái bút trên toạ độ TRANG (xem khối chú thích ở `_butBatDau`). Bước
        *  dài (chuột vắt một bước qua cả dòng, máy bận) chia nhỏ ≤ ½·buoc — không thì điểm
@@ -2260,8 +2263,8 @@ timMo: false,
         };
         if (B.zz) {                                               // ZÍC-ZẮC: mỗi lượt một dòng
           const s = this._butQuay(B, x, y);
-          if (s) { this._butLuot(B, B.luot.slice(0, B.luot.length - s.length + 1), true); B.luot = s; }
-          else B.luot.push({ x, y });
+          if (s) { this._butLuot(B, B.luot.slice(0, B.luot.length - s.length + 1), true); this._butLuotMoi(B, s); }
+          else { B.luot.push({ x, y }); this._butLuotDiem(B, x, y); }
           B.prev = { x, y };
           B.kq = this._butKq(B, x, y);
           return;
@@ -2332,7 +2335,7 @@ timMo: false,
         }
         B.prev = { x, y };
         const s = this._butQuay(B, x, y);
-        if (s && B.dong) { B.zz = true; B.luot = s; B.vao.clear(); }
+        if (s && B.dong) { B.vao.clear(); B.kq = this._butKq(B, x, y); B.zz = true; this._butLuotMoi(B, s); }
         B.kq = this._butKq(B, x, y);
       },
       /** Kết quả = (b) đã cắt ∪ (b) đang dở (nét dừng TRONG lõi) ∪ (a) các đoạn đi ngang
@@ -2376,19 +2379,53 @@ timMo: false,
         B.chieu = -B.chieu; B.dinh = q; B.sau = [];
         return s;
       },
-      /** Một LƯỢT zíc-zắc → [dòng, đoạn đã khoá]: dòng gần TRUNG VỊ độ cao của lượt trong số
-       *  các dòng có chữ ở bề ngang lượt; tô trọn bề ngang. `chot`: lượt đã xong thì ghi vào
-       *  `B.doan`; lượt đang dở ngắn hơn 2·buoc chưa tô (móc cuối nét). */
+      /** Lượt zíc-zắc mới bắt đầu từ các điểm `s` (từ đỉnh quay đầu tới giờ). */
+      _butLuotMoi(B, s) {
+        B.luot = s; B.lg = { dong: null, vao: [] };
+        for (const q of s) this._butLuotDiem(B, q.x, q.y);
+      },
+      /** BÁM ĐẦU LƯỢT: dòng của lượt chọn theo 2·buoc ĐẦU TIÊN bút đi trong vùng chữ (đầu
+       *  lượt người ta đặt bút chính xác nhất; cuối lượt tay trôi sang dòng kế — tr.83, tr.84),
+       *  rồi giữ cả lượt. Ứng viên = mọi dòng của CỘT gần độ cao bút, kể cả dòng không có chữ
+       *  ngay chỗ bút (dòng ngắn: lượt còn đi tiếp qua chữ của nó — tr.84 lượt 2). */
+      _butLuotDiem(B, x, y) {
+        const { tam, buoc, khuc } = B, g = B.lg;
+        if (g.dong !== null) return;
+        const K = khuc.filter((k) => k.l - buoc <= x && x <= k.r + buoc);
+        if (!K.length) return;
+        const cl = Math.min(...K.map((k) => k.l)), cr = Math.max(...K.map((k) => k.r));
+        const C = khuc.filter((k) => k.r >= cl && k.l <= cr && Math.abs(tam[k.h] - y) <= buoc);
+        if (C.length) g.vao.push({ x, y, C });
+        const xs = g.vao.map((q) => q.x);
+        if (g.vao.length && Math.max(...xs) - Math.min(...xs) >= 2 * buoc) this._butLuotChon(B);
+      },
+      /** Dòng gần trung vị độ cao đoạn đầu. Dòng ĐÃ TÔ — mọi chữ của nó ở bề ngang đoạn đầu
+       *  đã tô trong nét này (đoạn đầu không có chữ của dòng thì xét cả dòng; dòng tô dở mà
+       *  bút chạm phần CHƯA tô thì chưa tính là đã tô) — nhường cho dòng chưa tô
+       *  gần trung vị ≤ 0,8·buoc: tr.83 lượt cuối ở khe 6–7 (cách dòng 7 0,74·buoc) → 7; không
+       *  có thì vẫn bám dòng cũ — chà lại dòng đã tô không được nhảy sang dòng bên (tr.82
+       *  lượt cuối chà dòng 9: dòng 10 cách 0,96·buoc). */
+      _butLuotChon(B) {
+        const { tam, buoc } = B, g = B.lg;
+        const ys = g.vao.map((q) => q.y).sort((u, v) => u - v), ym = ys[ys.length >> 1];
+        const hs = [...new Set(g.vao.flatMap((q) => q.C.map((k) => k.h)))];
+        const gan = (ds) => ds.reduce((m, h) => (m === -1 || Math.abs(tam[h] - ym) < Math.abs(tam[m] - ym) ? h : m), -1);
+        const xs = g.vao.map((q) => q.x), a = Math.min(...xs), b = Math.max(...xs);
+        const daTo = (j) => { const ds = B.theoHang.get(j) || [], o = ds.filter((n) => b >= B.tu[n].gl && a <= B.tu[n].gr);
+          return (o.length ? o : ds).every((n) => B.kq.has(n)); };
+        let h = gan(hs);
+        if (h >= 0 && daTo(h)) { const k = gan(hs.filter((j) => !daTo(j) && Math.abs(tam[j] - ym) <= 0.8 * buoc)); if (k >= 0) h = k; }
+        g.dong = h;
+      },
+      /** Một LƯỢT → [dòng, đoạn đã khoá], tô trọn bề ngang lượt. `chot`: lượt đã xong (chưa đủ
+       *  2·buoc trong vùng chữ thì chọn với chừng đó) → ghi vào `B.doan`. */
       _butLuot(B, L, chot) {
-        const { tam, buoc, khuc } = B, xs = L.map((q) => q.x), a = Math.min(...xs), b = Math.max(...xs);
-        if (!chot && b - a < 2 * buoc) return null;
-        const ys = L.map((q) => q.y).sort((u, v) => u - v), ym = ys[ys.length >> 1];
-        const k = khuc.filter((k) => k.l - buoc <= b && a <= k.r + buoc && Math.abs(tam[k.h] - ym) <= buoc)
-          .reduce((m, k) => (!m || Math.abs(tam[k.h] - ym) < Math.abs(tam[m.h] - ym) ? k : m), null);
-        if (!k) return null;
-        const d = [a, ym, b, ym, true];
-        if (chot) { if (!B.doan.has(k.h)) B.doan.set(k.h, []); B.doan.get(k.h).push(d); }
-        return [k.h, d];
+        const g = B.lg, xs = L.map((q) => q.x), a = Math.min(...xs), b = Math.max(...xs);
+        if (chot && g.dong === null && g.vao.length) this._butLuotChon(B);
+        if (g.dong === null || g.dong < 0) return null;
+        const d = [a, B.tam[g.dong], b, B.tam[g.dong], true];
+        if (chot) { if (!B.doan.has(g.dong)) B.doan.set(g.dong, []); B.doan.get(g.dong).push(d); }
+        return [g.dong, d];
       },
       /** Luật (b): đoạn a→b trong lõi dòng r đủ sâu (≥ 35% chiều cao lõi) và dốc hơn ngưỡng
        *  KHOÁ (20° — nét thoải hơn thì đã khoá dòng, tô ngang lo; để ½ như trước thì nét chéo
