@@ -52,6 +52,10 @@ const MAX_LEN = 200;
 
 /** Giọng đang dùng. Chirp 3: HD — thế hệ mới hơn Neural2, cùng hạn mức free. */
 const VOICE = "en-US-Chirp3-HD-Leda";
+/** Môn dạy bằng tiếng Việt (`?lang=vi`, trang gửi theo `traNgonNgu()`): cùng dòng
+ *  Chirp 3: HD, cùng tên giọng, locale vi-VN. Tên giọng nằm trong khoá cache nên
+ *  không lẫn MP3 với giọng Anh. */
+const VOICE_VI = "vi-VN-Chirp3-HD-Leda";
 /**
  * Danh sách trắng để nghe SO SÁNH bằng `?voice=` trên máy thật trước khi chốt.
  * Đây là knob tạm; chốt xong thì bỏ tham số và giữ lại đúng một hằng số.
@@ -65,6 +69,7 @@ const VOICES = new Set([
   "en-US-Chirp3-HD-Zephyr",    // sáng
   "en-US-Chirp3-HD-Autonoe",   // ấm
   "en-US-Neural2-F",           // giọng cũ, để đối chứng
+  VOICE_VI,
 ]);
 
 async function sha1(s) {
@@ -113,7 +118,8 @@ export async function handleTts(request, env, url) {
   const text = (url.searchParams.get("text") || "").trim();
   if (!/^[\w-]{1,32}$/.test(user) || !/^[\w-]{1,64}$/.test(course)) return new Response("Sai user/course", { status: 400 });
   if (!text || text.length > MAX_LEN) return new Response("Thiếu hoặc quá dài", { status: 400 });
-  const voice = url.searchParams.get("voice") || VOICE;
+  const vi = url.searchParams.get("lang") === "vi";
+  const voice = url.searchParams.get("voice") || (vi ? VOICE_VI : VOICE);
   if (!VOICES.has(voice)) return new Response("Giọng không hỗ trợ", { status: 400 });
   const enc = url.searchParams.get("enc") || "MP3";
   if (!MAHOA[enc]) return new Response("Mã hoá không hỗ trợ", { status: 400 });
@@ -142,7 +148,7 @@ export async function handleTts(request, env, url) {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       input: { text },
-      voice: { languageCode: "en-US", name: voice },
+      voice: { languageCode: voice.slice(0, 5), name: voice },
       audioConfig: { ...AUDIO, audioEncoding: enc },
     }),
   });
