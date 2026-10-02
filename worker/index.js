@@ -9,6 +9,8 @@
  *   /api/tapdoc/*  → tập đọc: tiến độ + quiz (D1), bản thu âm (R2) — mọi đường đòi mã
  *   /api/lookup    → tra nghĩa 1 từ / dịch 1 đoạn bằng Gemini (cần mã bí mật)
  *   /api/lookup/history → từ đã tra, gộp theo từ + số lần (cần mã bí mật)
+ *   /tap-doc/am/*.mp3 → audio tập đọc có HTTP Range (worker/range.js; chỉ đường này
+ *                    chạy Worker trước tệp tĩnh — run_worker_first trong wrangler.toml)
  *   còn lại        → trả file tĩnh từ binding ASSETS (thư mục dist/)
  *
  * API:
@@ -33,6 +35,7 @@ import { readCards, writeSession, writeKnown, readStats } from "./study.js";
 import { handleTts } from "./tts.js";
 import { handleLookup, handleLookupHistory } from "./lookup.js";
 import { handleTapdoc } from "./tapdoc.js";
+import { laAm, phucVuAm } from "./range.js";
 
 const KEY = "progress";
 // Nhịp tim nằm ở khoá RIÊNG, không nhét chung vào `progress`. Tiến độ học là thứ
@@ -258,6 +261,10 @@ export default {
     //      người dùng từ trước khi đổi
     //   3. "/pl" (thư mục, không đuôi) không còn tìm ra pl/index.html → hỏng
     //      trang riêng của học sinh
+    // Audio tập đọc: tệp tĩnh của Workers bỏ qua Range → tự cắt (worker/range.js).
+    // wrangler.toml cho Worker chạy trước CHỈ ở /tap-doc/am/*.
+    if (laAm(pathname)) return phucVuAm(request, env);
+
     const asset = (path) => env.ASSETS.fetch(new Request(new URL(path, url), request));
 
     if (pathname.endsWith("/")) return asset(pathname + "index.html");
