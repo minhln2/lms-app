@@ -10,7 +10,7 @@
   <title>Mĩ Thuật 5 — PL</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.568a81cb.css">
+  <link rel="stylesheet" href="../assets/tw.8d66202a.css">
   <script defer src="../assets/collapse.d0a27f2d.js"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>
@@ -221,7 +221,7 @@
               body: JSON.stringify({ key, done: next, hash: hash || '' }),
             });
             if (r.status === 401) {
-              this.secret = ''; localStorage.removeItem('lms_key');
+              this.secret = ''; localStorage.removeItem('lms_key'); window.dispatchEvent(new Event('lms-key'));
               throw new Error('Mã bí mật không đúng');
             }
             if (!r.ok) throw new Error('Không lưu được (HTTP ' + r.status + ')');
@@ -262,7 +262,7 @@
               body: JSON.stringify({ updates }),
             });
             if (r.status === 401) {
-              this.secret = ''; localStorage.removeItem('lms_key');
+              this.secret = ''; localStorage.removeItem('lms_key'); window.dispatchEvent(new Event('lms-key'));
               throw new Error('Mã bí mật không đúng');
             }
             if (!r.ok) throw new Error('Không lưu được (HTTP ' + r.status + ')');
@@ -310,7 +310,7 @@
             });
             if (!r.ok) { alert('Mã không đúng.'); return false; }
           } catch { alert('Không kết nối được máy chủ.'); return false; }
-          this.secret = v; localStorage.setItem('lms_key', v);
+          this.secret = v; localStorage.setItem('lms_key', v); window.dispatchEvent(new Event('lms-key'));
           return true;
         },
       };
@@ -470,6 +470,41 @@ timMo: false,
                 class="px-3 py-2 text-xs rounded-full border">📝 bài tập</button>
         
       </div>
+      <div data-ma-bi-mat class="text-sm" @lms-key.window="co = !!localStorage.getItem('lms_key')" x-data="{
+       co: !!localStorage.getItem('lms_key'), mo: false, ma: '', loi: '', dang: false,
+       async luu() {
+         const v = this.ma.trim();
+         if (!v || this.dang) return;
+         this.dang = true; this.loi = '';
+         try {
+           const r = await fetch('/api/progress?check=1', { method: 'POST', body: '{}',
+             headers: { 'content-type': 'application/json', 'x-progress-key': v } });
+           if (r.status === 401) { this.loi = 'Mã không đúng.'; return; }
+           if (!r.ok) { this.loi = 'Không kiểm tra được mã lúc này. Thử lại sau.'; return; }
+           localStorage.setItem('lms_key', v);
+           location.reload();
+         } catch (e) {
+           this.loi = 'Không kiểm tra được mã lúc này (mất mạng?). Thử lại sau.';
+         } finally { this.dang = false; }
+       },
+       xoa() {
+         if (!confirm('Xoá mã bí mật trên máy này?')) return;
+         localStorage.removeItem('lms_key'); location.reload();
+       }
+     }">
+  <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Mã bí mật</p>
+  <div class="mt-1 flex flex-wrap items-center gap-2">
+    <span data-mbm-tt class="font-medium" :class="co ? 'text-emerald-700' : 'text-slate-600'" x-text="co ? '🔑 Đã nhập ✓' : '🔑 Chưa nhập'"></span>
+    <button type="button" data-mbm-mo x-show="!mo" @click="mo = true; $nextTick(() => $refs.o.focus())" class="px-3 py-2 rounded-full border border-slate-300 bg-white text-xs font-medium" x-text="co ? 'Đổi mã' : 'Nhập mã'"></button>
+    <button type="button" data-mbm-xoa x-show="co && !mo" @click="xoa()" class="px-3 py-2 rounded-full border border-slate-300 bg-white text-xs font-medium text-rose-700">Xoá mã</button>
+  </div>
+  <form x-show="mo" x-cloak @submit.prevent="luu()" class="mt-2 flex flex-wrap items-center gap-2">
+    <input x-ref="o" data-mbm-o type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" x-model="ma" placeholder="Mã bí mật" aria-label="Mã bí mật" class="h-9 px-3 rounded-lg border border-slate-300 text-sm">
+    <button type="submit" data-mbm-luu :disabled="dang" class="h-9 px-3 rounded-lg bg-indigo-600 text-white text-xs font-semibold" x-text="dang ? 'Đang kiểm…' : 'Lưu'"></button>
+    <button type="button" @click="mo = false; loi = ''" class="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs">Thôi</button>
+  </form>
+  <p data-mbm-loi x-show="loi" x-cloak x-text="loi" class="mt-1 text-xs text-rose-700"></p>
+</div>
     
       <div class="flex justify-between text-sm">
         <button type="button" data-bo-loc @click="boLoc()" class="px-2 py-2 -mx-2 text-slate-500 hover:text-indigo-600">Bỏ lọc</button>

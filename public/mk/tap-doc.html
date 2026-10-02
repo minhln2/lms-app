@@ -1,0 +1,1603 @@
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+  <title>Tập đọc — MK</title>
+  <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
+       thay dòng này bằng Tailwind CDN. -->
+  <link rel="stylesheet" href="../assets/tw.8d66202a.css">
+  <script defer src="../assets/alpine.63d2636a.js"></script>
+  <style>
+    [x-cloak]{display:none!important}
+    .td-bia{height:7.5rem;display:grid;place-items:center;font-size:3.2rem;background-size:cover;background-position:center}
+    .td-cap{position:absolute;top:.5rem;left:.5rem;width:2.1rem;height:2.1rem;border-radius:999px;display:grid;place-items:center;font-weight:800;color:#fff}
+    .td-cap-A{background:#16a34a}.td-cap-B{background:#f59e0b}.td-cap-C{background:#dc2626}
+    .td-nen-A{background-color:#bbf7d0}.td-nen-B{background-color:#fde68a}.td-nen-C{background-color:#ddd6fe}
+    .td-da-doc .td-bia{filter:saturate(.45) opacity(.75)}
+  </style>
+  
+  <script>/**
+ * Luật của bản thu âm tập đọc — MỘT nguồn cho cả Worker lẫn trang.
+ *
+ * Worker `import` file này để tự tính "hoàn thành" (không tin cờ trình duyệt gửi).
+ * Builder (`src/tapdoc.py`) đọc nguyên văn file, bỏ chữ `export `, nhúng vào
+ * `tapdoc.html`. Vì vậy file này CHỈ được dùng cú pháp chạy được ở cả hai nơi:
+ * không `import`, không API của Worker, và mọi thứ xuất ra đều bắt đầu bằng
+ * `export const` hoặc `export function` ở đầu dòng.
+ *
+ * `lat`: nhật ký lật trang `[[ms trên trục bản thu, số trang], …]`.
+ */
+const TD = {
+  GHE_MIN: 1000,                 // lần ghé ngắn hơn là vuốt nhầm, bỏ
+  O_LAI_MIN: 2000,               // ở lại ít nhất chừng này mới tính "đã đi qua" trang
+  TI_LE: 0.6,                    // bản thu phải dài ≥ 60% thời lượng máy đọc
+  DAI_MAX: 30 * 60 * 1000,       // 30 phút
+  BYTE_MAX: 20 * 1024 * 1024,    // 20 MB cho cả bản thu
+};
+
+/** Nhật ký lật + tổng dài (ms) → các lần ghé `{trang, tu, den}`, đã bỏ lần < 1 s. */
+function tdGhe(lat, dai) {
+  const a = (Array.isArray(lat) ? lat : [])
+    .filter((x) => Array.isArray(x) && Number.isFinite(x[0]) && Number.isInteger(x[1]) &&
+                   x[1] >= 1 && x[0] >= 0 && x[0] <= dai)
+    .slice()
+    .sort((p, q) => p[0] - q[0]);
+  const out = [];
+  for (let i = 0; i < a.length; i++) {
+    const g = { trang: a[i][1], tu: a[i][0], den: i + 1 < a.length ? a[i + 1][0] : dai };
+    if (g.den - g.tu < TD.GHE_MIN) continue;
+    const c = out[out.length - 1];
+    if (c && c.trang === g.trang) c.den = g.den;   // hai lần cùng trang, giữa là vuốt nhầm
+    else out.push(g);
+  }
+  return out;
+}
+
+/** Bản thu đã "hoàn thành" chưa, và nếu chưa thì thiếu gì. */
+function tdHoanThanh(lat, dai, soTrang, daiMay) {
+  // Đóng khi nghi ngờ: Worker dùng hàm này để KHÔNG tin cờ trình duyệt, nên số
+  // trang hay thời lượng máy đọc thiếu/hỏng thì trả "chưa hoàn thành", không
+  // để vòng lặp rỗng hay 0,6 × null = 0 biến thành "xong".
+  const soOk = Number.isInteger(soTrang) && soTrang >= 1;
+  const ghe = tdGhe(lat, dai);
+  const thieu = [];
+  if (soOk) {
+    for (let p = 1; p <= soTrang; p++) {
+      if (!ghe.some((g) => g.trang === p && g.den - g.tu >= TD.O_LAI_MIN)) thieu.push(p);
+    }
+  }
+  const duDai = Number.isFinite(dai) && dai > 0 && Number.isFinite(daiMay) && daiMay > 0 &&
+                dai >= TD.TI_LE * daiMay;
+  return { xong: soOk && thieu.length === 0 && duDai, thieu, duDai };
+}
+
+/** Đang phát tới `ms` thì trang nào đang hiện. */
+function tdTrangLuc(ghe, ms) {
+  let p = ghe.length ? ghe[0].trang : 1;
+  for (const g of ghe) if (g.tu <= ms) p = g.trang;
+  return p;
+}
+
+/** Người nghe lật tới `trang` → nhảy tới lần bé ở lại trang đó LÂU NHẤT. */
+function tdNhayToi(ghe, trang) {
+  let b = null;
+  for (const g of ghe) if (g.trang === trang && (!b || g.den - g.tu > b.den - b.tu)) b = g;
+  return b ? b.tu : null;
+}
+</script>
+  <style>
+  .td-doc{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;background:#fffdf5}
+  .td-thanh{flex:none;display:flex;align-items:center;gap:.5rem;padding:.25rem .75rem;min-height:48px;background:#6d28d9;color:#fff}
+  .td-thanh b{flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .td-n{font:inherit;border:0;border-radius:1rem;min-height:44px;min-width:44px;padding:.5rem 1rem;font-weight:600;cursor:pointer;background:#7c3aed;color:#fff}
+  .td-n:disabled,.td-n.td-mo{opacity:.4;cursor:default}
+  .td-n-phu{background:#fff;color:#5b21b6;border:2px solid #c4b5fd}
+  .td-n-tron{border-radius:999px;width:56px;height:56px;padding:0;font-size:1.5rem}
+  .td-trang{flex:1;position:relative;overflow:hidden;container-type:size;background:#fef3c7 center/cover no-repeat;touch-action:pan-y}
+  .td-o{position:absolute;border-radius:1.4rem;border:1px solid rgba(255,255,255,.55);box-shadow:0 4px 18px rgba(0,0,0,.2);color:#1f1a33;overflow-y:auto;
+        -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+  .td-A .td-o{left:5%;right:5%;bottom:3%;max-height:55%;padding:1rem 1.6rem;font-size:clamp(18px,3.71cqw,38px);line-height:1.75}
+  .td-B .td-o{left:3%;right:3%;top:40%;bottom:2%;padding:.9rem 1.5rem;font-size:clamp(18px,2.64cqw,27px);line-height:1.62}
+  .td-C .td-o{left:39%;right:1.5%;top:2%;bottom:2%;padding:.8rem 1.4rem;font-size:clamp(18px,2.2cqw,22.5px);line-height:1.62}
+  @media (max-width:640px){ .td-A .td-o,.td-B .td-o,.td-C .td-o{left:3%;right:3%;top:34%;bottom:2%;max-height:none} }
+  .td-tu{display:inline-block;border-radius:.5rem;padding:0 .12em;cursor:pointer;transition:transform .4s}
+  .td-tu.td-sang{background:#fde047}
+  .td-tu.td-nhan{background:#ddd6fe;transform:scale(1.12)}
+  .td-keo{flex:none;display:flex;align-items:center;gap:.75rem;padding:.4rem 1rem 0;background:#fff;border-top:1px solid #e5e7eb}
+  .td-keo input{flex:1;height:44px;accent-color:#7c3aed}
+  .td-dk{flex:none;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;padding:.4rem .75rem .6rem;background:#fff}
+  .td-toc{display:flex;border:2px solid #c4b5fd;border-radius:1rem;overflow:hidden}
+  .td-toc button{font:inherit;border:0;background:#fff;min-width:48px;min-height:44px;font-size:1.35rem;cursor:pointer}
+  .td-toc button[aria-pressed=true]{background:#ede9fe}
+  .td-toc button:disabled{opacity:.4;cursor:default}
+  .td-tb{position:absolute;left:50%;top:1rem;transform:translateX(-50%);z-index:6;max-width:90%;padding:.6rem 1rem;border-radius:1rem;background:#1f1a33;color:#fff;font-size:1rem}
+  .td-bong{position:absolute;z-index:5;min-width:min(26rem,92%);max-width:92%;padding:1rem 1.25rem .9rem;border-radius:1.4rem;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.35);text-align:center}
+  .td-bong-x{position:absolute;right:.25rem;top:.25rem;width:44px;height:44px;border:0;background:none;font-size:1.4rem;cursor:pointer}
+  .td-bong-chu{font-size:3.6rem;font-weight:700;letter-spacing:.06em;line-height:1.2;margin:0 2.5rem}
+  .td-bong-chu i{font-style:normal;border-radius:.6rem;padding:0 .04em}
+  .td-bong-chu i.td-sang{background:#fde047;color:#b91c1c}
+  .td-bong-buoc{min-height:2.2rem;margin:.3rem 0 .7rem;font-size:1.3rem;color:#5b21b6}
+  .td-bong-buoc span{display:inline-block;margin:0 .2rem;padding:0 .35rem;border-radius:.5rem}
+  .td-bong-buoc span.td-sang{background:#fde047;color:#713f12;font-weight:700}
+  .td-bong-nut{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap}
+  .td-n-vang{background:#fde047;color:#713f12}
+  .td-bong-che{margin-top:.6rem;font-size:.95rem;color:#555}
+  .td-bong-che button{font:inherit;min-height:44px;padding:.3rem .9rem;border-radius:999px;border:2px solid #c4b5fd;background:#fff;cursor:pointer}
+  .td-bong-che button[aria-pressed=true]{background:#ede9fe;border-color:#7c3aed;font-weight:700}
+</style>
+<script>
+  function tdDoc() {
+    return {
+      trang: 1,
+      dangDoc: false,          // máy đang đọc trang (kể cả quãng nghỉ 1 s trước khi tự lật)
+      tuSang: -1,              // chỉ số từ đang sáng; -1 = không
+      // Tốc độ là thiết lập của MÁY, không của truyện: khoá riêng, không nằm trong mục trạng thái.
+      tocDo: +(localStorage.getItem('td_toc') || 1) || 1,
+      amLoi: false,            // audio của trang này không phát được
+      thongBao: '',
+      nhanI: -1,               // từ đang bị nhấn (chưa thả)
+      henGiu: 0, daGiu: false, // hẹn "giữ 0,45 s"; daGiu = lần nhấn này đã mở bong bóng bằng giữ
+      nhanXY: null,            // chỗ ngón tay đặt xuống — trượt xa quá thì không còn là chạm
+      cuoiI: -1, cuoiLuc: 0,   // lần chạm trước (để "chạm lại trong 1,5 s" = mở bong bóng)
+      luot: 0,                 // số hiệu lượt phát đoạn trên au2: lượt mới huỷ lượt cũ
+      bong: null,
+      anhHong: {},             // url ảnh không tải được → trang đó dùng nền trơn, ô chữ đặc
+      vuot: null,
+      henLat: 0,               // hẹn tự lật sau khi hết audio trang
+      vong: 0,                 // số hiệu vòng tô sáng đang sống
+
+      tg() { return this.tr.trang[this.trang - 1]; },
+      // Đang thu âm HOẶC đang đếm ngược 3-2-1: máy đọc trang không được phát (lọt vào bản thu).
+      dangThu() { return !!(this.thu && (this.thu.dang || this.thu.dem > 0)); },
+      coAnh() { const t = this.tg(); return !!t.anh && !this.anhHong[this.anhUrl(t.anh)]; },
+      nenTrang() {
+        return this.coAnh() ? 'background-image:url(' + JSON.stringify(this.anhUrl(this.tg().anh)) + ')' : '';
+      },
+      // Ô chữ kính mờ: độ đặc và độ nhoè do builder đo từ chính tấm ảnh (spec §7.3).
+      // Không có ảnh (hoặc ảnh lỗi) thì ô chữ đặc hẳn — kính mờ trên nền trơn là vô nghĩa.
+      kinh() {
+        const t = this.tg();
+        if (!this.coAnh()) return 'background:rgba(255,253,245,1)';
+        return 'background:rgba(255,253,245,' + t.dac + ');-webkit-backdrop-filter:blur(' + t.nhoe + 'px);backdrop-filter:blur(' + t.nhoe + 'px)';
+      },
+      amUrl(khoa) { return this.goc + 'am/' + khoa + '.mp3'; },
+
+      // Mở truyện: KHÔNG dựng cờ `cho` — mở rồi quay ra mà không lật thì không có gì để gửi.
+      vaoDoc(n) { this.view = 'doc'; this.datTrang(n, true); },
+
+      // Chuyển sang trang n: dừng mọi tiếng, ghi nhớ, nạp audio. KHÔNG tự phát.
+      // `luocMo` = lượt mở truyện (vaoDoc): ghi cục bộ nhưng không tính là tiến độ để gửi.
+      datTrang(n, luocMo) {
+        this.dungDoc(); this.dongBong(); this.dungDoan();
+        this.huyNhan(); this.cuoiI = -1;   // hẹn giữ / "chạm lại" của trang cũ không được chạy sang trang mới
+        this.trang = Math.max(1, Math.min(this.tr.trang.length, n));
+        const c = this.s(this.id);
+        c.trang = this.trang;
+        if (!c.da_mo.includes(this.trang)) { c.da_mo.push(this.trang); c.da_mo.sort((x, y) => x - y); }
+        this.luuCucBo();
+        if (!luocMo) this.guiTrang(false);
+        this.tuSang = -1; this.amLoi = false; this.thongBao = '';
+        const au = this.$refs.au;
+        au.src = this.amUrl(this.tg().am);
+        // Safari iOS có thể đặt lại playbackRate về defaultPlaybackRate khi nạp src mới: đặt cả hai.
+        au.defaultPlaybackRate = this.tocDo; au.playbackRate = this.tocDo; au.preservesPitch = true;
+        if (this.tg().anh) {
+          const u = this.anhUrl(this.tg().anh), im = new Image();
+          im.onerror = () => { this.anhHong[u] = true; };
+          im.src = u;
+        }
+        this.taiTruoc();
+        if (this.thu && this.thu.dang) this.thuLat(this.trang);
+      },
+      // Tải trước ảnh + audio trang kế để lật không phải chờ.
+      taiTruoc() {
+        const t = this.tr.trang[this.trang];
+        if (!t) return;
+        if (t.anh) new Image().src = this.anhUrl(t.anh);
+        fetch(this.amUrl(t.am)).catch(() => {});
+      },
+
+      lat(d) {
+        if (this.thu && this.thu.dem > 0) return;   // đếm ngược thu âm: nhật ký phải bắt đầu ở trang 1 (nút, vuốt, phím đều qua đây)
+        const n = this.trang + d;
+        if (n < 1) return;
+        if (n > this.tr.trang.length) return this.hetTruyen();
+        const dang = this.dangDoc;
+        this.datTrang(n);
+        if (dang) this.phat();           // đang nghe đọc mà lật → đọc trang mới từ đầu
+      },
+      // ▶ ở trang cuối. "Đã đọc" = đã mở MỌI trang (spec §7.2), không đòi thời gian.
+      hetTruyen() {
+        const c = this.s(this.id), n = this.tr.trang.length;
+        // Đang thu mà đã mở đủ mọi trang: cũng là ĐỌC XONG — đánh dấu trước khi sang màn xem lại bản thu.
+        if (this.thu && this.thu.dang) {
+          if (c.da_mo.length >= n && !c.doc_xong) { c.doc_xong = true; this.luuCucBo(); this.guiTrang(true, true); }
+          return this.thuXong();
+        }
+        if (c.da_mo.length < n) {
+          const thieu = [];
+          for (let p = 1; p <= n; p++) if (!c.da_mo.includes(p)) thieu.push(p);
+          this.thongBao = 'Con còn trang chưa mở: ' + thieu.join(', ');
+          return;
+        }
+        this.dungDoc();
+        if (!c.doc_xong) { c.doc_xong = true; this.luuCucBo(); this.guiTrang(true, true); }
+        this.view = 'xong';
+      },
+
+      // ── máy đọc ─────────────────────────────────────────────────────────────
+      phat() {
+        if (this.amLoi || this.dangThu()) return;
+        this.dongBong(); this.dungDoan();      // một nguồn tiếng một lúc: tắt tiếng từ đang đọc dở
+        const au = this.$refs.au;
+        au.playbackRate = this.tocDo;
+        this.dangDoc = true;
+        // play() bị từ chối vì BA lý do khác hẳn nhau — gộp làm một là hỏng:
+        //   AbortError      lượt phát này bị lượt sau thay (lật trang lúc đang đọc) → bỏ qua
+        //   NotAllowedError trình duyệt chặn tự phát (chưa có lần chạm nào)        → thôi đọc
+        //   còn lại         file hỏng / không tải được                              → loiAm()
+        au.play().then(() => this.chay()).catch((e) => {
+          if (e && e.name === 'AbortError') return;
+          if (e && e.name === 'NotAllowedError') { this.dangDoc = false; return; }
+          this.loiAm();
+        });
+      },
+      tam() { clearTimeout(this.henLat); this.$refs.au.pause(); this.dangDoc = false; },
+      dungDoc() { clearTimeout(this.henLat); if (this.$refs.au) this.$refs.au.pause(); this.dangDoc = false; },
+      // Vòng tô sáng: mỗi khung hình hỏi audio đang ở giây nào.
+      chay() {
+        const v = this.vong = (this.vong || 0) + 1;      // chỉ MỘT vòng sống: vòng cũ tự thôi
+        const buoc = () => {
+          if (v !== this.vong || !this.dangDoc || this.view !== 'doc') return;
+          if (!this.$refs.au.paused) this.tuSang = this.tuLuc(this.$refs.au.currentTime);
+          requestAnimationFrame(buoc);
+        };
+        requestAnimationFrame(buoc);
+      },
+      tuLuc(giay) {
+        const a = this.tg().tu;
+        let i = -1;
+        for (let j = 0; j < a.length; j++) { if (a[j].t <= giay + 0.03) i = j; else break; }
+        return i;
+      },
+      // Hết audio của trang: nghỉ 1 s rồi tự lật và đọc tiếp (spec §7.2).
+      hetAm() {
+        this.tuSang = -1;
+        if (!this.dangDoc) return;
+        if (this.trang >= this.tr.trang.length) { this.dangDoc = false; return; }
+        this.henLat = setTimeout(() => {
+          if (!this.dangDoc) return;
+          this.datTrang(this.trang + 1);
+          this.phat();
+        }, 1000);
+      },
+      // Audio trang lỗi (404, mất mạng): trang vẫn đọc được bằng mắt; đang nghe đọc thì bỏ qua trang này.
+      // Có thể bị gọi HAI lần cho một trang (sự kiện `error` của thẻ audio + play() bị từ chối):
+      // lần hai phải vô hại, không thì hẹn hai lượt lật và nhảy cóc một trang.
+      loiAm() {
+        if (this.amLoi || !this.tr) return;
+        this.amLoi = true;
+        this.tuSang = -1;
+        if (!this.dangDoc) return;
+        if (this.trang >= this.tr.trang.length) { this.dangDoc = false; return; }
+        clearTimeout(this.henLat);
+        this.henLat = setTimeout(() => {
+          if (!this.dangDoc) return;
+          this.datTrang(this.trang + 1);
+          this.phat();
+        }, 1000);
+      },
+
+      // ── thanh tiến độ ───────────────────────────────────────────────────────
+      // Đang kéo: máy im, từ ứng với vị trí sáng theo tay. Thả: đọc từ ĐẦU từ đó.
+      keo(v) {
+        clearTimeout(this.henLat);
+        this.$refs.au.pause(); this.dangDoc = false;
+        this.dongBong();
+        this.tuSang = Math.max(0, Math.min(this.tg().tu.length - 1, +v));
+      },
+      tha() {
+        if (this.tuSang < 0 || this.amLoi) return;
+        this.$refs.au.currentTime = this.tg().tu[this.tuSang].t;
+        this.phat();
+      },
+
+      datToc(x) {
+        this.tocDo = x;
+        localStorage.setItem('td_toc', String(x));
+        // Tiếng của từ / đánh vần (au2) đi CÙNG tốc độ truyện — bé chọn 🐢 thì đánh vần cũng chậm.
+        for (const a of [this.$refs.au, this.$refs.au2]) { a.defaultPlaybackRate = x; a.playbackRate = x; }
+      },
+
+      // ── vuốt ngang để lật (iPad), phím ← → (máy tính) ───────────────────────
+      // Vuốt bắt đầu trên một từ vẫn tính: ngón tay rời từ đó là `huyNhan()` chạy, không đọc từ.
+      vuotBat(e) { this.vuot = { x: e.clientX, y: e.clientY }; },
+      vuotTha(e) {
+        const v = this.vuot;
+        this.vuot = null;
+        if (!v || this.view !== 'doc' || this.bong) return;
+        const dx = e.clientX - v.x, dy = e.clientY - v.y;
+        if (Math.abs(dx) < 60 || Math.abs(dx) < 2 * Math.abs(dy)) return;
+        this.lat(dx < 0 ? 1 : -1);
+      },
+      phim(d, e) {
+        if (this.view !== 'doc' || this.bong) return;
+        if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;   // đang ở thanh kéo
+        this.lat(d);
+      },
+
+      // ── bấm từ ──────────────────────────────────────────────────────────────
+      // CHẠM = đọc từ. GIỮ 0,45 s, hoặc CHẠM LẠI đúng từ đó trong 1,5 s = mở bong bóng.
+      // Không dùng "chạm đúp" kiểu thường: muốn phân biệt đúp với đơn thì phải chờ ~0,3 s
+      // sau MỖI lần chạm rồi mới đọc — việc hay dùng nhất bị trễ. Ở đây lần chạm đầu LUÔN
+      // đọc ngay; nghe xong chưa rõ thì bé chạm thêm cái nữa.
+      // Bấm từ / đánh vần KHÔNG phải tiến độ: không dựng cờ `cho`, không gọi máy chủ.
+      nhan(i, e) {
+        if (this.view !== 'doc' || (e && e.button > 0)) return;
+        this.daGiu = false; this.nhanI = i;
+        this.nhanXY = e ? { x: e.clientX, y: e.clientY } : null;
+        clearTimeout(this.henGiu);
+        // Giữ đủ lâu = mở bong bóng; xoá cả cửa "chạm lại" (cuoiI) để cú chạm kế tiếp là đọc, không mở lần nữa.
+        this.henGiu = setTimeout(() => { this.daGiu = true; this.nhanI = -1; this.cuoiI = -1; this.moBong(i); }, 450);
+      },
+      // Ngón tay trượt (vuốt lật trang bắt đầu trên một từ): với cảm ứng, từ đó GIỮ con trỏ
+      // nên `pointerleave` không tới — phải tự đo quãng trượt, quá 12 px thì không còn là chạm.
+      diNhan(e) {
+        const p = this.nhanXY;
+        if (this.nhanI < 0 || !p) return;
+        if (Math.abs(e.clientX - p.x) > 12 || Math.abs(e.clientY - p.y) > 12) this.huyNhan();
+      },
+      nha(i) {
+        clearTimeout(this.henGiu);
+        const dung = this.nhanI === i;          // thả đúng ở từ đã nhấn, và chưa mở bằng giữ
+        this.nhanI = -1; this.nhanXY = null;
+        if (!dung) return;
+        if (this.daGiu) { this.cuoiI = -1; return; }   // giữ đã mở bong bóng: không để ngỏ cửa "chạm lại"
+        const now = Date.now();
+        if (this.cuoiI === i && now - (this.cuoiLuc || 0) < 1500) { this.cuoiI = -1; this.moBong(i); return; }
+        this.cuoiI = i; this.cuoiLuc = now;
+        this.docTu(i);
+      },
+      // Rời từ, trượt xa, hoặc trình duyệt HUỶ lần nhấn (`pointercancel` — iPad: giữ rồi lỡ
+      // cuộn nhẹ, hay Safari giành cử chỉ): bỏ hẹn giữ, không tính là chạm, không kẹt trạng thái.
+      huyNhan() { clearTimeout(this.henGiu); this.nhanI = -1; this.nhanXY = null; },
+
+      tieng(i) { const k = this.tg().tu[i].k; return (k && this.tr.tieng[k]) || null; },
+
+      // Phát đoạn [tu, den) giây của file `g.am` trên thẻ audio PHỤ (không đụng audio trang).
+      // `moiKhung(giây)` chạy mỗi khung hình; `xong()` khi hết đoạn (kể cả khi file lỗi).
+      // Lượt mới huỷ lượt cũ.
+      // ⚠ iOS Safari: play() có tiếng chỉ được phép TRONG cử chỉ (hoặc ở thẻ đã mở khoá — moKhoa).
+      // Vì vậy play() gọi NGAY, kể cả khi file mới chưa có metadata — KHÔNG đợi loadedmetadata
+      // rồi mới play (lúc đó cử chỉ đã qua, Safari từ chối trong im lặng). Vị trí đầu đoạn đặt
+      // trước khi có metadata là "vị trí bắt đầu mặc định": trình duyệt tua tới đó khi nạp xong.
+      // Phòng trình duyệt nào phát vài khung đầu file trước khi tua: file mới thì tắt tiếng tới
+      // khi vị trí đã tới đầu đoạn.
+      phatDoan(g, tu, den, xong, moiKhung) {
+        const a = this.$refs.au2, url = this.amUrl(g.am);
+        const id = this.luot = (this.luot || 0) + 1;
+        const het = () => { if (id === this.luot) { this.luot++; a.muted = false; if (xong) xong(); } };
+        const moi = a.dataset.url !== url;
+        if (moi) {
+          a.dataset.url = url; a.src = url;
+          // File không tải được: phải tự kết thúc lượt, kẻo bong bóng kẹt ở "đang đọc" (cả từ
+          // sáng mãi). Xoá url để lần sau nạp lại.
+          const hong = () => { a.dataset.url = ''; het(); };
+          a.addEventListener('error', hong, { once: true });
+          a.addEventListener('loadedmetadata', () => {
+            a.removeEventListener('error', hong);
+            if (id === this.luot && Math.abs(a.currentTime - tu) > 0.05) a.currentTime = tu;   // trình duyệt bỏ qua vị trí mặc định
+          }, { once: true });
+        }
+        a.muted = moi && tu > 0.01;
+        a.currentTime = tu; a.defaultPlaybackRate = this.tocDo; a.playbackRate = this.tocDo; a.preservesPitch = true;
+        let da = false;
+        a.play().then(() => { da = true; }).catch(het);
+        const v = () => {
+          if (id !== this.luot) return;
+          if (a.muted && !a.seeking && a.readyState >= 2 && a.currentTime >= tu - 0.05) a.muted = false;
+          if (a.ended || a.currentTime >= den - 0.02 || (da && a.paused)) { a.pause(); het(); return; }
+          if (moiKhung) moiKhung(a.currentTime);
+          requestAnimationFrame(v);
+        };
+        requestAnimationFrame(v);
+      },
+      dungDoan() { this.luot = (this.luot || 0) + 1; const a = this.$refs.au2; if (a) { a.pause(); a.muted = false; } },
+      // Mở khoá thẻ audio cho iOS, MỘT lần mỗi thẻ: play() rồi pause() ngay trong cử chỉ đầu tiên
+      // trên trang đọc (không ra tiếng: dừng trước khi kịp phát). Sau đó thẻ phát được cả ngoài cử
+      // chỉ — bong bóng mở bằng GIỮ tự đọc từ một hẹn giờ. Bị từ chối (NotAllowedError: sự kiện này
+      // chưa tính là cử chỉ) thì lần chạm sau thử lại; AbortError (do pause) nghĩa là đã được phép.
+      moKhoa() {
+        for (const a of [this.$refs.au2, this.$refs.au, this.$refs.au3]) {   // au3: nghe lại bản thu
+          if (!a || a._daMo || a._dangMo || !a.paused || a.ended) continue;
+          a._dangMo = true;
+          try {
+            const p = a.play();
+            a.pause();
+            const xong = (e) => { a._dangMo = false; if (!e || e.name !== 'NotAllowedError') a._daMo = true; };
+            if (p && p.then) p.then(() => xong(), xong); else xong();
+          } catch (e) { a._dangMo = false; }
+        }
+      },
+
+      // "Đọc từ" = đoạn CUỐI của file đánh vần (bước cuối luôn là cả tiếng); từ chỉ-đọc thì cả file.
+      docTu(i) {
+        this.tam(); this.dongBong(); this.dungDoan();
+        this.tuSang = i;
+        const g = this.tieng(i);
+        const het = () => { if (!this.dangDoc && !this.bong && this.tuSang === i) this.tuSang = -1; };
+        if (g) { this.phatDoan(g, g.buoc ? g.t[g.t.length - 1] : 0, g.dai, het); return; }
+        // Thiếu audio của tiếng này: đọc bằng đúng đoạn của từ đó trong audio trang (spec §9).
+        if (this.amLoi) return het();
+        const a = this.$refs.au, tu = this.tg().tu, den = i + 1 < tu.length ? tu[i + 1].t : this.tg().dai;
+        a.currentTime = tu[i].t; a.playbackRate = this.tocDo;
+        a.play().catch(() => {});
+        const v = () => {
+          if (this.dangDoc) return;
+          if (a.paused) return het();
+          if (a.currentTime >= den - 0.02) { a.pause(); return het(); }
+          requestAnimationFrame(v);
+        };
+        requestAnimationFrame(v);
+      },
+
+      // ── bong bóng ───────────────────────────────────────────────────────────
+      // Kiểu đánh vần nhớ theo TRUYỆN trên thiết bị này (khoá riêng như td_toc, không nằm trong
+      // mục trạng thái — chuan() của tapdoc.html không cần biết).
+      cheDV() { return localStorage.getItem('td_che_' + this.id) || (this.tr.cap === 'C' ? 'nhanh' : 'daydu'); },
+      moBong(i) {
+        const g = this.tieng(i);
+        if (!g) return this.docTu(i);
+        this.tam(); this.dungDoan();
+        this.tuSang = i;
+        // Chữ phóng to là KHOÁ `k` (viết thường, bỏ dấu câu) chứ không phải chữ trong truyện: các
+        // khoảng chữ cái của từng bước (`buoc`) tính trên đúng chuỗi này.
+        this.bong = { i, chu: this.tg().tu[i].k, g, bs: -1, che: this.cheDV(), viTri: 'visibility:hidden' };
+        this.bongDoc();                          // phát NGAY (còn trong cử chỉ nếu mở bằng chạm lại)
+        this.$nextTick(() => this.datBong(i));   // đặt chỗ cần kích thước thật của bong bóng
+      },
+      dongBong() {
+        if (!this.bong) return;
+        this.dungDoan();
+        this.bong = null;
+        if (!this.dangDoc) this.tuSang = -1;
+      },
+      datChe(c) {
+        try { localStorage.setItem('td_che_' + this.id, c); } catch (e) {}   // nhớ cho cả truyện này, trên thiết bị này
+        this.dungDoan();
+        this.bong.che = c; this.bong.bs = -1;
+        this.$nextTick(() => this.bong && this.datBong(this.bong.i));   // số bước đổi → cao/rộng đổi
+      },
+      buocDau() { const b = this.bong; return b && b.g.buoc && b.che === 'nhanh' ? b.g.n : 0; },
+      buocHien() { const b = this.bong; return b && b.g.buoc ? b.g.buoc.slice(this.buocDau()) : []; },
+      // Chữ cái thứ j của từ phóng to có đang sáng không.
+      chuSang(j) {
+        const b = this.bong;
+        if (!b) return false;
+        if (b.bs === -2) return true;                       // đang đọc cả từ
+        if (b.bs < 0 || !b.g.buoc) return false;
+        const s = b.g.buoc[b.bs];
+        return j >= s[1] && j < s[2];
+      },
+      bongDoc() {
+        const b = this.bong, g = b.g;
+        b.bs = -2;
+        this.phatDoan(g, g.buoc ? g.t[g.t.length - 1] : 0, g.dai, () => { if (this.bong === b) b.bs = -1; });
+      },
+      bongVan() {
+        const b = this.bong, g = b.g, n0 = this.buocDau();
+        this.phatDoan(g, g.t[n0], g.dai, () => { if (this.bong === b) b.bs = -1; }, (giay) => {
+          let k = n0;
+          for (let j = n0; j < g.t.length; j++) if (g.t[j] <= giay + 0.03) k = j;
+          if (this.bong === b) b.bs = k;
+        });
+      },
+      bongTuDay() {
+        const i = this.bong.i;
+        this.dongBong();
+        if (this.amLoi) return;
+        this.$refs.au.currentTime = this.tg().tu[i].t;
+        this.phat();
+      },
+      // Đặt bong bóng cạnh từ: ưu tiên phía trên, không đủ chỗ thì phía dưới, luôn gọn trong trang.
+      datBong(i) {
+        const pop = this.$refs.bong, tu = this.$refs.o && this.$refs.o.querySelector('[data-td-tu="' + i + '"]');
+        if (!pop || !tu || !this.bong) return;
+        const pr = pop.parentElement.getBoundingClientRect(), r = tu.getBoundingClientRect();
+        const w = pop.offsetWidth, h = pop.offsetHeight;
+        let top = r.top - pr.top - h - 12;
+        if (top < 8) top = r.bottom - pr.top + 12;
+        top = Math.max(8, Math.min(pr.height - h - 8, top));
+        const left = Math.max(8, Math.min(pr.width - w - 8, r.left - pr.left + r.width / 2 - w / 2));
+        this.bong.viTri = 'top:' + top + 'px;left:' + left + 'px';
+      },
+    };
+  }
+</script>
+  <style>
+  .td-quiz{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;background:#fffdf5}
+  .td-q-than{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}
+  .td-q-truyen{display:flex;flex-direction:column;gap:.6rem;padding:1rem;background:#f3f0ff;border-right:2px dashed #c4b5fd;overflow-y:auto}
+  .td-q-anh{flex:none;height:9rem;border-radius:1rem;background:#fef3c7 center/cover no-repeat}
+  .td-q-chu{flex:1;margin:0;padding:.8rem 1rem;border-radius:1rem;background:#fff;font-size:1.3rem;line-height:1.7}
+  .td-q-lat{flex:none;display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+  .td-q-hoi-o{padding:1rem 1.2rem;overflow-y:auto}
+  .td-q-dong{display:flex;gap:.6rem;align-items:flex-start;margin:.75rem 0}
+  .td-q-hoi{margin:0;flex:1;font-size:1.5rem;font-weight:700;line-height:1.5}
+  .td-loa{flex:none;width:48px;height:48px;border-radius:999px;border:0;background:#ede9fe;font-size:1.3rem;cursor:pointer}
+  .td-q-chon{flex:1;text-align:left;font:inherit;font-size:1.3rem;min-height:60px;padding:.7rem 1rem;border-radius:1rem;border:3px solid #ddd6fe;background:#fff;color:#1f1a33;cursor:pointer}
+  .td-q-chon[aria-pressed=true]{border-color:#7c3aed;background:#ede9fe}
+  .td-quiz .td-sang{background:#fde047;border-radius:.4rem}
+  .td-q-xem{display:none}
+  @media (max-width:767px){
+    .td-q-than{grid-template-columns:1fr}
+    .td-q-truyen{display:none}
+    .td-q-truyen.td-q-mo{display:flex;position:fixed;inset:0;z-index:45;border:0}
+    .td-q-xem{display:inline-block}
+  }
+</style>
+<script>
+  function tdQuiz() {
+    return {
+      qDS: [],        // chỉ số các câu của lượt này (cả bài, hoặc chỉ các câu chưa đúng)
+      qi: 0,          // đang ở câu thứ mấy trong qDS
+      qChon: {},      // {chỉ số câu: chỉ số đáp án đã chọn}
+      qTrang: 1,      // trang đang hiện ở khung truyện
+      qXem: false,    // màn hẹp: khung truyện đang mở đè
+      qSang: null,    // {d, i}: dòng (−1 câu hỏi, 0–2 đáp án) và từ đang sáng khi máy đọc
+
+      vaoQuiz(lamLai) {
+        const c = this.s(this.id), tatCa = this.tr.quiz.map((_, i) => i);
+        this.qDS = lamLai ? tatCa.filter((i) => !(c.quiz[i] && c.quiz[i].dung)) : tatCa;
+        if (!this.qDS.length) return;
+        this.dungDoc(); this.dongBong(); this.dungDoan();
+        this.qi = 0; this.qChon = {}; this.qXem = false; this.qSang = null;
+        this.qTrang = this.tr.cap === 'A' ? this.cau().trang : 1;
+        this.view = 'quiz';
+      },
+      cau() { return this.tr.quiz[this.qDS[this.qi]]; },
+      daChon() { return this.qChon[this.qDS[this.qi]]; },
+      chon(j) { this.qChon[this.qDS[this.qi]] = j; },
+      qLat(d) { this.qTrang = Math.max(1, Math.min(this.tr.trang.length, this.qTrang + d)); },
+      qNen() {
+        const t = this.tr.trang[this.qTrang - 1];
+        return t.anh ? 'background-image:url(' + JSON.stringify(this.anhUrl(t.anh)) + ')' : '';
+      },
+      async cauTiep() {
+        if (this.daChon() === undefined) return;
+        this.dungDoan(); this.qSang = null;
+        if (this.qi + 1 < this.qDS.length) {
+          this.qi++;
+          if (this.tr.cap === 'A') this.qTrang = this.cau().trang;
+          return;
+        }
+        await this.nopQuiz();
+      },
+      thoatQuiz() { this.dungDoan(); this.qSang = null; this.view = 'xong'; },   // bỏ dở: không ghi gì
+      // Chấm tại chỗ (đáp án vốn nằm trong file tĩnh) để trang cập nhật ngay và chạy được khi
+      // không có mã; máy chủ chấm LẠI theo bản của nó — đó mới là bản được lưu.
+      // Khoá câu là chỉ số nguyên dạng chuẩn ("0", "1", …) — Worker từ chối mọi dạng khác.
+      async nopQuiz() {
+        const c = this.s(this.id);
+        for (const [k, j] of Object.entries(this.qChon)) {
+          const cu = c.quiz[k] || { dung: 0, lan: 0 };
+          // `chon` giữ đáp án để lần mở sau nộp lại nếu lượt POST này không tới máy chủ.
+          c.quiz[k] = { dung: j === this.tr.quiz[k].dung ? 1 : 0, lan: cu.lan + 1, chon: j };
+        }
+        this.luuCucBo();
+        const traLoi = this.qChon;
+        this.view = 'xong';
+        if (this.online) await this.api('/api/tapdoc/quiz', { user: this.user, truyen: this.id, tra_loi: traLoi });
+      },
+      // Đọc câu hỏi (d = −1) hoặc đáp án d. Một nguồn tiếng một lúc: tắt máy đọc trang và
+      // tiếng đang đọc dở trước. Gọi thẳng từ @click — phatDoan() play() ngay, còn trong cử chỉ.
+      qDoc(d) {
+        const dong = d < 0 ? this.cau().hoi : this.cau().chon[d];
+        this.dungDoc(); this.dungDoan();
+        this.qSang = { d, i: -1 };
+        this.phatDoan(dong, 0, dong.dai, () => { if (this.qSang && this.qSang.d === d) this.qSang = null; }, (giay) => {
+          let i = -1;
+          for (let j = 0; j < dong.tu.length; j++) if (dong.tu[j].t <= giay + 0.03) i = j;
+          if (this.qSang && this.qSang.d === d) this.qSang.i = i;
+        });
+      },
+      qTuSang(d, i) { return !!this.qSang && this.qSang.d === d && this.qSang.i === i; },
+      soCauSai() {
+        const c = this.s(this.id);
+        return this.tr.quiz.filter((_, i) => !(c.quiz[i] && c.quiz[i].dung)).length;
+      },
+      soCauDung() { return this.tr.quiz.length - this.soCauSai(); },
+      daLam() { return Object.keys(this.s(this.id).quiz).length > 0; },
+    };
+  }
+</script>
+  <style>
+  .td-dem{position:absolute;inset:0;z-index:7;display:grid;place-items:center;background:rgba(31,26,51,.55);color:#fff;font-size:9rem;font-weight:800}
+  .td-n-do{background:#dc2626;color:#fff}
+  .td-thu-dang{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+  .td-cham{width:14px;height:14px;border-radius:999px;background:#dc2626;animation:td-nhay 1s infinite}
+  .td-cham.td-nghi{animation:none;background:#9ca3af}
+  @keyframes td-nhay{50%{opacity:.25}}
+  .td-nghe-keo{position:relative;flex:1;min-width:8rem}
+  .td-nghe-keo input{width:100%;height:44px;accent-color:#7c3aed}
+  .td-nghe-keo i{position:absolute;top:6px;width:2px;height:10px;background:#7c3aed;opacity:.5;pointer-events:none}
+</style>
+<script>
+  function tdThuAm() {
+    // MediaStream / MediaRecorder để NGOÀI dữ liệu Alpine: chúng là đối tượng của trình duyệt,
+    // không có gì để theo dõi, và không nên bị bọc proxy.
+    const may = { luong: null, rec: null, hen: 0 };
+    const LOAI = /^audio\/(mp4|webm|ogg)$/;      // đúng LOAI_RE của worker/tapdoc.js
+
+    return {
+      thu: null,      // phiên thu đang diễn ra hoặc vừa xong (chưa lưu)
+      nghe: null,     // trình phát bản thu (vừa thu, hoặc bản đã lưu)
+      demMs: 1000,    // một nhịp đếm ngược 3-2-1 (bài test rút ngắn)
+      ngheTai: false, // đang tải bản đã lưu để nghe lại
+
+      // Thu được không: cần mã VÀ máy chủ đã đọc được mã đó (online).
+      thuDuoc() { return !!this.secret && this.online; },
+
+      async thuBatDau() {
+        if (!this.thuDuoc()) { this.err = 'Cần mã bí mật (và kết nối tới máy chủ) để thu âm. Con nhờ bố mẹ nhé.'; return; }
+        if (this.thu && (this.thu.dang || this.thu.dem > 0)) return;
+        if (!navigator.mediaDevices || typeof MediaRecorder === 'undefined') {
+          this.err = this.thongBao = 'Trình duyệt này chưa thu âm được. Con nhờ bố mẹ cập nhật máy nhé.';
+          return;
+        }
+        // Bấm hai lần liền: `thu` chỉ có SAU lượt xin micro, nên chặn bằng cờ riêng dựng TRƯỚC await —
+        // không thì hai luồng micro cùng mở, một luồng bị bỏ quên mà đèn micro vẫn sáng.
+        if (may.xin) return;
+        this.dungDoc(); this.dongBong(); this.dungDoan();
+        if (this.$refs.au3) this.$refs.au3.pause();
+        this.thuTatMay();
+        may.xin = true;
+        let luong;
+        try {
+          luong = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (e) {
+          this.thu = this.thuMoi('mic');
+          this.view = 'thu';
+          return;
+        } finally {
+          may.xin = false;
+        }
+        if (may.luong && may.luong !== luong) may.luong.getTracks().forEach((x) => { x.onended = null; x.stop(); });
+        may.luong = luong;
+        this.thu = this.thuMoi('');
+        this.thu.dem = 3;
+        const phien = this.thu;
+        this.vaoDoc(1);
+        for (let k = 3; k > 0; k--) {
+          phien.dem = k;
+          await new Promise((r) => setTimeout(r, this.demMs));
+          if (this.thu !== phien) return;               // đã huỷ trong lúc đếm
+        }
+        phien.dem = 0;
+        this.thuMoDoan();
+      },
+      // `ts` = lúc BẮT ĐẦU: Worker đòi bản thu mới có ts lớn hơn bản đã chốt.
+      thuMoi(loi) {
+        return { loi, dem: 0, dang: false, tam: false, het: false, doan: [], lat: [], goc: 0, t0: 0, dai: 0, kq: null, gui: false, ts: Date.now() };
+      },
+      thuTatMay() {
+        clearInterval(may.hen);
+        if (may.rec && may.rec.state !== 'inactive') { may.rec.onstop = null; try { may.rec.stop(); } catch (e) {} }
+        if (may.rec && may.rec._r) may.rec._r();
+        may.rec = null;
+        if (may.luong) may.luong.getTracks().forEach((x) => { x.onended = null; x.stop(); });
+        may.luong = null;
+      },
+
+      // Mili giây trên trục thời gian của BẢN THU (không tính lúc tạm dừng).
+      thuMs() {
+        const t = this.thu;
+        return t.goc + (t.dang && !t.tam ? performance.now() - t.t0 : 0);
+      },
+      // Trang đọc gọi mỗi lần lật (datTrang). Đang tạm dừng thì không ghi.
+      thuLat(trang) {
+        const t = this.thu;
+        if (!t || !t.dang || t.tam) return;
+        t.lat.push([Math.round(this.thuMs()), trang]);
+      },
+      thuByte() { return this.thu.doan.reduce((s, d) => s + d.blob.size, 0); },
+
+      thuMoDoan() {
+        const t = this.thu;
+        let rec;
+        try { rec = new MediaRecorder(may.luong, { audioBitsPerSecond: 32000 }); }
+        catch (e) {
+          if (!t.dang) { this.thuTatMay(); t.loi = 'mic'; this.view = 'thu'; return; }
+          t.tam = true; this.thongBao = 'Máy không thu tiếp được. Con bấm Kết thúc để giữ phần đã thu nhé.';
+          return;
+        }
+        this.dungDoc(); this.dungDoan();               // không để tiếng nào đang chạy lọt vào đầu đoạn
+        const manh = [], t0 = performance.now();
+        rec._xong = new Promise((r) => { rec._r = r; });
+        rec.ondataavailable = (e) => { if (e.data && e.data.size) manh.push(e.data); };
+        // `dataavailable` cuối luôn tới TRƯỚC `stop`: đọc `manh` ở đây là đủ.
+        rec.onstop = () => {
+          const dai = Math.round((rec._t1 || performance.now()) - t0);
+          let loai = (rec.mimeType || (manh[0] && manh[0].type) || 'audio/webm').split(';')[0].trim().replace(/^video\//, 'audio/');
+          if (!LOAI.test(loai)) loai = 'audio/webm';
+          if (manh.length && dai > 0) t.doan.push({ blob: new Blob(manh, { type: loai }), dai, loai });
+          t.goc += dai;
+          // Máy thu tự dừng (hệ thống ngắt micro) mà chưa ai bấm tạm dừng → coi là tạm dừng.
+          if (may.rec === rec && t.dang && !t.tam) { t.tam = true; clearInterval(may.hen); }
+          rec._r();
+        };
+        may.rec = rec;
+        may.luong.getAudioTracks().forEach((x) => { x.onended = () => this.thuTam(); });   // micro bị hệ thống ngắt
+        rec.start();
+        t.t0 = t0; t.dang = true; t.tam = false;
+        this.thuLat(this.trang);
+        clearInterval(may.hen);
+        may.hen = setInterval(() => { if (this.thu === t && t.dang && !t.tam && this.thuMs() >= TD.DAI_MAX) this.thuXong(); }, 1000);
+      },
+      // Đóng đoạn đang thu (nếu còn) và chờ nó vào `doan`. Gọi nhiều lần vô hại.
+      thuDongDoan() {
+        clearInterval(may.hen);
+        const rec = may.rec;
+        if (!rec) return Promise.resolve();
+        if (rec.state !== 'inactive') { rec._t1 = performance.now(); rec.stop(); }
+        return rec._xong;
+      },
+      async thuTam() {
+        const t = this.thu;
+        if (!t || !t.dang || t.tam) return;
+        // Bật cờ TRƯỚC khi dừng máy thu: từ đây thuMs() chỉ còn trả `goc`, và onstop cộng độ dài
+        // của đoạn vừa đóng vào `goc` — đồng hồ bản thu đứng yên suốt lúc tạm dừng.
+        t.tam = true;
+        await this.thuDongDoan();
+      },
+      async thuTiep() {
+        const t = this.thu;
+        if (!t || !t.dang || !t.tam || may.xin) return;
+        may.xin = true;                                 // bấm hai lần: một lượt xin micro thôi
+        try {
+          await this.thuDongDoan();                     // đoạn trước phải vào `doan` xong đã
+          // Worker nhận tối đa 99 đoạn (0–98) và 20 MB: chạm trần thì kết thúc, không mở đoạn mới.
+          if (t.doan.length >= 99 || this.thuByte() >= TD.BYTE_MAX) { this.thuXong(); return; }
+          if (!may.luong || !may.luong.getAudioTracks().some((x) => x.readyState === 'live')) {
+            let luong;
+            try { luong = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+            catch (e) { t.loi = 'mic'; this.thongBao = 'Máy chưa được phép dùng micro. Con nhờ bố mẹ cho phép trang này dùng micro nhé.'; return; }
+            // Trong lúc chờ cấp micro mà bé đã Kết thúc / Bỏ (thuTatMay đã chạy): luồng tới muộn
+            // phải tắt ngay, đừng gán vào may.luong — không thì đèn micro sáng mãi sau khi Lưu.
+            if (this.thu !== t || !t.tam || t.het) { luong.getTracks().forEach((x) => x.stop()); return; }
+            may.luong = luong;
+          }
+          if (this.thu !== t || !t.tam || t.het) return;
+          t.loi = ''; this.thongBao = '';
+          this.thuMoDoan();
+        } finally {
+          may.xin = false;
+        }
+      },
+      // Trang bị ẩn (chuyển ứng dụng, tắt màn hình) → TẠM DỪNG, không kết thúc; và TẮT micro (đèn
+      // micro không sáng khi bé không ở trong trang) — Thu tiếp tự xin lại. Đang đếm ngược → huỷ hẳn.
+      async thuAn() {
+        const t = this.thu;
+        if (!t) return;
+        if (t.dem > 0) { this.thuTatMay(); this.thu = null; return; }
+        if (!t.dang || t.het) return;
+        if (!t.tam) await this.thuTam();
+        if (this.thu === t && t.tam && !t.het && may.luong) {
+          may.luong.getTracks().forEach((x) => { x.onended = null; x.stop(); });
+          may.luong = null;
+        }
+      },
+
+      async thuXong() {
+        const t = this.thu;
+        if (!t || !t.dang || t.het) return;
+        t.het = true;                                   // chặn lần gọi thứ hai trong lúc chờ đóng đoạn
+        t.tam = true;
+        await this.thuDongDoan();
+        if (this.thu !== t) return;
+        this.thuTatMay();
+        t.dang = false; t.tam = false; t.dai = t.goc;
+        t.kq = tdHoanThanh(JSON.parse(JSON.stringify(t.lat)), t.dai, this.tr.trang.length, this.tr.dai_ms);
+        // Lớn quá thì máy chủ chắc chắn từ chối (413): nói ngay, đừng để bé chờ gửi.
+        // Micro hỏng giữa chừng ('mic' từ thuTiep) mà đã có đoạn → vẫn là bản thu dùng được: hiện màn
+        // xem lại bình thường (Lưu / Nghe thử). Màn báo micro chỉ khi chưa thu được gì.
+        if (t.loi === 'mic' && t.doan.length) t.loi = '';
+        if (this.thuByte() > TD.BYTE_MAX) t.loi = 'lon';
+        this.dungDoan(); this.dongBong();
+        this.thongBao = '';
+        this.view = 'thu';
+      },
+      thuHuy() {
+        this.thuTatMay();
+        this.thu = null;
+        this.view = this.s(this.id).doc_xong ? 'xong' : 'doc';
+      },
+      thuNhac() {
+        const k = this.thu && this.thu.kq;
+        if (!k) return '';
+        if (k.xong) return 'Con đã đọc đủ các trang. Giỏi lắm!';
+        if (k.thieu.length) return 'Con chưa đọc trang ' + k.thieu.join(', ') + '. Bản thu vẫn lưu được, nhưng chưa tính là hoàn thành.';
+        return 'Con đọc hơi nhanh. Bản thu vẫn lưu được, nhưng chưa tính là hoàn thành.';
+      },
+      // Câu báo cho từng kiểu gửi hỏng. Chỉ 'gui' (mạng / máy chủ trục trặc / thiếu đoạn) là gửi lại có ích.
+      thuLoiChu() {
+        return {
+          gui: 'Chưa gửi được bản thu (mất mạng?). Bản thu vẫn còn trong máy — đừng đóng trang này, bấm Gửi lại.',
+          cu: 'Đã có bản thu mới hơn (thu trên máy khác), nên bản này không lưu được. Con có thể nghe thử, hoặc thu lại.',
+          lon: 'Bản thu dài quá (hơn 30 phút) hoặc nặng quá (hơn 20 MB), máy chủ không nhận. Con thu lại gọn hơn nhé.',
+          hong: 'Máy chủ không nhận bản thu này. Con nhờ bố mẹ kiểm tra mã bí mật rồi thu lại nhé.',
+        }[this.thu && this.thu.loi] || '';
+      },
+
+      async thuLuu() {
+        const t = this.thu, c = this.s(this.id);
+        if (!t || !t.doan.length || t.gui || !this.thuDuoc()) return;
+        if (t.loi && t.loi !== 'gui') return;
+        if (c.thu && c.thu.xong && !t.kq.xong &&
+            !confirm('Bản thu cũ đã đọc đủ các trang, bản mới thì chưa. Con vẫn muốn thay bản cũ?')) return;
+        t.gui = true; t.loi = '';
+        const ts = t.ts, goc = '/api/tapdoc/rec/' + this.user + '/' + this.id;
+        const lat = JSON.parse(JSON.stringify(t.lat));
+        let ma = 0, kq = null;
+        try {
+          for (let n = 0; n < t.doan.length; n++) {
+            const d = t.doan[n];
+            const r = await fetch(goc + '/' + ts + '-' + n, { method: 'PUT', body: d.blob,
+              headers: { 'x-progress-key': this.secret, 'content-type': d.loai } });
+            if (!r.ok) { ma = r.status; throw new Error('HTTP ' + r.status); }
+          }
+          const r = await fetch(goc, { method: 'POST',
+            headers: { 'x-progress-key': this.secret, 'content-type': 'application/json' },
+            body: JSON.stringify({ ts, doan: t.doan.map((d, n) => ({ n, dai: d.dai })), lat }) });
+          if (!r.ok) { ma = r.status; throw new Error('HTTP ' + r.status); }
+          kq = await r.json();
+        } catch (e) {
+          if (ma === 409) return this.thuXet409(t, ts);
+          t.gui = false;
+          // Giữ nguyên các đoạn trong bộ nhớ. Chỉ lỗi mạng / máy chủ mới mời gửi lại.
+          t.loi = ma === 413 ? 'lon' : (ma >= 400 && ma < 500) ? 'hong' : 'gui';
+          return;
+        }
+        // Cất theo lời MÁY CHỦ (nó tự tính hoàn thành), không theo phép tính của trang.
+        this.thuDaLuu({ ts, dai: kq.dai, doan: t.doan.map((d, n) => ({ n, dai: d.dai, loai: d.loai })), lat, xong: !!kq.xong });
+      },
+      // 409 có ba nghĩa; hỏi lại máy chủ bản nào đang giữ (MỘT lượt, không lặp):
+      //   đúng bản này → lần trước đã chốt mà mất câu trả lời: coi là đã lưu;
+      //   bản mới hơn  → máy khác đã thu sau: bản này không lưu được;
+      //   còn lại      → mất đoạn / chốt chen nhau: gửi lại có ích.
+      async thuXet409(t, ts) {
+        const d = await this.api('/api/tapdoc/state?user=' + encodeURIComponent(this.user));
+        const m = d && d.truyen && d.truyen[this.id] ? this.chuan(d.truyen[this.id]) : null;
+        if (this.thu !== t) return;
+        // Đừng hạ `gui` trước khi thuDaLuu() bỏ `thu`: Alpine sẽ chạy lại các ràng buộc `thu.gui`
+        // của màn xem lại SAU khi `thu` đã là null (lỗi JS), trước khi x-if kịp gỡ màn đó.
+        if (m && m.thu && m.thu.ts === ts) return this.thuDaLuu(m.thu);
+        t.gui = false;
+        if (m) this.s(this.id).thu = m.thu;            // trang hiện đúng bản máy chủ đang giữ
+        this.luuCucBo();
+        t.loi = m && m.thu && m.thu.ts > ts ? 'cu' : 'gui';
+      },
+      thuDaLuu(thu) {
+        this.s(this.id).thu = thu;
+        this.luuCucBo();
+        this.thu = null;
+        this.view = 'xong';
+      },
+
+      // ── nghe lại ────────────────────────────────────────────────────────────
+      async ngheMo(nguon) {
+        if (this.ngheTai) return;                       // bấm hai lần: tải một lượt thôi
+        let doan = [], lat, dai;
+        if (nguon === 'thu') {
+          const t = this.thu;
+          doan = t.doan.map((d) => ({ url: URL.createObjectURL(d.blob), dai: d.dai }));
+          lat = t.lat; dai = t.dai;
+        } else {
+          const u = this.s(this.id).thu;
+          if (!u || !this.secret) return;
+          this.err = '';
+          this.ngheTai = true;
+          try {
+            for (const d of u.doan) {
+              const r = await fetch('/api/tapdoc/rec/' + this.user + '/' + this.id + '/' + u.ts + '-' + d.n,
+                { headers: { 'x-progress-key': this.secret } });
+              if (!r.ok) throw new Error('HTTP ' + r.status);
+              doan.push({ url: URL.createObjectURL(await r.blob()), dai: d.dai });
+            }
+          } catch (e) {
+            doan.forEach((x) => URL.revokeObjectURL(x.url));
+            this.err = 'Không tải được bản thu. Con thử lại nhé.';
+            return;
+          } finally {
+            this.ngheTai = false;
+          }
+          lat = u.lat; dai = u.dai;
+        }
+        this.dungDoc(); this.dongBong(); this.dungDoan();
+        if (this.nghe) this.nghe.doan.forEach((x) => URL.revokeObjectURL(x.url));   // trình phát cũ (nếu còn)
+        this.nghe = { nguon, doan, ghe: tdGhe(JSON.parse(JSON.stringify(lat)), dai), tong: dai, ms: 0, dang: false, k: -1, tua: false };
+        this.view = 'nghe';
+        this.ngheDat(0);
+      },
+      ngheDauDoan(k) { let s = 0; for (let j = 0; j < k; j++) s += this.nghe.doan[j].dai; return s; },
+      // Tua tới `ms` trên trục cả bản thu: chọn đúng đoạn, tua trong đoạn, cập nhật trang.
+      ngheDat(ms) {
+        const n = this.nghe, a = this.$refs.au3;
+        ms = Math.max(0, Math.min(n.tong, +ms));
+        let k = 0;
+        while (k < n.doan.length - 1 && ms >= this.ngheDauDoan(k + 1)) k++;
+        const trong = (ms - this.ngheDauDoan(k)) / 1000;
+        n.ms = ms;
+        const dat = () => {
+          if (this.nghe !== n) return;
+          const xong = () => {
+            if (this.nghe !== n) return;
+            n.tua = false;
+            try { a.currentTime = trong; } catch (e) {}
+            if (n.dang) a.play().catch(() => {});
+          };
+          // WebM do MediaRecorder ghi không có độ dài (duration = Infinity): Chrome không tua được
+          // cho tới khi bị ép đọc hết file một lần. Mẹo chuẩn: nhảy tới "vô cực" rồi quay lại.
+          // `tua` che bước đó: vị trí tạm ở cuối đoạn không được tính là "hết đoạn" hay đổi trang.
+          if (a.duration === Infinity) { n.tua = true; a.addEventListener('timeupdate', xong, { once: true }); a.currentTime = 1e101; }
+          else xong();
+        };
+        if (n.k !== k) {
+          n.k = k; a.src = n.doan[k].url;
+          a.addEventListener('loadedmetadata', dat, { once: true });
+          a.load();
+        } else dat();
+        this.ngheTrang();
+      },
+      // Trang hiển thị đi theo nhật ký lật của bé (không đụng "trang đang dở" đã lưu).
+      ngheTrang() {
+        const p = tdTrangLuc(this.nghe.ghe, this.nghe.ms);
+        if (p !== this.trang && p >= 1 && p <= this.tr.trang.length) { this.trang = p; this.tuSang = -1; }
+      },
+      // ⚠ iOS: play() gọi NGAY trong cú bấm — đừng chèn await phía trước.
+      nghePhat() {
+        const n = this.nghe, a = this.$refs.au3;
+        if (n.dang) { n.dang = false; a.pause(); return; }
+        this.dungDoc(); this.dungDoan();                // một nguồn tiếng một lúc
+        if (n.ms >= n.tong - 50) this.ngheDat(0);
+        n.dang = true;
+        a.play().catch(() => { if (!n.tua) n.dang = false; });
+        const v = () => {
+          if (this.nghe !== n || !n.dang) return;
+          if (!a.paused && !n.tua) {
+            n.ms = Math.min(n.tong, this.ngheDauDoan(n.k) + a.currentTime * 1000);
+            this.ngheTrang();
+          }
+          requestAnimationFrame(v);
+        };
+        requestAnimationFrame(v);
+      },
+      ngheHetDoan() {
+        const n = this.nghe;
+        if (!n || n.tua) return;
+        if (n.k + 1 < n.doan.length) this.ngheDat(this.ngheDauDoan(n.k + 1));
+        else { n.dang = false; n.ms = n.tong; }
+      },
+      // Người nghe lật trang → nhảy tới lần bé ở lại trang đó LÂU NHẤT.
+      ngheLat(d) {
+        const ms = tdNhayToi(this.nghe.ghe, this.trang + d);
+        if (ms !== null) this.ngheDat(ms);
+      },
+      ngheVach() {
+        const n = this.nghe;
+        return n && n.tong ? n.ghe.map((g) => 100 * g.tu / n.tong) : [];
+      },
+      ngheDong() {
+        const n = this.nghe;
+        if (!n) return;
+        const a = this.$refs.au3;
+        a.pause(); a.removeAttribute('src'); a.load();
+        n.doan.forEach((x) => URL.revokeObjectURL(x.url));
+        this.nghe = null;
+        this.view = n.nguon === 'thu' && this.thu ? 'thu' : 'xong';
+      },
+    };
+  }
+</script>
+  <script>
+    // Mục Tập đọc (spec 2026-10-02). Trang này là VỎ: danh sách truyện và từng truyện
+    // nạp bằng fetch từ tap-doc/ — sửa một truyện không phải dựng lại trang.
+    //
+    // Trạng thái sống ở HAI nơi: localStorage (luôn có, kể cả không mã / mất mạng) và
+    // máy chủ (khi có mã). Máy chủ thắng ở những gì chỉ nó biết chắc (quiz, bản thu);
+    // da_mo là hợp của hai bên, doc_xong là HOẶC. "Trang đang dở": mục cục bộ mang cờ
+    // `cho` (chờ gửi — chỉ sống trong localStorage, không gửi lên) thì máy này thắng và
+    // đẩy lên ngay sau lượt GET — TRỪ KHI máy chủ có trang mà máy này chưa từng mở (thiết
+    // bị khác đã đọc xa hơn): khi đó máy chủ thắng và cờ bị bỏ — nhưng nếu máy này còn
+    // tiến độ máy chủ chưa có (doc_xong, trang đã mở) thì vẫn đẩy, với trang của máy chủ.
+    // Không mang cờ thì trang của máy chủ thắng.
+    //
+    // HỢP ĐỒNG cho Task 8–12 về cờ `cho`:
+    //   • CHỈ tiến độ thật dựng cờ: lật trang → `this.luuCucBo(); this.guiTrang(false)`;
+    //     đọc xong → `this.guiTrang(true, true)`.
+    //   • Đường RỜI (về thư viện, pagehide, ẩn tab) chỉ XẢ: `this.xaCho()` gửi nếu cờ đã
+    //     có, không bao giờ dựng cờ. Đừng gọi guiTrang() từ đường rời.
+    function tapDoc() {
+      const coSo = {
+        user: "mk",
+        goc: "../tap-doc/",
+        secret: localStorage.getItem('lms_key') || '',
+        online: false,            // máy chủ đã nhận mã và trả tiến độ
+        maSai: false,             // máy chủ trả 401 cho mã đang lưu → chỉ tới mục 🔑 cuối thư viện
+        luuLoi: false,            // lượt ghi gần nhất hỏng → hiện "chưa lưu được tiến độ"
+        tai: true, err: '',
+        // Trần chờ lượt GET state (ms): mạng treo không được để thẻ chết mãi. Bài test hạ
+        // xuống qua window.TD_HAN_GET để khỏi chờ 8 s.
+        hanGet: window.TD_HAN_GET || 8000,
+        view: 'tv',               // tv · doc · quiz · xong · thu · nghe
+        ds: [], st: {}, loc: 'all',
+        anDaDoc: localStorage.getItem('td_an') === '1',
+        tr: null, id: '',
+
+        async init() {
+          this.st = this.docCucBo();
+          try {
+            const r = await fetch(this.goc + 'index.json');
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            this.ds = (await r.json()).truyen || [];
+          } catch (e) {
+            this.err = 'Không tải được danh sách truyện. Con thử tải lại trang nhé.';
+          }
+          const { ma, d } = await this.goiApi('/api/tapdoc/state?user=' + encodeURIComponent(this.user));
+          this.maSai = ma === 401;
+          if (d && d.truyen) {
+            this.online = true;
+            for (const [id, m0] of Object.entries(d.truyen)) {
+              // KHÔNG suy "máy này đã mở" từ !!this.st[id] hay da_mo cục bộ: lượt vẽ thư
+              // viện gọi s(id) cho mọi truyện trước lượt GET này, và da_mo của máy chủ đã
+              // trộn vào từ lần trước. Chỉ cờ `cho` nói được "máy này có trang chưa gửi".
+              const m = this.chuan(m0);
+              const c = this.s(id);
+              // Máy chủ có trang máy này chưa từng mở → thiết bị khác đã đọc xa hơn; cờ
+              // `cho` ở đây là của một lượt gửi đã mất (đóng tab trước khi có trả lời).
+              const xaHon = m.da_mo.some((x) => !c.da_mo.includes(x));
+              // Bỏ cờ chỉ bỏ phán quyết về TRANG. Máy này còn tiến độ máy chủ chưa có (đã đọc
+              // xong, hay trang đã mở) thì vẫn phải đẩy — với trang của máy chủ.
+              const conThieu = c.cho && xaHon &&
+                ((c.doc_xong && !m.doc_xong) || c.da_mo.some((x) => !m.da_mo.includes(x)));
+              if (c.cho && xaHon) delete c.cho;
+              c.da_mo = [...new Set([...c.da_mo, ...m.da_mo])].sort((x, y) => x - y);
+              c.doc_xong = c.doc_xong || m.doc_xong;
+              // Quiz: câu máy chủ CÓ thì máy chủ thắng; câu máy chủ chưa có (làm khi chưa có
+              // mã, hay lượt POST hỏng) thì giữ bản máy này — xoá đi là ❓ tắt lại dù bé đã làm.
+              c.quiz = { ...c.quiz, ...m.quiz };
+              c.thu = m.thu;
+              if (!c.cho) c.trang = m.trang;
+              if (conThieu) c.cho = true;      // lượt đẩy bên dưới gửi trang máy chủ + phần còn thiếu
+            }
+            this.luuCucBo();
+          }
+          this.tai = false;
+          // Đẩy lên mọi trang còn chờ — kể cả tiến độ làm từ trước khi nhập mã. Chỉ truyện
+          // còn trong thư viện; truyện đã gỡ thì máy chủ trả 404 (guiMot bỏ cờ).
+          if (this.online) {
+            const coTrongDs = new Set(this.ds.map((t) => t.id));
+            for (const id of Object.keys(this.st)) if (this.st[id].cho && coTrongDs.has(id)) this.guiMot(id);
+            // Câu quiz máy chủ chưa có → nộp lại MỘT lần (Worker cộng `lan` mỗi lượt POST),
+            // cùng hình với nopQuiz(). Chỉ câu có `chon` (đáp án bé đã chọn) mới nộp được.
+            for (const id of Object.keys(this.st)) {
+              if (!coTrongDs.has(id)) continue;
+              const coMC = (d.truyen[id] && d.truyen[id].quiz) || {};
+              const traLoi = {};
+              for (const [k, v] of Object.entries(this.st[id].quiz)) {
+                if (!(k in coMC) && Number.isInteger(v.chon)) traLoi[k] = v.chon;
+              }
+              if (Object.keys(traLoi).length) this.nopLai(id, traLoi);
+            }
+          }
+          addEventListener('pagehide', () => this.xaCho());
+          document.addEventListener('visibilitychange', () => { if (document.hidden) { this.xaCho(); this.thuAn(); } });
+        },
+
+        // ── trạng thái ────────────────────────────────────────────────────────
+        s(id) {
+          if (!this.st[id]) this.st[id] = this.chuan(null);
+          return this.st[id];
+        },
+        // Một mục trạng thái đúng hình — localStorage có thể chứa JSON hợp lệ mà sai hình
+        // (bản cũ, sửa tay); vẽ thư viện không được vỡ vì thế.
+        chuan(c) {
+          const o = c && typeof c === 'object' && !Array.isArray(c) ? c : {};
+          const vat = (x) => x && typeof x === 'object' && !Array.isArray(x);
+          // Quiz: khoá câu dạng chuẩn ("0", "1", … — như Worker), {dung: 0|1, lan: số nguyên dương,
+          // chon?: đáp án bé chọn — chỉ bản ghi ở máy này có, để nộp lại câu máy chủ chưa có}.
+          const quiz = {};
+          if (vat(o.quiz)) {
+            for (const [k, v] of Object.entries(o.quiz)) {
+              if (/^(0|[1-9]\d*)$/.test(k) && vat(v) && (v.dung === 0 || v.dung === 1) &&
+                  Number.isInteger(v.lan) && v.lan >= 1) {
+                quiz[k] = { dung: v.dung, lan: v.lan };
+                if (Number.isInteger(v.chon) && v.chon >= 0) quiz[k].chon = v.chon;
+              }
+            }
+          }
+          // Bản thu đã chốt: đúng hình GET state của Worker, không thì coi như chưa có.
+          const u = o.thu;
+          const thuDung = vat(u) && Number.isInteger(u.ts) && u.ts > 0 && Number.isFinite(u.dai) && u.dai >= 0 &&
+            Array.isArray(u.doan) && u.doan.length > 0 && Array.isArray(u.lat) &&
+            u.doan.every((d) => vat(d) && Number.isInteger(d.n) && d.n >= 0 && d.n <= 98 && Number.isFinite(d.dai) && d.dai > 0);
+          const m = {
+            trang: Number.isInteger(o.trang) && o.trang >= 1 ? o.trang : 1,
+            da_mo: Array.isArray(o.da_mo) ? o.da_mo.filter((x) => Number.isInteger(x) && x >= 1) : [],
+            doc_xong: o.doc_xong === true,
+            quiz,
+            thu: thuDung ? {
+              ts: u.ts, dai: u.dai, xong: u.xong === true,
+              doan: u.doan.map((d) => ({ n: d.n, dai: d.dai, loai: typeof d.loai === 'string' ? d.loai : 'audio/webm' })),
+              lat: u.lat.filter((x) => Array.isArray(x) && Number.isFinite(x[0]) && Number.isInteger(x[1])),
+            } : null,
+          };
+          if (o.cho === true) m.cho = true;
+          return m;
+        },
+        docCucBo() {
+          let o;
+          try { o = JSON.parse(localStorage.getItem('td_st_' + this.user) || '{}'); } catch (e) { o = null; }
+          const st = {};
+          if (o && typeof o === 'object' && !Array.isArray(o)) {
+            for (const [id, c] of Object.entries(o)) if (c && typeof c === 'object' && !Array.isArray(c)) st[id] = this.chuan(c);
+          }
+          return st;
+        },
+        luuCucBo() {
+          try { localStorage.setItem('td_st_' + this.user, JSON.stringify(this.st)); } catch (e) {}
+        },
+        // GET khi không có `than`, POST khi có. Không có mã thì không gọi. Hỏng → null,
+        // và chỉ lượt GHI hỏng mới bật cờ luuLoi (đọc hỏng = coi như không có mã).
+        async api(duong, than) {
+          return (await this.goiApi(duong, than)).d;
+        },
+        // Nộp lại câu quiz máy chủ chưa có. 400 = máy chủ KHÔNG nhận (truyện đã đổi, quiz ngắn
+        // lại): nộp lại mãi vô ích, nên bỏ `chon` của câu đó (lần mở sau không nộp nữa) và không
+        // bật luuLoi — như POST 404 của trang. Lô nhiều câu bị 400 thì tách từng câu: Worker từ
+        // chối cả lô vì một câu hỏng, mà câu còn lại vẫn hợp lệ, không được mất theo.
+        async nopLai(id, traLoi) {
+          const ks = Object.keys(traLoi);
+          const { ma } = await this.goiApi('/api/tapdoc/quiz', { user: this.user, truyen: id, tra_loi: traLoi }, [400]);
+          if (ma !== 400) return;
+          if (ks.length > 1) {
+            for (const k of ks) await this.nopLai(id, { [k]: traLoi[k] });
+            return;
+          }
+          const q = this.s(id).quiz[ks[0]];
+          if (q) { delete q.chon; this.luuCucBo(); }
+        },
+        // Như api() nhưng trả cả mã HTTP: { ma, d } — ma 0 = không mã / mạng hỏng / hết giờ.
+        // GET có trần `hanGet`. POST 404 = truyện không còn trên máy chủ: không bật luuLoi
+        // (không có gì để "thử lại"); `boQua` thêm các mã khác cũng không bật (nopLai: 400).
+        async goiApi(duong, than, boQua) {
+          if (!this.secret) return { ma: 0, d: null };
+          const doc = than === undefined;
+          const ac = new AbortController();
+          const hen = doc ? setTimeout(() => ac.abort(), this.hanGet) : 0;
+          let ma = 0;
+          try {
+            const r = await fetch(duong, doc
+              ? { headers: { 'x-progress-key': this.secret }, signal: ac.signal }
+              : { method: 'POST', keepalive: true, body: JSON.stringify(than),
+                  headers: { 'x-progress-key': this.secret, 'content-type': 'application/json' } });
+            ma = r.status;
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const d = await r.json();
+            if (!doc) this.luuLoi = false;
+            return { ma, d };
+          } catch (e) {
+            if (!doc && ma !== 404 && !(boQua && boQua.includes(ma))) this.luuLoi = true;
+            return { ma, d: null };
+          } finally {
+            clearTimeout(hen);
+          }
+        },
+        // Trang đang dở: localStorage ghi mỗi lần lật; máy chủ thưa hơn (rời trang, đọc
+        // xong, hoặc 30 s một lần) — để một truyện 20 trang không thành 20 lượt ghi.
+        // Gọi khi có TIẾN ĐỘ THẬT (lật trang, đọc xong). Đặt cờ `cho` TRƯỚC (kể cả khi
+        // không mã / máy chủ chưa đọc được): lượt gửi bị bỏ qua hay hỏng thì lần mở trang
+        // sau vẫn biết trang máy này mới hơn.
+        guiTrang(ngay, xong) {
+          if (!this.id) return;
+          const c = this.s(this.id);
+          if (!c.cho) { c.cho = true; this.luuCucBo(); }
+          if (!this.online) return;
+          const now = Date.now();
+          if (!ngay && now - (this.guiLuc || 0) < 30000) return;
+          this.guiLuc = now;
+          this.guiMot(this.id, xong);
+        },
+        // Một POST cho một truyện; thành công mới gỡ `cho` — và chỉ khi trong lúc chờ
+        // không có lần lật trang nào mới hơn (nếu có, cờ ở lại cho lượt sau).
+        async guiMot(id, xong) {
+          const c = this.s(id);
+          const than = { user: this.user, truyen: id, trang: c.trang, da_mo: [...c.da_mo] };
+          if (xong || c.doc_xong) than.xong = true;
+          const { ma, d } = await this.goiApi('/api/tapdoc/state', than);
+          // 404: máy chủ không còn truyện này — giữ cờ là gửi lại mãi vô ích.
+          if (ma === 404 || (d && c.trang === than.trang && c.da_mo.length === than.da_mo.length)) {
+            delete c.cho;
+            this.luuCucBo();
+          }
+        },
+        // Đường RỜI (về thư viện, pagehide, ẩn tab): chỉ XẢ cờ đã có, không dựng cờ —
+        // mở truyện rồi quay ra mà không lật trang thì không có gì để gửi.
+        xaCho() {
+          if (!this.id || !this.online || !this.s(this.id).cho) return;
+          this.guiLuc = Date.now();
+          this.guiMot(this.id);
+        },
+
+        // ── thư viện ──────────────────────────────────────────────────────────
+        dsHien() {
+          return this.ds.filter((t) => (this.loc === 'all' || t.cap === this.loc) && !(this.anDaDoc && this.s(t.id).doc_xong));
+        },
+        dsDocTiep() {
+          return this.ds.filter((t) => { const c = this.s(t.id); return !c.doc_xong && c.da_mo.length > 0; });
+        },
+        datAn() { this.anDaDoc = !this.anDaDoc; localStorage.setItem('td_an', this.anDaDoc ? '1' : '0'); },
+        soDung(t) { return Object.values(this.s(t.id).quiz).filter((q) => q.dung).length; },
+        daLamQuiz(t) { return Object.keys(this.s(t.id).quiz).length > 0; },
+        nenThe(t) { return t.bia ? 'background-image:url(' + JSON.stringify(this.goc + 'truyen/' + t.id + '/' + t.bia) + ')' : ''; },
+        moTa(t) {
+          const c = this.s(t.id);
+          if (c.doc_xong) return this.daLamQuiz(t) ? 'Quiz ' + this.soDung(t) + '/' + t.so_cau : 'Chưa làm quiz';
+          return c.da_mo.length ? 'Trang ' + c.trang + ' / ' + t.so_trang : t.so_trang + ' trang · mới';
+        },
+        anhUrl(ten) { return this.goc + 'truyen/' + this.id + '/' + ten; },
+        phutGiay(ms) {
+          const s = Math.round(ms / 1000);
+          return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+        },
+        // Bấm thẻ truyện: mở khoá au/au2 cho iOS NGAY trong cử chỉ này (moKhoa ở _td_doc.html),
+        // trước khi mo() chạm tới await nào — để lần GIỮ một từ đầu tiên trong trang đọc (bong
+        // bóng tự đọc từ một hẹn giờ, ngoài cử chỉ) không câm trên iPad.
+        bamThe(id) { this.moKhoa(); this.mo(id); },
+        async mo(id) {
+          // Chưa trộn xong tiến độ của máy chủ thì chưa biết vào trang nào (hay vào trang xong).
+          if (this.tai) return;
+          this.err = '';
+          try {
+            const r = await fetch(this.goc + 'truyen/' + id + '.json');
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            this.tr = await r.json();
+          } catch (e) {
+            this.err = 'Không mở được truyện này. Con thử lại nhé.';
+            return;
+          }
+          this.id = id;
+          const c = this.s(id);
+          if (c.doc_xong) this.view = 'xong'; else this.vaoDoc(c.trang || 1);
+        },
+        veThuVien() {
+          this.dungDoc(); this.dongBong(); this.dungDoan();
+          this.xaCho();
+          this.view = 'tv'; this.tr = null; this.id = '';
+        },
+      };
+      return Object.assign(coSo, tdDoc(), tdQuiz(), tdThuAm());
+    }
+  </script>
+</head>
+<!-- KHÔNG thêm x-init="init()": Alpine 3 TỰ gọi init() của object x-data — thêm nữa là
+     chạy hai lần (hai lượt GET state, hai bộ listener pagehide). Như study.html. -->
+<body class="bg-slate-100 text-slate-800 min-h-screen" x-data="tapDoc()" :data-td-view="view">
+
+  <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+    <div class="max-w-5xl mx-auto px-4 py-3">
+      <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-slate-500">
+  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
+  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">MK</a><span class="shrink-0 text-slate-300">›</span>
+  <span aria-current="page"  class="truncate font-medium text-slate-700">Tập đọc</span>
+</nav>
+      <h1 class="mt-1 text-lg font-bold">📖 Tập đọc</h1>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-4" x-show="view === 'tv'">
+    <template x-if="tai"><p data-td-dang-tai class="text-slate-500">Đang tải…</p></template>
+    <p x-show="err" x-cloak x-text="err" class="mb-3 px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm"></p>
+    <p x-show="luuLoi" x-cloak data-td-luu-loi class="mb-3 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm">Chưa lưu được tiến độ lên máy chủ. Con cứ đọc tiếp, máy sẽ thử lại.</p>
+    <p x-show="!tai && !secret" x-cloak data-td-khong-ma class="mb-3 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-sm">Tiến độ đang chỉ lưu trên máy này. Nhập mã bí mật để lưu lên máy chủ và để thu âm.</p>
+    
+    <p x-show="!tai && secret && !online" x-cloak data-td-khong-may-chu class="mb-3 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-sm"><span x-show="!maSai">Chưa kết nối được máy chủ, nên lúc này tiến độ chỉ lưu trên máy này.</span><span x-show="maSai" data-td-ma-sai>Máy chủ không nhận mã bí mật đang lưu, nên lúc này tiến độ chỉ lưu trên máy này. Nhập lại mã ở mục 🔑 Mã bí mật cuối trang.</span></p>
+
+    <div class="flex flex-wrap items-center gap-2 mb-4">
+      <button type="button" data-td-loc="all" @click="loc = 'all'" :class="loc === 'all' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="px-4 py-2 rounded-full border text-sm font-medium">Tất cả</button>
+      <button type="button" data-td-loc="A" @click="loc = 'A'" :class="loc === 'A' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="px-4 py-2 rounded-full border text-sm font-medium">🟢 A · Dễ</button>
+      <button type="button" data-td-loc="B" @click="loc = 'B'" :class="loc === 'B' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="px-4 py-2 rounded-full border text-sm font-medium">🟠 B · Vừa</button>
+      <button type="button" data-td-loc="C" @click="loc = 'C'" :class="loc === 'C' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="px-4 py-2 rounded-full border text-sm font-medium">🔴 C · Khó</button>
+      <span class="flex-1"></span>
+      <button type="button" data-td-an @click="datAn()" :aria-pressed="String(anDaDoc)" :class="anDaDoc ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-700 border-slate-300'" class="px-4 py-2 rounded-full border text-sm font-medium"><span x-text="anDaDoc ? '☑' : '☐'"></span> Ẩn truyện đã đọc</button>
+    </div>
+
+    <section data-td-tiep x-show="dsDocTiep().length" x-cloak class="mb-6">
+      <h2 class="text-base font-bold mb-2">Đọc tiếp</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <template x-for="t in dsDocTiep()" :key="'tiep-' + t.id">
+          <button type="button" :data-td-the="t.id" @click="bamThe(t.id)" class="relative flex flex-col text-left bg-white rounded-2xl overflow-hidden shadow">
+            <span class="td-bia block" :class="'td-nen-' + t.cap" :style="nenThe(t)"><span x-show="!t.bia">📖</span></span>
+            <span class="td-cap" :class="'td-cap-' + t.cap" x-text="t.cap"></span>
+            <span class="block px-3 pt-2 font-bold" x-text="t.ten"></span>
+            <span class="block px-3 text-sm text-slate-500" x-text="'Trang ' + s(t.id).trang + ' / ' + t.so_trang"></span>
+            <span class="block mx-3 my-3 h-2 rounded-full bg-slate-200 overflow-hidden"><span class="block h-full bg-indigo-600" :style="'width:' + Math.round(100 * s(t.id).da_mo.length / t.so_trang) + '%'"></span></span>
+          </button>
+        </template>
+      </div>
+    </section>
+
+    <h2 class="text-base font-bold mb-2">Tất cả truyện</h2>
+    <p x-show="!tai && !err && !ds.length" x-cloak data-td-trong class="text-slate-500">Thư viện chưa có truyện nào.</p>
+    <p x-show="!tai && !err && ds.length && !dsHien().length" x-cloak class="text-slate-500">Không có truyện nào khớp bộ lọc.</p>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <template x-for="t in dsHien()" :key="t.id">
+        <button type="button" :data-td-the="t.id" :data-td-cap="t.cap" @click="bamThe(t.id)" :class="s(t.id).doc_xong ? 'td-da-doc' : ''" class="relative flex flex-col text-left bg-white rounded-2xl overflow-hidden shadow">
+          <span class="td-bia block" :class="'td-nen-' + t.cap" :style="nenThe(t)"><span x-show="!t.bia">📖</span></span>
+          <span class="td-cap" :class="'td-cap-' + t.cap" x-text="t.cap"></span>
+          <span x-show="s(t.id).doc_xong" class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-bold">✓ Đã đọc</span>
+          <span class="block px-3 pt-2 font-bold" x-text="t.ten"></span>
+          <span class="block px-3 text-sm text-slate-500" x-text="moTa(t)"></span>
+          <span class="flex gap-2 px-3 py-2 text-lg">
+            <span :class="s(t.id).doc_xong ? '' : 'opacity-25'" title="Đọc truyện">📖</span>
+            <span :class="daLamQuiz(t) ? '' : 'opacity-25'" title="Quiz">❓</span>
+            <span :class="s(t.id).thu ? '' : 'opacity-25'" title="Thu âm">🎙</span>
+          </span>
+        </button>
+      </template>
+    </div>
+    <div class="mt-8 pt-4 border-t border-slate-200"><div data-ma-bi-mat class="text-sm" @lms-key.window="co = !!localStorage.getItem('lms_key')" x-data="{
+       co: !!localStorage.getItem('lms_key'), mo: false, ma: '', loi: '', dang: false,
+       async luu() {
+         const v = this.ma.trim();
+         if (!v || this.dang) return;
+         this.dang = true; this.loi = '';
+         try {
+           const r = await fetch('/api/progress?check=1', { method: 'POST', body: '{}',
+             headers: { 'content-type': 'application/json', 'x-progress-key': v } });
+           if (r.status === 401) { this.loi = 'Mã không đúng.'; return; }
+           if (!r.ok) { this.loi = 'Không kiểm tra được mã lúc này. Thử lại sau.'; return; }
+           localStorage.setItem('lms_key', v);
+           location.reload();
+         } catch (e) {
+           this.loi = 'Không kiểm tra được mã lúc này (mất mạng?). Thử lại sau.';
+         } finally { this.dang = false; }
+       },
+       xoa() {
+         if (!confirm('Xoá mã bí mật trên máy này?')) return;
+         localStorage.removeItem('lms_key'); location.reload();
+       }
+     }">
+  <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Mã bí mật</p>
+  <div class="mt-1 flex flex-wrap items-center gap-2">
+    <span data-mbm-tt class="font-medium" :class="co ? 'text-emerald-700' : 'text-slate-600'" x-text="co ? '🔑 Đã nhập ✓' : '🔑 Chưa nhập'"></span>
+    <button type="button" data-mbm-mo x-show="!mo" @click="mo = true; $nextTick(() => $refs.o.focus())" class="px-3 py-2 rounded-full border border-slate-300 bg-white text-xs font-medium" x-text="co ? 'Đổi mã' : 'Nhập mã'"></button>
+    <button type="button" data-mbm-xoa x-show="co && !mo" @click="xoa()" class="px-3 py-2 rounded-full border border-slate-300 bg-white text-xs font-medium text-rose-700">Xoá mã</button>
+  </div>
+  <form x-show="mo" x-cloak @submit.prevent="luu()" class="mt-2 flex flex-wrap items-center gap-2">
+    <input x-ref="o" data-mbm-o type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" x-model="ma" placeholder="Mã bí mật" aria-label="Mã bí mật" class="h-9 px-3 rounded-lg border border-slate-300 text-sm">
+    <button type="submit" data-mbm-luu :disabled="dang" class="h-9 px-3 rounded-lg bg-indigo-600 text-white text-xs font-semibold" x-text="dang ? 'Đang kiểm…' : 'Lưu'"></button>
+    <button type="button" @click="mo = false; loi = ''" class="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs">Thôi</button>
+  </form>
+  <p data-mbm-loi x-show="loi" x-cloak x-text="loi" class="mt-1 text-xs text-rose-700"></p>
+</div></div>
+  </main>
+
+  <section class="td-doc" x-show="view === 'doc' || view === 'nghe'" x-cloak :class="tr ? 'td-' + tr.cap : ''"
+         @keydown.arrow-left.window="phim(-1, $event)" @keydown.arrow-right.window="phim(1, $event)"
+         @resize.window="bong && $nextTick(() => bong && datBong(bong.i))"
+         @pointerdown="moKhoa()" @pointerup="moKhoa()">
+  <template x-if="tr && (view === 'doc' || view === 'nghe')">
+    <div style="display:contents">
+      <div class="td-thanh">
+        
+        <button type="button" class="td-n" data-td-ve :disabled="dangThu()" @click="view === 'nghe' ? ngheDong() : veThuVien()">← <span x-text="view === 'nghe' ? 'Xong' : 'Thư viện'"></span></button>
+        <b x-text="tr.ten"></b>
+        <span data-td-so-trang x-text="trang + ' / ' + tr.trang.length"></span>
+      </div>
+
+      <div class="td-trang" :style="nenTrang()" @pointerdown="vuotBat($event)" @pointerup="vuotTha($event)" @pointercancel="vuot = null">
+        <div class="td-dem" data-td-dem x-show="thu && thu.dem > 0" x-text="thu ? thu.dem : ''"></div>
+        <p class="td-tb" data-td-thong-bao x-show="thongBao" x-text="thongBao" @click="thongBao = ''"></p>
+        <template x-if="bong">
+          <div class="td-bong" data-td-bong x-ref="bong" :style="bong ? bong.viTri : ''">
+            <button type="button" class="td-bong-x" data-td-bong-dong aria-label="Đóng" @click="dongBong()">✕</button>
+            <div class="td-bong-chu" data-td-bong-chu><template x-for="(c, j) in (bong ? [...bong.chu] : [])" :key="j"><i :class="{ 'td-sang': chuSang(j) }" x-text="c"></i></template></div>
+            <div class="td-bong-buoc" x-show="bong && bong.g.buoc">
+              <template x-for="(b, k) in buocHien()" :key="buocDau() + '-' + k"><span data-td-buoc :class="{ 'td-sang': bong && bong.bs === k + buocDau() }" x-text="b[0]"></span></template>
+            </div>
+            <div class="td-bong-nut">
+              <button type="button" class="td-n" data-td-bong-doc @click="bongDoc()">🔊 Đọc</button>
+              <button type="button" class="td-n td-n-vang" data-td-bong-van x-show="bong && bong.g.buoc" @click="bongVan()">🧩 Đánh vần</button>
+              <button type="button" class="td-n td-n-phu" data-td-bong-tu-day x-show="!dangThu() && !amLoi" @click="bongTuDay()">▶ Đọc từ đây</button>
+            </div>
+            <div class="td-bong-che" x-show="bong && bong.g.buoc">Kiểu đánh vần:
+              <button type="button" data-td-che="daydu" :aria-pressed="String(!!bong && bong.che === 'daydu')" @click="datChe('daydu')">Đầy đủ</button>
+              <button type="button" data-td-che="nhanh" :aria-pressed="String(!!bong && bong.che === 'nhanh')" @click="datChe('nhanh')">Nhanh</button>
+            </div>
+          </div>
+        </template>
+        <div class="td-o" data-td-o x-ref="o" :style="kinh()">
+          <template x-for="(w, i) in tg().tu" :key="trang + '-' + i">
+            <span><template x-if="w.nl"><br></template><span class="td-tu" :data-td-tu="i"
+                  :class="{ 'td-sang': tuSang === i, 'td-nhan': nhanI === i }"
+                  @pointerdown="nhan(i, $event)" @pointermove="diNhan($event)" @pointerup="nha(i)" @pointerleave="huyNhan()" @pointercancel="huyNhan()"
+                  @contextmenu.prevent x-text="w.c"></span> </span>
+          </template>
+        </div>
+      </div>
+
+      <div x-show="view === 'doc'">
+        <div class="td-keo">
+          <span aria-hidden="true">🔊</span>
+          <input type="range" data-td-keo aria-label="Vị trí đang đọc" min="0" step="1"
+                 :max="tg().tu.length - 1" :value="Math.max(0, tuSang)" :disabled="amLoi || dangThu()"
+                 @input="keo($event.target.value)" @change="tha()">
+        </div>
+        <div class="td-dk">
+          
+          <button type="button" class="td-n td-n-phu td-n-tron" data-td-lui aria-label="Trang trước" :class="trang <= 1 ? 'td-mo' : ''" @click="lat(-1)">◀</button>
+          <button type="button" class="td-n" data-td-phat :disabled="amLoi || dangThu()" @click="dangDoc ? tam() : phat()"
+                  x-text="amLoi ? '🔇 Không có tiếng' : (dangDoc ? '⏸ Tạm dừng' : '▶ Nghe đọc')"></button>
+          <span class="td-toc" role="group" aria-label="Tốc độ đọc">
+            <button type="button" data-td-toc="0.8" :disabled="dangThu()" :aria-pressed="String(tocDo === 0.8)" @click="datToc(0.8)" title="Chậm">🐢</button>
+            <button type="button" data-td-toc="1" :disabled="dangThu()" :aria-pressed="String(tocDo === 1)" @click="datToc(1)" title="Vừa">🚶</button>
+            <button type="button" data-td-toc="1.2" :disabled="dangThu()" :aria-pressed="String(tocDo === 1.2)" @click="datToc(1.2)" title="Nhanh">🐇</button>
+          </span>
+          <span class="flex-1"></span>
+          
+<button type="button" class="td-n td-n-do" data-td-thu x-show="thuDuoc() && !(thu && (thu.dang || thu.dem > 0))" @click="thuBatDau()">🎙 Thu âm</button>
+<span class="td-thu-dang" x-show="thu && thu.dang && !thu.het">
+  <span class="td-cham" :class="thu && thu.tam ? 'td-nghi' : ''"></span>
+  <span data-td-thu-gio x-text="thu && thu.dang ? (thu.tam ? 'Đang tạm dừng ở trang ' + trang : 'Đang thu') : ''"></span>
+  <button type="button" class="td-n td-n-phu" data-td-thu-tam x-show="thu && !thu.tam" @click="thuTam()">⏸ Tạm dừng</button>
+  <button type="button" class="td-n td-n-do" data-td-thu-tiep x-show="thu && thu.tam" @click="thuTiep()">▶ Thu tiếp</button>
+  <button type="button" class="td-n td-n-phu" data-td-thu-xong @click="thuXong()" x-text="trang >= tr.trang.length ? '✅ Xong' : '⏹ Kết thúc'"></button>
+</span>
+          <button type="button" class="td-n td-n-phu td-n-tron" data-td-toi aria-label="Trang sau" @click="lat(1)">▶</button>
+        </div>
+      </div>
+      <div class="td-dk" x-show="view === 'nghe'">
+  <template x-if="nghe">
+    <div style="display:contents">
+      <button type="button" class="td-n td-n-phu td-n-tron" data-td-nghe-lui aria-label="Trang trước" :disabled="trang <= 1" @click="ngheLat(-1)">◀</button>
+      <button type="button" class="td-n" data-td-nghe-phat @click="nghePhat()" x-text="nghe.dang ? '⏸ Tạm dừng' : '▶ Nghe'"></button>
+      <span class="td-nghe-keo">
+        <template x-for="(v, k) in ngheVach()" :key="k"><i :style="'left:' + v + '%'"></i></template>
+        <input type="range" data-td-nghe-keo aria-label="Vị trí trong bản thu" min="0" step="100" :max="nghe.tong" :value="nghe.ms" @input="ngheDat($event.target.value)">
+      </span>
+      <span x-text="phutGiay(nghe.ms) + ' / ' + phutGiay(nghe.tong)"></span>
+      <button type="button" class="td-n td-n-phu td-n-tron" data-td-nghe-toi aria-label="Trang sau" :disabled="trang >= tr.trang.length" @click="ngheLat(1)">▶</button>
+    </div>
+  </template>
+</div>
+    </div>
+  </template>
+</section>
+  <section class="td-quiz" data-td-quiz x-show="view === 'quiz'" x-cloak>
+  <template x-if="tr && view === 'quiz'">
+    <div style="display:contents">
+      <div class="td-thanh">
+        <button type="button" class="td-n" data-td-q-thoat @click="thoatQuiz()">← Thoát</button>
+        <b x-text="'Quiz · ' + tr.ten"></b>
+        <span data-td-q-so x-text="'Câu ' + (qi + 1) + ' / ' + qDS.length"></span>
+      </div>
+      <div class="td-q-than">
+        <div class="td-q-truyen" data-td-q-truyen :class="qXem ? 'td-q-mo' : ''">
+          
+          <div class="td-q-anh" x-show="tr.trang[qTrang - 1].anh" :style="qNen()"></div>
+          <p class="td-q-chu"><template x-for="(w, i) in tr.trang[qTrang - 1].tu" :key="qTrang + '-' + i"><span><template x-if="w.nl"><br></template><span x-text="w.c"></span> </span></template></p>
+          <div class="td-q-lat">
+            <button type="button" class="td-n td-n-phu td-n-tron" data-td-q-lui aria-label="Trang trước" :disabled="qTrang <= 1" @click="qLat(-1)">◀</button>
+            <span data-td-q-trang x-text="'Trang ' + qTrang + ' / ' + tr.trang.length"></span>
+            <button type="button" class="td-n td-n-phu td-n-tron" data-td-q-toi aria-label="Trang sau" :disabled="qTrang >= tr.trang.length" @click="qLat(1)">▶</button>
+            <button type="button" class="td-n" data-td-q-dong x-show="qXem" @click="qXem = false">Đóng</button>
+          </div>
+        </div>
+        <div class="td-q-hoi-o">
+          <div class="td-q-dong">
+            <button type="button" class="td-loa" data-td-q-loa="-1" aria-label="Đọc câu hỏi" @click="qDoc(-1)">🔊</button>
+            <p class="td-q-hoi" data-td-q-hoi><template x-for="(w, i) in cau().hoi.tu" :key="qDS[qi] + '-h-' + i"><span><span :class="{ 'td-sang': qTuSang(-1, i) }" x-text="w.c"></span> </span></template></p>
+          </div>
+          <template x-for="(c, j) in cau().chon" :key="qDS[qi] + '-' + j">
+            <div class="td-q-dong">
+              <button type="button" class="td-loa" :data-td-q-loa="j" aria-label="Đọc đáp án" @click="qDoc(j)">🔊</button>
+              <button type="button" class="td-q-chon" :data-td-q-chon="j" :aria-pressed="String(daChon() === j)" @click="chon(j)"><template x-for="(w, i) in c.tu" :key="i"><span><span :class="{ 'td-sang': qTuSang(j, i) }" x-text="w.c"></span> </span></template></button>
+            </div>
+          </template>
+          <div class="td-q-dong" style="align-items:center">
+            <button type="button" class="td-n td-n-phu td-q-xem" data-td-q-xem @click="qXem = true">📖 Xem lại truyện</button>
+            <span style="flex:1"></span>
+            <button type="button" class="td-n" data-td-q-tiep :disabled="daChon() === undefined" @click="cauTiep()" x-text="qi + 1 < qDS.length ? 'Câu tiếp ▶' : 'Xong'"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+</section>
+  
+<section x-show="view === 'thu'" x-cloak data-td-thu-xem class="max-w-xl mx-auto px-4 py-6 text-center">
+  <template x-if="thu && view === 'thu'">
+    <div>
+      <template x-if="thu.loi === 'mic'">
+        <div>
+          <p data-td-thu-mic class="px-4 py-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-left">
+            Máy chưa được phép dùng micro. Con nhờ bố mẹ mở cài đặt của trình duyệt, cho phép trang này dùng <b>micro</b>, rồi bấm Thu âm lại nhé.</p>
+          <p class="mt-4"><button type="button" data-td-thu-bo @click="thuHuy()" class="px-5 py-3 rounded-xl bg-indigo-600 text-white font-semibold">Quay lại</button></p>
+        </div>
+      </template>
+      <template x-if="thu.loi !== 'mic'">
+        <div>
+          <h2 class="text-xl font-bold">Con vừa thu xong!</h2>
+          <p class="text-slate-600 mt-1" x-text="'Dài ' + phutGiay(thu.dai) + ' · ' + thu.doan.length + ' đoạn'"></p>
+          <p data-td-thu-nhac class="mt-3 px-4 py-3 rounded-2xl bg-white shadow text-left" x-text="thuNhac()"></p>
+          <p x-show="thu.loi" :data-td-thu-loi="thu.loi" class="mt-3 px-4 py-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-left" x-text="thuLoiChu()"></p>
+          <p class="mt-5 flex flex-wrap gap-3 justify-center">
+            <button type="button" data-td-thu-nghe :disabled="thu.gui || !thu.doan.length" @click="moKhoa(); ngheMo('thu')" class="px-5 py-3 rounded-xl border border-slate-300 bg-white font-semibold">🎧 Nghe thử</button>
+            <button type="button" data-td-thu-lai :disabled="thu.gui" @click="moKhoa(); thuBatDau()" class="px-5 py-3 rounded-xl border border-slate-300 bg-white font-semibold">🔁 Thu lại</button>
+            <button type="button" data-td-thu-luu x-show="!thu.loi" :disabled="thu.gui || !thu.doan.length" @click="thuLuu()" class="px-5 py-3 rounded-xl bg-emerald-600 text-white font-semibold" x-text="thu.gui ? 'Đang gửi…' : '✅ Lưu'"></button>
+            <button type="button" data-td-thu-gui-lai x-show="thu.loi === 'gui'" :disabled="thu.gui" @click="thuLuu()" class="px-5 py-3 rounded-xl bg-emerald-600 text-white font-semibold" x-text="thu.gui ? 'Đang gửi…' : 'Gửi lại'"></button>
+          </p>
+          <p class="mt-4"><button type="button" data-td-thu-bo :disabled="thu.gui" @click="thuHuy()" class="px-4 py-3 text-slate-500 underline">Bỏ bản thu này</button></p>
+        </div>
+      </template>
+    </div>
+  </template>
+</section>
+
+  
+  <section x-show="view === 'xong'" x-cloak data-td-xong class="max-w-2xl mx-auto px-4 py-6">
+    <template x-if="tr && view === 'xong'">
+      <div>
+        <h2 class="text-xl font-bold text-center" x-text="tr.ten"></h2>
+        <p class="text-center text-lg text-slate-700 mt-1 mb-4" data-td-xong-loi
+           x-text="daLam() ? 'Con trả lời đúng ' + soCauDung() + ' / ' + tr.quiz.length + ' câu' : 'Con đã đọc xong truyện!'"></p>
+        
+        <p x-show="luuLoi" data-td-xong-luu-loi class="mb-3 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm">Chưa lưu được lên máy chủ.</p>
+        
+        <p x-show="!secret" data-td-xong-khong-ma class="mb-3 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-sm">Tiến độ đang chỉ lưu trên máy này. Nhập mã bí mật để lưu lên máy chủ và để thu âm.</p>
+        <p x-show="secret && !online" data-td-xong-khong-may-chu class="mb-3 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-sm">Chưa kết nối được máy chủ, nên lúc này tiến độ chỉ lưu trên máy này.</p>
+        <p x-show="err" x-text="err" @click="err = ''" class="mb-3 px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm"></p>
+
+        <div class="flex items-center gap-3 bg-white rounded-2xl shadow px-4 py-3 mb-3">
+          <span class="text-3xl">📖</span>
+          <span class="flex-1"><b>Đọc truyện</b><span class="block text-sm text-slate-500" x-text="'Đã đọc hết ' + tr.trang.length + ' trang'"></span></span>
+          <button type="button" data-td-xong-doc-lai @click="moKhoa(); vaoDoc(1)" class="px-4 py-3 rounded-xl border border-slate-300 bg-white font-semibold">Đọc lại</button>
+        </div>
+
+        <div class="flex items-center gap-3 bg-white rounded-2xl shadow px-4 py-3 mb-3">
+          <span class="text-3xl">❓</span>
+          <span class="flex-1"><b>Quiz</b><span class="block text-sm text-slate-500"
+                x-text="daLam() ? 'Đúng ' + soCauDung() + ' / ' + tr.quiz.length + ' câu' : 'Chưa làm · ' + tr.quiz.length + ' câu'"></span></span>
+          <button type="button" data-td-xong-lam x-show="!daLam()" @click="moKhoa(); vaoQuiz(false)" class="px-4 py-3 rounded-xl bg-amber-300 text-amber-950 font-semibold">Làm quiz</button>
+          <button type="button" data-td-xong-lam-lai x-show="daLam() && soCauSai() > 0" @click="moKhoa(); vaoQuiz(true)" class="px-4 py-3 rounded-xl bg-amber-300 text-amber-950 font-semibold" x-text="'Làm lại ' + soCauSai() + ' câu sai'"></button>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 bg-white rounded-2xl shadow px-4 py-3 mb-3">
+          <span class="text-3xl">🎙</span>
+          <span class="flex-1"><b>Thu âm</b><span class="block text-sm text-slate-500" data-td-xong-thu
+                x-text="s(id).thu ? 'Đã thu · ' + phutGiay(s(id).thu.dai) + (s(id).thu.xong ? ' · đã hoàn thành' : ' · chưa hoàn thành') : (online ? 'Chưa thu' : (secret ? 'Cần kết nối máy chủ để thu âm' : 'Cần mã bí mật để thu âm'))"></span></span>
+          <button type="button" data-td-xong-thu-bat-dau x-show="online && !s(id).thu" @click="moKhoa(); thuBatDau()" class="px-4 py-3 rounded-xl bg-rose-600 text-white font-semibold">Thu âm</button>
+          <button type="button" data-td-xong-nghe x-show="online && s(id).thu" :disabled="ngheTai" @click="moKhoa(); ngheMo('luu')" class="px-4 py-3 rounded-xl border border-slate-300 bg-white font-semibold">🎧 Nghe lại</button>
+          <button type="button" data-td-xong-thu-lai x-show="online && s(id).thu" @click="moKhoa(); thuBatDau()" class="px-4 py-3 rounded-xl border border-slate-300 bg-white font-semibold">Thu lại</button>
+        </div>
+
+        <p class="text-center mt-5">
+          <button type="button" data-td-xong-ve @click="veThuVien()" class="px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold">📚 Về thư viện</button>
+        </p>
+      </div>
+    </template>
+  </section>
+
+  <audio x-ref="au" preload="auto" @ended="hetAm()" @error="loiAm()"></audio>
+  <audio x-ref="au2" preload="auto"></audio>
+  <audio x-ref="au3" preload="auto" @ended="ngheHetDoan()"></audio>
+</body>
+</html>

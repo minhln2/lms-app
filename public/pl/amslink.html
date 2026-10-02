@@ -10,7 +10,7 @@
   <title>Amslink — PL</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.568a81cb.css">
+  <link rel="stylesheet" href="../assets/tw.8d66202a.css">
   <script defer src="../assets/collapse.d0a27f2d.js"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>
@@ -221,7 +221,7 @@
               body: JSON.stringify({ key, done: next, hash: hash || '' }),
             });
             if (r.status === 401) {
-              this.secret = ''; localStorage.removeItem('lms_key');
+              this.secret = ''; localStorage.removeItem('lms_key'); window.dispatchEvent(new Event('lms-key'));
               throw new Error('Mã bí mật không đúng');
             }
             if (!r.ok) throw new Error('Không lưu được (HTTP ' + r.status + ')');
@@ -262,7 +262,7 @@
               body: JSON.stringify({ updates }),
             });
             if (r.status === 401) {
-              this.secret = ''; localStorage.removeItem('lms_key');
+              this.secret = ''; localStorage.removeItem('lms_key'); window.dispatchEvent(new Event('lms-key'));
               throw new Error('Mã bí mật không đúng');
             }
             if (!r.ok) throw new Error('Không lưu được (HTTP ' + r.status + ')');
@@ -310,7 +310,7 @@
             });
             if (!r.ok) { alert('Mã không đúng.'); return false; }
           } catch { alert('Không kết nối được máy chủ.'); return false; }
-          this.secret = v; localStorage.setItem('lms_key', v);
+          this.secret = v; localStorage.setItem('lms_key', v); window.dispatchEvent(new Event('lms-key'));
           return true;
         },
       };
