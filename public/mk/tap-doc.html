@@ -12,7 +12,7 @@
   <title>Tập đọc — MK</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.8d66202a.css">
+  <link rel="stylesheet" href="../assets/tw.4fd334e9.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   
   <link rel="stylesheet" href="../tap-doc/phong/be-vietnam-pro/font-face.css">
@@ -24,6 +24,10 @@
     .td-cap-A{background:#16a34a}.td-cap-B{background:#f59e0b}.td-cap-C{background:#dc2626}
     .td-nen-A{background-color:#bbf7d0}.td-nen-B{background-color:#fde68a}.td-nen-C{background-color:#ddd6fe}
     .td-da-doc .td-bia{filter:saturate(.45) opacity(.75)}
+    /* Hàng kéo ngang (chế độ Tất cả cấp): thẻ rộng cố định, dừng gọn khi thả tay. Lưới: chế độ một cấp. */
+    .td-hang{display:flex;gap:1rem;overflow-x:auto;scroll-snap-type:x mandatory;padding:.25rem .25rem 1rem;margin:0 -.25rem;-webkit-overflow-scrolling:touch}
+    .td-hang>*{flex:none;width:11.5rem;scroll-snap-align:start}
+    .td-luoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(11.5rem,1fr));gap:1rem}
   </style>
   
   <script>/**
@@ -116,7 +120,7 @@ function tdAnhLat(lat, trang) {
 /* CSS trang đọc của mục Tập đọc — MỘT nguồn cho trang thật (builder), trang đo của lệnh dàn
    trang (src/tapdoc_dantrang.py) và dấu bố cục (tapdoc.dau_bo_cuc). Sửa file này là đổi dấu:
    chạy lại python -m src.tapdoc_dantrang rồi commit truyen/<id>/bo_cuc.json.
-   ⚠ Vị trí ô chữ theo cấp (.td-A/.td-B/.td-C .td-o) phải khớp O_CHU trong src/tapdoc.py. */
+   ⚠ Vùng tối đa của ô chữ (.td-o: left/bottom/max-width/max-height) phải khớp O_CHU trong src/tapdoc.py. */
   /* Phông: tên do builder đặt vào biến --td-phong (bảng truyen/phong.json); @font-face ở vendor/fonts/<tên>/font-face.css. */
   .td-doc,.td-quiz{font-family:var(--td-phong,'Be Vietnam Pro'),system-ui,sans-serif}
   .td-doc{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;background:#fffdf5}
@@ -129,10 +133,14 @@ function tdAnhLat(lat, trang) {
   .td-trang{flex:1;position:relative;overflow:hidden;container-type:size;background:#fef3c7 center/cover no-repeat;touch-action:pan-y}
   .td-o{position:absolute;border-radius:1.4rem;border:1px solid rgba(255,255,255,.55);box-shadow:0 4px 18px rgba(0,0,0,.2);color:#1f1a33;overflow-y:auto;
         -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
-  .td-A .td-o{left:5%;right:5%;bottom:3%;max-height:55%;padding:1rem 1.6rem;font-size:clamp(18px,3.71cqw,38px);line-height:1.75}
-  .td-B .td-o{left:3%;right:3%;top:40%;bottom:2%;padding:.9rem 1.5rem;font-size:clamp(18px,2.64cqw,27px);line-height:1.62}
-  .td-C .td-o{left:39%;right:1.5%;top:2%;bottom:2%;padding:.8rem 1.4rem;font-size:clamp(18px,2.2cqw,22.5px);line-height:1.62}
-  @media (max-width:640px){ .td-A .td-o,.td-B .td-o,.td-C .td-o{left:3%;right:3%;top:34%;bottom:2%;max-height:none} }
+  /* Ô chữ: MỘT kiểu cho cả ba cấp — góc DƯỚI bên TRÁI, rộng và cao theo nội dung trang (tới trần
+     O_CHU), mép dưới cố định (chủ dự án chọn 2026-10-04: ảnh phía trên thoáng). Cấp chỉ khác cỡ chữ. */
+  .td-o{left:3%;bottom:3%;width:fit-content;max-width:55%;max-height:94%;padding:.9rem 1.5rem;line-height:1.62}
+  .td-A .td-o{font-size:clamp(18px,3.32cqw,34px);line-height:1.75}
+  .td-B .td-o{font-size:clamp(18px,2.73cqw,28px)}
+  .td-C .td-o{font-size:clamp(18px,2.2cqw,22.5px);padding:.8rem 1.4rem}
+  /* Khổ hẹp: rộng hết ngang (3% mỗi bên), bám ĐÁY, cao theo nội dung tới 64% trang. */
+  @media (max-width:640px){ .td-o{right:3%;width:auto;max-width:none;max-height:64%} }
   .td-tu{display:inline-block;border-radius:.5rem;padding:0 .12em;cursor:pointer;transition:transform .4s}
   .td-tu.td-sang{background:#fde047}
   .td-tu.td-nhan{background:#ddd6fe;transform:scale(1.12)}
@@ -143,6 +151,15 @@ function tdAnhLat(lat, trang) {
   .td-toc button{font:inherit;border:0;background:#fff;min-width:48px;min-height:44px;font-size:1.35rem;cursor:pointer}
   .td-toc button[aria-pressed=true]{background:#ede9fe}
   .td-toc button:disabled{opacity:.4;cursor:default}
+  /* Ô số trang giữa thanh .td-dk: chiếm phần còn lại để nằm giữa hai cụm nút. Không co
+     (flex-shrink 0): thiếu chỗ thì thanh xuống hàng THẬT để test_tapdoc_thuam mục N bắt được;
+     dãy chấm có trần bề rộng, truyện nhiều trang thì chấm tự thu nhỏ. */
+  .td-so-o{flex:1 0 auto;display:flex;align-items:center;justify-content:center;gap:.5rem;color:#5b21b6;font-weight:600}
+  .td-so-o b{font-variant-numeric:tabular-nums}
+  .td-chams{display:flex;align-items:center;gap:3px;max-width:14rem}
+  .td-ch{display:block;flex:0 1 10px;min-width:4px;height:10px;border-radius:999px;border:2px solid #a78bfa;background:#fff}
+  .td-ch.td-ch-thay{background:#a78bfa}
+  .td-ch.td-ch-nay{flex-basis:16px;min-width:8px;height:16px;background:#7c3aed;border-color:#7c3aed}
   .td-tb{position:absolute;left:50%;top:1rem;transform:translateX(-50%);z-index:6;max-width:90%;padding:.6rem 1rem;border-radius:1rem;background:#1f1a33;color:#fff;font-size:1rem}
   .td-bong{position:absolute;z-index:5;min-width:min(26rem,92%);max-width:92%;padding:1rem 1.25rem .9rem;border-radius:1.4rem;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.35);text-align:center}
   .td-bong-x{position:absolute;right:.25rem;top:.25rem;width:44px;height:44px;border:0;background:none;font-size:1.4rem;cursor:pointer}
@@ -197,6 +214,13 @@ function tdAnhLat(lat, trang) {
         return i >= 0 ? i + 1 : 1;
       },
       tg() { return this.trs[this.trang - 1]; },
+      // Chấm của ô số trang: trang đang đọc · trang đã xem (có câu nằm trong da_thay) · chưa xem.
+      loaiCham(p) {
+        if (p.so === this.trang) return 'td-ch-nay';
+        const d = this.s(this.id).da_thay;
+        for (let k = p.c0; k <= p.c1; k++) if (d.includes(k)) return 'td-ch-thay';
+        return '';
+      },
       // Đang thu âm HOẶC đang đếm ngược 3-2-1: máy đọc trang không được phát (lọt vào bản thu).
       dangThu() { return !!(this.thu && (this.thu.dang || this.thu.dem > 0)); },
       coAnh() { const t = this.tg(); return !!t.anh && !this.anhHong[this.anhUrl(t.anh)]; },
@@ -1099,6 +1123,11 @@ function tdAnhLat(lat, trang) {
     // tiến độ máy chủ chưa có (doc_xong, câu đã thấy) thì vẫn đẩy, với vị trí của máy chủ.
     // Không mang cờ thì vị trí của máy chủ thắng.
     //
+    // Bộ lọc thư viện (spec giao diện 10-03 §2) là thiết lập của MÁY, không nằm trong td_st_<user>:
+    // `loc` (cấp, không lưu) và `loai` = 'all' | 'chua' | 'da' lưu ở localStorage `td_loai`. Khoá cũ
+    // `td_an = '1'` ("Ẩn truyện đã đọc") được hiểu là 'chua' khi chưa có td_loai. td_loai là giá trị
+    // lạ (rác) thì coi như không có: rơi về khoá cũ td_an ('1' → 'chua'), không có nữa thì 'all'.
+    //
     // HỢP ĐỒNG cho Task 8–12 về cờ `cho`:
     //   • CHỈ tiến độ thật dựng cờ: lật trang → `this.luuCucBo(); this.guiTrang(false)`;
     //     đọc xong → `this.guiTrang(true, true)`.
@@ -1118,7 +1147,11 @@ function tdAnhLat(lat, trang) {
         hanGet: window.TD_HAN_GET || 8000,
         view: 'tv',               // tv · doc · quiz · xong · thu · nghe
         ds: [], st: {}, loc: 'all',
-        anDaDoc: localStorage.getItem('td_an') === '1',
+        // Bộ lọc đọc/chưa đọc (hợp đồng ở đầu script): 'all' · 'chua' · 'da'.
+        loai: (() => {
+          const v = localStorage.getItem('td_loai');
+          return ['all', 'chua', 'da'].includes(v) ? v : (localStorage.getItem('td_an') === '1' ? 'chua' : 'all');
+        })(),
         tr: null, id: '', trs: [],   // trs: trang để vẽ (dungTrang) của truyện đang mở
 
         async init() {
@@ -1321,12 +1354,34 @@ function tdAnhLat(lat, trang) {
         },
 
         // ── thư viện ──────────────────────────────────────────────────────────
-        dsHien() {
-          return this.ds.filter((t) => (this.loc === 'all' || t.cap === this.loc) && !(this.anDaDoc && this.s(t.id).doc_xong));
+        // Một truyện lọt bộ lọc cấp + đọc/chưa đọc. "Đã đọc" = doc_xong, làm quiz hay chưa đều tính.
+        khop(t) {
+          const x = this.s(t.id).doc_xong;
+          return (this.loc === 'all' || t.cap === this.loc) && (this.loai === 'all' || (this.loai === 'da') === x);
         },
+        // "Đang đọc": đọc dở, hoặc đọc xong mà chưa làm quiz.
+        dangDo(t) { const c = this.s(t.id); return c.doc_xong ? !this.daLamQuiz(t) : c.da_thay.length > 0; },
+        // Hạng trong một nhóm: đang đọc → chưa đọc → đã xong (đọc xong + có quiz). sort của JS ổn định:
+        // cùng hạng giữ thứ tự index.
+        hang(t) { return this.dangDo(t) ? 0 : (this.s(t.id).doc_xong ? 2 : 1); },
+        xep(ds) { return ds.slice().sort((a, b) => this.hang(a) - this.hang(b)); },
+        // Hàng "📌 Đang đọc" trên cùng — chỉ ở chế độ Tất cả cấp; xếp A → B → C, trong cấp theo index.
         dsDocTiep() {
-          return this.ds.filter((t) => { const c = this.s(t.id); return !c.doc_xong && c.da_thay.length > 0; });
+          if (this.loc !== 'all') return [];
+          const th = { A: 0, B: 1, C: 2 };
+          return this.ds.filter((t) => this.dangDo(t) && this.khop(t)).sort((a, b) => (th[a.cap] ?? 9) - (th[b.cap] ?? 9));
         },
+        // Các nhóm để vẽ: Tất cả → mỗi cấp một hàng kéo ngang (bỏ truyện đã ở hàng Đang đọc);
+        // một cấp → một lưới cuộn dọc. Nhóm rỗng không vẽ.
+        nhom() {
+          const ten = { A: '🟢 A · Dễ', B: '🟠 B · Vừa', C: '🔴 C · Khó' };
+          const caps = this.loc === 'all' ? ['A', 'B', 'C'] : [this.loc];
+          return caps.map((c) => ({
+            cap: c, ten: ten[c],
+            ds: this.xep(this.ds.filter((t) => t.cap === c && this.khop(t) && !(this.loc === 'all' && this.dangDo(t)))),
+          })).filter((g) => g.ds.length);
+        },
+        dsHien() { return this.nhom().flatMap((g) => g.ds).concat(this.dsDocTiep()); },
         // Trang (1-based) chứa mã câu `ma` theo bố cục ở index (trang_dau = mã câu đầu từng trang) —
         // thư viện chưa tải JSON truyện nên không có trs.
         trangTV(t, ma) {
@@ -1335,13 +1390,13 @@ function tdAnhLat(lat, trang) {
           for (let i = 0; i < d.length; i++) if (d[i] <= ma) p = i + 1;
           return p;
         },
-        datAn() { this.anDaDoc = !this.anDaDoc; localStorage.setItem('td_an', this.anDaDoc ? '1' : '0'); },
+        datLoai(v) { this.loai = v; localStorage.setItem('td_loai', v); },
         soDung(t) { return Object.values(this.s(t.id).quiz).filter((q) => q.dung).length; },
         daLamQuiz(t) { return Object.keys(this.s(t.id).quiz).length > 0; },
         nenThe(t) { return t.bia ? 'background-image:url(' + JSON.stringify(this.goc + 'truyen/' + t.id + '/' + t.bia) + ')' : ''; },
         moTa(t) {
           const c = this.s(t.id);
-          if (c.doc_xong) return this.daLamQuiz(t) ? 'Quiz ' + this.soDung(t) + '/' + t.so_hoi : 'Chưa làm quiz';
+          if (c.doc_xong) return this.daLamQuiz(t) ? 'Quiz ' + this.soDung(t) + '/' + t.so_hoi : 'Đã đọc · chưa làm quiz';
           return c.da_thay.length ? 'Trang ' + this.trangTV(t, c.vi_tri) + ' / ' + t.so_trang : t.so_trang + ' trang · mới';
         },
         anhUrl(ten) { return this.goc + 'truyen/' + this.id + '/' + ten; },
@@ -1412,43 +1467,57 @@ function tdAnhLat(lat, trang) {
       <button type="button" data-td-loc="B" @click="loc = 'B'" :class="loc === 'B' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="px-4 py-2 rounded-full border text-sm font-medium">🟠 B · Vừa</button>
       <button type="button" data-td-loc="C" @click="loc = 'C'" :class="loc === 'C' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="px-4 py-2 rounded-full border text-sm font-medium">🔴 C · Khó</button>
       <span class="flex-1"></span>
-      <button type="button" data-td-an @click="datAn()" :aria-pressed="String(anDaDoc)" :class="anDaDoc ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-700 border-slate-300'" class="px-4 py-2 rounded-full border text-sm font-medium"><span x-text="anDaDoc ? '☑' : '☐'"></span> Ẩn truyện đã đọc</button>
+      <span class="inline-flex rounded-full border border-slate-300 overflow-hidden" role="group" aria-label="Lọc theo đã đọc">
+        <button type="button" data-td-loai="all" @click="datLoai('all')" :aria-pressed="String(loai === 'all')" :class="loai === 'all' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-700'" class="px-4 py-2 text-sm font-medium">Tất cả</button>
+        <button type="button" data-td-loai="chua" @click="datLoai('chua')" :aria-pressed="String(loai === 'chua')" :class="loai === 'chua' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-700'" class="px-4 py-2 text-sm font-medium border-l border-slate-300">Chưa đọc</button>
+        <button type="button" data-td-loai="da" @click="datLoai('da')" :aria-pressed="String(loai === 'da')" :class="loai === 'da' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-700'" class="px-4 py-2 text-sm font-medium border-l border-slate-300">✓ Đã đọc</button>
+      </span>
     </div>
 
-    <section data-td-tiep x-show="dsDocTiep().length" x-cloak class="mb-6">
-      <h2 class="text-base font-bold mb-2">Đọc tiếp</h2>
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-        <template x-for="t in dsDocTiep()" :key="'tiep-' + t.id">
-          <button type="button" :data-td-the="t.id" @click="bamThe(t.id)" class="relative flex flex-col text-left bg-white rounded-2xl overflow-hidden shadow">
-            <span class="td-bia block" :class="'td-nen-' + t.cap" :style="nenThe(t)"><span x-show="!t.bia">📖</span></span>
-            <span class="td-cap" :class="'td-cap-' + t.cap" x-text="t.cap"></span>
-            <span class="block px-3 pt-2 font-bold" x-text="t.ten"></span>
-            <span class="block px-3 text-sm text-slate-500" x-text="'Trang ' + trangTV(t, s(t.id).vi_tri) + ' / ' + t.so_trang"></span>
-            <span class="block mx-3 my-3 h-2 rounded-full bg-slate-200 overflow-hidden"><span class="block h-full bg-indigo-600" :style="'width:' + Math.round(100 * s(t.id).da_thay.length / Math.max(1, t.so_cau)) + '%'"></span></span>
-          </button>
-        </template>
+    
+    
+
+    <section data-td-tiep x-show="dsDocTiep().length" x-cloak class="mb-4">
+      <h2 class="text-base font-bold mb-2">📌 Đang đọc <span class="text-slate-400 font-normal" x-text="'(' + dsDocTiep().length + ')'"></span></h2>
+      <div class="td-hang">
+        <template x-for="t in dsDocTiep()" :key="'tiep-' + t.id"><button type="button" :data-td-the="t.id" @click="bamThe(t.id)" :class="s(t.id).doc_xong ? 'td-da-doc' : ''" class="relative flex flex-col text-left bg-white rounded-2xl overflow-hidden shadow">
+      <span class="td-bia block" :class="'td-nen-' + t.cap" :style="nenThe(t)"><span x-show="!t.bia">📖</span></span>
+      <span class="td-cap" :class="'td-cap-' + t.cap" x-text="t.cap"></span>
+      <span x-show="s(t.id).doc_xong" class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-bold">✓ Đã đọc</span>
+      <span class="block px-3 pt-2 font-bold" x-text="t.ten"></span>
+      <span class="block px-3 text-sm text-slate-500" x-text="moTa(t)"></span>
+      <span x-show="!s(t.id).doc_xong" class="block mx-3 mt-3 h-2 rounded-full bg-slate-200 overflow-hidden"><span class="block h-full bg-indigo-600" :style="'width:' + Math.round(100 * s(t.id).da_thay.length / Math.max(1, t.so_cau)) + '%'"></span></span>
+      <span class="flex gap-2 px-3 py-2 text-lg">
+        <span :class="s(t.id).doc_xong ? '' : 'opacity-25'" title="Đọc truyện">📖</span>
+        <span :class="daLamQuiz(t) ? '' : 'opacity-25'" title="Quiz">❓</span>
+        <span :class="s(t.id).thu ? '' : 'opacity-25'" title="Thu âm">🎙</span>
+      </span>
+    </button></template>
       </div>
     </section>
 
-    <h2 class="text-base font-bold mb-2">Tất cả truyện</h2>
     <p x-show="!tai && !err && !ds.length" x-cloak data-td-trong class="text-slate-500">Thư viện chưa có truyện nào.</p>
     <p x-show="!tai && !err && ds.length && !dsHien().length" x-cloak class="text-slate-500">Không có truyện nào khớp bộ lọc.</p>
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-      <template x-for="t in dsHien()" :key="t.id">
-        <button type="button" :data-td-the="t.id" :data-td-cap="t.cap" @click="bamThe(t.id)" :class="s(t.id).doc_xong ? 'td-da-doc' : ''" class="relative flex flex-col text-left bg-white rounded-2xl overflow-hidden shadow">
-          <span class="td-bia block" :class="'td-nen-' + t.cap" :style="nenThe(t)"><span x-show="!t.bia">📖</span></span>
-          <span class="td-cap" :class="'td-cap-' + t.cap" x-text="t.cap"></span>
-          <span x-show="s(t.id).doc_xong" class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-bold">✓ Đã đọc</span>
-          <span class="block px-3 pt-2 font-bold" x-text="t.ten"></span>
-          <span class="block px-3 text-sm text-slate-500" x-text="moTa(t)"></span>
-          <span class="flex gap-2 px-3 py-2 text-lg">
-            <span :class="s(t.id).doc_xong ? '' : 'opacity-25'" title="Đọc truyện">📖</span>
-            <span :class="daLamQuiz(t) ? '' : 'opacity-25'" title="Quiz">❓</span>
-            <span :class="s(t.id).thu ? '' : 'opacity-25'" title="Thu âm">🎙</span>
-          </span>
-        </button>
-      </template>
-    </div>
+    <template x-for="g in nhom()" :key="g.cap">
+      <section :data-td-nhom="g.cap" class="mb-4">
+        <h2 class="text-base font-bold mb-2"><span x-text="g.ten"></span> <span class="text-slate-400 font-normal" x-text="'(' + g.ds.length + ')'"></span></h2>
+        <div :class="loc === 'all' ? 'td-hang' : 'td-luoi'">
+          <template x-for="t in g.ds" :key="t.id"><button type="button" :data-td-the="t.id" :data-td-cap="t.cap" @click="bamThe(t.id)" :class="s(t.id).doc_xong ? 'td-da-doc' : ''" class="relative flex flex-col text-left bg-white rounded-2xl overflow-hidden shadow">
+      <span class="td-bia block" :class="'td-nen-' + t.cap" :style="nenThe(t)"><span x-show="!t.bia">📖</span></span>
+      <span class="td-cap" :class="'td-cap-' + t.cap" x-text="t.cap"></span>
+      <span x-show="s(t.id).doc_xong" class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-bold">✓ Đã đọc</span>
+      <span class="block px-3 pt-2 font-bold" x-text="t.ten"></span>
+      <span class="block px-3 text-sm text-slate-500" x-text="moTa(t)"></span>
+      
+      <span class="flex gap-2 px-3 py-2 text-lg">
+        <span :class="s(t.id).doc_xong ? '' : 'opacity-25'" title="Đọc truyện">📖</span>
+        <span :class="daLamQuiz(t) ? '' : 'opacity-25'" title="Quiz">❓</span>
+        <span :class="s(t.id).thu ? '' : 'opacity-25'" title="Thu âm">🎙</span>
+      </span>
+    </button></template>
+        </div>
+      </section>
+    </template>
     <div class="mt-8 pt-4 border-t border-slate-200"><div data-ma-bi-mat class="text-sm" @lms-key.window="co = !!localStorage.getItem('lms_key')" x-data="{
        co: !!localStorage.getItem('lms_key'), mo: false, ma: '', loi: '', dang: false,
        async luu() {
@@ -1496,7 +1565,8 @@ function tdAnhLat(lat, trang) {
         
         <button type="button" class="td-n" data-td-ve :disabled="dangThu()" @click="view === 'nghe' ? ngheDong() : veThuVien()">← <span x-text="view === 'nghe' ? 'Xong' : 'Thư viện'"></span></button>
         <b x-text="tr.ten"></b>
-        <span data-td-so-trang x-text="trang + ' / ' + trs.length"></span>
+        
+        <span class="td-n" aria-hidden="true" style="visibility:hidden" x-text="view === 'nghe' ? '← Xong' : '← Thư viện'"></span>
       </div>
 
       <div class="td-trang" :style="nenTrang()" @pointerdown="vuotBat($event)" @pointerup="vuotTha($event)" @pointercancel="vuot = null">
@@ -1542,12 +1612,17 @@ function tdAnhLat(lat, trang) {
           <button type="button" class="td-n td-n-phu td-n-tron" data-td-lui aria-label="Trang trước" :class="trang <= 1 ? 'td-mo' : ''" @click="lat(-1)">◀</button>
           <button type="button" class="td-n" data-td-phat :disabled="amLoi || dangThu()" @click="dangDoc ? tam() : phat()"
                   x-text="amLoi ? '🔇 Không có tiếng' : (dangDoc ? '⏸ Tạm dừng' : '▶ Nghe đọc')"></button>
-          <span class="td-toc" role="group" aria-label="Tốc độ đọc">
+          
+          <span class="td-toc" role="group" aria-label="Tốc độ đọc" x-show="!dangThu()">
             <button type="button" data-td-toc="0.8" :disabled="dangThu()" :aria-pressed="String(tocDo === 0.8)" @click="datToc(0.8)" title="Chậm">🐢</button>
             <button type="button" data-td-toc="1" :disabled="dangThu()" :aria-pressed="String(tocDo === 1)" @click="datToc(1)" title="Vừa">🚶</button>
             <button type="button" data-td-toc="1.2" :disabled="dangThu()" :aria-pressed="String(tocDo === 1.2)" @click="datToc(1.2)" title="Nhanh">🐇</button>
           </span>
-          <span class="flex-1"></span>
+          
+          <span class="td-so-o" data-td-trang-o>
+            <span>Trang</span> <b data-td-so-trang x-text="trang + ' / ' + trs.length"></b>
+            <span class="td-chams" aria-hidden="true" x-show="!dangThu()"><template x-for="p in trs" :key="p.so"><i class="td-ch" :data-td-cham="p.so" :class="loaiCham(p)"></i></template></span>
+          </span>
           
 <button type="button" class="td-n td-n-do" data-td-thu x-show="thuDuoc() && !(thu && (thu.dang || thu.dem > 0))" @click="thuBatDau()">🎙 Thu âm</button>
 <span class="td-thu-dang" x-show="thu && thu.dang && !thu.het">
@@ -1565,6 +1640,7 @@ function tdAnhLat(lat, trang) {
     <div style="display:contents">
       <button type="button" class="td-n td-n-phu td-n-tron" data-td-nghe-lui aria-label="Trang trước" :disabled="trang <= 1" @click="ngheLat(-1)">◀</button>
       <button type="button" class="td-n" data-td-nghe-phat @click="nghePhat()" x-text="nghe.dang ? '⏸ Tạm dừng' : '▶ Nghe'"></button>
+      <span data-td-nghe-trang x-text="trang + ' / ' + trs.length"></span>
       <span class="td-nghe-keo">
         <template x-for="(v, k) in ngheVach()" :key="k"><i :style="'left:' + v + '%'"></i></template>
         <input type="range" data-td-nghe-keo aria-label="Vị trí trong bản thu" min="0" step="100" :max="nghe.tong" :value="nghe.ms" @input="ngheDat($event.target.value)">
@@ -1588,7 +1664,7 @@ function tdAnhLat(lat, trang) {
       <div class="td-q-than">
         <div class="td-q-truyen" data-td-q-truyen :class="qXem ? 'td-q-mo' : ''">
           
-          <div class="td-q-anh" x-show="trs[qTrang - 1].anh" :style="qNen()"></div>
+          <template x-if="trs[qTrang - 1].anh"><div class="td-q-anh" :style="qNen()"></div></template>
           <p class="td-q-chu"><template x-for="(w, i) in trs[qTrang - 1].tu" :key="qTrang + '-' + i"><span><template x-if="w.nl"><br></template><span x-text="w.c"></span> </span></template></p>
           <div class="td-q-lat">
             <button type="button" class="td-n td-n-phu td-n-tron" data-td-q-lui aria-label="Trang trước" :disabled="qTrang <= 1" @click="qLat(-1)">◀</button>
