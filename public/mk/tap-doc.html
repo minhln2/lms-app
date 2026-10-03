@@ -14,6 +14,9 @@
        thay dòng này bằng Tailwind CDN. -->
   <link rel="stylesheet" href="../assets/tw.8d66202a.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
+  
+  <link rel="stylesheet" href="../tap-doc/phong/be-vietnam-pro/font-face.css">
+  
   <style>
     [x-cloak]{display:none!important}
     .td-bia{height:7.5rem;display:grid;place-items:center;font-size:3.2rem;background-size:cover;background-position:center}
@@ -32,7 +35,8 @@
  * không `import`, không API của Worker, và mọi thứ xuất ra đều bắt đầu bằng
  * `export const` hoặc `export function` ở đầu dòng.
  *
- * `lat`: nhật ký lật trang `[[ms trên trục bản thu, số trang], …]`.
+ * `lat` lưu theo MÃ CÂU: `[[ms trên trục bản thu, mã câu đầu trang], …]` (spec 2026-10-03 §6).
+ * `tdAnhLat` đổi nó sang `[[ms, số trang]]` của bố cục HIỆN HÀNH; các hàm còn lại làm trên số trang.
  */
 const TD = {
   GHE_MIN: 1000,                 // lần ghé ngắn hơn là vuốt nhầm, bỏ
@@ -91,8 +95,30 @@ function tdNhayToi(ghe, trang) {
   for (const g of ghe) if (g.trang === trang && (!b || g.den - g.tu > b.den - b.tu)) b = g;
   return b ? b.tu : null;
 }
+
+/**
+ * Nhật ký `[[ms, mã câu]]` → `[[ms, số trang 1-based]]` theo bố cục `trang` = `[{canh, tu, den}]`
+ * (bố cục HIỆN HÀNH — đổi bố cục thì bản thu cũ vẫn tính và vẫn nghe lại đúng chỗ). Mục hỏng, hay
+ * mã câu không nằm trong trang nào (truyện đã sửa chữ), bị BỎ — không ném lỗi.
+ */
+function tdAnhLat(lat, trang) {
+  const ds = Array.isArray(trang) ? trang : [];
+  const out = [];
+  for (const x of Array.isArray(lat) ? lat : []) {
+    if (!Array.isArray(x) || !Number.isFinite(x[0]) || !Number.isInteger(x[1]) || x[1] < 0) continue;
+    const p = ds.findIndex((t) => t && Number.isInteger(t.tu) && Number.isInteger(t.den) && t.tu <= x[1] && x[1] <= t.den);
+    if (p >= 0) out.push([x[0], p + 1]);
+  }
+  return out;
+}
 </script>
   <style>
+/* CSS trang đọc của mục Tập đọc — MỘT nguồn cho trang thật (builder), trang đo của lệnh dàn
+   trang (src/tapdoc_dantrang.py) và dấu bố cục (tapdoc.dau_bo_cuc). Sửa file này là đổi dấu:
+   chạy lại python -m src.tapdoc_dantrang rồi commit truyen/<id>/bo_cuc.json.
+   ⚠ Vị trí ô chữ theo cấp (.td-A/.td-B/.td-C .td-o) phải khớp O_CHU trong src/tapdoc.py. */
+  /* Phông: tên do builder đặt vào biến --td-phong (bảng truyen/phong.json); @font-face ở vendor/fonts/<tên>/font-face.css. */
+  .td-doc,.td-quiz{font-family:var(--td-phong,'Be Vietnam Pro'),system-ui,sans-serif}
   .td-doc{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;background:#fffdf5}
   .td-thanh{flex:none;display:flex;align-items:center;gap:.5rem;padding:.25rem .75rem;min-height:48px;background:#6d28d9;color:#fff}
   .td-thanh b{flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -131,6 +157,7 @@ function tdNhayToi(ghe, trang) {
   .td-bong-che{margin-top:.6rem;font-size:.95rem;color:#555}
   .td-bong-che button{font:inherit;min-height:44px;padding:.3rem .9rem;border-radius:999px;border:2px solid #c4b5fd;background:#fff;cursor:pointer}
   .td-bong-che button[aria-pressed=true]{background:#ede9fe;border-color:#7c3aed;font-weight:700}
+
 </style>
 <script>
   function tdDoc() {
@@ -153,7 +180,23 @@ function tdNhayToi(ghe, trang) {
       henLat: 0,               // hẹn tự lật sau khi hết audio trang
       vong: 0,                 // số hiệu vòng tô sáng đang sống
 
-      tg() { return this.tr.trang[this.trang - 1]; },
+      // Trang để vẽ: nối từ của các câu tu..den của bố cục (spec 10-03 §5). Từ đầu trang luôn
+      // nl=false — trang mở giữa cảnh bằng câu thoại xuống dòng không được có dòng trống ở đầu ô
+      // chữ. Bản Python giống hệt: tapdoc.trang_ve() (tests/test_tapdoc_trang.py chốt hai bên khớp).
+      // Lệnh dàn trang (src/tapdoc_dantrang.py) đo bằng CHÍNH hàm này.
+      dungTrang(t, i, tr) {
+        tr = tr || this.tr;
+        const g = tr.canh[t.canh], tu = [];
+        for (let k = t.tu; k <= t.den; k++) for (const w of tr.cau[k].tu) tu.push(tu.length ? w : { ...w, nl: false });
+        return { so: i + 1, canh: t.canh, c0: t.tu, c1: t.den, tu, am: g.am, anh: g.anh, dac: g.dac, nhoe: g.nhoe,
+                 bd: tr.cau[t.tu].bd, kt: tr.cau[t.den].kt };
+      },
+      // Trang (1-based) chứa mã câu `ma` theo bố cục đang dùng; không có (truyện đã sửa chữ) → 1.
+      trangCua(ma) {
+        const i = this.trs.findIndex((p) => p.c0 <= ma && ma <= p.c1);
+        return i >= 0 ? i + 1 : 1;
+      },
+      tg() { return this.trs[this.trang - 1]; },
       // Đang thu âm HOẶC đang đếm ngược 3-2-1: máy đọc trang không được phát (lọt vào bản thu).
       dangThu() { return !!(this.thu && (this.thu.dang || this.thu.dem > 0)); },
       coAnh() { const t = this.tg(); return !!t.anh && !this.anhHong[this.anhUrl(t.anh)]; },
@@ -175,55 +218,72 @@ function tdNhayToi(ghe, trang) {
       // Chuyển sang trang n: dừng mọi tiếng, ghi nhớ, nạp audio. KHÔNG tự phát.
       // `luocMo` = lượt mở truyện (vaoDoc): ghi cục bộ nhưng không tính là tiến độ để gửi.
       datTrang(n, luocMo) {
+        const dangTruoc = this.dangDoc;   // đang nghe đọc (tự lật): trang cùng file hỏng phải bỏ qua, không dừng
         this.dungDoc(); this.dongBong(); this.dungDoan();
         this.huyNhan(); this.cuoiI = -1;   // hẹn giữ / "chạm lại" của trang cũ không được chạy sang trang mới
-        this.trang = Math.max(1, Math.min(this.tr.trang.length, n));
-        const c = this.s(this.id);
-        c.trang = this.trang;
-        if (!c.da_mo.includes(this.trang)) { c.da_mo.push(this.trang); c.da_mo.sort((x, y) => x - y); }
+        this.trang = Math.max(1, Math.min(this.trs.length, n));
+        const g = this.tg(), c = this.s(this.id);
+        // Vị trí theo MÃ CÂU (spec 10-03 §6): câu đầu trang; mọi câu của trang là "đã thấy".
+        c.vi_tri = g.c0;
+        let them = false;
+        for (let k = g.c0; k <= g.c1; k++) if (!c.da_thay.includes(k)) { c.da_thay.push(k); them = true; }
+        if (them) c.da_thay.sort((x, y) => x - y);
         this.luuCucBo();
         if (!luocMo) this.guiTrang(false);
         this.tuSang = -1; this.amLoi = false; this.thongBao = '';
-        const au = this.$refs.au;
-        au.src = this.amUrl(this.tg().am);
+        const au = this.$refs.au, url = this.amUrl(g.am);
+        // Audio của trang là ĐOẠN [bd, kt) của file cảnh. Cùng cảnh thì giữ file đang nạp (không tải
+        // lại); file đó đã lỗi thì trang này cũng không có tiếng — và đang nghe đọc thì bỏ qua trang
+        // này như mọi trang mất tiếng (spec #1 §9): `error` của thẻ audio không báo lại cho cùng một
+        // file, nên phải tự gọi loiAm(). Đặt currentTime trước khi có metadata = vị trí bắt đầu mặc
+        // định: trình duyệt tua tới đó khi nạp xong.
+        if (au.dataset.url !== url || au.error) { au.dataset.url = url; au.src = url; }   // lỗi tải → nạp lại (thử lại khi lật / mở lại)
+        else if (au.error) {
+          if (dangTruoc) { this.dangDoc = true; this.loiAm(); }
+          else this.amLoi = true;
+        }
+        au.currentTime = g.bd;
         // Safari iOS có thể đặt lại playbackRate về defaultPlaybackRate khi nạp src mới: đặt cả hai.
         au.defaultPlaybackRate = this.tocDo; au.playbackRate = this.tocDo; au.preservesPitch = true;
-        if (this.tg().anh) {
-          const u = this.anhUrl(this.tg().anh), im = new Image();
+        if (g.anh) {
+          const u = this.anhUrl(g.anh), im = new Image();
           im.onerror = () => { this.anhHong[u] = true; };
           im.src = u;
         }
         this.taiTruoc();
-        if (this.thu && this.thu.dang) this.thuLat(this.trang);
+        if (this.thu && this.thu.dang) this.thuLat(g.c0);
       },
-      // Tải trước ảnh + audio trang kế để lật không phải chờ.
+      // Tải trước ảnh + audio trang kế để lật không phải chờ (cùng cảnh thì file đã có sẵn).
       taiTruoc() {
-        const t = this.tr.trang[this.trang];
+        const t = this.trs[this.trang];
         if (!t) return;
         if (t.anh) new Image().src = this.anhUrl(t.anh);
-        fetch(this.amUrl(t.am)).catch(() => {});
+        if (t.am !== this.tg().am) fetch(this.amUrl(t.am)).catch(() => {});
       },
 
       lat(d) {
         if (this.thu && this.thu.dem > 0) return;   // đếm ngược thu âm: nhật ký phải bắt đầu ở trang 1 (nút, vuốt, phím đều qua đây)
         const n = this.trang + d;
         if (n < 1) return;
-        if (n > this.tr.trang.length) return this.hetTruyen();
+        if (n > this.trs.length) return this.hetTruyen();
         const dang = this.dangDoc;
         this.datTrang(n);
         if (dang) this.phat();           // đang nghe đọc mà lật → đọc trang mới từ đầu
       },
-      // ▶ ở trang cuối. "Đã đọc" = đã mở MỌI trang (spec §7.2), không đòi thời gian.
+      // ▶ ở trang cuối. "Đã đọc" = đã HIỆN mọi câu (spec 10-03 §6), không đòi thời gian.
       hetTruyen() {
-        const c = this.s(this.id), n = this.tr.trang.length;
-        // Đang thu mà đã mở đủ mọi trang: cũng là ĐỌC XONG — đánh dấu trước khi sang màn xem lại bản thu.
+        const c = this.s(this.id);
+        const du = this.tr.cau.every((_, k) => c.da_thay.includes(k));
+        // Đang thu mà đã hiện đủ mọi câu: cũng là ĐỌC XONG — đánh dấu trước khi sang màn xem lại bản thu.
         if (this.thu && this.thu.dang) {
-          if (c.da_mo.length >= n && !c.doc_xong) { c.doc_xong = true; this.luuCucBo(); this.guiTrang(true, true); }
+          if (du && !c.doc_xong) { c.doc_xong = true; this.luuCucBo(); this.guiTrang(true, true); }
           return this.thuXong();
         }
-        if (c.da_mo.length < n) {
-          const thieu = [];
-          for (let p = 1; p <= n; p++) if (!c.da_mo.includes(p)) thieu.push(p);
+        if (!du) {
+          const thieu = this.trs.filter((p) => {
+            for (let k = p.c0; k <= p.c1; k++) if (!c.da_thay.includes(k)) return true;
+            return false;
+          }).map((p) => p.so);
           this.thongBao = 'Con còn trang chưa mở: ' + thieu.join(', ');
           return;
         }
@@ -236,7 +296,9 @@ function tdNhayToi(ghe, trang) {
       phat() {
         if (this.amLoi || this.dangThu()) return;
         this.dongBong(); this.dungDoan();      // một nguồn tiếng một lúc: tắt tiếng từ đang đọc dở
-        const au = this.$refs.au;
+        const au = this.$refs.au, g = this.tg();
+        // Ngoài đoạn của trang (vừa hết đoạn, hay chưa tua tới bd) → đọc lại từ đầu trang.
+        if (au.currentTime < g.bd - 0.05 || au.currentTime >= g.kt - 0.05) au.currentTime = g.bd;
         au.playbackRate = this.tocDo;
         this.dangDoc = true;
         // play() bị từ chối vì BA lý do khác hẳn nhau — gộp làm một là hỏng:
@@ -251,15 +313,28 @@ function tdNhayToi(ghe, trang) {
       },
       tam() { clearTimeout(this.henLat); this.$refs.au.pause(); this.dangDoc = false; },
       dungDoc() { clearTimeout(this.henLat); if (this.$refs.au) this.$refs.au.pause(); this.dangDoc = false; },
-      // Vòng tô sáng: mỗi khung hình hỏi audio đang ở giây nào.
+      // Vòng tô sáng: mỗi khung hình hỏi audio đang ở giây nào. Hết ĐOẠN của trang (không phải
+      // hết file — file là của cả cảnh) thì dừng ngay ở câu cuối trang rồi tự lật như cũ.
       chay() {
         const v = this.vong = (this.vong || 0) + 1;      // chỉ MỘT vòng sống: vòng cũ tự thôi
         const buoc = () => {
           if (v !== this.vong || !this.dangDoc || this.view !== 'doc') return;
-          if (!this.$refs.au.paused) this.tuSang = this.tuLuc(this.$refs.au.currentTime);
+          const au = this.$refs.au;
+          if (!au.paused) {
+            if (au.currentTime >= this.tg().kt - 0.02) { au.pause(); this.hetAm(); return; }
+            this.tuSang = this.tuLuc(au.currentTime);
+          }
           requestAnimationFrame(buoc);
         };
         requestAnimationFrame(buoc);
+      },
+      // Dự phòng cho vòng tô sáng: tab ẩn / iPad khoá màn hình thì requestAnimationFrame bị hãm (có
+      // khi đứng hẳn) mà audio vẫn chạy — `timeupdate` (~4 lần/s) vẫn tới, nên vẫn dừng được ở câu
+      // cuối trang thay vì đọc lấn sang câu của trang sau. Chạy cùng vòng rAF vô hại: đã dừng thì thôi.
+      hetDoan() {
+        const au = this.$refs.au;
+        if (!this.dangDoc || this.view !== 'doc' || !this.tr || !au || au.paused) return;
+        if (au.currentTime >= this.tg().kt - 0.02) { au.pause(); this.hetAm(); }
       },
       tuLuc(giay) {
         const a = this.tg().tu;
@@ -269,9 +344,10 @@ function tdNhayToi(ghe, trang) {
       },
       // Hết audio của trang: nghỉ 1 s rồi tự lật và đọc tiếp (spec §7.2).
       hetAm() {
+        clearTimeout(this.henLat);   // vòng tô sáng và @ended có thể cùng báo hết đoạn
         this.tuSang = -1;
         if (!this.dangDoc) return;
-        if (this.trang >= this.tr.trang.length) { this.dangDoc = false; return; }
+        if (this.trang >= this.trs.length) { this.dangDoc = false; return; }
         this.henLat = setTimeout(() => {
           if (!this.dangDoc) return;
           this.datTrang(this.trang + 1);
@@ -286,7 +362,7 @@ function tdNhayToi(ghe, trang) {
         this.amLoi = true;
         this.tuSang = -1;
         if (!this.dangDoc) return;
-        if (this.trang >= this.tr.trang.length) { this.dangDoc = false; return; }
+        if (this.trang >= this.trs.length) { this.dangDoc = false; return; }
         clearTimeout(this.henLat);
         this.henLat = setTimeout(() => {
           if (!this.dangDoc) return;
@@ -436,7 +512,7 @@ function tdNhayToi(ghe, trang) {
         if (g) { this.phatDoan(g, g.buoc ? g.t[g.t.length - 1] : 0, g.dai, het); return; }
         // Thiếu audio của tiếng này: đọc bằng đúng đoạn của từ đó trong audio trang (spec §9).
         if (this.amLoi) return het();
-        const a = this.$refs.au, tu = this.tg().tu, den = i + 1 < tu.length ? tu[i + 1].t : this.tg().dai;
+        const a = this.$refs.au, tu = this.tg().tu, den = i + 1 < tu.length ? tu[i + 1].t : this.tg().kt;
         a.currentTime = tu[i].t; a.playbackRate = this.tocDo;
         a.play().catch(() => {});
         const v = () => {
@@ -559,15 +635,15 @@ function tdNhayToi(ghe, trang) {
         if (!this.qDS.length) return;
         this.dungDoc(); this.dongBong(); this.dungDoan();
         this.qi = 0; this.qChon = {}; this.qXem = false; this.qSang = null;
-        this.qTrang = this.tr.cap === 'A' ? this.cau().trang : 1;
+        this.qTrang = this.tr.cap === 'A' ? this.trangCua(this.cau().ma_cau) : 1;
         this.view = 'quiz';
       },
       cau() { return this.tr.quiz[this.qDS[this.qi]]; },
       daChon() { return this.qChon[this.qDS[this.qi]]; },
       chon(j) { this.qChon[this.qDS[this.qi]] = j; },
-      qLat(d) { this.qTrang = Math.max(1, Math.min(this.tr.trang.length, this.qTrang + d)); },
+      qLat(d) { this.qTrang = Math.max(1, Math.min(this.trs.length, this.qTrang + d)); },
       qNen() {
-        const t = this.tr.trang[this.qTrang - 1];
+        const t = this.trs[this.qTrang - 1];
         return t.anh ? 'background-image:url(' + JSON.stringify(this.anhUrl(t.anh)) + ')' : '';
       },
       async cauTiep() {
@@ -575,7 +651,7 @@ function tdNhayToi(ghe, trang) {
         this.dungDoan(); this.qSang = null;
         if (this.qi + 1 < this.qDS.length) {
           this.qi++;
-          if (this.tr.cap === 'A') this.qTrang = this.cau().trang;
+          if (this.tr.cap === 'A') this.qTrang = this.trangCua(this.cau().ma_cau);
           return;
         }
         await this.nopQuiz();
@@ -701,11 +777,11 @@ function tdNhayToi(ghe, trang) {
         const t = this.thu;
         return t.goc + (t.dang && !t.tam ? performance.now() - t.t0 : 0);
       },
-      // Trang đọc gọi mỗi lần lật (datTrang). Đang tạm dừng thì không ghi.
-      thuLat(trang) {
+      // Trang đọc gọi mỗi lần lật (datTrang) với MÃ CÂU đầu trang mới. Đang tạm dừng thì không ghi.
+      thuLat(ma) {
         const t = this.thu;
         if (!t || !t.dang || t.tam) return;
-        t.lat.push([Math.round(this.thuMs()), trang]);
+        t.lat.push([Math.round(this.thuMs()), ma]);
       },
       thuByte() { return this.thu.doan.reduce((s, d) => s + d.blob.size, 0); },
 
@@ -737,7 +813,7 @@ function tdNhayToi(ghe, trang) {
         may.luong.getAudioTracks().forEach((x) => { x.onended = () => this.thuTam(); });   // micro bị hệ thống ngắt
         rec.start();
         t.t0 = t0; t.dang = true; t.tam = false;
-        this.thuLat(this.trang);
+        this.thuLat(this.tg().c0);
         clearInterval(may.hen);
         may.hen = setInterval(() => { if (this.thu === t && t.dang && !t.tam && this.thuMs() >= TD.DAI_MAX) this.thuXong(); }, 1000);
       },
@@ -804,7 +880,7 @@ function tdNhayToi(ghe, trang) {
         if (this.thu !== t) return;
         this.thuTatMay();
         t.dang = false; t.tam = false; t.dai = t.goc;
-        t.kq = tdHoanThanh(JSON.parse(JSON.stringify(t.lat)), t.dai, this.tr.trang.length, this.tr.dai_ms);
+        t.kq = tdHoanThanh(tdAnhLat(JSON.parse(JSON.stringify(t.lat)), this.tr.trang), t.dai, this.trs.length, this.tr.dai_ms);
         // Lớn quá thì máy chủ chắc chắn từ chối (413): nói ngay, đừng để bé chờ gửi.
         // Micro hỏng giữa chừng ('mic' từ thuTiep) mà đã có đoạn → vẫn là bản thu dùng được: hiện màn
         // xem lại bình thường (Lưu / Nghe thử). Màn báo micro chỉ khi chưa thu được gì.
@@ -922,7 +998,7 @@ function tdNhayToi(ghe, trang) {
         }
         this.dungDoc(); this.dongBong(); this.dungDoan();
         if (this.nghe) this.nghe.doan.forEach((x) => URL.revokeObjectURL(x.url));   // trình phát cũ (nếu còn)
-        this.nghe = { nguon, doan, ghe: tdGhe(JSON.parse(JSON.stringify(lat)), dai), tong: dai, ms: 0, dang: false, k: -1, tua: false };
+        this.nghe = { nguon, doan, ghe: tdGhe(tdAnhLat(JSON.parse(JSON.stringify(lat)), this.tr.trang), dai), tong: dai, ms: 0, dang: false, k: -1, tua: false };
         this.view = 'nghe';
         this.ngheDat(0);
       },
@@ -959,7 +1035,7 @@ function tdNhayToi(ghe, trang) {
       // Trang hiển thị đi theo nhật ký lật của bé (không đụng "trang đang dở" đã lưu).
       ngheTrang() {
         const p = tdTrangLuc(this.nghe.ghe, this.nghe.ms);
-        if (p !== this.trang && p >= 1 && p <= this.tr.trang.length) { this.trang = p; this.tuSang = -1; }
+        if (p !== this.trang && p >= 1 && p <= this.trs.length) { this.trang = p; this.tuSang = -1; }
       },
       // ⚠ iOS: play() gọi NGAY trong cú bấm — đừng chèn await phía trước.
       nghePhat() {
@@ -1007,17 +1083,21 @@ function tdNhayToi(ghe, trang) {
   }
 </script>
   <script>
-    // Mục Tập đọc (spec 2026-10-02). Trang này là VỎ: danh sách truyện và từng truyện
+    // Mục Tập đọc (spec 2026-10-02, 2026-10-03). Trang này là VỎ: danh sách truyện và từng truyện
     // nạp bằng fetch từ tap-doc/ — sửa một truyện không phải dựng lại trang.
+    //
+    // Vị trí lưu theo MÃ CÂU, không theo số trang (spec 10-03 §6): `vi_tri` = mã câu đầu của
+    // trang đang dở, `da_thay` = các mã câu đã hiện. Trang chỉ là cách xếp câu (`tr.trang`, từ
+    // bo_cuc.json; `trs` = trang để vẽ) — đổi bố cục thì vi_tri vẫn mở đúng trang chứa câu đó.
     //
     // Trạng thái sống ở HAI nơi: localStorage (luôn có, kể cả không mã / mất mạng) và
     // máy chủ (khi có mã). Máy chủ thắng ở những gì chỉ nó biết chắc (quiz, bản thu);
-    // da_mo là hợp của hai bên, doc_xong là HOẶC. "Trang đang dở": mục cục bộ mang cờ
+    // da_thay là hợp của hai bên, doc_xong là HOẶC. "Vị trí đang dở": mục cục bộ mang cờ
     // `cho` (chờ gửi — chỉ sống trong localStorage, không gửi lên) thì máy này thắng và
-    // đẩy lên ngay sau lượt GET — TRỪ KHI máy chủ có trang mà máy này chưa từng mở (thiết
+    // đẩy lên ngay sau lượt GET — TRỪ KHI máy chủ có câu mà máy này chưa từng thấy (thiết
     // bị khác đã đọc xa hơn): khi đó máy chủ thắng và cờ bị bỏ — nhưng nếu máy này còn
-    // tiến độ máy chủ chưa có (doc_xong, trang đã mở) thì vẫn đẩy, với trang của máy chủ.
-    // Không mang cờ thì trang của máy chủ thắng.
+    // tiến độ máy chủ chưa có (doc_xong, câu đã thấy) thì vẫn đẩy, với vị trí của máy chủ.
+    // Không mang cờ thì vị trí của máy chủ thắng.
     //
     // HỢP ĐỒNG cho Task 8–12 về cờ `cho`:
     //   • CHỈ tiến độ thật dựng cờ: lật trang → `this.luuCucBo(); this.guiTrang(false)`;
@@ -1039,7 +1119,7 @@ function tdNhayToi(ghe, trang) {
         view: 'tv',               // tv · doc · quiz · xong · thu · nghe
         ds: [], st: {}, loc: 'all',
         anDaDoc: localStorage.getItem('td_an') === '1',
-        tr: null, id: '',
+        tr: null, id: '', trs: [],   // trs: trang để vẽ (dungTrang) của truyện đang mở
 
         async init() {
           this.st = this.docCucBo();
@@ -1055,27 +1135,27 @@ function tdNhayToi(ghe, trang) {
           if (d && d.truyen) {
             this.online = true;
             for (const [id, m0] of Object.entries(d.truyen)) {
-              // KHÔNG suy "máy này đã mở" từ !!this.st[id] hay da_mo cục bộ: lượt vẽ thư
-              // viện gọi s(id) cho mọi truyện trước lượt GET này, và da_mo của máy chủ đã
-              // trộn vào từ lần trước. Chỉ cờ `cho` nói được "máy này có trang chưa gửi".
+              // KHÔNG suy "máy này đã thấy" từ !!this.st[id] hay da_thay cục bộ: lượt vẽ thư
+              // viện gọi s(id) cho mọi truyện trước lượt GET này, và da_thay của máy chủ đã
+              // trộn vào từ lần trước. Chỉ cờ `cho` nói được "máy này có vị trí chưa gửi".
               const m = this.chuan(m0);
               const c = this.s(id);
-              // Máy chủ có trang máy này chưa từng mở → thiết bị khác đã đọc xa hơn; cờ
+              // Máy chủ có câu máy này chưa từng thấy → thiết bị khác đã đọc xa hơn; cờ
               // `cho` ở đây là của một lượt gửi đã mất (đóng tab trước khi có trả lời).
-              const xaHon = m.da_mo.some((x) => !c.da_mo.includes(x));
-              // Bỏ cờ chỉ bỏ phán quyết về TRANG. Máy này còn tiến độ máy chủ chưa có (đã đọc
-              // xong, hay trang đã mở) thì vẫn phải đẩy — với trang của máy chủ.
+              const xaHon = m.da_thay.some((x) => !c.da_thay.includes(x));
+              // Bỏ cờ chỉ bỏ phán quyết về VỊ TRÍ. Máy này còn tiến độ máy chủ chưa có (đã đọc
+              // xong, hay câu đã thấy) thì vẫn phải đẩy — với vị trí của máy chủ.
               const conThieu = c.cho && xaHon &&
-                ((c.doc_xong && !m.doc_xong) || c.da_mo.some((x) => !m.da_mo.includes(x)));
+                ((c.doc_xong && !m.doc_xong) || c.da_thay.some((x) => !m.da_thay.includes(x)));
               if (c.cho && xaHon) delete c.cho;
-              c.da_mo = [...new Set([...c.da_mo, ...m.da_mo])].sort((x, y) => x - y);
+              c.da_thay = [...new Set([...c.da_thay, ...m.da_thay])].sort((x, y) => x - y);
               c.doc_xong = c.doc_xong || m.doc_xong;
               // Quiz: câu máy chủ CÓ thì máy chủ thắng; câu máy chủ chưa có (làm khi chưa có
               // mã, hay lượt POST hỏng) thì giữ bản máy này — xoá đi là ❓ tắt lại dù bé đã làm.
               c.quiz = { ...c.quiz, ...m.quiz };
               c.thu = m.thu;
-              if (!c.cho) c.trang = m.trang;
-              if (conThieu) c.cho = true;      // lượt đẩy bên dưới gửi trang máy chủ + phần còn thiếu
+              if (!c.cho) c.vi_tri = m.vi_tri;
+              if (conThieu) c.cho = true;      // lượt đẩy bên dưới gửi vị trí máy chủ + phần còn thiếu
             }
             this.luuCucBo();
           }
@@ -1128,18 +1208,22 @@ function tdNhayToi(ghe, trang) {
           const thuDung = vat(u) && Number.isInteger(u.ts) && u.ts > 0 && Number.isFinite(u.dai) && u.dai >= 0 &&
             Array.isArray(u.doan) && u.doan.length > 0 && Array.isArray(u.lat) &&
             u.doan.every((d) => vat(d) && Number.isInteger(d.n) && d.n >= 0 && d.n <= 98 && Number.isFinite(d.dai) && d.dai > 0);
+          // Dạng cũ của #1 ({trang, da_mo}, chưa có mảng da_thay): giữ quiz (chỉ số câu HỎI không
+          // đổi), BỎ `cho` và bản thu — nhật ký `lat` cũ đếm theo SỐ TRANG, đọc theo mã câu là sai;
+          // vị trí về đầu truyện. Máy chủ (đã qua migration 0007) là nguồn đúng.
+          const moi = Array.isArray(o.da_thay);
           const m = {
-            trang: Number.isInteger(o.trang) && o.trang >= 1 ? o.trang : 1,
-            da_mo: Array.isArray(o.da_mo) ? o.da_mo.filter((x) => Number.isInteger(x) && x >= 1) : [],
+            vi_tri: Number.isInteger(o.vi_tri) && o.vi_tri >= 0 ? o.vi_tri : 0,
+            da_thay: moi ? [...new Set(o.da_thay.filter((x) => Number.isInteger(x) && x >= 0))].sort((x, y) => x - y) : [],
             doc_xong: o.doc_xong === true,
             quiz,
-            thu: thuDung ? {
+            thu: thuDung && moi ? {
               ts: u.ts, dai: u.dai, xong: u.xong === true,
               doan: u.doan.map((d) => ({ n: d.n, dai: d.dai, loai: typeof d.loai === 'string' ? d.loai : 'audio/webm' })),
-              lat: u.lat.filter((x) => Array.isArray(x) && Number.isFinite(x[0]) && Number.isInteger(x[1])),
+              lat: u.lat.filter((x) => Array.isArray(x) && Number.isFinite(x[0]) && Number.isInteger(x[1]) && x[1] >= 0),
             } : null,
           };
-          if (o.cho === true) m.cho = true;
+          if (o.cho === true && moi) m.cho = true;
           return m;
         },
         docCucBo() {
@@ -1219,11 +1303,11 @@ function tdNhayToi(ghe, trang) {
         // không có lần lật trang nào mới hơn (nếu có, cờ ở lại cho lượt sau).
         async guiMot(id, xong) {
           const c = this.s(id);
-          const than = { user: this.user, truyen: id, trang: c.trang, da_mo: [...c.da_mo] };
+          const than = { user: this.user, truyen: id, vi_tri: c.vi_tri, da_thay: [...c.da_thay] };
           if (xong || c.doc_xong) than.xong = true;
           const { ma, d } = await this.goiApi('/api/tapdoc/state', than);
           // 404: máy chủ không còn truyện này — giữ cờ là gửi lại mãi vô ích.
-          if (ma === 404 || (d && c.trang === than.trang && c.da_mo.length === than.da_mo.length)) {
+          if (ma === 404 || (d && c.vi_tri === than.vi_tri && c.da_thay.length === than.da_thay.length)) {
             delete c.cho;
             this.luuCucBo();
           }
@@ -1241,7 +1325,15 @@ function tdNhayToi(ghe, trang) {
           return this.ds.filter((t) => (this.loc === 'all' || t.cap === this.loc) && !(this.anDaDoc && this.s(t.id).doc_xong));
         },
         dsDocTiep() {
-          return this.ds.filter((t) => { const c = this.s(t.id); return !c.doc_xong && c.da_mo.length > 0; });
+          return this.ds.filter((t) => { const c = this.s(t.id); return !c.doc_xong && c.da_thay.length > 0; });
+        },
+        // Trang (1-based) chứa mã câu `ma` theo bố cục ở index (trang_dau = mã câu đầu từng trang) —
+        // thư viện chưa tải JSON truyện nên không có trs.
+        trangTV(t, ma) {
+          const d = Array.isArray(t.trang_dau) ? t.trang_dau : [0];
+          let p = 1;
+          for (let i = 0; i < d.length; i++) if (d[i] <= ma) p = i + 1;
+          return p;
         },
         datAn() { this.anDaDoc = !this.anDaDoc; localStorage.setItem('td_an', this.anDaDoc ? '1' : '0'); },
         soDung(t) { return Object.values(this.s(t.id).quiz).filter((q) => q.dung).length; },
@@ -1249,8 +1341,8 @@ function tdNhayToi(ghe, trang) {
         nenThe(t) { return t.bia ? 'background-image:url(' + JSON.stringify(this.goc + 'truyen/' + t.id + '/' + t.bia) + ')' : ''; },
         moTa(t) {
           const c = this.s(t.id);
-          if (c.doc_xong) return this.daLamQuiz(t) ? 'Quiz ' + this.soDung(t) + '/' + t.so_cau : 'Chưa làm quiz';
-          return c.da_mo.length ? 'Trang ' + c.trang + ' / ' + t.so_trang : t.so_trang + ' trang · mới';
+          if (c.doc_xong) return this.daLamQuiz(t) ? 'Quiz ' + this.soDung(t) + '/' + t.so_hoi : 'Chưa làm quiz';
+          return c.da_thay.length ? 'Trang ' + this.trangTV(t, c.vi_tri) + ' / ' + t.so_trang : t.so_trang + ' trang · mới';
         },
         anhUrl(ten) { return this.goc + 'truyen/' + this.id + '/' + ten; },
         phutGiay(ms) {
@@ -1265,22 +1357,25 @@ function tdNhayToi(ghe, trang) {
           // Chưa trộn xong tiến độ của máy chủ thì chưa biết vào trang nào (hay vào trang xong).
           if (this.tai) return;
           this.err = '';
+          let tr, trs;
           try {
             const r = await fetch(this.goc + 'truyen/' + id + '.json');
             if (!r.ok) throw new Error('HTTP ' + r.status);
-            this.tr = await r.json();
+            tr = await r.json();
+            trs = tr.trang.map((t, i) => this.dungTrang(t, i, tr));
           } catch (e) {
             this.err = 'Không mở được truyện này. Con thử lại nhé.';
             return;
           }
+          this.tr = tr; this.trs = trs;
           this.id = id;
           const c = this.s(id);
-          if (c.doc_xong) this.view = 'xong'; else this.vaoDoc(c.trang || 1);
+          if (c.doc_xong) this.view = 'xong'; else this.vaoDoc(this.trangCua(c.vi_tri));
         },
         veThuVien() {
           this.dungDoc(); this.dongBong(); this.dungDoan();
           this.xaCho();
-          this.view = 'tv'; this.tr = null; this.id = '';
+          this.view = 'tv'; this.tr = null; this.id = ''; this.trs = [];
         },
       };
       return Object.assign(coSo, tdDoc(), tdQuiz(), tdThuAm());
@@ -1289,7 +1384,8 @@ function tdNhayToi(ghe, trang) {
 </head>
 <!-- KHÔNG thêm x-init="init()": Alpine 3 TỰ gọi init() của object x-data — thêm nữa là
      chạy hai lần (hai lượt GET state, hai bộ listener pagehide). Như study.html. -->
-<body class="bg-slate-100 text-slate-800 min-h-screen" x-data="tapDoc()" :data-td-view="view">
+<body class="bg-slate-100 text-slate-800 min-h-screen" x-data="tapDoc()" :data-td-view="view"
+      :style="tr && tr.phong ? '--td-phong:' + JSON.stringify(tr.phong) : ''">
 
   <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
     <div class="max-w-5xl mx-auto px-4 py-3">
@@ -1327,8 +1423,8 @@ function tdNhayToi(ghe, trang) {
             <span class="td-bia block" :class="'td-nen-' + t.cap" :style="nenThe(t)"><span x-show="!t.bia">📖</span></span>
             <span class="td-cap" :class="'td-cap-' + t.cap" x-text="t.cap"></span>
             <span class="block px-3 pt-2 font-bold" x-text="t.ten"></span>
-            <span class="block px-3 text-sm text-slate-500" x-text="'Trang ' + s(t.id).trang + ' / ' + t.so_trang"></span>
-            <span class="block mx-3 my-3 h-2 rounded-full bg-slate-200 overflow-hidden"><span class="block h-full bg-indigo-600" :style="'width:' + Math.round(100 * s(t.id).da_mo.length / t.so_trang) + '%'"></span></span>
+            <span class="block px-3 text-sm text-slate-500" x-text="'Trang ' + trangTV(t, s(t.id).vi_tri) + ' / ' + t.so_trang"></span>
+            <span class="block mx-3 my-3 h-2 rounded-full bg-slate-200 overflow-hidden"><span class="block h-full bg-indigo-600" :style="'width:' + Math.round(100 * s(t.id).da_thay.length / Math.max(1, t.so_cau)) + '%'"></span></span>
           </button>
         </template>
       </div>
@@ -1400,7 +1496,7 @@ function tdNhayToi(ghe, trang) {
         
         <button type="button" class="td-n" data-td-ve :disabled="dangThu()" @click="view === 'nghe' ? ngheDong() : veThuVien()">← <span x-text="view === 'nghe' ? 'Xong' : 'Thư viện'"></span></button>
         <b x-text="tr.ten"></b>
-        <span data-td-so-trang x-text="trang + ' / ' + tr.trang.length"></span>
+        <span data-td-so-trang x-text="trang + ' / ' + trs.length"></span>
       </div>
 
       <div class="td-trang" :style="nenTrang()" @pointerdown="vuotBat($event)" @pointerup="vuotTha($event)" @pointercancel="vuot = null">
@@ -1459,7 +1555,7 @@ function tdNhayToi(ghe, trang) {
   <span data-td-thu-gio x-text="thu && thu.dang ? (thu.tam ? 'Đang tạm dừng ở trang ' + trang : 'Đang thu') : ''"></span>
   <button type="button" class="td-n td-n-phu" data-td-thu-tam x-show="thu && !thu.tam" @click="thuTam()">⏸ Tạm dừng</button>
   <button type="button" class="td-n td-n-do" data-td-thu-tiep x-show="thu && thu.tam" @click="thuTiep()">▶ Thu tiếp</button>
-  <button type="button" class="td-n td-n-phu" data-td-thu-xong @click="thuXong()" x-text="trang >= tr.trang.length ? '✅ Xong' : '⏹ Kết thúc'"></button>
+  <button type="button" class="td-n td-n-phu" data-td-thu-xong @click="thuXong()" x-text="trang >= trs.length ? '✅ Xong' : '⏹ Kết thúc'"></button>
 </span>
           <button type="button" class="td-n td-n-phu td-n-tron" data-td-toi aria-label="Trang sau" @click="lat(1)">▶</button>
         </div>
@@ -1474,7 +1570,7 @@ function tdNhayToi(ghe, trang) {
         <input type="range" data-td-nghe-keo aria-label="Vị trí trong bản thu" min="0" step="100" :max="nghe.tong" :value="nghe.ms" @input="ngheDat($event.target.value)">
       </span>
       <span x-text="phutGiay(nghe.ms) + ' / ' + phutGiay(nghe.tong)"></span>
-      <button type="button" class="td-n td-n-phu td-n-tron" data-td-nghe-toi aria-label="Trang sau" :disabled="trang >= tr.trang.length" @click="ngheLat(1)">▶</button>
+      <button type="button" class="td-n td-n-phu td-n-tron" data-td-nghe-toi aria-label="Trang sau" :disabled="trang >= trs.length" @click="ngheLat(1)">▶</button>
     </div>
   </template>
 </div>
@@ -1492,12 +1588,12 @@ function tdNhayToi(ghe, trang) {
       <div class="td-q-than">
         <div class="td-q-truyen" data-td-q-truyen :class="qXem ? 'td-q-mo' : ''">
           
-          <div class="td-q-anh" x-show="tr.trang[qTrang - 1].anh" :style="qNen()"></div>
-          <p class="td-q-chu"><template x-for="(w, i) in tr.trang[qTrang - 1].tu" :key="qTrang + '-' + i"><span><template x-if="w.nl"><br></template><span x-text="w.c"></span> </span></template></p>
+          <div class="td-q-anh" x-show="trs[qTrang - 1].anh" :style="qNen()"></div>
+          <p class="td-q-chu"><template x-for="(w, i) in trs[qTrang - 1].tu" :key="qTrang + '-' + i"><span><template x-if="w.nl"><br></template><span x-text="w.c"></span> </span></template></p>
           <div class="td-q-lat">
             <button type="button" class="td-n td-n-phu td-n-tron" data-td-q-lui aria-label="Trang trước" :disabled="qTrang <= 1" @click="qLat(-1)">◀</button>
-            <span data-td-q-trang x-text="'Trang ' + qTrang + ' / ' + tr.trang.length"></span>
-            <button type="button" class="td-n td-n-phu td-n-tron" data-td-q-toi aria-label="Trang sau" :disabled="qTrang >= tr.trang.length" @click="qLat(1)">▶</button>
+            <span data-td-q-trang x-text="'Trang ' + qTrang + ' / ' + trs.length"></span>
+            <button type="button" class="td-n td-n-phu td-n-tron" data-td-q-toi aria-label="Trang sau" :disabled="qTrang >= trs.length" @click="qLat(1)">▶</button>
             <button type="button" class="td-n" data-td-q-dong x-show="qXem" @click="qXem = false">Đóng</button>
           </div>
         </div>
@@ -1568,7 +1664,7 @@ function tdNhayToi(ghe, trang) {
 
         <div class="flex items-center gap-3 bg-white rounded-2xl shadow px-4 py-3 mb-3">
           <span class="text-3xl">📖</span>
-          <span class="flex-1"><b>Đọc truyện</b><span class="block text-sm text-slate-500" x-text="'Đã đọc hết ' + tr.trang.length + ' trang'"></span></span>
+          <span class="flex-1"><b>Đọc truyện</b><span class="block text-sm text-slate-500" x-text="'Đã đọc hết ' + trs.length + ' trang'"></span></span>
           <button type="button" data-td-xong-doc-lai @click="moKhoa(); vaoDoc(1)" class="px-4 py-3 rounded-xl border border-slate-300 bg-white font-semibold">Đọc lại</button>
         </div>
 
@@ -1596,7 +1692,7 @@ function tdNhayToi(ghe, trang) {
     </template>
   </section>
 
-  <audio x-ref="au" preload="auto" @ended="hetAm()" @error="loiAm()"></audio>
+  <audio x-ref="au" preload="auto" @ended="hetAm()" @error="loiAm()" @timeupdate="hetDoan()"></audio>
   <audio x-ref="au2" preload="auto"></audio>
   <audio x-ref="au3" preload="auto" @ended="ngheHetDoan()"></audio>
 </body>

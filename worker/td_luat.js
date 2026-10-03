@@ -7,7 +7,8 @@
  * không `import`, không API của Worker, và mọi thứ xuất ra đều bắt đầu bằng
  * `export const` hoặc `export function` ở đầu dòng.
  *
- * `lat`: nhật ký lật trang `[[ms trên trục bản thu, số trang], …]`.
+ * `lat` lưu theo MÃ CÂU: `[[ms trên trục bản thu, mã câu đầu trang], …]` (spec 2026-10-03 §6).
+ * `tdAnhLat` đổi nó sang `[[ms, số trang]]` của bố cục HIỆN HÀNH; các hàm còn lại làm trên số trang.
  */
 export const TD = {
   GHE_MIN: 1000,                 // lần ghé ngắn hơn là vuốt nhầm, bỏ
@@ -65,4 +66,20 @@ export function tdNhayToi(ghe, trang) {
   let b = null;
   for (const g of ghe) if (g.trang === trang && (!b || g.den - g.tu > b.den - b.tu)) b = g;
   return b ? b.tu : null;
+}
+
+/**
+ * Nhật ký `[[ms, mã câu]]` → `[[ms, số trang 1-based]]` theo bố cục `trang` = `[{canh, tu, den}]`
+ * (bố cục HIỆN HÀNH — đổi bố cục thì bản thu cũ vẫn tính và vẫn nghe lại đúng chỗ). Mục hỏng, hay
+ * mã câu không nằm trong trang nào (truyện đã sửa chữ), bị BỎ — không ném lỗi.
+ */
+export function tdAnhLat(lat, trang) {
+  const ds = Array.isArray(trang) ? trang : [];
+  const out = [];
+  for (const x of Array.isArray(lat) ? lat : []) {
+    if (!Array.isArray(x) || !Number.isFinite(x[0]) || !Number.isInteger(x[1]) || x[1] < 0) continue;
+    const p = ds.findIndex((t) => t && Number.isInteger(t.tu) && Number.isInteger(t.den) && t.tu <= x[1] && x[1] <= t.den);
+    if (p >= 0) out.push([x[0], p + 1]);
+  }
+  return out;
 }
