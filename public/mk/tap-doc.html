@@ -21,8 +21,8 @@
     [x-cloak]{display:none!important}
     .td-bia{height:7.5rem;display:grid;place-items:center;font-size:3.2rem;background-size:cover;background-position:center}
     .td-cap{position:absolute;top:.5rem;left:.5rem;width:2.1rem;height:2.1rem;border-radius:999px;display:grid;place-items:center;font-weight:800;color:#fff}
-    .td-cap-A{background:#16a34a}.td-cap-B{background:#f59e0b}.td-cap-C{background:#dc2626}
-    .td-nen-A{background-color:#bbf7d0}.td-nen-B{background-color:#fde68a}.td-nen-C{background-color:#ddd6fe}
+    .td-cap-A{background:#16a34a}.td-cap-B{background:#f59e0b}.td-cap-C{background:#dc2626}.td-cap-D{background:#1f2937}
+    .td-nen-A{background-color:#bbf7d0}.td-nen-B{background-color:#fde68a}.td-nen-C{background-color:#ddd6fe}.td-nen-D{background-color:#e5e7eb}
     .td-da-doc .td-bia{filter:saturate(.45) opacity(.75)}
     /* Hàng kéo ngang (chế độ Tất cả cấp): thẻ rộng cố định, dừng gọn khi thả tay. Lưới: chế độ một cấp. */
     .td-hang{display:flex;gap:1rem;overflow-x:auto;scroll-snap-type:x mandatory;padding:.25rem .25rem 1rem;margin:0 -.25rem;-webkit-overflow-scrolling:touch}
@@ -133,14 +133,33 @@ function tdAnhLat(lat, trang) {
   .td-trang{flex:1;position:relative;overflow:hidden;container-type:size;background:#fef3c7 center/cover no-repeat;touch-action:pan-y}
   .td-o{position:absolute;border-radius:1.4rem;border:1px solid rgba(255,255,255,.55);box-shadow:0 4px 18px rgba(0,0,0,.2);color:#1f1a33;overflow-y:auto;
         -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
-  /* Ô chữ: MỘT kiểu cho cả ba cấp — góc DƯỚI bên TRÁI, rộng và cao theo nội dung trang (tới trần
-     O_CHU), mép dưới cố định (chủ dự án chọn 2026-10-04: ảnh phía trên thoáng). Cấp chỉ khác cỡ chữ. */
-  .td-o{left:3%;bottom:3%;width:fit-content;max-width:55%;max-height:94%;padding:.9rem 1.5rem;line-height:1.62}
+  /* Ô chữ: MỘT kiểu cho cả bốn cấp — góc DƯỚI bên TRÁI, rộng và cao theo nội dung trang (tới trần
+     O_CHU), mép dưới cố định (chủ dự án chọn 2026-10-04: ảnh phía trên thoáng). Cấp chỉ khác cỡ chữ.
+     Căn đều hai lề cho cả bốn cấp (chủ dự án chọn 2026-10-05 sau khi so ảnh chụp; ô chữ co theo
+     nội dung nên khoảng giãn nhỏ). */
+  .td-o{left:3%;bottom:3%;width:fit-content;max-width:55%;max-height:94%;padding:.9rem 1.5rem;line-height:1.62;text-align:justify}
   .td-A .td-o{font-size:clamp(18px,3.32cqw,34px);line-height:1.75}
   .td-B .td-o{font-size:clamp(18px,2.73cqw,28px)}
   .td-C .td-o{font-size:clamp(18px,2.2cqw,22.5px);padding:.8rem 1.4rem}
+  .td-D .td-o{font-size:clamp(16px,2cqw,20px);padding:.8rem 1.4rem}
   /* Khổ hẹp: rộng hết ngang (3% mỗi bên), bám ĐÁY, cao theo nội dung tới 64% trang. */
   @media (max-width:640px){ .td-o{right:3%;width:auto;max-width:none;max-height:64%} }
+  /* Kiểu "nguyên tranh" (cảnh `dat: "tranh"`, ADR 0056 2026-10-05): tranh hiện TRỌN, không cắt, trong vùng bên PHẢI trang —
+     từ 60% bề rộng tới cách mép phải 3%, cách mép trên / dưới 4% (ô chữ ở dưới trái, rộng tối đa 55% → không bao giờ chạm).
+     Cỡ: vừa vùng, KHÔNG phóng quá 2× cỡ gốc; ghi sẵn cả rộng lẫn cao (min của ba cách co) nên khung ôm sát tranh, đúng tỉ lệ.
+     --w / --h là cỡ gốc (px, số không đơn vị) do trang đặt từ JSON; đơn vị cqw / cqh theo .td-trang (container-type:size).
+     --vw / --vh là cỡ vùng — khớp left/right/top/bottom bên cạnh. Là <img> chứ không phải nền: đo được khung thật, và
+     iPad Safari xử lý min() / cq của <img> ổn định hơn background-size. Nền trang lúc đó trắng (nenTrang()). */
+  .td-tranh-o{--vw:37cqw;--vh:92cqh;position:absolute;left:60%;right:3%;top:4%;bottom:4%;display:flex;align-items:center;justify-content:center;overflow:hidden;pointer-events:none}
+  /* Dự phòng iPad Safari < 16 (không có đơn vị cqw / cqh): trình duyệt BỎ cả khai báo width / height bên dưới (min() chứa
+     cq), nên tranh về cỡ gốc. Ba dòng đầu giữ tranh trong vùng (co theo tỉ lệ, không méo); .td-tranh-o cắt phần thừa
+     (overflow:hidden) để tranh không tràn sang ô chữ. Khi cq chạy được thì width / height bên dưới ≤ vùng, các dòng này không đổi gì. */
+  .td-tranh{display:block;flex:none;max-width:100%;max-height:100%;object-fit:contain;
+            width:min(var(--vw),calc(var(--vh) * var(--w) / var(--h)),calc(var(--w) * 2px));
+            height:min(calc(var(--vw) * var(--h) / var(--w)),var(--vh),calc(var(--h) * 2px));
+            border-radius:.8rem;-webkit-user-select:none;user-select:none;-webkit-user-drag:none;-webkit-touch-callout:none}
+  /* Khổ hẹp: ô chữ rộng hết ngang, tới 64% trang từ đáy lên → tranh nằm trên cùng, trong 30% chiều cao (3% … 33%). */
+  @media (max-width:640px){ .td-tranh-o{--vw:94cqw;--vh:30cqh;left:3%;right:3%;top:3%;bottom:67%} }
   .td-tu{display:inline-block;border-radius:.5rem;padding:0 .12em;cursor:pointer;transition:transform .4s}
   .td-tu.td-sang{background:#fde047}
   .td-tu.td-nhan{background:#ddd6fe;transform:scale(1.12)}
@@ -160,6 +179,8 @@ function tdAnhLat(lat, trang) {
      rộng nội tại của khung flex (Chromium) không tính flex-basis, nên chấm từng bị ép còn 4 px. Truyện dài thì chấm tự
      thu nhỏ trong trần max-width. */
   .td-chams{flex:none;display:flex;align-items:center;gap:5px;max-width:20rem}
+  .td-thanh-tr{flex:none;display:block;width:8rem;height:6px;border-radius:999px;background:#e5e7eb;overflow:hidden}
+  .td-thanh-tr i{display:block;height:100%;background:#7c3aed}
   .td-ch{display:block;flex:0 1 auto;width:18px;min-width:6px;height:18px;border-radius:999px;border:3px solid #a78bfa;background:#fff}
   .td-ch.td-ch-thay{background:#a78bfa}
   .td-ch.td-ch-nay{width:26px;min-width:10px;height:26px;background:#7c3aed;border-color:#7c3aed}
@@ -183,6 +204,7 @@ function tdAnhLat(lat, trang) {
   function tdDoc() {
     return {
       trang: 1,
+      TRANG_CHAM: 20,          // truyện dài hơn thế này thì ô số trang vẽ thanh mảnh, không vẽ dãy chấm (chấm tràn ~32 trang)
       dangDoc: false,          // máy đang đọc trang (kể cả quãng nghỉ 1 s trước khi tự lật)
       tuSang: -1,              // chỉ số từ đang sáng; -1 = không
       // Tốc độ là thiết lập của MÁY, không của truyện: khoá riêng, không nằm trong mục trạng thái.
@@ -209,6 +231,7 @@ function tdAnhLat(lat, trang) {
         const g = tr.canh[t.canh], tu = [];
         for (let k = t.tu; k <= t.den; k++) for (const w of tr.cau[k].tu) tu.push(tu.length ? w : { ...w, nl: false });
         return { so: i + 1, canh: t.canh, c0: t.tu, c1: t.den, tu, am: g.am, anh: g.anh, dac: g.dac, nhoe: g.nhoe,
+                 dat: g.dat || 'phu', w: g.w || 0, h: g.h || 0,
                  bd: tr.cau[t.tu].bd, kt: tr.cau[t.den].kt };
       },
       // Trang (1-based) chứa mã câu `ma` theo bố cục đang dùng; không có (truyện đã sửa chữ) → 1.
@@ -227,14 +250,21 @@ function tdAnhLat(lat, trang) {
       // Đang thu âm HOẶC đang đếm ngược 3-2-1: máy đọc trang không được phát (lọt vào bản thu).
       dangThu() { return !!(this.thu && (this.thu.dang || this.thu.dem > 0)); },
       coAnh() { const t = this.tg(); return !!t.anh && !this.anhHong[this.anhUrl(t.anh)]; },
+      // Kiểu "nguyên tranh" (ADR 0056 2026-10-05): cảnh có ảnh, dat = 'tranh' và biết cỡ gốc (w, h > 0; JSON cũ thiếu thì
+      // coi là phủ). Ảnh lỗi → coAnh() sai → trang trơn như mọi cảnh mất ảnh.
+      datTranh() { const t = this.tg(); return this.coAnh() && t.dat === 'tranh' && t.w > 0 && t.h > 0; },
+      // Phủ: ảnh là nền cover (CSS). Nguyên tranh: nền trắng (tranh sách thường nền trắng — không thành hộp trắng trên nền kem),
+      // tranh là <img class="td-tranh"> trong than().
       nenTrang() {
-        return this.coAnh() ? 'background-image:url(' + JSON.stringify(this.anhUrl(this.tg().anh)) + ')' : '';
+        if (!this.coAnh()) return '';
+        return this.datTranh() ? 'background:#fff' : 'background-image:url(' + JSON.stringify(this.anhUrl(this.tg().anh)) + ')';
       },
       // Ô chữ kính mờ: độ đặc và độ nhoè do builder đo từ chính tấm ảnh (spec §7.3).
-      // Không có ảnh (hoặc ảnh lỗi) thì ô chữ đặc hẳn — kính mờ trên nền trơn là vô nghĩa.
+      // Không có ảnh (hoặc ảnh lỗi) thì ô chữ đặc hẳn — kính mờ trên nền trơn là vô nghĩa. Kiểu nguyên tranh cũng đặc
+      // (dac 1, nhoe 0): ảnh không nằm dưới ô chữ.
       kinh() {
         const t = this.tg();
-        if (!this.coAnh()) return 'background:rgba(255,253,245,1)';
+        if (!this.coAnh() || this.datTranh()) return 'background:rgba(255,253,245,1)';
         return 'background:rgba(255,253,245,' + t.dac + ');-webkit-backdrop-filter:blur(' + t.nhoe + 'px);backdrop-filter:blur(' + t.nhoe + 'px)';
       },
       amUrl(khoa) { return this.goc + 'am/' + khoa + '.mp3'; },
@@ -554,7 +584,7 @@ function tdAnhLat(lat, trang) {
       // ── bong bóng ───────────────────────────────────────────────────────────
       // Kiểu đánh vần nhớ theo TRUYỆN trên thiết bị này (khoá riêng như td_toc, không nằm trong
       // mục trạng thái — chuan() của tapdoc.html không cần biết).
-      cheDV() { return localStorage.getItem('td_che_' + this.id) || (this.tr.cap === 'C' ? 'nhanh' : 'daydu'); },
+      cheDV() { return localStorage.getItem('td_che_' + this.id) || (this.tr.cap === 'C' || this.tr.cap === 'D' ? 'nhanh' : 'daydu'); },
       moBong(i) {
         const g = this.tieng(i);
         if (!g) return this.docTu(i);
@@ -1368,17 +1398,17 @@ function tdAnhLat(lat, trang) {
         // cùng hạng giữ thứ tự index.
         hang(t) { return this.dangDo(t) ? 0 : (this.s(t.id).doc_xong ? 2 : 1); },
         xep(ds) { return ds.slice().sort((a, b) => this.hang(a) - this.hang(b)); },
-        // Hàng "📌 Đang đọc" trên cùng — chỉ ở chế độ Tất cả cấp; xếp A → B → C, trong cấp theo index.
+        // Hàng "📌 Đang đọc" trên cùng — chỉ ở chế độ Tất cả cấp; xếp A → B → C → D, trong cấp theo index.
         dsDocTiep() {
           if (this.loc !== 'all') return [];
-          const th = { A: 0, B: 1, C: 2 };
+          const th = { A: 0, B: 1, C: 2, D: 3 };
           return this.ds.filter((t) => this.dangDo(t) && this.khop(t)).sort((a, b) => (th[a.cap] ?? 9) - (th[b.cap] ?? 9));
         },
         // Các nhóm để vẽ: Tất cả → mỗi cấp một hàng kéo ngang (bỏ truyện đã ở hàng Đang đọc);
         // một cấp → một lưới cuộn dọc. Nhóm rỗng không vẽ.
         nhom() {
-          const ten = { A: '🟢 A · Dễ', B: '🟠 B · Vừa', C: '🔴 C · Khó' };
-          const caps = this.loc === 'all' ? ['A', 'B', 'C'] : [this.loc];
+          const ten = { A: '🟢 A · Dễ', B: '🟠 B · Vừa', C: '🔴 C · Khó', D: '⚫ D · Rất khó' };
+          const caps = this.loc === 'all' ? ['A', 'B', 'C', 'D'] : [this.loc];
           return caps.map((c) => ({
             cap: c, ten: ten[c],
             ds: this.xep(this.ds.filter((t) => t.cap === c && this.khop(t) && !(this.loc === 'all' && this.dangDo(t)))),
@@ -1469,6 +1499,7 @@ function tdAnhLat(lat, trang) {
       <button type="button" data-td-loc="A" @click="loc = 'A'" :class="loc === 'A' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="px-4 py-2 rounded-full border text-sm font-medium">🟢 A · Dễ</button>
       <button type="button" data-td-loc="B" @click="loc = 'B'" :class="loc === 'B' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="px-4 py-2 rounded-full border text-sm font-medium">🟠 B · Vừa</button>
       <button type="button" data-td-loc="C" @click="loc = 'C'" :class="loc === 'C' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="px-4 py-2 rounded-full border text-sm font-medium">🔴 C · Khó</button>
+      <button type="button" data-td-loc="D" @click="loc = 'D'" :class="loc === 'D' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="px-4 py-2 rounded-full border text-sm font-medium">⚫ D · Rất khó</button>
       <span class="flex-1"></span>
       <span class="inline-flex rounded-full border border-slate-300 overflow-hidden" role="group" aria-label="Lọc theo đã đọc">
         <button type="button" data-td-loai="all" @click="datLoai('all')" :aria-pressed="String(loai === 'all')" :class="loai === 'all' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-700'" class="px-4 py-2 text-sm font-medium">Tất cả</button>
@@ -1573,6 +1604,8 @@ function tdAnhLat(lat, trang) {
       </div>
 
       <div class="td-trang" :style="nenTrang()" @pointerdown="vuotBat($event)" @pointerup="vuotTha($event)" @pointercancel="vuot = null">
+        
+        <template x-if="datTranh()"><div class="td-tranh-o" aria-hidden="true"><img class="td-tranh" data-td-tranh alt="" draggable="false" :src="anhUrl(tg().anh)" :style="'--w:' + tg().w + ';--h:' + tg().h"></div></template>
         <div class="td-dem" data-td-dem x-show="thu && thu.dem > 0" x-text="thu ? thu.dem : ''"></div>
         <p class="td-tb" data-td-thong-bao x-show="thongBao" x-text="thongBao" @click="thongBao = ''"></p>
         <template x-if="bong">
@@ -1624,7 +1657,8 @@ function tdAnhLat(lat, trang) {
           
           <span class="td-so-o" data-td-trang-o>
             <span>Trang</span> <b data-td-so-trang x-text="trang + ' / ' + trs.length"></b>
-            <span class="td-chams" aria-hidden="true" x-show="!dangThu()"><template x-for="p in trs" :key="p.so"><i class="td-ch" :data-td-cham="p.so" :class="loaiCham(p)"></i></template></span>
+            <span class="td-chams" aria-hidden="true" x-show="!dangThu() && trs.length <= TRANG_CHAM"><template x-for="p in (trs.length <= TRANG_CHAM ? trs : [])" :key="p.so"><i class="td-ch" :data-td-cham="p.so" :class="loaiCham(p)"></i></template></span>
+            <span class="td-thanh-tr" data-td-thanh-tr aria-hidden="true" x-show="!dangThu() && trs.length > TRANG_CHAM"><i :style="'width:' + (100 * trang / trs.length) + '%'"></i></span>
           </span>
           
 <button type="button" class="td-n td-n-do" data-td-thu x-show="thuDuoc() && !(thu && (thu.dang || thu.dem > 0))" @click="thuBatDau()">🎙 Thu âm</button>
