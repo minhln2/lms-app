@@ -144,13 +144,42 @@ function tdAnhLat(lat, trang) {
   .td-D .td-o{font-size:clamp(16px,2cqw,20px);padding:.8rem 1.4rem}
   /* Khổ hẹp: rộng hết ngang (3% mỗi bên), bám ĐÁY, cao theo nội dung tới 64% trang. */
   @media (max-width:640px){ .td-o{right:3%;width:auto;max-width:none;max-height:64%} }
-  /* Kiểu "nguyên tranh" (cảnh `dat: "tranh"`, ADR 0056 2026-10-05): tranh hiện TRỌN, không cắt, trong vùng bên PHẢI trang —
-     từ 60% bề rộng tới cách mép phải 3%, cách mép trên / dưới 4% (ô chữ ở dưới trái, rộng tối đa 55% → không bao giờ chạm).
-     Cỡ: vừa vùng, KHÔNG phóng quá 2× cỡ gốc; ghi sẵn cả rộng lẫn cao (min của ba cách co) nên khung ôm sát tranh, đúng tỉ lệ.
-     --w / --h là cỡ gốc (px, số không đơn vị) do trang đặt từ JSON; đơn vị cqw / cqh theo .td-trang (container-type:size).
-     --vw / --vh là cỡ vùng — khớp left/right/top/bottom bên cạnh. Là <img> chứ không phải nền: đo được khung thật, và
-     iPad Safari xử lý min() / cq của <img> ổn định hơn background-size. Nền trang lúc đó trắng (nenTrang()). */
-  .td-tranh-o{--vw:37cqw;--vh:92cqh;position:absolute;left:60%;right:3%;top:4%;bottom:4%;display:flex;align-items:center;justify-content:center;overflow:hidden;pointer-events:none}
+  /* iPad (> 640 px), trang kiểu "nguyên tranh": xếp HÀNG — ô chữ bên trái, tranh bên phải, MỘT CỤM (ô chữ + khe 2% + tranh) căn GIỮA theo
+     chiều ngang trang, hai lề ngoài bằng nhau, mỗi lề ≥ 3% (chủ dự án 2026-10-05, phương án C). Ô chữ ngắn thì tranh to ra tới khi vừa
+     CHIỀU CAO (92% trang) hoặc vừa phần bề rộng còn lại, không để trống một khoảng lớn giữa chữ và tranh; ô chữ dài (tối đa 55%) thì cụm
+     đầy bề rộng: ô chữ ở trái 3%, tranh lấp phần còn lại tới cách mép phải 3% (vùng tranh ≥ 37cqw như cũ). Ô chữ: max-width 55%, max-height 94%,
+     cỡ chữ và kích thước y nguyên (khớp O_CHU) — chỉ đổi cách đặt: flex-item `position:relative` thay vì absolute, căn giữa dọc. Trang phủ ("phu") giữ
+     góc dưới-trái (chọn 2026-10-04). `not all and (max-width:640px)` = đúng phần bù của khối ≤ 640 px (xếp cột, bám đáy), kể cả khung
+     rộng lẻ 640,5 px mà `(min-width:641px)` bỏ sót — hai khối không đè nhau, không hở.
+     Cách làm: `.td-trang` là flex hàng `justify-content:center`; lề ngoài là margin của CON (ô chữ margin-left 3%, vùng tranh margin-right 3%) cộng với
+     phần dư chia đôi nên luôn đối xứng; khe 2% là margin-left của vùng tranh (đúng khoảng cũ giữa ô chữ rộng tối đa — 58% — và vùng cố định cũ — 60%
+     — nên trang chữ dài giữ NGUYÊN cỡ tranh). KHÔNG padding / gap của .td-trang: đơn vị cq của chính một vùng chứa tính theo vùng chứa CHA (xem
+     khối điện thoại bên dưới); % của margin của flex-item = % bề rộng .td-trang, đúng bằng cqw. Thứ tự DOM là tranh trước chữ nên `order:1`.
+     Vùng tranh ÔM SÁT tranh (không còn là vùng chứa size): rộng cơ sở = min(92cqh × w / h, 2 × w px) (vừa chiều cao, trần 2×), `flex:0 1 auto` +
+     `min-width:0` để co khi cụm quá rộng, `aspect-ratio` w / h cho chiều cao theo bề rộng đã co (tranh không méo), `align-self:center` (KHÔNG stretch:
+     stretch ép cao bằng trang). <img> nằm tuyệt đối 100% × 100% vùng, nên khung vùng = khung tranh = vùng datBong đo. --w / --h do template đặt trên
+     vùng. Dự phòng iPad Safari < 16 (không có cqh): khối @supports không áp, vùng là `flex:1 1 0` + `align-self:stretch` lấp phần còn lại (phương án A, commit 8a463fc,
+     lề dọc bằng % bề rộng cho gần đúng) và <img> `object-fit:contain` trong vùng. .td-tb / .td-bong / .td-dem là absolute nên không tham gia dòng flex. */
+  @media not all and (max-width:640px){
+    .td-trang.td-tg-tranh{display:flex;flex-direction:row;align-items:center;justify-content:center}
+    .td-tg-tranh .td-o{position:relative;left:auto;top:auto;bottom:auto;flex:none;margin-left:3%}
+    .td-tg-tranh .td-tranh-o{position:relative;left:auto;right:auto;top:auto;bottom:auto;order:1;flex:1 1 0;min-width:0;min-height:0;align-self:stretch;margin:4% 3% 4% 2%}
+    .td-tg-tranh .td-tranh{position:absolute;left:0;top:0;width:100%;height:100%}
+    @supports (width:1cqw){
+      .td-tg-tranh .td-tranh-o{flex:0 1 auto;align-self:center;margin:0 3% 0 2%;aspect-ratio:var(--w) / var(--h);
+        width:min(calc(92cqh * var(--w) / var(--h)),calc(var(--w) * 2px))}
+    }
+  }
+  /* Kiểu "nguyên tranh" (cảnh `dat: "tranh"`, ADR 0056 2026-10-05): tranh hiện TRỌN, không cắt, trong vùng .td-tranh-o bên PHẢI ô chữ.
+     VỊ TRÍ + CỠ của vùng do hai khối khổ ở trên / dưới đặt (> 640 px: ô chữ + tranh thành một cụm giữa trang; ≤ 640 px: xếp cột) —
+     đây chỉ là phần chung: căn giữa tranh, cắt phần thừa, không chặn chạm vào chữ.
+     Cỡ tranh: vừa vùng, KHÔNG phóng quá 2× cỡ gốc. Ở MỌI khổ, khi cq chạy được (@supports (width:1cqw)): vùng ôm sát tranh — rộng (> 640 px) hoặc cao
+     (≤ 640 px) cơ sở = min(vừa vùng cho phép, 2× cỡ gốc), chiều kia theo aspect-ratio — và <img> tuyệt đối 100% × 100% vùng (xem hai khối trên). --vw / --vh
+     (= 100cqw / 100cqh, đặt ở khối điện thoại ngoài @supports) và hai dòng width / height min() của .td-tranh bên dưới CHỈ là dự phòng: khối @supports ghi đè
+     chúng ở nơi cq chạy được, còn nơi cq không chạy được (Safari < 16) khai báo chứa cq bị bỏ. --w / --h là cỡ gốc (px, số không đơn vị) do trang đặt từ JSON,
+     trên vùng. Là <img> chứ không phải nền:
+     đo được khung thật, và iPad Safari xử lý min() / cq của <img> ổn định hơn background-size. Nền trang lúc đó trắng (nenTrang()). */
+  .td-tranh-o{display:flex;align-items:center;justify-content:center;overflow:hidden;pointer-events:none}
   /* Dự phòng iPad Safari < 16 (không có đơn vị cqw / cqh): trình duyệt BỎ cả khai báo width / height bên dưới (min() chứa
      cq), nên tranh về cỡ gốc. Ba dòng đầu giữ tranh trong vùng (co theo tỉ lệ, không méo); .td-tranh-o cắt phần thừa
      (overflow:hidden) để tranh không tràn sang ô chữ. Khi cq chạy được thì width / height bên dưới ≤ vùng, các dòng này không đổi gì. */
@@ -158,8 +187,6 @@ function tdAnhLat(lat, trang) {
             width:min(var(--vw),calc(var(--vh) * var(--w) / var(--h)),calc(var(--w) * 2px));
             height:min(calc(var(--vw) * var(--h) / var(--w)),var(--vh),calc(var(--h) * 2px));
             border-radius:.8rem;-webkit-user-select:none;user-select:none;-webkit-user-drag:none;-webkit-touch-callout:none}
-  /* Khổ hẹp: ô chữ rộng hết ngang, tới 64% trang từ đáy lên → tranh nằm trên cùng, trong 30% chiều cao (3% … 33%). */
-  @media (max-width:640px){ .td-tranh-o{--vw:94cqw;--vh:30cqh;left:3%;right:3%;top:3%;bottom:67%} }
   .td-tu{display:inline-block;border-radius:.5rem;padding:0 .12em;cursor:pointer;transition:transform .4s}
   .td-tu.td-sang{background:#fde047}
   .td-tu.td-nhan{background:#ddd6fe;transform:scale(1.12)}
@@ -198,6 +225,64 @@ function tdAnhLat(lat, trang) {
   .td-bong-che{margin-top:.6rem;font-size:.95rem;color:#555}
   .td-bong-che button{font:inherit;min-height:44px;padding:.3rem .9rem;border-radius:999px;border:2px solid #c4b5fd;background:#fff;cursor:pointer}
   .td-bong-che button[aria-pressed=true]{background:#ede9fe;border-color:#7c3aed;font-weight:700}
+  /* Bong bóng nằm trong VÙNG TRANH (lớp td-bong-tranh do datBong đặt): trang nguyên tranh ở khổ > 640 px có ô chữ căn giữa dọc,
+     nên từ ở giữa không còn chỗ trên / dưới cho bong bóng cao ~250 px. Khi đó bong bóng vào vùng tranh bên phải (.td-tranh-o: ôm sát
+     tranh trong cụm ô chữ + tranh căn giữa; luôn nằm bên phải ô chữ → không bao giờ đè chữ), sát mép trái vùng, căn giữa dọc theo từ, nằm gọn trong trang.
+     Bề rộng = --bw do datBong đặt (= min(30rem, max(bề rộng vùng THẬT, 37% trang)): vùng rộng thì bong bóng rộng, vùng hẹp (tranh cao hẹp) thì bong bóng tràn
+     sang lề phải của cụm); 37cqw chỉ dùng khi thiếu --bw. Hẹp hơn 26rem nên chữ to nhỏ lại và được xuống dòng giữa các chữ cái (word-break) thay vì tràn ra ngoài khung. */
+  .td-bong.td-bong-tranh{min-width:0;max-width:none;width:var(--bw,37cqw);padding:.8rem 1rem .7rem}
+  .td-bong-tranh .td-bong-chu{font-size:2.6rem;margin:0 2rem;word-break:break-all}
+  .td-bong-tranh .td-bong-buoc{font-size:1.15rem}
+  /* Điện thoại hẹp (≤ 640 px; không có vùng tranh ở khổ này): bong bóng rộng 92% trang mà chữ cố định 3,6rem làm tiếng dài tràn khung
+     (đo 2026-10-06: 360×740 — "Hướng", "ngóng", "Miếng", "Hương" của Xoài; 320×568 — hầu hết tiếng ≥ 4 chữ cái; 390×844 vẫn xanh vì chỉ quét
+     Bê-na, tối đa 5 chữ cái, còn Cây khế có tiếng 7 chữ cái). Chữ co THEO SỐ CHỮ CÁI --n (Alpine đặt trên .td-bong-chu) để tiếng ngắn vẫn to:
+     cỡ = min(3,6rem, chỗ chứa / (0,8·n + 0,45) em). Chỗ chứa = 92cqw (bề rộng bong bóng) − 2,5rem (hai lề trong 1,25rem) − 4rem (hai lề chữ 2rem,
+     đủ chừa nút ✕ 44 px). Bề rộng chữ tính theo em, đo trên phông Be Vietnam Pro tự host (tối đa theo số chữ cái, gồm cả letter-spacing .06em và
+     lề .04em của <i>): 1→0,82 · 2→1,84 · 3→2,69 · 4→3,39 · 5→3,91 · 6→4,64 · 7→5,04 (7 là dài nhất của tiếng Việt: "nghiêng"); mẫu số 0,8n + 0,45 cho
+     1,25 · 2,05 · 2,85 · 3,65 · 4,45 · 5,25 · 6,05 — luôn lớn hơn số đo. Khổ rộng dần thì cỡ về 3,6rem như cũ: tiếng 5 chữ cái từ 391 px, 7 chữ cái từ 491 px.
+     @supports: Safari < 16 không có cqw thì giữ cỡ 3,6rem cũ. Test: tests/test_tapdoc_o.py mục 8b. */
+  @supports (width:1cqw){
+    @media (max-width:640px){
+      .td-bong-chu{margin:0 2rem;font-size:min(3.6rem,calc((92cqw - 6.5rem) / (0.8 * var(--n,5) + 0.45)))}
+    }
+  }
+  /* ── Điện thoại dọc (≤ 640 px), spec 2026-10-05 tranh-vuông §3 ───────────────────────────────────────────────────
+     Trang kiểu "tranh" (lớp td-tg-tranh do nenTrang()/datTranh() đặt): xếp CỘT — tranh ở trên, ô chữ ở dưới theo nội dung (tới 64%
+     trang), rộng hết ngang. Lề đặt bằng margin của con, KHÔNG padding/gap của .td-trang: đơn vị cq của chính một vùng chứa tính theo
+     vùng chứa CHA (ở đây không có → khung nhìn), lệch số đo. Cảnh "phu" và mọi khổ > 640 px: không đổi.
+     CỤM DỌC (chủ dự án 2026-10-06, cùng ý với phương án C ở > 640 px): tranh + khe 2cqh + ô chữ là MỘT cụm căn GIỮA theo chiều dọc, hai lề
+     trên / dưới bằng nhau, mỗi lề ≥ 3cqh. Trong @supports (width:1cqw) `.td-tranh-o` ÔM SÁT tranh (không còn là vùng chứa size): cao cơ sở =
+     min(94cqw × h / w, 2 × h px) (vừa bề rộng 94% trang, trần 2×), `flex:0 1 auto` + `min-height:0` (co khi cụm quá cao: chữ dài), `aspect-ratio`
+     w / h cho bề rộng theo chiều cao đã co, `align-self:center`; <img> tuyệt đối 100% × 100%. Chữ dài → vùng co đúng bằng phần còn lại → tranh
+     đúng cỡ cũ. Ngoài @supports (Safari < 16): xếp cột cũ — vùng `flex:1 1 0` lấp phần còn lại, vùng chứa size, --vw / --vh = 100cqw / 100cqh.
+     Thanh điều khiển MỘT hàng: nút ≥ 44 px, nhãn chữ (.td-chu) ẩn — aria-label giữ lời; tốc độ là MỘT nút chuyển vòng
+     (vongToc); số trang chỉ "x / N"; thanh tua thành vạch mảnh. `.td-keo+.td-dk` = thanh của trang đọc (thanh nghe lại
+     — cũng .td-dk — giữ flex-wrap vì có thanh trượt min-width 8rem). */
+  .td-toc-vong{display:none}
+  @media (max-width:640px){
+    .td-trang.td-tg-tranh{display:flex;flex-direction:column}
+    .td-tg-tranh .td-tranh-o{position:relative;inset:auto;flex:1 1 0;min-height:0;margin:3cqh 3cqw 0;container-type:size;--vw:100cqw;--vh:100cqh}
+    .td-tg-tranh .td-o{position:relative;left:auto;right:auto;bottom:auto;width:auto;max-height:64%;flex:none;margin:2cqh 3cqw 3cqh}
+    @supports (width:1cqw){
+      .td-trang.td-tg-tranh{justify-content:center}
+      .td-tg-tranh .td-tranh-o{flex:0 1 auto;align-self:center;container-type:normal;aspect-ratio:var(--w) / var(--h);
+        height:min(calc(94cqw * var(--h) / var(--w)),calc(var(--h) * 2px))}
+      .td-tg-tranh .td-tranh{position:absolute;left:0;top:0;width:100%;height:100%}
+    }
+    .td-keo{padding:0 .5rem;border-top:0}
+    .td-keo span{display:none}
+    .td-keo input{height:32px}
+    .td-keo+.td-dk{flex-wrap:nowrap}
+    .td-dk{gap:.35rem;padding:.25rem .5rem .4rem}
+    .td-dk .td-n{padding:.5rem .6rem}
+    .td-dk .td-n-tron{width:44px;height:44px;padding:0;font-size:1.2rem}
+    .td-dk .td-chu,.td-chams,.td-thanh-tr{display:none!important}
+    .td-toc{display:none!important}
+    .td-toc-vong{display:inline-flex;align-items:center;justify-content:center;font-size:1.35rem}
+    .td-dk .td-toc-vong{padding:0;line-height:1}
+    .td-so-o{flex:1 1 auto;min-width:0}
+    .td-dk .td-thu-dang{flex-wrap:nowrap;gap:.3rem}
+  }
 
 </style>
 <script>
@@ -448,6 +533,10 @@ function tdAnhLat(lat, trang) {
         // Tiếng của từ / đánh vần (au2) đi CÙNG tốc độ truyện — bé chọn 🐢 thì đánh vần cũng chậm.
         for (const a of [this.$refs.au, this.$refs.au2]) { a.defaultPlaybackRate = x; a.playbackRate = x; }
       },
+      // Điện thoại dọc: một nút chuyển vòng 0,8 → 1 → 1,2 → 0,8. Giá trị lạ (localStorage sửa tay): indexOf = -1 → 0,8.
+      vongToc() { const v = [0.8, 1, 1.2], i = v.indexOf(this.tocDo); this.datToc(v[(i + 1) % 3]); },
+      bieuToc() { return this.tocDo === 0.8 ? '🐢' : this.tocDo === 1.2 ? '🐇' : '🚶'; },
+      tenToc() { return this.tocDo === 0.8 ? 'Chậm' : this.tocDo === 1.2 ? 'Nhanh' : 'Vừa'; },
 
       // ── vuốt ngang để lật (iPad), phím ← → (máy tính) ───────────────────────
       // Vuốt bắt đầu trên một từ vẫn tính: ngón tay rời từ đó là `huyNhan()` chạy, không đọc từ.
@@ -594,7 +683,13 @@ function tdAnhLat(lat, trang) {
         // khoảng chữ cái của từng bước (`buoc`) tính trên đúng chuỗi này.
         this.bong = { i, chu: this.tg().tu[i].k, g, bs: -1, che: this.cheDV(), viTri: 'visibility:hidden' };
         this.bongDoc();                          // phát NGAY (còn trong cử chỉ nếu mở bằng chạm lại)
-        this.$nextTick(() => this.datBong(i));   // đặt chỗ cần kích thước thật của bong bóng
+        this.$nextTick(() => {
+          this.datBong(i);                       // đặt chỗ cần kích thước thật của bong bóng
+          // Phông đậm của chữ phóng to nạp LƯỜI, lúc bong bóng đầu tiên hiện: lần đo trên đây còn dùng phông dự phòng (hàng "Kiểu đánh vần" xuống dòng → cao hơn
+          // thật 44 px ở 360 px, bong bóng đặt lệch), phông thật về làm đổi cỡ mà không ai đặt lại. Phông xong thì đặt lại một lần (idempotent).
+          if (document.fonts)   // luôn nối: lúc này `status` có thể chưa là 'loading' (phông bắt đầu nạp sau lần bố cục kế); đã xong sẵn thì lần đặt lại này là phép thừa vô hại
+            document.fonts.ready.then(() => this.bong && this.bong.i === i && this.datBong(i));
+        });
       },
       dongBong() {
         if (!this.bong) return;
@@ -640,16 +735,50 @@ function tdAnhLat(lat, trang) {
         this.phat();
       },
       // Đặt bong bóng cạnh từ: ưu tiên phía trên, không đủ chỗ thì phía dưới, luôn gọn trong trang.
+      // NGOẠI LỆ — trang nguyên tranh ở khổ > 640 px (ô chữ căn giữa dọc, CSS): từ ở giữa trang không đủ chỗ cả trên lẫn dưới
+      // (bong bóng cao ~250 px, trang ~515 px) và phép kẹp sẽ đè bong bóng lên CHÍNH từ vừa chạm (đo 2026-10-05: 57/129 từ Xoài).
+      // Khi đó bong bóng vào vùng tranh bên phải (.td-tranh-o; lớp td-bong-tranh), sát mép trái vùng, căn giữa dọc theo từ, kẹp trong trang.
+      // Vùng tranh ÔM SÁT tranh (CSS xếp hàng: ô chữ + khe + tranh thành một cụm giữa trang, phương án C) nên rộng hẹp tuỳ tranh: bề rộng
+      // bong bóng THEO vùng thật — min(30rem, max(vùng, 37% trang)), truyền qua biến --bw trong viTri; vùng rộng thì bong bóng ít xuống dòng,
+      // thấp hơn; vùng hẹp (tranh cao hẹp) thì không hẹp hơn 37% trang, tràn sang lề phải của cụm. Bong bóng luôn nằm giữa mép phải ô chữ
+      // + 8 px và mép phải trang − 8 px (không bao giờ đè ô chữ); hết chỗ (< 14rem) thì dùng công thức cũ. Mọi trường hợp khác (phủ,
+      // điện thoại, đủ chỗ trên / dưới) giữ nguyên.
+      // Lớp và --bw do hàm này tự đặt/gỡ (không buộc Alpine): đo dạng thường trước, chỉ đổi dạng khi cần — cùng một lượt, không nháy.
+      // Đo xong ghi LẠI thuộc tính style đúng bằng viTri (dat()): lúc đo hàm đã chạm vào style của bong bóng, mà Alpine không ghi lại
+      // khi viTri không đổi chuỗi.
       datBong(i) {
         const pop = this.$refs.bong, tu = this.$refs.o && this.$refs.o.querySelector('[data-td-tu="' + i + '"]');
         if (!pop || !tu || !this.bong) return;
         const pr = pop.parentElement.getBoundingClientRect(), r = tu.getBoundingClientRect();
+        const dat = (viTri) => { this.bong.viTri = viTri; pop.setAttribute('style', viTri); };
+        pop.classList.remove('td-bong-tranh');
         const w = pop.offsetWidth, h = pop.offsetHeight;
         let top = r.top - pr.top - h - 12;
-        if (top < 8) top = r.bottom - pr.top + 12;
+        const duoi = r.bottom - pr.top + 12;
+        if (top < 8 && duoi + h > pr.height - 8 && this.datTranh() && !window.matchMedia('(max-width:640px)').matches) {
+          const z = pop.parentElement.querySelector('.td-tranh-o'), o = this.$refs.o;
+          if (z && o) {
+            const zr = z.getBoundingClientRect(), rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+            const lo = o.getBoundingClientRect().right - pr.left + 8, hi = pr.width - 8;   // chỗ cho bong bóng: sát phải ô chữ → sát mép phải trang
+            let bw = Math.min(30 * rem, Math.max(zr.width, 0.37 * pr.width)), left = zr.left - pr.left;
+            if (left + bw > hi) left = hi - bw;
+            if (left < lo) { left = lo; bw = Math.min(bw, hi - lo); }
+            if (bw >= 14 * rem) {
+              pop.classList.add('td-bong-tranh');
+              pop.style.setProperty('--bw', bw + 'px');
+              const hz = pop.offsetHeight;   // dạng vùng hẹp nên cao hơn; trang quá thấp (iPad nhỏ / cửa sổ thấp) mà vẫn không vừa thì bỏ — nút bị .td-trang cắt mất
+              if (hz <= pr.height - 16) {
+                const tren = Math.max(8, Math.min(pr.height - hz - 8, (r.top + r.bottom) / 2 - pr.top - hz / 2));
+                return dat('top:' + tren + 'px;left:' + left + 'px;--bw:' + bw + 'px');
+              }
+              pop.classList.remove('td-bong-tranh');   // không vừa chiều cao trang → công thức cũ bên dưới
+            }
+          }
+        }
+        if (top < 8) top = duoi;
         top = Math.max(8, Math.min(pr.height - h - 8, top));
         const left = Math.max(8, Math.min(pr.width - w - 8, r.left - pr.left + r.width / 2 - w / 2));
-        this.bong.viTri = 'top:' + top + 'px;left:' + left + 'px';
+        dat('top:' + top + 'px;left:' + left + 'px');
       },
     };
   }
@@ -659,6 +788,8 @@ function tdAnhLat(lat, trang) {
   .td-q-than{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0}
   .td-q-truyen{display:flex;flex-direction:column;gap:.6rem;padding:1rem;background:#f3f0ff;border-right:2px dashed #c4b5fd;overflow-y:auto}
   .td-q-anh{flex:none;height:9rem;border-radius:1rem;background:#fef3c7 center/cover no-repeat}
+  /* Trang kiểu "nguyên tranh" (dat = 'tranh'): hiện TRỌN tranh trên nền trắng — cover cắt mất mép tranh. Đặt SAU .td-q-anh (cùng độ ưu tiên). */
+  .td-q-anh-tranh{background-color:#fff;background-size:contain}
   .td-q-chu{flex:1;margin:0;padding:.8rem 1rem;border-radius:1rem;background:#fff;font-size:1.3rem;line-height:1.7}
   .td-q-lat{flex:none;display:flex;align-items:center;justify-content:space-between;gap:.5rem}
   .td-q-hoi-o{padding:1rem 1.2rem;overflow-y:auto}
@@ -1603,15 +1734,15 @@ function tdAnhLat(lat, trang) {
         <span class="td-n" aria-hidden="true" style="visibility:hidden" x-text="view === 'nghe' ? '← Xong' : '← Thư viện'"></span>
       </div>
 
-      <div class="td-trang" :style="nenTrang()" @pointerdown="vuotBat($event)" @pointerup="vuotTha($event)" @pointercancel="vuot = null">
+      <div class="td-trang" :class="datTranh() ? 'td-tg-tranh' : ''" :style="nenTrang()" @pointerdown="vuotBat($event)" @pointerup="vuotTha($event)" @pointercancel="vuot = null">
         
-        <template x-if="datTranh()"><div class="td-tranh-o" aria-hidden="true"><img class="td-tranh" data-td-tranh alt="" draggable="false" :src="anhUrl(tg().anh)" :style="'--w:' + tg().w + ';--h:' + tg().h"></div></template>
+        <template x-if="datTranh()"><div class="td-tranh-o" aria-hidden="true" :style="'--w:' + tg().w + ';--h:' + tg().h"><img class="td-tranh" data-td-tranh alt="" draggable="false" :src="anhUrl(tg().anh)"></div></template>
         <div class="td-dem" data-td-dem x-show="thu && thu.dem > 0" x-text="thu ? thu.dem : ''"></div>
         <p class="td-tb" data-td-thong-bao x-show="thongBao" x-text="thongBao" @click="thongBao = ''"></p>
         <template x-if="bong">
           <div class="td-bong" data-td-bong x-ref="bong" :style="bong ? bong.viTri : ''">
             <button type="button" class="td-bong-x" data-td-bong-dong aria-label="Đóng" @click="dongBong()">✕</button>
-            <div class="td-bong-chu" data-td-bong-chu><template x-for="(c, j) in (bong ? [...bong.chu] : [])" :key="j"><i :class="{ 'td-sang': chuSang(j) }" x-text="c"></i></template></div>
+            <div class="td-bong-chu" data-td-bong-chu :style="'--n:' + (bong ? [...bong.chu].length : 1)"><template x-for="(c, j) in (bong ? [...bong.chu] : [])" :key="j"><i :class="{ 'td-sang': chuSang(j) }" x-text="c"></i></template></div>
             <div class="td-bong-buoc" x-show="bong && bong.g.buoc">
               <template x-for="(b, k) in buocHien()" :key="buocDau() + '-' + k"><span data-td-buoc :class="{ 'td-sang': bong && bong.bs === k + buocDau() }" x-text="b[0]"></span></template>
             </div>
@@ -1646,8 +1777,9 @@ function tdAnhLat(lat, trang) {
         <div class="td-dk">
           
           <button type="button" class="td-n td-n-phu td-n-tron" data-td-lui aria-label="Trang trước" :class="trang <= 1 ? 'td-mo' : ''" @click="lat(-1)">◀</button>
+          
           <button type="button" class="td-n" data-td-phat :disabled="amLoi || dangThu()" @click="dangDoc ? tam() : phat()"
-                  x-text="amLoi ? '🔇 Không có tiếng' : (dangDoc ? '⏸ Tạm dừng' : '▶ Nghe đọc')"></button>
+                  :aria-label="amLoi ? 'Không có tiếng' : (dangDoc ? 'Tạm dừng' : 'Nghe đọc')"><span x-text="amLoi ? '🔇' : (dangDoc ? '⏸' : '▶')"></span><span class="td-chu" x-text="amLoi ? ' Không có tiếng' : (dangDoc ? ' Tạm dừng' : ' Nghe đọc')"></span></button>
           
           <span class="td-toc" role="group" aria-label="Tốc độ đọc" x-show="!dangThu()">
             <button type="button" data-td-toc="0.8" :disabled="dangThu()" :aria-pressed="String(tocDo === 0.8)" @click="datToc(0.8)" title="Chậm">🐢</button>
@@ -1655,19 +1787,22 @@ function tdAnhLat(lat, trang) {
             <button type="button" data-td-toc="1.2" :disabled="dangThu()" :aria-pressed="String(tocDo === 1.2)" @click="datToc(1.2)" title="Nhanh">🐇</button>
           </span>
           
+          <button type="button" class="td-n td-n-phu td-toc-vong" data-td-toc-vong x-show="!dangThu()" :aria-label="'Tốc độ: ' + tenToc()" @click="vongToc()" x-text="bieuToc()"></button>
+          
           <span class="td-so-o" data-td-trang-o>
-            <span>Trang</span> <b data-td-so-trang x-text="trang + ' / ' + trs.length"></b>
+            <span class="td-chu">Trang</span> <b data-td-so-trang x-text="trang + ' / ' + trs.length"></b>
             <span class="td-chams" aria-hidden="true" x-show="!dangThu() && trs.length <= TRANG_CHAM"><template x-for="p in (trs.length <= TRANG_CHAM ? trs : [])" :key="p.so"><i class="td-ch" :data-td-cham="p.so" :class="loaiCham(p)"></i></template></span>
             <span class="td-thanh-tr" data-td-thanh-tr aria-hidden="true" x-show="!dangThu() && trs.length > TRANG_CHAM"><i :style="'width:' + (100 * trang / trs.length) + '%'"></i></span>
           </span>
           
-<button type="button" class="td-n td-n-do" data-td-thu x-show="thuDuoc() && !(thu && (thu.dang || thu.dem > 0))" @click="thuBatDau()">🎙 Thu âm</button>
+<button type="button" class="td-n td-n-do" data-td-thu aria-label="Thu âm" x-show="thuDuoc() && !(thu && (thu.dang || thu.dem > 0))" @click="thuBatDau()">🎙<span class="td-chu"> Thu âm</span></button>
 <span class="td-thu-dang" x-show="thu && thu.dang && !thu.het">
   <span class="td-cham" :class="thu && thu.tam ? 'td-nghi' : ''"></span>
-  <span data-td-thu-gio x-text="thu && thu.dang ? (thu.tam ? 'Đang tạm dừng ở trang ' + trang : 'Đang thu') : ''"></span>
-  <button type="button" class="td-n td-n-phu" data-td-thu-tam x-show="thu && !thu.tam" @click="thuTam()">⏸ Tạm dừng</button>
-  <button type="button" class="td-n td-n-do" data-td-thu-tiep x-show="thu && thu.tam" @click="thuTiep()">▶ Thu tiếp</button>
-  <button type="button" class="td-n td-n-phu" data-td-thu-xong @click="thuXong()" x-text="trang >= trs.length ? '✅ Xong' : '⏹ Kết thúc'"></button>
+  
+  <span class="td-chu" data-td-thu-gio x-text="thu && thu.dang ? (thu.tam ? 'Đang tạm dừng ở trang ' + trang : 'Đang thu') : ''"></span>
+  <button type="button" class="td-n td-n-phu" data-td-thu-tam aria-label="Tạm dừng thu" x-show="thu && !thu.tam" @click="thuTam()">⏸<span class="td-chu"> Tạm dừng</span></button>
+  <button type="button" class="td-n td-n-do" data-td-thu-tiep aria-label="Thu tiếp" x-show="thu && thu.tam" @click="thuTiep()">▶<span class="td-chu"> Thu tiếp</span></button>
+  <button type="button" class="td-n td-n-phu" data-td-thu-xong :aria-label="trang >= trs.length ? 'Xong' : 'Kết thúc'" @click="thuXong()"><span x-text="trang >= trs.length ? '✅' : '⏹'"></span><span class="td-chu" x-text="trang >= trs.length ? ' Xong' : ' Kết thúc'"></span></button>
 </span>
           <button type="button" class="td-n td-n-phu td-n-tron" data-td-toi aria-label="Trang sau" @click="lat(1)">▶</button>
         </div>
@@ -1701,7 +1836,7 @@ function tdAnhLat(lat, trang) {
       <div class="td-q-than">
         <div class="td-q-truyen" data-td-q-truyen :class="qXem ? 'td-q-mo' : ''">
           
-          <template x-if="trs[qTrang - 1].anh"><div class="td-q-anh" :style="qNen()"></div></template>
+          <template x-if="trs[qTrang - 1].anh"><div class="td-q-anh" :class="trs[qTrang - 1].dat === 'tranh' ? 'td-q-anh-tranh' : ''" :style="qNen()"></div></template>
           <p class="td-q-chu"><template x-for="(w, i) in trs[qTrang - 1].tu" :key="qTrang + '-' + i"><span><template x-if="w.nl"><br></template><span x-text="w.c"></span> </span></template></p>
           <div class="td-q-lat">
             <button type="button" class="td-n td-n-phu td-n-tron" data-td-q-lui aria-label="Trang trước" :disabled="qTrang <= 1" @click="qLat(-1)">◀</button>
