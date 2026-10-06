@@ -319,7 +319,7 @@
     // Nhãn loại mục để dòng "Đang lọc" gọi tên chip đang bật. (tojson trong <script> — được.)
     var LOAI = { "page": "\ud83d\udcc4 v\u0103n b\u1ea3n","file": "\ud83d\udcce t\u00e0i li\u1ec7u","assignment": "\ud83d\udcdd b\u00e0i t\u1eadp","external": "\ud83d\udd17 li\u00ean k\u1ebft ngo\u00e0i", };
     var TIEN_DO_KEY = "pl/80095/";
-    var TONG_MUC = 24;
+    var TONG_MUC = 27;
     var CO_HW = false;
     /** State của TRANG MÔN. Trước đây nằm thẳng trong `x-data` của <body>; nay phải là hàm vì
         ô tìm dùng chung (`_timkiem.html`) chèn thêm thành viên — nhét vào thuộc tính HTML là
@@ -547,7 +547,7 @@ timMo: false,
             <span class="min-w-0 flex-1">Unit 2: Weather Data Management System</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/8'"></span>
+                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/11'"></span>
             </template>
           </button>
         </li>
@@ -615,14 +615,264 @@ timMo: false,
         <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">Unit 2: Weather Data Management System</span>
         <template x-if="p.online">
           <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
-                :class="moduleDone($el.closest('[data-module]'), p.done) === 8
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 11
                         ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
-                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/8'"></span>
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/11'"></span>
         </template>
-        <span class="text-xs text-slate-400 shrink-0">8 mục</span>
+        <span class="text-xs text-slate-400 shrink-0">11 mục</span>
       </button>
 
       <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-sechead data-title="Week 8" data-sec="4"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>Week 8</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="Week 8" data-type="page" data-sec="4"
+             data-pkey="pl/80095/8333934" data-hash="670ca280fe051d095302c002eda3a4fa1ba4172a" data-ts="1791256235000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/80095/8333934'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80095/8333934'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80095/8333934']; $el.indeterminate = !!p.redo['pl/80095/8333934']"
+                     @change="await p.toggle('pl/80095/8333934', '670ca280fe051d095302c002eda3a4fa1ba4172a'); $el.checked = !!p.done['pl/80095/8333934']; $el.indeterminate = !!p.redo['pl/80095/8333934']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Week 8</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80095/8333934', '670ca280fe051d095302c002eda3a4fa1ba4172a')">
+                  <button @click.stop="p.seen('pl/80095/8333934', '670ca280fe051d095302c002eda3a4fa1ba4172a')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 06/10</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80095/pages/week-8-4" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Our success criteria for the lesson are:</p>
+<p><span>I can identify the specific purposes and objectives of a data analysis project to determine the relevant data needed.</span></p>
+<p><span>I can design a single table database by identifying the data attributes (columns) required to address the objectives of the statistical investigation.</span></p>
+<p><span>I can choose appropriate data types for each data attribute, such as text, date, or numeric, to ensure efficient data storage and processing in the database.</span></p>
+<p> </p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Weather Database" data-type="assignment" data-sec="4"
+             data-pkey="pl/80095/8333936" data-hash="09b4db8258696efb23b4af5d3328b979f0e00907" data-ts="1791256238000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/80095/8333936'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80095/8333936'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80095/8333936']; $el.indeterminate = !!p.redo['pl/80095/8333936']"
+                     @change="await p.toggle('pl/80095/8333936', '09b4db8258696efb23b4af5d3328b979f0e00907'); $el.checked = !!p.done['pl/80095/8333936']; $el.indeterminate = !!p.redo['pl/80095/8333936']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài tập">📝</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Weather Database</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài tập</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80095/8333936', '09b4db8258696efb23b4af5d3328b979f0e00907')">
+                  <button @click.stop="p.seen('pl/80095/8333936', '09b4db8258696efb23b4af5d3328b979f0e00907')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 06/10</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80095/assignments/2878086" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p class="cvGsUA direction-ltr align-center para-style-body"><span class="OYPEnA text-decoration-none text-strikethrough-none">Your job:</span></p>
+<p class="cvGsUA direction-ltr align-center para-style-body"><span class="OYPEnA text-decoration-none text-strikethrough-none">1) Choose different cities from around the world.</span></p>
+<p class="cvGsUA direction-ltr align-center para-style-body"><span class="OYPEnA text-decoration-none text-strikethrough-none">Use a search engine to research their weather.</span></p>
+<p class="cvGsUA direction-ltr align-center para-style-body"><span class="OYPEnA text-decoration-none text-strikethrough-none">Create a database about what you find.</span></p>
+<p class="cvGsUA direction-ltr align-center para-style-body"> </p>
+<p><span>Green group:</span></p>
+<p><a href="https://www.canva.com/design/DAF-mmgyOrc/wOMp6-kkZ0x1a49tj_qWzg/edit?utm_content=DAF-mmgyOrc&amp;utm_campaign=designshare&amp;utm_medium=link2&amp;utm_source=sharebutton" rel="noopener" target="_blank"><span>https://www.canva.com/design/DAF-mmgyOrc/wOMp6-kkZ0x1a49tj_qWzg/edit?utm_content=DAF-mmgyOrc&amp;utm_campaign=designshare&amp;utm_medium=link2&amp;utm_source=sharebutton</span></a></p>
+<p><span>Yellow group:</span></p>
+<p><a href="https://www.canva.com/design/DAF-mpwRy0U/_msiLpriig2rl2Q9WjpUCg/edit?utm_content=DAF-mpwRy0U&amp;utm_campaign=designshare&amp;utm_medium=link2&amp;utm_source=sharebutton" rel="noopener" target="_blank"><span>https://www.canva.com/design/DAF-mpwRy0U/_msiLpriig2rl2Q9WjpUCg/edit?utm_content=DAF-mpwRy0U&amp;utm_campaign=designshare&amp;utm_medium=link2&amp;utm_source=sharebutton</span></a></p>
+<p><span>Red group: Independent</span></p>
+<p><span><a href="https://www.canva.com/design/DAF-nEUyVoQ/WVD3RfkstR5EOZ7CFLFZjw/edit?utm_content=DAF-nEUyVoQ&amp;utm_campaign=designshare&amp;utm_medium=link2&amp;utm_source=sharebutton" rel="noopener" target="_blank">https://www.canva.com/design/DAF-nEUyVoQ/WVD3RfkstR5EOZ7CFLFZjw/edit?utm_content=DAF-nEUyVoQ&amp;utm_campaign=designshare&amp;utm_medium=link2&amp;utm_source=sharebutton</a></span></p>
+<p> </p>
+<p> </p>
+<p><span>2) </span></p>
+<p class="cvGsUA direction-ltr align-center para-style-body"><span class="OYPEnA text-decoration-none text-strikethrough-none">Your job:</span></p>
+<p class="cvGsUA direction-ltr align-center para-style-body"><span class="OYPEnA text-decoration-none text-strikethrough-none">Create a key on the spreadsheet and highlight the different columns to show the different types of data.</span></p>
+<ul>
+<li><span class="OYPEnA text-decoration-none text-strikethrough-none">Integer – whole numbers</span></li>
+<li><span class="OYPEnA text-decoration-none text-strikethrough-none">Float – numbers containing a decimal place</span></li>
+<li><span class="OYPEnA text-decoration-none text-strikethrough-none">String – mulitple letters</span></li>
+<li><span class="OYPEnA text-decoration-none text-strikethrough-none">Date – specific date</span></li>
+<li><span class="OYPEnA text-decoration-none text-strikethrough-none">Boolean – true or false (yes or no)</span></li>
+</ul>
+<p> </p>
+<p><span>Extension:</span></p>
+<p>Answer these questions about your database:</p>
+<p><a class="inline_disabled" href="https://www.canva.com/design/DAF-nQupYEo/r84mTN22gjb20xoOrowdtA/edit?utm_content=DAF-nQupYEo&amp;utm_campaign=designshare&amp;utm_medium=link2&amp;utm_source=sharebutton" rel="noopener" target="_blank">Database Questions</a></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Grade 5 Week 8" data-type="external" data-sec="4"
+             data-pkey="pl/80095/8333935" data-hash="8319fb57c74caf8806f5982897d4b466ae10bd7d" data-ts="1791282660000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/80095/8333935'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80095/8333935'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80095/8333935']; $el.indeterminate = !!p.redo['pl/80095/8333935']"
+                     @change="await p.toggle('pl/80095/8333935', '8319fb57c74caf8806f5982897d4b466ae10bd7d'); $el.checked = !!p.done['pl/80095/8333935']; $el.indeterminate = !!p.redo['pl/80095/8333935']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://www.canva.com/design/DAF-mX7hrRc/wH86jPPqHV9MT-YzpA5JFg/edit?utm_content=DAF-mX7hrRc&amp;utm_campaign=designshare&amp;utm_medium=link2&amp;utm_source=sharebutton" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Grade 5 Week 8
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80095/8333935', '8319fb57c74caf8806f5982897d4b466ae10bd7d')">
+                  <button @click.stop="p.seen('pl/80095/8333935', '8319fb57c74caf8806f5982897d4b466ae10bd7d')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 06/10</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
         
         
         <div data-sechead data-title="Week 7" data-sec="3"
