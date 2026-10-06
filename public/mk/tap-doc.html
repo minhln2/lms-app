@@ -142,8 +142,9 @@ function tdAnhLat(lat, trang) {
   .td-B .td-o{font-size:clamp(18px,2.73cqw,28px)}
   .td-C .td-o{font-size:clamp(18px,2.2cqw,22.5px);padding:.8rem 1.4rem}
   .td-D .td-o{font-size:clamp(16px,2cqw,20px);padding:.8rem 1.4rem}
-  /* Khổ hẹp: rộng hết ngang (3% mỗi bên), bám ĐÁY, cao theo nội dung tới 64% trang. */
-  @media (max-width:640px){ .td-o{right:3%;width:auto;max-width:none;max-height:64%} }
+  /* Khổ hẹp: rộng hết ngang (3% mỗi bên), bám ĐÁY, cao theo nội dung tới 64% trang. Đáy cách mép trang ≥ 16 px (max(3%, 16px)): trang thấp
+     (640×360: trang ≈ 250 px → 3% ≈ 7 px) thì vùng chạm thanh tua (đè 16 px cuối trang, xem THANH TUA) phủ lên dòng chữ cuối. */
+  @media (max-width:640px){ .td-o{right:3%;width:auto;max-width:none;max-height:64%;bottom:max(3%,16px)} }
   /* iPad (> 640 px), trang kiểu "nguyên tranh": xếp HÀNG — ô chữ bên trái, tranh bên phải, MỘT CỤM (ô chữ + khe 2% + tranh) căn GIỮA theo
      chiều ngang trang, hai lề ngoài bằng nhau, mỗi lề ≥ 3% (chủ dự án 2026-10-05, phương án C). Ô chữ ngắn thì tranh to ra tới khi vừa
      CHIỀU CAO (92% trang) hoặc vừa phần bề rộng còn lại, không để trống một khoảng lớn giữa chữ và tranh; ô chữ dài (tối đa 55%) thì cụm
@@ -251,33 +252,56 @@ function tdAnhLat(lat, trang) {
      trang), rộng hết ngang. Lề đặt bằng margin của con, KHÔNG padding/gap của .td-trang: đơn vị cq của chính một vùng chứa tính theo
      vùng chứa CHA (ở đây không có → khung nhìn), lệch số đo. Cảnh "phu" và mọi khổ > 640 px: không đổi.
      CỤM DỌC (chủ dự án 2026-10-06, cùng ý với phương án C ở > 640 px): tranh + khe 2cqh + ô chữ là MỘT cụm căn GIỮA theo chiều dọc, hai lề
-     trên / dưới bằng nhau, mỗi lề ≥ 3cqh. Trong @supports (width:1cqw) `.td-tranh-o` ÔM SÁT tranh (không còn là vùng chứa size): cao cơ sở =
+     trên / dưới bằng nhau, mỗi lề ≥ max(3cqh, 16 px) (16 px = nửa trên vùng chạm thanh tua, xem THANH TUA: trang thấp thì 3cqh nhỏ hơn 16 px). Trong @supports (width:1cqw) `.td-tranh-o` ÔM SÁT tranh (không còn là vùng chứa size): cao cơ sở =
      min(94cqw × h / w, 2 × h px) (vừa bề rộng 94% trang, trần 2×), `flex:0 1 auto` + `min-height:0` (co khi cụm quá cao: chữ dài), `aspect-ratio`
      w / h cho bề rộng theo chiều cao đã co, `align-self:center`; <img> tuyệt đối 100% × 100%. Chữ dài → vùng co đúng bằng phần còn lại → tranh
      đúng cỡ cũ. Ngoài @supports (Safari < 16): xếp cột cũ — vùng `flex:1 1 0` lấp phần còn lại, vùng chứa size, --vw / --vh = 100cqw / 100cqh.
+     Lề của vùng tranh và ô chữ viết bằng cq nên trình duyệt cũ BỎ cả khai báo (lề về 0: ô chữ dính đáy trang, dính hai mép) — mỗi dòng có thêm một
+     dòng dự phòng đứng TRƯỚC (rem + %; dòng cq đứng sau thắng ở nơi có cq, nên không đổi gì ở đó). Lề dưới ô chữ của dòng dự phòng 1,2rem = 19 px ≥ 16 px: vùng chạm
+     thanh tua (xem dưới) đè 16 px cuối của trang, không được phủ lên dòng chữ cuối. Chốt: tests/test_tapdoc_cu.py (giả lập bỏ cq).
      Thanh điều khiển MỘT hàng: nút ≥ 44 px, nhãn chữ (.td-chu) ẩn — aria-label giữ lời; tốc độ là MỘT nút chuyển vòng
      (vongToc); số trang chỉ "x / N"; thanh tua thành vạch mảnh. `.td-keo+.td-dk` = thanh của trang đọc (thanh nghe lại
-     — cũng .td-dk — giữ flex-wrap vì có thanh trượt min-width 8rem). */
+     — cũng .td-dk — giữ flex-wrap vì có thanh trượt min-width 8rem).
+     THANH TUA ĐÈ MÉP thanh nút (chủ dự án 2026-10-06, spec bộ truyện §3): không còn hàng riêng 32 px. `.td-duoi` (khung bọc thanh tua + thanh nút)
+     là `position:relative`; `.td-keo` tuyệt đối `top:-16px` cao 32 px → TÂM vùng chạm đúng mép trên thanh nút: nửa trên đè 16 px lề dưới trang
+     (ô chữ cách đáy trang ≥ 16 px ở MỌI chiều cao trang — bố cục tranh: margin-bottom max(3cqh, 16px); bố cục phủ: bottom max(3%, 16px). Chỉ 3cqh / 3% thì
+     không đủ: 640×360 trang cao ≈ 250 px → ≈ 7 px, vùng chạm phủ 8 px của dòng chữ cuối. Chốt: tests/test_tapdoc_dt.py mục 8b), nửa dưới đè 16 px đầu thanh nút (đỉnh nút ◀ cách mép 4 px: nút cao 44 px → còn
+     48 − 16 = 32 px bấm được, đúng ngưỡng ADR 0016). Vạch HIỆN chỉ 4 px (::-webkit-slider-runnable-track / ::-moz-range-track #a78bfa, núm
+     14 px #7c3aed — phải tự vẽ vì `appearance:none` mới đặt được cỡ), nằm giữa mép nên đỉnh vạch cách mép 2 px. Đo 390×844 (tests/test_tapdoc_dt.py
+     mục 8, vạch đo bằng điểm ảnh): phần dưới (thanh tua + thanh nút) 86,4 px (hàng tua 32 + thanh nút 54,4) → 56,4 px (≤ 60); .td-trang cao thêm 32 px.
+     Khổ > 640 px: không đổi (hàng riêng cao 44 px). */
   .td-toc-vong{display:none}
   @media (max-width:640px){
     .td-trang.td-tg-tranh{display:flex;flex-direction:column}
-    .td-tg-tranh .td-tranh-o{position:relative;inset:auto;flex:1 1 0;min-height:0;margin:3cqh 3cqw 0;container-type:size;--vw:100cqw;--vh:100cqh}
-    .td-tg-tranh .td-o{position:relative;left:auto;right:auto;bottom:auto;width:auto;max-height:64%;flex:none;margin:2cqh 3cqw 3cqh}
+    .td-tg-tranh .td-tranh-o{position:relative;inset:auto;flex:1 1 0;min-height:0;margin:1rem 3% 0;margin:max(3cqh,16px) 3cqw 0;container-type:size;--vw:100cqw;--vh:100cqh}
+    .td-tg-tranh .td-o{position:relative;left:auto;right:auto;bottom:auto;width:auto;max-height:64%;flex:none;margin:.75rem 3% 1.2rem;margin:2cqh 3cqw max(3cqh,16px)}
     @supports (width:1cqw){
       .td-trang.td-tg-tranh{justify-content:center}
       .td-tg-tranh .td-tranh-o{flex:0 1 auto;align-self:center;container-type:normal;aspect-ratio:var(--w) / var(--h);
         height:min(calc(94cqw * var(--h) / var(--w)),calc(var(--h) * 2px))}
       .td-tg-tranh .td-tranh{position:absolute;left:0;top:0;width:100%;height:100%}
     }
-    .td-keo{padding:0 .5rem;border-top:0}
+    .td-duoi{position:relative}
+    .td-keo{position:absolute;left:0;right:0;top:-16px;height:32px;padding:0 .5rem;z-index:2;background:none;border-top:0}
     .td-keo span{display:none}
-    .td-keo input{height:32px}
+    .td-keo input{height:32px;margin:0;-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer}
+    .td-keo input:disabled{opacity:.4;cursor:default}
+    .td-keo input::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:#a78bfa}
+    .td-keo input::-moz-range-track{height:4px;border-radius:2px;background:#a78bfa}
+    .td-keo input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;margin-top:-5px;border:0;border-radius:50%;background:#7c3aed}
+    .td-keo input::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:#7c3aed}
     .td-keo+.td-dk{flex-wrap:nowrap}
     .td-dk{gap:.35rem;padding:.25rem .5rem .4rem}
     .td-dk .td-n{padding:.5rem .6rem}
     .td-dk .td-n-tron{width:44px;height:44px;padding:0;font-size:1.2rem}
     .td-dk .td-chu,.td-chams,.td-thanh-tr{display:none!important}
     .td-toc{display:none!important}
+    /* Thanh tiêu đề của CHƯƠNG một bộ (.td-thanh-bo): bỏ ô trống bên phải và tên chương, tên bộ cắt (…) riêng, "Chương k" /
+       "Phần k/N" (.td-tb-so) KHÔNG BAO GIỜ bị cắt. > 640 px: ba <span> liền nhau như một chuỗi, y như trước. */
+    .td-thanh-bo .td-tb-cho,.td-thanh-bo .td-tb-chuong{display:none}
+    .td-thanh-bo b{display:flex;justify-content:center;min-width:0}
+    .td-thanh-bo .td-tb-ten{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .td-thanh-bo .td-tb-so{flex:none;white-space:nowrap}
     .td-toc-vong{display:inline-flex;align-items:center;justify-content:center;font-size:1.35rem}
     .td-dk .td-toc-vong{padding:0;line-height:1}
     .td-so-o{flex:1 1 auto;min-width:0}
@@ -1518,31 +1542,74 @@ function tdAnhLat(lat, trang) {
         },
 
         // ── thư viện ──────────────────────────────────────────────────────────
-        // Một truyện lọt bộ lọc cấp + đọc/chưa đọc. "Đã đọc" = doc_xong, làm quiz hay chưa đều tính.
-        khop(t) {
-          const x = this.s(t.id).doc_xong;
-          return (this.loc === 'all' || t.cap === this.loc) && (this.loai === 'all' || (this.loai === 'da') === x);
+        // Bộ truyện (spec 2026-10-06): hàng index mang `bo` là MỘT chương; các chương cùng bo.id gộp thành
+        // MỘT mục thư viện — gộp hoàn toàn ở client, Worker / D1 vẫn thấy từng chương như một truyện riêng.
+        // Mục gộp: { bo: true, id: <chương sẽ mở>, boId, ten: tên bộ, cap: cấp CAO NHẤT các chương, bia: bìa chương 1,
+        // kieu, tong, chuong: [hàng index, theo bo.so] }; đứng ở chỗ chương đầu tiên của bộ trong index.
+        // Chương sẽ mở = chương nhỏ nhất chưa doc_xong (đọc hết thì chương 1).
+        // ⚠ `bo === true` là cờ của MỤC GỘP. Hàng chương thô cũng có `bo`, nhưng là OBJECT — luôn so `=== true`.
+        gop() {
+          const ra = [], theoBo = new Map();
+          for (const t of this.ds) {
+            const b = t.bo;
+            if (!b || typeof b !== 'object' || typeof b.id !== 'string' || !Number.isInteger(b.so)) { ra.push(t); continue; }
+            let m = theoBo.get(b.id);
+            if (!m) {
+              m = { bo: true, boId: b.id, ten: b.ten || t.ten, kieu: b.kieu, tong: b.tong, chuong: [] };
+              theoBo.set(b.id, m); ra.push(m);
+            }
+            m.chuong.push(t);
+          }
+          const hang = { A: 0, B: 1, C: 2, D: 3 };
+          for (const m of theoBo.values()) {
+            m.chuong.sort((x, y) => x.bo.so - y.bo.so);
+            const dau = m.chuong[0];
+            m.cap = m.chuong.reduce((c, t) => ((hang[t.cap] ?? -1) > (hang[c] ?? -1) ? t.cap : c), dau.cap);
+            m.bia = dau.bia;
+            // `du`: đủ MỌI chương 1..tong trong index. Bộ index dở (thiếu chương) không bao giờ "đã đọc" / "đã xong",
+            // dù mọi chương đang có đều đã đọc — chỉ khi đủ mới tính (daDoc, daLamQuiz, daThu).
+            const tong = Number.isInteger(m.tong) && m.tong >= 1 ? m.tong : m.chuong.length;
+            const co = new Set(m.chuong.map((t) => t.bo.so));
+            m.du = Array.from({ length: tong }, (_, i) => i + 1).every((k) => co.has(k));
+            m.tong = Math.max(tong, m.chuong.length);
+            m.id = (m.chuong.find((t) => !this.s(t.id).doc_xong) || dau).id;
+          }
+          return ra;
         },
-        // "Đang đọc": đọc dở, hoặc đọc xong mà chưa làm quiz.
-        dangDo(t) { const c = this.s(t.id); return c.doc_xong ? !this.daLamQuiz(t) : c.da_thay.length > 0; },
+        // Mọi hàm dưới nhận một MỤC: truyện thường (hàng index) hoặc mục gộp của gop().
+        // "Đã đọc" = doc_xong (làm quiz hay chưa đều tính); bộ "đã đọc" khi ĐỦ chương 1..tong (t.du) và MỌI chương doc_xong.
+        daDoc(t) { return t.bo === true ? t.du && t.chuong.every((c) => this.s(c.id).doc_xong) : this.s(t.id).doc_xong; },
+        // Một mục lọt bộ lọc cấp + đọc/chưa đọc.
+        khop(t) {
+          return (this.loc === 'all' || t.cap === this.loc) && (this.loai === 'all' || (this.loai === 'da') === this.daDoc(t));
+        },
+        // "Đang đọc": đọc dở, hoặc đọc xong mà chưa làm quiz. Bộ: có chương như thế, hoặc đã đọc MỘT PHẦN
+        // (có chương doc_xong mà chưa "đã đọc" cả bộ — kể cả bộ index dở) — chưa đụng chương nào, hay đã xong trọn, thì không.
+        dangDo(t) {
+          if (t.bo === true) {
+            return t.chuong.some((c) => this.dangDo(c)) || (t.chuong.some((c) => this.s(c.id).doc_xong) && !this.daDoc(t));
+          }
+          const c = this.s(t.id); return c.doc_xong ? !this.daLamQuiz(t) : c.da_thay.length > 0;
+        },
         // Hạng trong một nhóm: đang đọc → chưa đọc → đã xong (đọc xong + có quiz). sort của JS ổn định:
         // cùng hạng giữ thứ tự index.
-        hang(t) { return this.dangDo(t) ? 0 : (this.s(t.id).doc_xong ? 2 : 1); },
+        hang(t) { return this.dangDo(t) ? 0 : (this.daDoc(t) ? 2 : 1); },
         xep(ds) { return ds.slice().sort((a, b) => this.hang(a) - this.hang(b)); },
         // Hàng "📌 Đang đọc" trên cùng — chỉ ở chế độ Tất cả cấp; xếp A → B → C → D, trong cấp theo index.
         dsDocTiep() {
           if (this.loc !== 'all') return [];
           const th = { A: 0, B: 1, C: 2, D: 3 };
-          return this.ds.filter((t) => this.dangDo(t) && this.khop(t)).sort((a, b) => (th[a.cap] ?? 9) - (th[b.cap] ?? 9));
+          return this.gop().filter((t) => this.dangDo(t) && this.khop(t)).sort((a, b) => (th[a.cap] ?? 9) - (th[b.cap] ?? 9));
         },
         // Các nhóm để vẽ: Tất cả → mỗi cấp một hàng kéo ngang (bỏ truyện đã ở hàng Đang đọc);
         // một cấp → một lưới cuộn dọc. Nhóm rỗng không vẽ.
         nhom() {
           const ten = { A: '🟢 A · Dễ', B: '🟠 B · Vừa', C: '🔴 C · Khó', D: '⚫ D · Rất khó' };
           const caps = this.loc === 'all' ? ['A', 'B', 'C', 'D'] : [this.loc];
+          const ds = this.gop();
           return caps.map((c) => ({
             cap: c, ten: ten[c],
-            ds: this.xep(this.ds.filter((t) => t.cap === c && this.khop(t) && !(this.loc === 'all' && this.dangDo(t)))),
+            ds: this.xep(ds.filter((t) => t.cap === c && this.khop(t) && !(this.loc === 'all' && this.dangDo(t)))),
           })).filter((g) => g.ds.length);
         },
         dsHien() { return this.nhom().flatMap((g) => g.ds).concat(this.dsDocTiep()); },
@@ -1556,9 +1623,25 @@ function tdAnhLat(lat, trang) {
         },
         datLoai(v) { this.loai = v; localStorage.setItem('td_loai', v); },
         soDung(t) { return Object.values(this.s(t.id).quiz).filter((q) => q.dung).length; },
-        daLamQuiz(t) { return Object.keys(this.s(t.id).quiz).length > 0; },
-        nenThe(t) { return t.bia ? 'background-image:url(' + JSON.stringify(this.goc + 'truyen/' + t.id + '/' + t.bia) + ')' : ''; },
+        // Bộ: ❓ / 🎙 sáng khi MỌI chương đã làm quiz / đã thu (cùng nghĩa với "✓ Đã đọc" của bộ).
+        daLamQuiz(t) { return t.bo === true ? t.du && t.chuong.every((c) => this.daLamQuiz(c)) : Object.keys(this.s(t.id).quiz).length > 0; },
+        daThu(t) { return t.bo === true ? t.du && t.chuong.every((c) => !!this.s(c.id).thu) : !!this.s(t.id).thu; },
+        // Bìa thẻ bộ = bìa chương 1 (nằm trong thư mục chương 1).
+        nenThe(t) {
+          const g = t.bo === true ? t.chuong[0] : t;
+          return t.bia ? 'background-image:url(' + JSON.stringify(this.goc + 'truyen/' + g.id + '/' + t.bia) + ')' : '';
+        },
+        // Thanh tiến độ ở hàng Đang đọc (%). Bộ: số chương đã đọc xong + phần đọc dở của các chương khác, trên tổng.
+        tienDo(t) {
+          const phan = (c) => { const x = this.s(c.id); return x.doc_xong ? 1 : Math.min(1, x.da_thay.length / Math.max(1, c.so_cau)); };
+          const bo = t.bo === true;
+          return Math.round(100 * (bo ? t.chuong : [t]).reduce((n, c) => n + phan(c), 0) / (bo ? t.tong : 1));
+        },
         moTa(t) {
+          if (t.bo === true) {
+            const k = t.chuong.filter((c) => this.s(c.id).doc_xong).length;
+            return t.tong + ' ' + (t.kieu === 'phan' ? 'phần' : 'chương') + ' · đã đọc ' + k + '/' + t.tong;
+          }
           const c = this.s(t.id);
           if (c.doc_xong) return this.daLamQuiz(t) ? 'Quiz ' + this.soDung(t) + '/' + t.so_hoi : 'Đã đọc · chưa làm quiz';
           return c.da_thay.length ? 'Trang ' + this.trangTV(t, c.vi_tri) + ' / ' + t.so_trang : t.so_trang + ' trang · mới';
@@ -1595,6 +1678,39 @@ function tdAnhLat(lat, trang) {
           this.dungDoc(); this.dongBong(); this.dungDoan();
           this.xaCho();
           this.view = 'tv'; this.tr = null; this.id = ''; this.trs = [];
+        },
+        // Tiêu đề ở thanh trang đọc, thanh quiz và màn xong. Truyện thường: tên truyện. Chương của một bộ
+        // (JSON truyện có `bo`; `ten` = tên bộ): "<tên bộ> · Chương k: <tên chương>", kiểu "phan": "<tên bộ> · Phần k/N".
+        tieuDe(tr) { return tr ? tr.ten + this.tieuSo(tr) + this.tieuChuong(tr) : ''; },
+        // Hai nửa của phần sau tên bộ — thanh trang đọc (_td_doc.html) vẽ MỖI NỬA MỘT <span> để điện thoại (≤ 640 px) cắt
+        // (…) riêng tên bộ, giữ "Chương k" / "Phần k/N" và bỏ tên chương: tieuSo = " · Chương k" / " · Phần k/N",
+        // tieuChuong = ": <tên chương>" (kiểu "phan" không có). Truyện thường: cả hai rỗng.
+        tieuSo(tr) {
+          const b = tr && tr.bo;
+          if (!b || typeof b !== 'object') return '';
+          return ' · ' + (b.kieu === 'phan' ? 'Phần ' + b.so + '/' + b.tong : 'Chương ' + b.so);
+        },
+        tieuChuong(tr) {
+          const b = tr && tr.bo;
+          return b && typeof b === 'object' && b.kieu !== 'phan' ? ': ' + b.ten_chuong : '';
+        },
+        // Màn xong: id chương kế của bộ (<bo.id>-<k+1>) — rỗng nếu truyện không thuộc bộ, đây là chương cuối,
+        // hay chương đó không có trong index (bộ nhập dở không lọt build, nhưng index cũ / lỗi thì không được vỡ).
+        idChuongSau() {
+          const b = this.tr && this.tr.bo;
+          if (!b || typeof b !== 'object' || !Number.isInteger(b.so)) return '';
+          const id = b.id + '-' + (b.so + 1);
+          return this.ds.some((t) => t.id === id) ? id : '';
+        },
+        nhanChuongSau() { return this.tr && this.tr.bo && this.tr.bo.kieu === 'phan' ? 'Phần sau →' : 'Chương sau →'; },
+        // Như veThuVien() nhưng đi thẳng sang chương kế: dừng tiếng, xả tiến độ chương vừa xong rồi mo().
+        sangChuongSau() {
+          const id = this.idChuongSau();
+          if (!id) return;
+          this.moKhoa();
+          this.dungDoc(); this.dongBong(); this.dungDoan();
+          this.xaCho();
+          this.mo(id);
         },
       };
       return Object.assign(coSo, tdDoc(), tdQuiz(), tdThuAm());
@@ -1645,17 +1761,17 @@ function tdAnhLat(lat, trang) {
     <section data-td-tiep x-show="dsDocTiep().length" x-cloak class="mb-4">
       <h2 class="text-base font-bold mb-2">📌 Đang đọc <span class="text-slate-400 font-normal" x-text="'(' + dsDocTiep().length + ')'"></span></h2>
       <div class="td-hang">
-        <template x-for="t in dsDocTiep()" :key="'tiep-' + t.id"><button type="button" :data-td-the="t.id" @click="bamThe(t.id)" :class="s(t.id).doc_xong ? 'td-da-doc' : ''" class="relative flex flex-col text-left bg-white rounded-2xl overflow-hidden shadow">
+        <template x-for="t in dsDocTiep()" :key="'tiep-' + t.id"><button type="button" :data-td-the="t.id" :data-td-bo="t.bo === true ? t.boId : null" @click="bamThe(t.id)" :class="daDoc(t) ? 'td-da-doc' : ''" class="relative flex flex-col text-left bg-white rounded-2xl overflow-hidden shadow">
       <span class="td-bia block" :class="'td-nen-' + t.cap" :style="nenThe(t)"><span x-show="!t.bia">📖</span></span>
       <span class="td-cap" :class="'td-cap-' + t.cap" x-text="t.cap"></span>
-      <span x-show="s(t.id).doc_xong" class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-bold">✓ Đã đọc</span>
+      <span x-show="daDoc(t)" class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-bold">✓ Đã đọc</span>
       <span class="block px-3 pt-2 font-bold" x-text="t.ten"></span>
       <span class="block px-3 text-sm text-slate-500" x-text="moTa(t)"></span>
-      <span x-show="!s(t.id).doc_xong" class="block mx-3 mt-3 h-2 rounded-full bg-slate-200 overflow-hidden"><span class="block h-full bg-indigo-600" :style="'width:' + Math.round(100 * s(t.id).da_thay.length / Math.max(1, t.so_cau)) + '%'"></span></span>
+      <span x-show="!daDoc(t)" class="block mx-3 mt-3 h-2 rounded-full bg-slate-200 overflow-hidden"><span class="block h-full bg-indigo-600" :style="'width:' + tienDo(t) + '%'"></span></span>
       <span class="flex gap-2 px-3 py-2 text-lg">
-        <span :class="s(t.id).doc_xong ? '' : 'opacity-25'" title="Đọc truyện">📖</span>
+        <span :class="daDoc(t) ? '' : 'opacity-25'" title="Đọc truyện">📖</span>
         <span :class="daLamQuiz(t) ? '' : 'opacity-25'" title="Quiz">❓</span>
-        <span :class="s(t.id).thu ? '' : 'opacity-25'" title="Thu âm">🎙</span>
+        <span :class="daThu(t) ? '' : 'opacity-25'" title="Thu âm">🎙</span>
       </span>
     </button></template>
       </div>
@@ -1667,17 +1783,17 @@ function tdAnhLat(lat, trang) {
       <section :data-td-nhom="g.cap" class="mb-4">
         <h2 class="text-base font-bold mb-2"><span x-text="g.ten"></span> <span class="text-slate-400 font-normal" x-text="'(' + g.ds.length + ')'"></span></h2>
         <div :class="loc === 'all' ? 'td-hang' : 'td-luoi'">
-          <template x-for="t in g.ds" :key="t.id"><button type="button" :data-td-the="t.id" :data-td-cap="t.cap" @click="bamThe(t.id)" :class="s(t.id).doc_xong ? 'td-da-doc' : ''" class="relative flex flex-col text-left bg-white rounded-2xl overflow-hidden shadow">
+          <template x-for="t in g.ds" :key="t.id"><button type="button" :data-td-the="t.id" :data-td-bo="t.bo === true ? t.boId : null" :data-td-cap="t.cap" @click="bamThe(t.id)" :class="daDoc(t) ? 'td-da-doc' : ''" class="relative flex flex-col text-left bg-white rounded-2xl overflow-hidden shadow">
       <span class="td-bia block" :class="'td-nen-' + t.cap" :style="nenThe(t)"><span x-show="!t.bia">📖</span></span>
       <span class="td-cap" :class="'td-cap-' + t.cap" x-text="t.cap"></span>
-      <span x-show="s(t.id).doc_xong" class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-bold">✓ Đã đọc</span>
+      <span x-show="daDoc(t)" class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-bold">✓ Đã đọc</span>
       <span class="block px-3 pt-2 font-bold" x-text="t.ten"></span>
       <span class="block px-3 text-sm text-slate-500" x-text="moTa(t)"></span>
       
       <span class="flex gap-2 px-3 py-2 text-lg">
-        <span :class="s(t.id).doc_xong ? '' : 'opacity-25'" title="Đọc truyện">📖</span>
+        <span :class="daDoc(t) ? '' : 'opacity-25'" title="Đọc truyện">📖</span>
         <span :class="daLamQuiz(t) ? '' : 'opacity-25'" title="Quiz">❓</span>
-        <span :class="s(t.id).thu ? '' : 'opacity-25'" title="Thu âm">🎙</span>
+        <span :class="daThu(t) ? '' : 'opacity-25'" title="Thu âm">🎙</span>
       </span>
     </button></template>
         </div>
@@ -1726,12 +1842,13 @@ function tdAnhLat(lat, trang) {
          @pointerdown="moKhoa()" @pointerup="moKhoa()">
   <template x-if="tr && (view === 'doc' || view === 'nghe')">
     <div style="display:contents">
-      <div class="td-thanh">
+      <div class="td-thanh" :class="tieuSo(tr) ? 'td-thanh-bo' : ''">
         
         <button type="button" class="td-n" data-td-ve :disabled="dangThu()" @click="view === 'nghe' ? ngheDong() : veThuVien()">← <span x-text="view === 'nghe' ? 'Xong' : 'Thư viện'"></span></button>
-        <b x-text="tr.ten"></b>
         
-        <span class="td-n" aria-hidden="true" style="visibility:hidden" x-text="view === 'nghe' ? '← Xong' : '← Thư viện'"></span>
+        <b data-td-tieu-de><span class="td-tb-ten" x-text="tr.ten"></span><span class="td-tb-so" x-text="tieuSo(tr)"></span><span class="td-tb-chuong" x-text="tieuChuong(tr)"></span></b>
+        
+        <span class="td-n td-tb-cho" aria-hidden="true" style="visibility:hidden" x-text="view === 'nghe' ? '← Xong' : '← Thư viện'"></span>
       </div>
 
       <div class="td-trang" :class="datTranh() ? 'td-tg-tranh' : ''" :style="nenTrang()" @pointerdown="vuotBat($event)" @pointerup="vuotTha($event)" @pointercancel="vuot = null">
@@ -1767,7 +1884,7 @@ function tdAnhLat(lat, trang) {
         </div>
       </div>
 
-      <div x-show="view === 'doc'">
+      <div class="td-duoi" x-show="view === 'doc'">
         <div class="td-keo">
           <span aria-hidden="true">🔊</span>
           <input type="range" data-td-keo aria-label="Vị trí đang đọc" min="0" step="1"
@@ -1830,7 +1947,7 @@ function tdAnhLat(lat, trang) {
     <div style="display:contents">
       <div class="td-thanh">
         <button type="button" class="td-n" data-td-q-thoat @click="thoatQuiz()">← Thoát</button>
-        <b x-text="'Quiz · ' + tr.ten"></b>
+        <b x-text="'Quiz · ' + tieuDe(tr)"></b>
         <span data-td-q-so x-text="'Câu ' + (qi + 1) + ' / ' + qDS.length"></span>
       </div>
       <div class="td-q-than">
@@ -1900,7 +2017,7 @@ function tdAnhLat(lat, trang) {
   <section x-show="view === 'xong'" x-cloak data-td-xong class="max-w-2xl mx-auto px-4 py-6">
     <template x-if="tr && view === 'xong'">
       <div>
-        <h2 class="text-xl font-bold text-center" x-text="tr.ten"></h2>
+        <h2 class="text-xl font-bold text-center" x-text="tieuDe(tr)"></h2>
         <p class="text-center text-lg text-slate-700 mt-1 mb-4" data-td-xong-loi
            x-text="daLam() ? 'Con trả lời đúng ' + soCauDung() + ' / ' + tr.quiz.length + ' câu' : 'Con đã đọc xong truyện!'"></p>
         
@@ -1933,9 +2050,13 @@ function tdAnhLat(lat, trang) {
           <button type="button" data-td-xong-thu-lai x-show="online && s(id).thu" @click="moKhoa(); thuBatDau()" class="px-4 py-3 rounded-xl border border-slate-300 bg-white font-semibold">Thu lại</button>
         </div>
 
-        <p class="text-center mt-5">
-          <button type="button" data-td-xong-ve @click="veThuVien()" class="px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold">📚 Về thư viện</button>
-        </p>
+        
+        <div class="flex flex-wrap items-center justify-center gap-3 mt-5">
+          <template x-if="idChuongSau()">
+            <button type="button" data-td-chuong-sau @click="sangChuongSau()" class="px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold" x-text="nhanChuongSau()"></button>
+          </template>
+          <button type="button" data-td-xong-ve @click="veThuVien()" :class="idChuongSau() ? 'bg-white text-slate-800 border border-slate-300' : 'bg-indigo-600 text-white'" class="px-6 py-3 rounded-xl font-semibold">📚 Về thư viện</button>
+        </div>
       </div>
     </template>
   </section>
