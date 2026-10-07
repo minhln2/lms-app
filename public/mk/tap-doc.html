@@ -547,14 +547,19 @@ function tdAnhLat(lat, trang) {
         this.datTrang(n);
         if (dang) this.phat();           // đang nghe đọc mà lật → đọc trang mới từ đầu
       },
+      // Ghi "đọc xong" nếu đủ luật (ADR 0060): đang ở trang cuối + đã có bat_dau. Dùng chung cho ▶ / hết audio (hetTruyen)
+      // và nút ✅ Xong khi đang thu ở trang cuối (thuXong, _td_thuam.html) — nút đó gọi thẳng thuXong, không qua hetTruyen.
+      ghiXong() {
+        const c = this.s(this.id);
+        if (this.trang < this.trs.length || !c.bat_dau || c.doc_xong) return;
+        c.doc_xong = true; c.vi_tri = this.tg().c0; c.ts_vt = Date.now();
+        this.luuCucBo(); this.guiTrang(true, true);
+      },
       // ▶ ở trang cuối, hoặc audio trang cuối phát hết (hetAm). Đọc xong (ADR 0060) = đã có bat_dau + đang ở trang cuối;
       // chưa có bat_dau (bé lướt cả truyện) thì nhắc và ở lại.
       hetTruyen() {
-        const c = this.s(this.id), cuoi = this.trang >= this.trs.length;
-        if (cuoi && c.bat_dau && !c.doc_xong) {
-          c.doc_xong = true; c.vi_tri = this.tg().c0; c.ts_vt = Date.now();
-          this.luuCucBo(); this.guiTrang(true, true);
-        }
+        const c = this.s(this.id);
+        this.ghiXong();
         // Đang thu: chốt bản thu như cũ (đọc xong hay chưa đã xét ở trên).
         if (this.thu && this.thu.dang) { this.huyDem(); return this.thuXong(); }
         if (!c.doc_xong) { this.thongBao = 'Con đọc chậm lại một chút nhé'; return; }
@@ -1196,6 +1201,8 @@ function tdAnhLat(lat, trang) {
         const t = this.thu;
         if (!t || !t.dang || t.het) return;
         t.het = true;                                   // chặn lần gọi thứ hai trong lúc chờ đóng đoạn
+        // Kết thúc thu ở TRANG CUỐI (nút ✅ Xong, hay tự dừng vì quá dài) = đọc xong như ▶ ở trang cuối, nếu đủ luật (ghiXong).
+        this.ghiXong();
         t.tam = true;
         await this.thuDongDoan();
         if (this.thu !== t) return;
