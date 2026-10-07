@@ -1620,16 +1620,17 @@ function tdAnhLat(lat, trang) {
           const th = { A: 0, B: 1, C: 2, D: 3 };
           return this.ds.filter((t) => this.dangDo(t) && this.khop(t)).sort((a, b) => (th[a.cap] ?? 9) - (th[b.cap] ?? 9));
         },
-        // Các nhóm để vẽ: Tất cả → mỗi cấp một hàng kéo ngang (bỏ truyện đã ở hàng Đang đọc); một cấp → một lưới cuộn dọc. Nhóm rỗng không vẽ.
+        // Các nhóm để vẽ: Tất cả → mỗi cấp một hàng kéo ngang; một cấp → một lưới cuộn dọc. Nhóm rỗng không vẽ.
+        // Truyện đang đọc VẪN ở hàng cấp của nó (đứng đầu, nhờ xep) — hàng Đang đọc chỉ là lối tắt (2026-10-07: rời hàng cấp thì khó theo dõi).
         nhom() {
           const ten = { A: '🟢 A · Dễ', B: '🟠 B · Vừa', C: '🔴 C · Khó', D: '⚫ D · Rất khó' };
           const caps = this.loc === 'all' ? ['A', 'B', 'C', 'D'] : [this.loc];
           return caps.map((c) => ({
             cap: c, ten: ten[c],
-            ds: this.xep(this.ds.filter((t) => t.cap === c && this.khop(t) && !(this.loc === 'all' && this.dangDo(t)))),
+            ds: this.xep(this.ds.filter((t) => t.cap === c && this.khop(t))),
           })).filter((g) => g.ds.length);
         },
-        dsHien() { return this.nhom().flatMap((g) => g.ds).concat(this.dsDocTiep()); },
+        dsHien() { return this.nhom().flatMap((g) => g.ds); },
         // Trang (1-based) chứa mã câu `ma` theo bố cục ở index (trang_dau = mã câu đầu từng trang) — thư viện chưa tải JSON truyện nên không có trs.
         trangTV(t, ma) {
           const d = Array.isArray(t.trang_dau) ? t.trang_dau : [0];
