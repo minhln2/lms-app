@@ -12,7 +12,7 @@
   <title>Tập đọc — MK</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.4fd334e9.css">
+  <link rel="stylesheet" href="../assets/tw.2ff8a49c.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   
   <link rel="stylesheet" href="../tap-doc/phong/be-vietnam-pro/font-face.css">
@@ -28,6 +28,7 @@
     .td-hang{display:flex;gap:1rem;overflow-x:auto;scroll-snap-type:x mandatory;padding:.25rem .25rem 1rem;margin:0 -.25rem;-webkit-overflow-scrolling:touch}
     .td-hang>*{flex:none;width:11.5rem;scroll-snap-align:start}
     .td-luoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(11.5rem,1fr));gap:1rem}
+    .td-cuon{scrollbar-width:none}.td-cuon::-webkit-scrollbar{display:none}
   </style>
   
   <script>/**
@@ -343,6 +344,11 @@ function tdAnhLat(lat, trang) {
       vong: 0,                 // số hiệu vòng tô sáng đang sống
       mucLuc: false,           // ngăn mục lục đang mở
       viTriMo: 0,              // vị trí đã lưu LÚC MỞ truyện (mo() đặt) — bấm lại chương đang dở trong mục lục thì về đây
+      // Đồng hồ trang (ADR 0060): trang ĐỦ GIỜ khi ở lại T giây (tab hiện) hoặc audio trang phát hết.
+      demTrang: 0,             // hẹn "đủ giờ" của lượt ở trang hiện tại; 0 = không hẹn
+      demCon: 0,               // ms còn phải ở lại (giữ qua lúc tab ẩn)
+      demLuc: 0,               // Date.now() lúc đặt hẹn hiện tại
+      daDu: false,             // lượt ở trang này đã đủ giờ — hết audio + hết giờ không được đếm hai lần
 
       // Trang để vẽ: nối từ của các câu tu..den của bố cục (spec 10-03 §5). Từ đầu trang luôn
       // nl=false — trang mở giữa cảnh bằng câu thoại xuống dòng không được có dòng trống ở đầu ô
@@ -370,10 +376,10 @@ function tdAnhLat(lat, trang) {
         for (let i = 0; i < ch.length; i++) if (ch[i].cau_dau <= t.c0) k = i;
         return k;
       },
-      // Dấu một dòng mục lục: ▶ chương của trang đang mở · ✓ mọi câu đã thấy · · còn lại.
+      // Dấu một dòng mục lục: ▶ chương của trang đang mở · ✓ chương đã qua (chuongXong) · · còn lại.
       dauChuong(k) {
         if (k === this.chuongCua(this.trang)) return '▶';
-        return this.chuongXong(this.tr, k, this.tr.cau.length) ? '✓' : '·';
+        return this.chuongXong(this.tr, k) ? '✓' : '·';
       },
       nhanChuong(k) {
         const ch = this.tr.chuong;
@@ -387,21 +393,21 @@ function tdAnhLat(lat, trang) {
       },
       dongMucLuc() { this.mucLuc = false; },
       // Bấm chương k (spec §3): dấu trang lúc mở (viTriMo) nằm trong chương k mà chương chưa đọc hết → về đúng trang đó; còn lại → trang đầu
-      // chương. Như lật trang (datTrang): dừng tiếng, đóng bong bóng, tính là tiến độ (dựng cờ `cho`).
+      // chương. Như lật trang (datTrang): dừng tiếng, đóng bong bóng, đếm giờ trang mới — chỉ lật, KHÔNG phải tiến độ (không dựng cờ `cho`;
+      // chỉ trang đủ giờ — duGio — và đọc xong mới dựng).
       moChuong(k) {
         const ch = this.tr.chuong, n = this.tr.cau.length;
         const tu = ch[k].cau_dau, den = k + 1 < ch.length ? ch[k + 1].cau_dau : n;
-        const vt = this.viTriMo >= tu && this.viTriMo < den && !this.chuongXong(this.tr, k, n) ? this.viTriMo : tu;
+        const vt = this.viTriMo >= tu && this.viTriMo < den && !this.chuongXong(this.tr, k) ? this.viTriMo : tu;
         this.mucLuc = false;
         this.datTrang(this.trangCua(vt));
       },
       tg() { return this.trs[this.trang - 1]; },
-      // Chấm của ô số trang: trang đang đọc · trang đã xem (có câu nằm trong da_thay) · chưa xem.
+      // Chấm của ô số trang: trang đang mở · trang đọc gần nhất (vi_tri, giữ lớp td-ch-thay của CSS) · còn lại.
       loaiCham(p) {
         if (p.so === this.trang) return 'td-ch-nay';
-        const d = this.s(this.id).da_thay;
-        for (let k = p.c0; k <= p.c1; k++) if (d.includes(k)) return 'td-ch-thay';
-        return '';
+        const v = this.s(this.id).vi_tri;
+        return p.c0 <= v && v <= p.c1 ? 'td-ch-thay' : '';
       },
       // Đang thu âm HOẶC đang đếm ngược 3-2-1: máy đọc trang không được phát (lọt vào bản thu).
       dangThu() { return !!(this.thu && (this.thu.dang || this.thu.dem > 0)); },
@@ -425,24 +431,63 @@ function tdAnhLat(lat, trang) {
       },
       amUrl(khoa) { return this.goc + 'am/' + khoa + '.mp3'; },
 
-      // Mở truyện: KHÔNG dựng cờ `cho` — mở rồi quay ra mà không lật thì không có gì để gửi.
-      vaoDoc(n) { this.view = 'doc'; this.datTrang(n, true); },
+      // T = 0,4 s × số tiếng, kẹp [10, 20] giây (spec 2026-10-07 §1). window.TD_NGUONG_MS: móc cho bài test.
+      nguongGiay(soTieng) { return Math.min(20, Math.max(10, 0.4 * soTieng)); },
+      nguongMs(g) { return window.TD_NGUONG_MS || 1000 * this.nguongGiay(g.tu.length); },
+      // Lượt ở trang mới: đếm lại từ 0.
+      batDem() {
+        this.huyDem();
+        this.daDu = false;
+        this.demCon = this.nguongMs(this.tg());
+        this.henDem();
+      },
+      // (Lại) hẹn phần còn lại — chỉ khi tab hiện và đang ở trang đọc. Hết phần còn lại (tab ẩn đúng lúc hẹn đến hạn mà chưa kịp
+      // nổ: nghiDem tính ra 0 ms) mà lượt này chưa đủ giờ → đủ giờ NGAY, không thì trang không bao giờ được tính trong lượt này.
+      henDem() {
+        if (this.demTrang || this.daDu || document.hidden || this.view !== 'doc' || !this.tr) return;
+        if (this.demCon <= 0) { this.duGio(); return; }
+        this.demLuc = Date.now();
+        this.demTrang = setTimeout(() => { this.demTrang = 0; this.demCon = 0; this.duGio(); }, this.demCon);
+      },
+      // Tab ẩn: dừng hẹn, giữ phần còn lại.
+      nghiDem() {
+        if (!this.demTrang) return;
+        clearTimeout(this.demTrang); this.demTrang = 0;
+        this.demCon = Math.max(0, this.demCon - (Date.now() - this.demLuc));
+      },
+      // Huỷ hẳn đếm giờ của lượt này (rời trang / đọc xong / chốt bản thu): daDu = true để henDem không tưởng "hết giờ" mà tính trang;
+      // lượt ở trang mới (batDem) đặt lại daDu = false.
+      huyDem() { clearTimeout(this.demTrang); this.demTrang = 0; this.demCon = 0; this.daDu = true; },
+      // Trang hiện tại đủ giờ: ghi vi_tri; chưa có bat_dau thì đếm trang (mã câu đầu) — đủ min(2, số trang) trang khác nhau thì đặt
+      // mốc (truyện MỘT trang chỉ có một trang để đủ giờ: đòi 2 là không bao giờ Đang đọc / đọc xong). Đặt mốc thì lời nhắc
+      // "đọc chậm lại" cũ (▶ ở trang cuối lúc chưa bat_dau) hết nghĩa — tắt luôn.
+      // Đây là TIẾN ĐỘ THẬT (hợp đồng cờ `cho` ở đầu tapdoc.html).
+      duGio() {
+        if (this.daDu || !this.tr || this.view !== 'doc') return;
+        this.daDu = true;
+        this.huyDem();
+        const g = this.tg(), c = this.s(this.id);
+        c.vi_tri = g.c0; c.ts_vt = Date.now();
+        let ngay = false;
+        if (!c.bat_dau) {
+          const dem = [...new Set([...(c.dem || []), g.c0])];
+          if (dem.length >= Math.min(2, this.trs.length)) { c.bat_dau = true; delete c.dem; ngay = true; this.thongBao = ''; } else c.dem = dem;
+        }
+        this.luuCucBo();
+        this.guiTrang(ngay);
+      },
 
-      // Chuyển sang trang n: dừng mọi tiếng, ghi nhớ, nạp audio. KHÔNG tự phát.
-      // `luocMo` = lượt mở truyện (vaoDoc): ghi cục bộ nhưng không tính là tiến độ để gửi.
-      datTrang(n, luocMo) {
+      // Mở truyện: KHÔNG dựng cờ `cho` — chỉ bắt đầu đếm giờ trang (ADR 0060); mở rồi quay ra thì không có gì để gửi.
+      vaoDoc(n) { this.view = 'doc'; this.datTrang(n); },
+
+      // Chuyển sang trang n: dừng mọi tiếng, nạp audio, đếm giờ lại từ 0. KHÔNG tự phát, KHÔNG ghi tiến độ —
+      // tiến độ chỉ ghi khi trang đủ giờ (duGio).
+      datTrang(n) {
         const dangTruoc = this.dangDoc;   // đang nghe đọc (tự lật): trang cùng file hỏng phải bỏ qua, không dừng
         this.dungDoc(); this.dongBong(); this.dungDoan();
         this.huyNhan(); this.cuoiI = -1;   // hẹn giữ / "chạm lại" của trang cũ không được chạy sang trang mới
         this.trang = Math.max(1, Math.min(this.trs.length, n));
-        const g = this.tg(), c = this.s(this.id);
-        // Vị trí theo MÃ CÂU (spec 10-03 §6): câu đầu trang; mọi câu của trang là "đã thấy".
-        c.vi_tri = g.c0;
-        let them = false;
-        for (let k = g.c0; k <= g.c1; k++) if (!c.da_thay.includes(k)) { c.da_thay.push(k); them = true; }
-        if (them) c.da_thay.sort((x, y) => x - y);
-        this.luuCucBo();
-        if (!luocMo) this.guiTrang(false);
+        const g = this.tg();
         this.tuSang = -1; this.amLoi = false; this.thongBao = '';
         const au = this.$refs.au, url = this.amUrl(g.am);
         // Audio của trang là ĐOẠN [bd, kt) của file cảnh. Cùng cảnh thì giữ file đang nạp (không tải
@@ -465,6 +510,7 @@ function tdAnhLat(lat, trang) {
         }
         this.taiTruoc();
         if (this.thu && this.thu.dang) this.thuLat(g.c0);
+        this.batDem();
       },
       // Tải trước ảnh + audio trang kế để lật không phải chờ (cùng cảnh thì file đã có sẵn).
       taiTruoc() {
@@ -483,34 +529,18 @@ function tdAnhLat(lat, trang) {
         this.datTrang(n);
         if (dang) this.phat();           // đang nghe đọc mà lật → đọc trang mới từ đầu
       },
-      // Lời nhắc khi bấm ▶ ở trang cuối mà còn trang chưa mở (`thieu` = các trang chưa hiện đủ câu). Truyện nhiều chương nêu CHƯƠNG còn trang
-      // chưa mở ("Chương 3, 5 còn trang chưa mở"; "Phần …" khi kieu_chuong phan), truyện không chương nêu số trang. Tối đa 5 mục rồi "…":
-      // truyện 51 trang mà chưa mở 40 trang thì không đọc ra cả danh sách.
-      loiChuaMo(thieu) {
-        const rut = (a) => (a.length > 5 ? a.slice(0, 5).join(', ') + ', …' : a.join(', '));
-        if (!Array.isArray(this.tr.chuong) || !this.tr.chuong.length) return 'Con còn trang chưa mở: ' + rut(thieu.map((p) => p.so));
-        const ks = [...new Set(thieu.map((p) => this.chuongCua(p.so) + 1))];
-        return (this.tr.kieu_chuong === 'phan' ? 'Phần ' : 'Chương ') + rut(ks) + ' còn trang chưa mở';
-      },
-      // ▶ ở trang cuối. "Đã đọc" = đã HIỆN mọi câu (spec 10-03 §6), không đòi thời gian.
+      // ▶ ở trang cuối, hoặc audio trang cuối phát hết (hetAm). Đọc xong (ADR 0060) = đã có bat_dau + đang ở trang cuối;
+      // chưa có bat_dau (bé lướt cả truyện) thì nhắc và ở lại.
       hetTruyen() {
-        const c = this.s(this.id);
-        const du = this.tr.cau.every((_, k) => c.da_thay.includes(k));
-        // Đang thu mà đã hiện đủ mọi câu: cũng là ĐỌC XONG — đánh dấu trước khi sang màn xem lại bản thu.
-        if (this.thu && this.thu.dang) {
-          if (du && !c.doc_xong) { c.doc_xong = true; this.luuCucBo(); this.guiTrang(true, true); }
-          return this.thuXong();
+        const c = this.s(this.id), cuoi = this.trang >= this.trs.length;
+        if (cuoi && c.bat_dau && !c.doc_xong) {
+          c.doc_xong = true; c.vi_tri = this.tg().c0; c.ts_vt = Date.now();
+          this.luuCucBo(); this.guiTrang(true, true);
         }
-        if (!du) {
-          const thieu = this.trs.filter((p) => {
-            for (let k = p.c0; k <= p.c1; k++) if (!c.da_thay.includes(k)) return true;
-            return false;
-          });
-          this.thongBao = this.loiChuaMo(thieu);
-          return;
-        }
-        this.dungDoc();
-        if (!c.doc_xong) { c.doc_xong = true; this.luuCucBo(); this.guiTrang(true, true); }
+        // Đang thu: chốt bản thu như cũ (đọc xong hay chưa đã xét ở trên).
+        if (this.thu && this.thu.dang) { this.huyDem(); return this.thuXong(); }
+        if (!c.doc_xong) { this.thongBao = 'Con đọc chậm lại một chút nhé'; return; }
+        this.dungDoc(); this.huyDem();
         this.view = 'xong';
       },
 
@@ -564,12 +594,13 @@ function tdAnhLat(lat, trang) {
         for (let j = 0; j < a.length; j++) { if (a[j].t <= giay + 0.03) i = j; else break; }
         return i;
       },
-      // Hết audio của trang: nghỉ 1 s rồi tự lật và đọc tiếp (spec §7.2).
+      // Hết audio của trang: trang đủ giờ (ADR 0060); nghỉ 1 s rồi tự lật và đọc tiếp (spec §7.2). Trang cuối → hetTruyen.
       hetAm() {
         clearTimeout(this.henLat);   // vòng tô sáng và @ended có thể cùng báo hết đoạn
         this.tuSang = -1;
         if (!this.dangDoc) return;
-        if (this.trang >= this.trs.length) { this.dangDoc = false; return; }
+        this.duGio();
+        if (this.trang >= this.trs.length) { this.dangDoc = false; this.hetTruyen(); return; }
         this.henLat = setTimeout(() => {
           if (!this.dangDoc) return;
           this.datTrang(this.trang + 1);
@@ -1359,25 +1390,25 @@ function tdAnhLat(lat, trang) {
     // nạp bằng fetch từ tap-doc/ — sửa một truyện không phải dựng lại trang.
     //
     // Vị trí lưu theo MÃ CÂU, không theo số trang (spec 10-03 §6): `vi_tri` = mã câu đầu của
-    // trang đang dở, `da_thay` = các mã câu đã hiện. Trang chỉ là cách xếp câu (`tr.trang`, từ
-    // bo_cuc.json; `trs` = trang để vẽ) — đổi bố cục thì vi_tri vẫn mở đúng trang chứa câu đó.
+    // trang ĐỦ GIỜ gần nhất (ADR 0060 — lật qua mà chưa đủ giờ thì không đổi). Trang chỉ là cách xếp câu
+    // (`tr.trang`, từ bo_cuc.json; `trs` = trang để vẽ) — đổi bố cục thì vi_tri vẫn mở đúng trang chứa câu đó.
+    // Hai mốc ghi MỘT lần: `bat_dau` (min(2, số trang) trang đủ giờ → "Đang đọc") và `doc_xong` (có bat_dau + ▶ / hết audio ở
+    // trang cuối). `dem` = mã câu đầu các trang đã đủ giờ khi CHƯA có bat_dau — chỉ ở máy này, không gửi.
     //
     // Trạng thái sống ở HAI nơi: localStorage (luôn có, kể cả không mã / mất mạng) và
     // máy chủ (khi có mã). Máy chủ thắng ở những gì chỉ nó biết chắc (quiz, bản thu);
-    // da_thay là hợp của hai bên, doc_xong là HOẶC. "Vị trí đang dở": mục cục bộ mang cờ
-    // `cho` (chờ gửi — chỉ sống trong localStorage, không gửi lên) thì máy này thắng và
-    // đẩy lên ngay sau lượt GET — TRỪ KHI máy chủ có câu mà máy này chưa từng thấy (thiết
-    // bị khác đã đọc xa hơn): khi đó máy chủ thắng và cờ bị bỏ — nhưng nếu máy này còn
-    // tiến độ máy chủ chưa có (doc_xong, câu đã thấy) thì vẫn đẩy, với vị trí của máy chủ.
-    // Không mang cờ thì vị trí của máy chủ thắng.
+    // bat_dau và doc_xong là HOẶC. Vị trí: mục cục bộ mang cờ `cho` (chờ gửi) và `ts_vt` (ms, lúc ghi
+    // vi_tri ở máy này) MỚI HƠN `ts` của máy chủ (giây) thì máy này thắng và đẩy lên; không thì máy chủ
+    // thắng, bỏ cờ — nhưng máy này còn mốc máy chủ chưa có thì vẫn đẩy, với vị trí của máy chủ.
+    // Dạng trước ADR 0060 (mảng da_thay): suyCu() đổi một lần thành bat_dau (phủ ≥ 2 trang) rồi bỏ mảng.
     //
     // Bộ lọc thư viện (spec giao diện 10-03 §2) là thiết lập của MÁY, không nằm trong td_st_<user>:
-    // `loc` (cấp, không lưu) và `loai` = 'all' | 'chua' | 'da' lưu ở localStorage `td_loai`. Khoá cũ
+    // `loc` (cấp, không lưu) và `loai` = 'all' | 'dang' | 'chua' | 'da' lưu ở localStorage `td_loai`. Khoá cũ
     // `td_an = '1'` ("Ẩn truyện đã đọc") được hiểu là 'chua' khi chưa có td_loai. td_loai là giá trị
     // lạ (rác) thì coi như không có: rơi về khoá cũ td_an ('1' → 'chua'), không có nữa thì 'all'.
     //
     // HỢP ĐỒNG cho Task 8–12 về cờ `cho`:
-    //   • CHỈ tiến độ thật dựng cờ: lật trang → `this.luuCucBo(); this.guiTrang(false)`;
+    //   • CHỈ tiến độ thật dựng cờ: trang đủ giờ (duGio) → `this.luuCucBo(); this.guiTrang(…)`;
     //     đọc xong → `this.guiTrang(true, true)`.
     //   • Đường RỜI (về thư viện, pagehide, ẩn tab) chỉ XẢ: `this.xaCho()` gửi nếu cờ đã
     //     có, không bao giờ dựng cờ. Đừng gọi guiTrang() từ đường rời.
@@ -1395,10 +1426,10 @@ function tdAnhLat(lat, trang) {
         hanGet: window.TD_HAN_GET || 8000,
         view: 'tv',               // tv · doc · quiz · xong · thu · nghe
         ds: [], st: {}, loc: 'all',
-        // Bộ lọc đọc/chưa đọc (hợp đồng ở đầu script): 'all' · 'chua' · 'da'.
+        // Bộ lọc trạng thái (hợp đồng ở đầu script): 'all' · 'dang' · 'chua' · 'da'.
         loai: (() => {
           const v = localStorage.getItem('td_loai');
-          return ['all', 'chua', 'da'].includes(v) ? v : (localStorage.getItem('td_an') === '1' ? 'chua' : 'all');
+          return ['all', 'dang', 'chua', 'da'].includes(v) ? v : (localStorage.getItem('td_an') === '1' ? 'chua' : 'all');
         })(),
         tr: null, id: '', trs: [],   // trs: trang để vẽ (dungTrang) của truyện đang mở
 
@@ -1411,32 +1442,35 @@ function tdAnhLat(lat, trang) {
           } catch (e) {
             this.err = 'Không tải được danh sách truyện. Con thử tải lại trang nhé.';
           }
+          this.suyCu();
           const { ma, d } = await this.goiApi('/api/tapdoc/state?user=' + encodeURIComponent(this.user));
           this.maSai = ma === 401;
           if (d && d.truyen) {
             this.online = true;
             for (const [id, m0] of Object.entries(d.truyen)) {
-              // KHÔNG suy "máy này đã thấy" từ !!this.st[id] hay da_thay cục bộ: lượt vẽ thư
-              // viện gọi s(id) cho mọi truyện trước lượt GET này, và da_thay của máy chủ đã
-              // trộn vào từ lần trước. Chỉ cờ `cho` nói được "máy này có vị trí chưa gửi".
               const m = this.chuan(m0);
+              this.suyMot(id, m);
               const c = this.s(id);
-              // Máy chủ có câu máy này chưa từng thấy → thiết bị khác đã đọc xa hơn; cờ
-              // `cho` ở đây là của một lượt gửi đã mất (đóng tab trước khi có trả lời).
-              const xaHon = m.da_thay.some((x) => !c.da_thay.includes(x));
-              // Bỏ cờ chỉ bỏ phán quyết về VỊ TRÍ. Máy này còn tiến độ máy chủ chưa có (đã đọc
-              // xong, hay câu đã thấy) thì vẫn phải đẩy — với vị trí của máy chủ.
-              const conThieu = c.cho && xaHon &&
-                ((c.doc_xong && !m.doc_xong) || c.da_thay.some((x) => !m.da_thay.includes(x)));
-              if (c.cho && xaHon) delete c.cho;
-              c.da_thay = [...new Set([...c.da_thay, ...m.da_thay])].sort((x, y) => x - y);
+              // Vị trí: máy này thắng chỉ khi có vị trí CHƯA GỬI (`cho`) ghi SAU lượt ghi gần nhất của máy chủ.
+              const cucBoMoi = !!c.cho && (c.ts_vt || 0) > (m.ts || 0) * 1000;
+              // Mốc máy này có mà máy chủ chưa có → phải đẩy, kể cả khi vị trí của máy chủ thắng.
+              const thieuMoc = (c.bat_dau && !m.bat_dau) || (c.doc_xong && !m.doc_xong);
+              c.bat_dau = c.bat_dau || m.bat_dau;
               c.doc_xong = c.doc_xong || m.doc_xong;
+              if (c.bat_dau) delete c.dem;
               // Quiz: câu máy chủ CÓ thì máy chủ thắng; câu máy chủ chưa có (làm khi chưa có
               // mã, hay lượt POST hỏng) thì giữ bản máy này — xoá đi là ❓ tắt lại dù bé đã làm.
               c.quiz = { ...c.quiz, ...m.quiz };
               c.thu = m.thu;
-              if (!c.cho) c.vi_tri = m.vi_tri;
-              if (conThieu) c.cho = true;      // lượt đẩy bên dưới gửi vị trí máy chủ + phần còn thiếu
+              if (!cucBoMoi) { c.vi_tri = m.vi_tri; delete c.cho; }
+              // Mốc còn thiếu là doc_xong: Worker chỉ nhận `xong` khi vi_tri nằm ở TRANG CUỐI, mà vị trí của máy chủ có thể
+              // đang ở giữa truyện. Truyện đã đọc xong mở thẳng vào màn xong nên vị trí dở không còn quan trọng → đưa vi_tri
+              // về câu đầu trang cuối (index) trước khi đẩy. Không biết bố cục (truyện không còn trong index) thì để nguyên.
+              if (c.doc_xong && !m.doc_xong) {
+                const t = this.ds.find((x) => x.id === id);
+                if (t && Array.isArray(t.trang_dau) && t.trang_dau.length) c.vi_tri = t.trang_dau[t.trang_dau.length - 1];
+              }
+              if (thieuMoc) c.cho = true;      // lượt đẩy bên dưới gửi vị trí (của máy chủ nếu nó thắng) + mốc còn thiếu
             }
             this.luuCucBo();
           }
@@ -1459,7 +1493,9 @@ function tdAnhLat(lat, trang) {
             }
           }
           addEventListener('pagehide', () => this.xaCho());
-          document.addEventListener('visibilitychange', () => { if (document.hidden) { this.xaCho(); this.thuAn(); } });
+          document.addEventListener('visibilitychange', () => {
+            if (document.hidden) { this.nghiDem(); this.xaCho(); this.thuAn(); } else this.henDem();
+          });
         },
 
         // ── trạng thái ────────────────────────────────────────────────────────
@@ -1489,13 +1525,14 @@ function tdAnhLat(lat, trang) {
           const thuDung = vat(u) && Number.isInteger(u.ts) && u.ts > 0 && Number.isFinite(u.dai) && u.dai >= 0 &&
             Array.isArray(u.doan) && u.doan.length > 0 && Array.isArray(u.lat) &&
             u.doan.every((d) => vat(d) && Number.isInteger(d.n) && d.n >= 0 && d.n <= 98 && Number.isFinite(d.dai) && d.dai > 0);
-          // Dạng cũ của #1 ({trang, da_mo}, chưa có mảng da_thay): giữ quiz (chỉ số câu HỎI không
+          // Dạng cũ của #1 ({trang, da_mo}, chưa có da_thay lẫn bat_dau): giữ quiz (chỉ số câu HỎI không
           // đổi), BỎ `cho` và bản thu — nhật ký `lat` cũ đếm theo SỐ TRANG, đọc theo mã câu là sai;
           // vị trí về đầu truyện. Máy chủ (đã qua migration 0007) là nguồn đúng.
-          const moi = Array.isArray(o.da_thay);
+          const moi = Array.isArray(o.da_thay) || typeof o.bat_dau === 'boolean';
+          const so = (x) => Number.isInteger(x) && x >= 0;
           const m = {
-            vi_tri: Number.isInteger(o.vi_tri) && o.vi_tri >= 0 ? o.vi_tri : 0,
-            da_thay: moi ? [...new Set(o.da_thay.filter((x) => Number.isInteger(x) && x >= 0))].sort((x, y) => x - y) : [],
+            vi_tri: so(o.vi_tri) ? o.vi_tri : 0,
+            bat_dau: o.bat_dau === true || o.doc_xong === true,
             doc_xong: o.doc_xong === true,
             quiz,
             thu: thuDung && moi ? {
@@ -1504,8 +1541,41 @@ function tdAnhLat(lat, trang) {
               lat: u.lat.filter((x) => Array.isArray(x) && Number.isFinite(x[0]) && Number.isInteger(x[1]) && x[1] >= 0),
             } : null,
           };
+          if (Number.isInteger(o.ts_vt) && o.ts_vt > 0) m.ts_vt = o.ts_vt;
+          if (Number.isInteger(o.ts) && o.ts > 0) m.ts = o.ts;                 // lượt ghi gần nhất của MÁY CHỦ (giây) — chỉ có ở bản GET
+          if (!m.bat_dau && Array.isArray(o.dem)) {
+            const dem = [...new Set(o.dem.filter(so))];
+            if (dem.length) m.dem = dem;
+          }
+          // Dạng trước ADR 0060: giữ mảng tới khi suyCu() biết bố cục (index) để đổi thành bat_dau.
+          if (!m.bat_dau && Array.isArray(o.da_thay)) m.da_thay = [...new Set(o.da_thay.filter(so))];
           if (o.cho === true && moi) m.cho = true;
           return m;
+        },
+        // Số trang (theo trang_dau của index) có ít nhất một câu trong `thay`.
+        soTrangPhu(t, thay) {
+          const d = Array.isArray(t.trang_dau) && t.trang_dau.length ? t.trang_dau : [0], s = new Set(thay);
+          let n = 0;
+          for (let i = 0; i < d.length; i++) {
+            const den = i + 1 < d.length ? d[i + 1] : t.so_cau;
+            for (let k = d[i]; k < den; k++) if (s.has(k)) { n++; break; }
+          }
+          return n;
+        },
+        // Dạng trước ADR 0060 → bat_dau khi da_thay phủ ≥ 2 trang (mở nhầm chỉ có trang 1 → Chưa đọc), rồi bỏ mảng.
+        // Truyện không còn trong index thì để nguyên (không biết bố cục). Trả true nếu có đổi.
+        suyMot(id, c) {
+          if (!c.da_thay) return false;
+          const t = this.ds.find((x) => x.id === id);
+          if (!t) return false;
+          if (!c.bat_dau && this.soTrangPhu(t, c.da_thay) >= 2) c.bat_dau = true;
+          delete c.da_thay;
+          return true;
+        },
+        suyCu() {
+          let doi = false;
+          for (const [id, c] of Object.entries(this.st)) if (this.suyMot(id, c)) doi = true;
+          if (doi) this.luuCucBo();
         },
         docCucBo() {
           let o;
@@ -1565,11 +1635,11 @@ function tdAnhLat(lat, trang) {
             clearTimeout(hen);
           }
         },
-        // Trang đang dở: localStorage ghi mỗi lần lật; máy chủ thưa hơn (rời trang, đọc
-        // xong, hoặc 30 s một lần) — để một truyện 20 trang không thành 20 lượt ghi.
-        // Gọi khi có TIẾN ĐỘ THẬT (lật trang, đọc xong). Đặt cờ `cho` TRƯỚC (kể cả khi
+        // Vị trí đang dở: localStorage ghi mỗi lần một trang đủ giờ; máy chủ thưa hơn (rời trang, đọc
+        // xong, mốc bat_dau, hoặc 30 s một lần) — để một truyện 20 trang không thành 20 lượt ghi.
+        // Gọi khi có TIẾN ĐỘ THẬT (trang đủ giờ, đọc xong). Đặt cờ `cho` TRƯỚC (kể cả khi
         // không mã / máy chủ chưa đọc được): lượt gửi bị bỏ qua hay hỏng thì lần mở trang
-        // sau vẫn biết trang máy này mới hơn.
+        // sau vẫn biết vị trí máy này mới hơn.
         guiTrang(ngay, xong) {
           if (!this.id) return;
           const c = this.s(this.id);
@@ -1581,20 +1651,21 @@ function tdAnhLat(lat, trang) {
           this.guiMot(this.id, xong);
         },
         // Một POST cho một truyện; thành công mới gỡ `cho` — và chỉ khi trong lúc chờ
-        // không có lần lật trang nào mới hơn (nếu có, cờ ở lại cho lượt sau).
+        // không có vị trí / mốc nào mới hơn (nếu có, cờ ở lại cho lượt sau).
         async guiMot(id, xong) {
           const c = this.s(id);
-          const than = { user: this.user, truyen: id, vi_tri: c.vi_tri, da_thay: [...c.da_thay] };
+          const than = { user: this.user, truyen: id, vi_tri: c.vi_tri };
+          if (c.bat_dau) than.bat_dau = true;
           if (xong || c.doc_xong) than.xong = true;
           const { ma, d } = await this.goiApi('/api/tapdoc/state', than);
           // 404: máy chủ không còn truyện này — giữ cờ là gửi lại mãi vô ích.
-          if (ma === 404 || (d && c.vi_tri === than.vi_tri && c.da_thay.length === than.da_thay.length)) {
+          if (ma === 404 || (d && c.vi_tri === than.vi_tri && c.bat_dau === !!than.bat_dau && c.doc_xong === !!than.xong)) {
             delete c.cho;
             this.luuCucBo();
           }
         },
         // Đường RỜI (về thư viện, pagehide, ẩn tab): chỉ XẢ cờ đã có, không dựng cờ —
-        // mở truyện rồi quay ra mà không lật trang thì không có gì để gửi.
+        // mở truyện rồi quay ra mà không có trang đủ giờ thì không có gì để gửi.
         xaCho() {
           if (!this.id || !this.online || !this.s(this.id).cho) return;
           this.guiLuc = Date.now();
@@ -1602,21 +1673,23 @@ function tdAnhLat(lat, trang) {
         },
 
         // ── thư viện ──────────────────────────────────────────────────────────
-        // Mỗi hàng index là MỘT thẻ (spec 2026-10-06 mot-truyen §3) — truyện nhiều chương cũng vậy, kèm dòng phụ "N chương · đã đọc k/N".
-        // "Đã đọc" = doc_xong (làm quiz hay chưa đều tính).
-        daDoc(t) { return this.s(t.id).doc_xong; },
-        // Một mục lọt bộ lọc cấp + đọc/chưa đọc.
+        // Mỗi hàng index là MỘT thẻ (spec 2026-10-06 mot-truyen §3) — truyện nhiều chương cũng vậy, kèm dòng phụ "N chương · đang ở chương k".
+        // Ba trạng thái loại trừ nhau (ADR 0060): Chưa đọc = chưa có bat_dau · Đang đọc = có bat_dau, chưa xong hẳn
+        // (đọc dở, hoặc đọc xong mà còn quiz) · Đã đọc = đọc xong + đã làm quiz (truyện không quiz: đọc xong là đủ).
+        daDoc(t) { return this.s(t.id).doc_xong && (this.daLamQuiz(t) || !(t.so_hoi > 0)); },
+        dangDo(t) { return this.s(t.id).bat_dau && !this.daDoc(t); },
+        trangThai(t) { return this.daDoc(t) ? 'da' : (this.dangDo(t) ? 'dang' : 'chua'); },
+        // Một mục lọt bộ lọc cấp + trạng thái.
         khop(t) {
-          return (this.loc === 'all' || t.cap === this.loc) && (this.loai === 'all' || (this.loai === 'da') === this.daDoc(t));
+          return (this.loc === 'all' || t.cap === this.loc) && (this.loai === 'all' || this.trangThai(t) === this.loai);
         },
-        // "Đang đọc": đọc dở, hoặc đọc xong mà chưa làm quiz.
-        dangDo(t) { const c = this.s(t.id); return c.doc_xong ? !this.daLamQuiz(t) : c.da_thay.length > 0; },
-        // Hạng trong một nhóm: đang đọc → chưa đọc → đã xong (đọc xong + có quiz). sort của JS ổn định: cùng hạng giữ thứ tự index.
-        hang(t) { return this.dangDo(t) ? 0 : (this.daDoc(t) ? 2 : 1); },
+        // Hạng trong một nhóm: đang đọc → chưa đọc → đã đọc. sort của JS ổn định: cùng hạng giữ thứ tự index.
+        hang(t) { return { dang: 0, chua: 1, da: 2 }[this.trangThai(t)]; },
         xep(ds) { return ds.slice().sort((a, b) => this.hang(a) - this.hang(b)); },
-        // Hàng "📌 Đang đọc" trên cùng — chỉ ở chế độ Tất cả cấp; xếp A → B → C → D, trong cấp theo index.
+        // Hàng "📌 Đang đọc" trên cùng — chỉ ở chế độ Tất cả cấp và khi bộ lọc trạng thái là Tất cả / Đang đọc;
+        // xếp A → B → C → D, trong cấp theo index.
         dsDocTiep() {
-          if (this.loc !== 'all') return [];
+          if (this.loc !== 'all' || !(this.loai === 'all' || this.loai === 'dang')) return [];
           const th = { A: 0, B: 1, C: 2, D: 3 };
           return this.ds.filter((t) => this.dangDo(t) && this.khop(t)).sort((a, b) => (th[a.cap] ?? 9) - (th[b.cap] ?? 9));
         },
@@ -1643,24 +1716,28 @@ function tdAnhLat(lat, trang) {
         daLamQuiz(t) { return Object.keys(this.s(t.id).quiz).length > 0; },
         daThu(t) { return !!this.s(t.id).thu; },
         nenThe(t) { return t.bia ? 'background-image:url(' + JSON.stringify(this.goc + 'truyen/' + t.id + '/' + t.bia) + ')' : ''; },
-        // Thanh tiến độ ở hàng Đang đọc (%).
-        tienDo(t) { const x = this.s(t.id); return Math.round(100 * (x.doc_xong ? 1 : Math.min(1, x.da_thay.length / Math.max(1, t.so_cau)))); },
+        // Thanh tiến độ (%): trang của vi_tri / số trang; đọc xong = 100.
+        tienDo(t) { const x = this.s(t.id); return x.doc_xong ? 100 : Math.round(100 * this.trangTV(t, x.vi_tri) / Math.max(1, t.so_trang)); },
         moTa(t) {
           const c = this.s(t.id);
-          if (c.doc_xong) return this.daLamQuiz(t) ? 'Quiz ' + this.soDung(t) + '/' + t.so_hoi : 'Đã đọc · chưa làm quiz';
-          return c.da_thay.length ? 'Trang ' + this.trangTV(t, c.vi_tri) + ' / ' + t.so_trang : t.so_trang + ' trang · mới';
+          if (c.doc_xong) return this.daLamQuiz(t) ? 'Quiz ' + this.soDung(t) + '/' + t.so_hoi : (t.so_hoi > 0 ? 'Còn quiz' : 'Đã đọc xong');
+          return c.bat_dau ? 'Trang ' + this.trangTV(t, c.vi_tri) + ' / ' + t.so_trang : t.so_trang + ' trang · mới';
         },
-        // Truyện nhiều chương: chương k (từ 0) "đã đọc" = MỌI câu [cau_dau_k, cau_dau_{k+1}) nằm trong da_thay — suy ra, không lưu riêng.
-        // `t` = hàng index hay JSON truyện (cùng id, cùng `chuong`); `n` = tổng số câu (index: so_cau; trang đọc: tr.cau.length).
-        chuongXong(t, k, n) {
-          const ch = t.chuong, d = new Set(this.s(t.id).da_thay);
-          const den = k + 1 < ch.length ? ch[k + 1].cau_dau : n;
-          for (let x = ch[k].cau_dau; x < den; x++) if (!d.has(x)) return false;
-          return true;
+        // Truyện nhiều chương: chỉ số chương (từ 0) chứa mã câu `ma` theo cau_dau; không chương → −1.
+        // `t` = hàng index hay JSON truyện (cùng `chuong` có cau_dau).
+        chuongTV(t, ma) {
+          const ch = t && t.chuong;
+          if (!Array.isArray(ch) || !ch.length) return -1;
+          let k = 0;
+          for (let i = 0; i < ch.length; i++) if (ch[i].cau_dau <= ma) k = i;
+          return k;
         },
+        // Chương k "đã qua" (ADR 0060 — không còn danh sách câu đã thấy): đọc xong cả truyện, hoặc đứng TRƯỚC chương của vi_tri.
+        chuongXong(t, k) { const c = this.s(t.id); return c.doc_xong || k < this.chuongTV(t, c.vi_tri); },
         moTaChuong(t) {
-          const n = t.chuong.length, k = t.chuong.filter((_, i) => this.chuongXong(t, i, t.so_cau)).length;
-          return n + (t.kieu_chuong === 'phan' ? ' phần' : ' chương') + ' · đã đọc ' + k + '/' + n;
+          const c = this.s(t.id), n = t.chuong.length, ten = t.kieu_chuong === 'phan' ? ' phần' : ' chương';
+          if (c.doc_xong) return n + ten + ' · đã đọc hết';
+          return c.bat_dau ? n + ten + ' · đang ở' + ten + ' ' + (this.chuongTV(t, c.vi_tri) + 1) : n + ten;
         },
         anhUrl(ten) { return this.goc + 'truyen/' + this.id + '/' + ten; },
         phutGiay(ms) {
@@ -1696,6 +1773,7 @@ function tdAnhLat(lat, trang) {
           if (c.doc_xong) { this.trang = this.trangCua(c.vi_tri); this.view = 'xong'; } else this.vaoDoc(this.trangCua(c.vi_tri));
         },
         veThuVien() {
+          this.huyDem();
           this.dungDoc(); this.dongBong(); this.dungDoan();
           this.xaCho();
           this.mucLuc = false;
@@ -1745,18 +1823,22 @@ function tdAnhLat(lat, trang) {
     
     <p x-show="!tai && secret && !online" x-cloak data-td-khong-may-chu class="mb-3 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-sm"><span x-show="!maSai">Chưa kết nối được máy chủ, nên lúc này tiến độ chỉ lưu trên máy này.</span><span x-show="maSai" data-td-ma-sai>Máy chủ không nhận mã bí mật đang lưu, nên lúc này tiến độ chỉ lưu trên máy này. Nhập lại mã ở mục 🔑 Mã bí mật cuối trang.</span></p>
 
-    <div class="flex flex-wrap items-center gap-2 mb-4">
-      <button type="button" data-td-loc="all" @click="loc = 'all'" :class="loc === 'all' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="px-4 py-2 rounded-full border text-sm font-medium">Tất cả</button>
-      <button type="button" data-td-loc="A" @click="loc = 'A'" :class="loc === 'A' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="px-4 py-2 rounded-full border text-sm font-medium">🟢 A · Dễ</button>
-      <button type="button" data-td-loc="B" @click="loc = 'B'" :class="loc === 'B' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="px-4 py-2 rounded-full border text-sm font-medium">🟠 B · Vừa</button>
-      <button type="button" data-td-loc="C" @click="loc = 'C'" :class="loc === 'C' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="px-4 py-2 rounded-full border text-sm font-medium">🔴 C · Khó</button>
-      <button type="button" data-td-loc="D" @click="loc = 'D'" :class="loc === 'D' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="px-4 py-2 rounded-full border text-sm font-medium">⚫ D · Rất khó</button>
-      <span class="flex-1"></span>
-      <span class="inline-flex rounded-full border border-slate-300 overflow-hidden" role="group" aria-label="Lọc theo đã đọc">
-        <button type="button" data-td-loai="all" @click="datLoai('all')" :aria-pressed="String(loai === 'all')" :class="loai === 'all' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-700'" class="px-4 py-2 text-sm font-medium">Tất cả</button>
-        <button type="button" data-td-loai="chua" @click="datLoai('chua')" :aria-pressed="String(loai === 'chua')" :class="loai === 'chua' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-700'" class="px-4 py-2 text-sm font-medium border-l border-slate-300">Chưa đọc</button>
-        <button type="button" data-td-loai="da" @click="datLoai('da')" :aria-pressed="String(loai === 'da')" :class="loai === 'da' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-700'" class="px-4 py-2 text-sm font-medium border-l border-slate-300">✓ Đã đọc</button>
-      </span>
+    
+    <div data-td-loc-hang class="flex flex-nowrap items-center gap-2 mb-4">
+      <div class="td-cuon flex flex-1 min-w-0 gap-2 overflow-x-auto">
+        <button type="button" data-td-loc="all" @click="loc = 'all'" :class="loc === 'all' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="flex-none px-3 py-2 rounded-full border text-sm font-medium">Tất cả</button>
+        <button type="button" data-td-loc="A" @click="loc = 'A'" :class="loc === 'A' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="flex-none px-3 py-2 rounded-full border text-sm font-medium">🟢 A<span class="hidden sm:inline"> · Dễ</span></button>
+        <button type="button" data-td-loc="B" @click="loc = 'B'" :class="loc === 'B' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="flex-none px-3 py-2 rounded-full border text-sm font-medium">🟠 B<span class="hidden sm:inline"> · Vừa</span></button>
+        <button type="button" data-td-loc="C" @click="loc = 'C'" :class="loc === 'C' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="flex-none px-3 py-2 rounded-full border text-sm font-medium">🔴 C<span class="hidden sm:inline"> · Khó</span></button>
+        <button type="button" data-td-loc="D" @click="loc = 'D'" :class="loc === 'D' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="flex-none px-3 py-2 rounded-full border text-sm font-medium">⚫ D<span class="hidden sm:inline"> · Rất khó</span></button>
+      </div>
+      <select data-td-loai aria-label="Lọc theo trạng thái đọc" @change="datLoai($event.target.value)"
+              class="flex-none px-3 py-2 rounded-full border border-slate-300 bg-white text-sm font-medium">
+        <option value="all" :selected="loai === 'all'">Tất cả</option>
+        <option value="dang" :selected="loai === 'dang'">📌 Đang đọc</option>
+        <option value="chua" :selected="loai === 'chua'">Chưa đọc</option>
+        <option value="da" :selected="loai === 'da'">✓ Đã đọc</option>
+      </select>
     </div>
 
     
@@ -1772,9 +1854,9 @@ function tdAnhLat(lat, trang) {
       <span class="block px-3 pt-2 font-bold" x-text="t.ten"></span>
       <span class="block px-3 text-sm text-slate-500" x-text="moTa(t)"></span>
       <template x-if="Array.isArray(t.chuong)"><span class="block px-3 text-sm text-slate-500" data-td-the-chuong x-text="moTaChuong(t)"></span></template>
-      <span x-show="!daDoc(t)" class="block mx-3 mt-3 h-2 rounded-full bg-slate-200 overflow-hidden"><span class="block h-full bg-indigo-600" :style="'width:' + tienDo(t) + '%'"></span></span>
+      <span x-show="dangDo(t) && !s(t.id).doc_xong" class="block mx-3 mt-3 h-2 rounded-full bg-slate-200 overflow-hidden"><span class="block h-full bg-indigo-600" :style="'width:' + tienDo(t) + '%'"></span></span>
       <span class="flex gap-2 px-3 py-2 text-lg">
-        <span :class="daDoc(t) ? '' : 'opacity-25'" title="Đọc truyện">📖</span>
+        <span :class="s(t.id).doc_xong ? '' : 'opacity-25'" title="Đọc truyện">📖</span>
         <span :class="daLamQuiz(t) ? '' : 'opacity-25'" title="Quiz">❓</span>
         <span x-show="t.cap !== 'D'" :class="daThu(t) ? '' : 'opacity-25'" title="Thu âm">🎙</span>
       </span>
@@ -1795,9 +1877,9 @@ function tdAnhLat(lat, trang) {
       <span class="block px-3 pt-2 font-bold" x-text="t.ten"></span>
       <span class="block px-3 text-sm text-slate-500" x-text="moTa(t)"></span>
       <template x-if="Array.isArray(t.chuong)"><span class="block px-3 text-sm text-slate-500" data-td-the-chuong x-text="moTaChuong(t)"></span></template>
-      
+      <span x-show="dangDo(t) && !s(t.id).doc_xong" class="block mx-3 mt-3 h-2 rounded-full bg-slate-200 overflow-hidden"><span class="block h-full bg-indigo-600" :style="'width:' + tienDo(t) + '%'"></span></span>
       <span class="flex gap-2 px-3 py-2 text-lg">
-        <span :class="daDoc(t) ? '' : 'opacity-25'" title="Đọc truyện">📖</span>
+        <span :class="s(t.id).doc_xong ? '' : 'opacity-25'" title="Đọc truyện">📖</span>
         <span :class="daLamQuiz(t) ? '' : 'opacity-25'" title="Quiz">❓</span>
         <span x-show="t.cap !== 'D'" :class="daThu(t) ? '' : 'opacity-25'" title="Thu âm">🎙</span>
       </span>

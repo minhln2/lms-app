@@ -4,14 +4,15 @@
  * MỌI đường dẫn đòi mã bí mật, kể cả GET: tiến độ cho biết đứa trẻ đọc tới đâu và
  * sai câu nào; bản thu là giọng của nó. Cùng lý do /api/study/stats bị khoá.
  *
- * Ba mốc "lần đầu" — read_ts, dung_ts, xong_ts — chỉ ghi MỘT lần (COALESCE giữ giá
+ * Bốn mốc "lần đầu" — start_ts, read_ts, dung_ts, xong_ts — chỉ ghi MỘT lần (COALESCE giữ giá
  * trị cũ). Hệ điểm thưởng sau này cộng điểm theo chúng; để chúng bị ghi đè là cộng
  * trùng mà không có dấu hiệu nào.
  *
  * Truyện nào tồn tại, có mấy câu / trang (bố cục), đáp án đúng là gì: đọc từ file tĩnh qua ASSETS
  * (chính những file trang đang tải) — không tin số liệu trình duyệt gửi lên.
  *
- * Vị trí lưu theo MÃ CÂU (spec 2026-10-03 §6): td_truyen.vi_tri / da_thay; nhật ký lật của bản
+ * Vị trí lưu theo MÃ CÂU (spec 2026-10-03 §6): td_truyen.vi_tri; da_thay không dùng nữa (ADR 0060 — cột còn, không
+ * đọc / ghi). start_ts = "Đang đọc", read_ts = "Đọc xong" (cần start_ts + vi_tri ở trang cuối). Nhật ký lật của bản
  * thu `[[ms, mã câu]]` được ánh xạ sang trang của bố cục HIỆN HÀNH (tdAnhLat) rồi mới áp luật.
  */
 import { TD, tdHoanThanh, tdAnhLat } from "./td_luat.js";
@@ -66,14 +67,16 @@ const tsTuongLai = (ts) => ts > Date.now() + 86400000;
 async function docTrangThai(env, user) {
   const db = env.STUDY_DB;
   const [a, b, c] = await db.batch([
-    db.prepare(`SELECT truyen, vi_tri, da_thay, read_ts FROM td_truyen WHERE user_id = ?1`).bind(user),
+    db.prepare(`SELECT truyen, vi_tri, start_ts, read_ts, ts FROM td_truyen WHERE user_id = ?1`).bind(user),
     db.prepare(`SELECT truyen, cau, dung, lan FROM td_quiz WHERE user_id = ?1`).bind(user),
     db.prepare(`SELECT truyen, ts, dai, doan, lat, xong FROM td_thuam WHERE user_id = ?1`).bind(user),
   ]);
   const out = {};
-  const o = (id) => (out[id] ??= { vi_tri: 0, da_thay: [], doc_xong: false, quiz: {}, thu: null });
+  const o = (id) => (out[id] ??= { vi_tri: 0, ts: 0, bat_dau: false, doc_xong: false, quiz: {}, thu: null });
   for (const r of a.results || []) {
-    Object.assign(o(r.truyen), { vi_tri: r.vi_tri, da_thay: mang(r.da_thay), doc_xong: r.read_ts != null });
+    // read_ts có mà start_ts NULL: hàng trước ADR 0060 chưa điền mốc — đọc xong thì đương nhiên đã bắt đầu.
+    Object.assign(o(r.truyen), { vi_tri: r.vi_tri, ts: r.ts, bat_dau: r.start_ts != null || r.read_ts != null,
+                                 doc_xong: r.read_ts != null });
   }
   for (const r of b.results || []) o(r.truyen).quiz[r.cau] = { dung: r.dung, lan: r.lan };
   for (const r of c.results || []) {
@@ -83,28 +86,31 @@ async function docTrangThai(env, user) {
 }
 
 async function ghiTrangThai(env, user, t, body) {
-  // Số câu lấy từ index tĩnh, không tin trình duyệt.
+  // Số câu và bố cục lấy từ index tĩnh, không tin trình duyệt.
   const n = t.so_cau;
   if (!Number.isInteger(n) || n < 1) throw sai("Không đọc được truyện", 500);
   const viTri = Number.isInteger(body.vi_tri) ? Math.min(n - 1, Math.max(0, body.vi_tri)) : 0;
-  const hop = (x) => Number.isInteger(x) && x >= 0 && x < n;
-  const moi = (Array.isArray(body.da_thay) ? body.da_thay : []).filter(hop);
+  const d = Array.isArray(t.trang_dau) && t.trang_dau.length ? t.trang_dau : [0];
   const db = env.STUDY_DB;
-  // Đọc rồi GỘP: hai thiết bị gửi lệch thứ tự thì lượt cũ đến sau không được làm mất
-  // câu đã thấy. (Hai câu lệnh, không nguyên tử — chấp nhận: xấu nhất là thiếu một
-  // câu vừa thấy, lượt gửi kế tiếp tự bù.)
-  const cu = await db.prepare(`SELECT da_thay, read_ts FROM td_truyen WHERE user_id = ?1 AND truyen = ?2`)
+  const cu = await db.prepare(`SELECT start_ts, read_ts FROM td_truyen WHERE user_id = ?1 AND truyen = ?2`)
     .bind(user, t.id).first();
-  const daThay = [...new Set([...(cu ? mang(cu.da_thay).filter(hop) : []), ...moi])].sort((x, y) => x - y);
   const now = giay();
-  const xong = body.xong === true && daThay.length === n ? now : null;
+  const daBatDau = !!(cu && (cu.start_ts != null || cu.read_ts != null));
+  const batDau = body.bat_dau === true ? now : null;
+  // Đọc xong (ADR 0060): đã bắt đầu (trước đó hay CHÍNH lượt này) và vị trí ở trang cuối. Không đạt → bỏ cờ, không lỗi:
+  // tab mở từ trước bản này vẫn gửi xong theo luật cũ.
+  const xong = body.xong === true && (daBatDau || batDau != null) && viTri >= d[d.length - 1] ? now : null;
+  // start_ts chưa có mà read_ts có (hàng đọc xong trước ADR 0060, chưa điền mốc): nhận read_ts, KHÔNG nhận "bây giờ" —
+  // đã đọc xong thì không thể bắt đầu muộn hơn, và start_ts ghi MỘT lần nên mốc sai không sửa được nữa.
   await db.prepare(
-    `INSERT INTO td_truyen (user_id, truyen, vi_tri, da_thay, read_ts, ts) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+    `INSERT INTO td_truyen (user_id, truyen, vi_tri, start_ts, read_ts, ts) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
      ON CONFLICT (user_id, truyen) DO UPDATE SET
-       vi_tri = excluded.vi_tri, da_thay = excluded.da_thay,
+       vi_tri = excluded.vi_tri,
+       start_ts = COALESCE(td_truyen.start_ts, td_truyen.read_ts, excluded.start_ts),
        read_ts = COALESCE(td_truyen.read_ts, excluded.read_ts), ts = excluded.ts`
-  ).bind(user, t.id, viTri, JSON.stringify(daThay), xong, now).run();
-  return { ok: true, da_thay: daThay, doc_xong: (cu && cu.read_ts != null) || xong != null };
+  ).bind(user, t.id, viTri, batDau, xong, now).run();
+  const docXong = (cu && cu.read_ts != null) || xong != null;
+  return { ok: true, bat_dau: daBatDau || batDau != null || docXong, doc_xong: docXong };
 }
 
 async function ghiQuiz(env, url, user, t, traLoi) {
