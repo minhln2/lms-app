@@ -3,6 +3,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -12,7 +22,7 @@
   <title>Tập đọc — MK</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.2ff8a49c.css">
+  <link rel="stylesheet" href="../assets/tw.8ce8f1ff.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   
   <link rel="stylesheet" href="../tap-doc/phong/be-vietnam-pro/font-face.css">
@@ -21,14 +31,22 @@
     [x-cloak]{display:none!important}
     .td-bia{height:7.5rem;display:grid;place-items:center;font-size:3.2rem;background-size:cover;background-position:center}
     .td-cap{position:absolute;top:.5rem;left:.5rem;width:2.1rem;height:2.1rem;border-radius:999px;display:grid;place-items:center;font-weight:800;color:#fff}
-    .td-cap-A{background:#16a34a}.td-cap-B{background:#f59e0b}.td-cap-C{background:#dc2626}.td-cap-D{background:#1f2937}
-    .td-nen-A{background-color:#bbf7d0}.td-nen-B{background-color:#fde68a}.td-nen-C{background-color:#ddd6fe}.td-nen-D{background-color:#e5e7eb}
+    /* Màu cấp (ADR 0060 đợt 2): xanh · cam · đỏ · tím (D từng là đen). Huy hiệu thẻ (.td-cap-*) và chấm của bộ lọc / tiêu đề nhóm (.td-chammau-*) dùng CHUNG màu. */
+    .td-cap-A,.td-chammau-A{background:#16a34a}.td-cap-B,.td-chammau-B{background:#f59e0b}.td-cap-C,.td-chammau-C{background:#dc2626}.td-cap-D,.td-chammau-D{background:#7c3aed}
+    /* Chấm "Tất cả": vòng chuyển bốn màu cấp. Chấm KHÔNG viền / đĩa: chip đang chọn có nền indigo-50 sáng nên mọi màu, kể cả tím #7c3aed của cấp D, hiện nguyên. */
+    .td-chammau{flex:none;display:inline-block;width:1rem;height:1rem;border-radius:999px}
+    .td-chammau-all{background:conic-gradient(#16a34a,#f59e0b,#dc2626,#7c3aed,#16a34a)}
+    /* Nền bìa khi truyện chưa có ảnh: bốn tông 200 khác nhau (C từng là tím nhạt, nay đỏ nhạt để không trùng D). */
+    .td-nen-A{background-color:#bbf7d0}.td-nen-B{background-color:#fde68a}.td-nen-C{background-color:#fecaca}.td-nen-D{background-color:#ddd6fe}
+    /* Icon trạng thái (macro icon): <img> Noto vuông; huy hiệu ✅ của "Đã đọc" thò ra góc dưới phải. */
+    .td-ico{position:relative;display:inline-flex;flex:none;line-height:0}
+    .td-ico img{display:block;max-width:none;height:auto}
+    .td-ico .td-ico-ck{position:absolute;right:-14%;bottom:-8%}
     .td-da-doc .td-bia{filter:saturate(.45) opacity(.75)}
     /* Hàng kéo ngang (chế độ Tất cả cấp): thẻ rộng cố định, dừng gọn khi thả tay. Lưới: chế độ một cấp. */
     .td-hang{display:flex;gap:1rem;overflow-x:auto;scroll-snap-type:x mandatory;padding:.25rem .25rem 1rem;margin:0 -.25rem;-webkit-overflow-scrolling:touch}
     .td-hang>*{flex:none;width:11.5rem;scroll-snap-align:start}
     .td-luoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(11.5rem,1fr));gap:1rem}
-    .td-cuon{scrollbar-width:none}.td-cuon::-webkit-scrollbar{display:none}
   </style>
   
   <script>/**
@@ -1403,9 +1421,11 @@ function tdAnhLat(lat, trang) {
     // Dạng trước ADR 0060 (mảng da_thay): suyCu() đổi một lần thành bat_dau (phủ ≥ 2 trang) rồi bỏ mảng.
     //
     // Bộ lọc thư viện (spec giao diện 10-03 §2) là thiết lập của MÁY, không nằm trong td_st_<user>:
-    // `loc` (cấp, không lưu) và `loai` = 'all' | 'dang' | 'chua' | 'da' lưu ở localStorage `td_loai`. Khoá cũ
+    // `loc` (độ dài = cấp) = 'all' | 'A' | 'B' | 'C' | 'D' lưu ở localStorage `td_loc`; `loai` = 'all' | 'dang' | 'chua' | 'da' lưu ở
+    // `td_loai`. Cả hai ghi qua datLoc() / datLoai() mỗi khi đổi (chip lẫn dòng menu). td_loc lạ (rác, chữ thường, rỗng) → 'all'. Khoá cũ
     // `td_an = '1'` ("Ẩn truyện đã đọc") được hiểu là 'chua' khi chưa có td_loai. td_loai là giá trị
     // lạ (rác) thì coi như không có: rơi về khoá cũ td_an ('1' → 'chua'), không có nữa thì 'all'.
+    // Hai cách bấm cùng đổi `loc` / `loai`: chip (≥ 640 px) và hai nút thả xuống (< 640 px; `menuMo` = menu nào đang mở, tối đa MỘT).
     //
     // HỢP ĐỒNG cho Task 8–12 về cờ `cho`:
     //   • CHỈ tiến độ thật dựng cờ: trang đủ giờ (duGio) → `this.luuCucBo(); this.guiTrang(…)`;
@@ -1425,7 +1445,14 @@ function tdAnhLat(lat, trang) {
         // xuống qua window.TD_HAN_GET để khỏi chờ 8 s.
         hanGet: window.TD_HAN_GET || 8000,
         view: 'tv',               // tv · doc · quiz · xong · thu · nghe
-        ds: [], st: {}, loc: 'all',
+        ds: [], st: {},
+        loc: (() => {
+          const v = localStorage.getItem('td_loc');
+          return ['all', 'A', 'B', 'C', 'D'].includes(v) ? v : 'all';
+        })(),
+        // Tên hiển thị (từ khai báo ở đầu template): độ dài = cấp A–D; mã cấp và mã trạng thái KHÔNG đổi.
+        tenCap: {"A": "R\u1ea5t ng\u1eafn", "B": "Ng\u1eafn", "C": "V\u1eeba", "D": "D\u00e0i"}, tenLoai: {"chua": "Ch\u01b0a \u0111\u1ecdc", "da": "\u0110\u00e3 \u0111\u1ecdc", "dang": "\u0110ang \u0111\u1ecdc"},
+        menuMo: '',               // '' · 'loc' · 'loai' — menu thả xuống (< 640 px) đang mở
         // Bộ lọc trạng thái (hợp đồng ở đầu script): 'all' · 'dang' · 'chua' · 'da'.
         loai: (() => {
           const v = localStorage.getItem('td_loai');
@@ -1679,14 +1706,19 @@ function tdAnhLat(lat, trang) {
         daDoc(t) { return this.s(t.id).doc_xong && (this.daLamQuiz(t) || !(t.so_hoi > 0)); },
         dangDo(t) { return this.s(t.id).bat_dau && !this.daDoc(t); },
         trangThai(t) { return this.daDoc(t) ? 'da' : (this.dangDo(t) ? 'dang' : 'chua'); },
-        // Một mục lọt bộ lọc cấp + trạng thái.
-        khop(t) {
-          return (this.loc === 'all' || t.cap === this.loc) && (this.loai === 'all' || this.trangThai(t) === this.loai);
-        },
+        // Một mục lọt bộ lọc cấp `c` + trạng thái `v` ('all' = không lọc chiều đó).
+        khopLL(t, c, v) { return (c === 'all' || t.cap === c) && (v === 'all' || this.trangThai(t) === v); },
+        khop(t) { return this.khopLL(t, this.loc, this.loai); },
+        // Số trên dòng menu thả xuống: đếm theo bộ lọc KIA (số hiện trên dòng = số thẻ ra sau khi chọn dòng đó).
+        demLoc(c) { return this.ds.filter((t) => this.khopLL(t, c, this.loai)).length; },
+        demLoai(v) { return this.ds.filter((t) => this.khopLL(t, this.loc, v)).length; },
+        // Chữ trên hai nút thả xuống: Tất cả → tên chiều lọc ("Độ dài" / "Trạng thái"); đã chọn → tên mục (và nút được tô).
+        nhanLoc() { return this.loc === 'all' ? 'Độ dài' : this.tenCap[this.loc]; },
+        nhanLoai() { return this.loai === 'all' ? 'Trạng thái' : this.tenLoai[this.loai]; },
         // Hạng trong một nhóm: đang đọc → chưa đọc → đã đọc. sort của JS ổn định: cùng hạng giữ thứ tự index.
         hang(t) { return { dang: 0, chua: 1, da: 2 }[this.trangThai(t)]; },
         xep(ds) { return ds.slice().sort((a, b) => this.hang(a) - this.hang(b)); },
-        // Hàng "📌 Đang đọc" trên cùng — chỉ ở chế độ Tất cả cấp và khi bộ lọc trạng thái là Tất cả / Đang đọc;
+        // Hàng "Đang đọc" trên cùng — chỉ ở chế độ Tất cả cấp và khi bộ lọc trạng thái là Tất cả / Đang đọc;
         // xếp A → B → C → D, trong cấp theo index.
         dsDocTiep() {
           if (this.loc !== 'all' || !(this.loai === 'all' || this.loai === 'dang')) return [];
@@ -1696,10 +1728,9 @@ function tdAnhLat(lat, trang) {
         // Các nhóm để vẽ: Tất cả → mỗi cấp một hàng kéo ngang; một cấp → một lưới cuộn dọc. Nhóm rỗng không vẽ.
         // Truyện đang đọc VẪN ở hàng cấp của nó (đứng đầu, nhờ xep) — hàng Đang đọc chỉ là lối tắt (2026-10-07: rời hàng cấp thì khó theo dõi).
         nhom() {
-          const ten = { A: '🟢 A · Dễ', B: '🟠 B · Vừa', C: '🔴 C · Khó', D: '⚫ D · Rất khó' };
           const caps = this.loc === 'all' ? ['A', 'B', 'C', 'D'] : [this.loc];
           return caps.map((c) => ({
-            cap: c, ten: ten[c],
+            cap: c, ten: this.tenCap[c],
             ds: this.xep(this.ds.filter((t) => t.cap === c && this.khop(t))),
           })).filter((g) => g.ds.length);
         },
@@ -1711,6 +1742,7 @@ function tdAnhLat(lat, trang) {
           for (let i = 0; i < d.length; i++) if (d[i] <= ma) p = i + 1;
           return p;
         },
+        datLoc(v) { this.loc = v; localStorage.setItem('td_loc', v); },
         datLoai(v) { this.loai = v; localStorage.setItem('td_loai', v); },
         soDung(t) { return Object.values(this.s(t.id).quiz).filter((q) => q.dung).length; },
         daLamQuiz(t) { return Object.keys(this.s(t.id).quiz).length > 0; },
@@ -1824,33 +1856,156 @@ function tdAnhLat(lat, trang) {
     <p x-show="!tai && secret && !online" x-cloak data-td-khong-may-chu class="mb-3 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-sm"><span x-show="!maSai">Chưa kết nối được máy chủ, nên lúc này tiến độ chỉ lưu trên máy này.</span><span x-show="maSai" data-td-ma-sai>Máy chủ không nhận mã bí mật đang lưu, nên lúc này tiến độ chỉ lưu trên máy này. Nhập lại mã ở mục 🔑 Mã bí mật cuối trang.</span></p>
 
     
-    <div data-td-loc-hang class="flex flex-nowrap items-center gap-2 mb-4">
-      <div class="td-cuon flex flex-1 min-w-0 gap-2 overflow-x-auto">
-        <button type="button" data-td-loc="all" @click="loc = 'all'" :class="loc === 'all' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="flex-none px-3 py-2 rounded-full border text-sm font-medium">Tất cả</button>
-        <button type="button" data-td-loc="A" @click="loc = 'A'" :class="loc === 'A' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="flex-none px-3 py-2 rounded-full border text-sm font-medium">🟢 A<span class="hidden sm:inline"> · Dễ</span></button>
-        <button type="button" data-td-loc="B" @click="loc = 'B'" :class="loc === 'B' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="flex-none px-3 py-2 rounded-full border text-sm font-medium">🟠 B<span class="hidden sm:inline"> · Vừa</span></button>
-        <button type="button" data-td-loc="C" @click="loc = 'C'" :class="loc === 'C' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="flex-none px-3 py-2 rounded-full border text-sm font-medium">🔴 C<span class="hidden sm:inline"> · Khó</span></button>
-        <button type="button" data-td-loc="D" @click="loc = 'D'" :class="loc === 'D' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-300'" class="flex-none px-3 py-2 rounded-full border text-sm font-medium">⚫ D<span class="hidden sm:inline"> · Rất khó</span></button>
+    <div data-td-loc-hang class="mb-4" @keydown.escape.window="menuMo = ''">
+      <div class="flex items-start justify-between gap-2 sm:hidden">
+        <div class="relative min-w-0" @click.outside="if (menuMo === 'loc') menuMo = ''">
+          <button type="button" data-td-loc-mo aria-haspopup="menu" :aria-expanded="menuMo === 'loc'" @click="menuMo = menuMo === 'loc' ? '' : 'loc'"
+                  :class="loc === 'all' ? 'bg-white text-slate-700 font-medium border-slate-300' : 'bg-indigo-50 text-indigo-700 font-bold border-indigo-600 ring-1 ring-inset ring-indigo-600'"
+                  class="flex items-center gap-2 max-w-full px-3 py-2 rounded-full border text-sm">
+            <span class="td-chammau" :class="'td-chammau-' + loc"></span>
+            <span data-td-nhan class="min-w-0 truncate" x-text="nhanLoc()"></span>
+            <span aria-hidden="true" class="flex-none text-xs">▾</span>
+          </button>
+          <div role="menu" data-td-loc-menu x-show="menuMo === 'loc'" x-cloak class="absolute left-0 z-20 mt-1 w-56 py-1 rounded-xl border border-slate-200 bg-white shadow-lg">
+            
+            <button type="button" role="menuitemradio" data-td-loc-chon="all" :aria-checked="loc === 'all'" @click="datLoc('all'); menuMo = ''"
+                    :class="loc === 'all' ? 'bg-indigo-50 font-semibold text-indigo-700' : 'text-slate-700'"
+                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm">
+              <span class="td-chammau td-chammau-all"></span>
+              <span>Tất cả</span>
+              <span data-td-dem class="ml-auto text-xs text-slate-400 tabular-nums" x-text="demLoc('all')"></span>
+            </button>
+            
+            <button type="button" role="menuitemradio" data-td-loc-chon="A" :aria-checked="loc === 'A'" @click="datLoc('A'); menuMo = ''"
+                    :class="loc === 'A' ? 'bg-indigo-50 font-semibold text-indigo-700' : 'text-slate-700'"
+                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm">
+              <span class="td-chammau td-chammau-A"></span>
+              <span>Rất ngắn</span>
+              <span data-td-dem class="ml-auto text-xs text-slate-400 tabular-nums" x-text="demLoc('A')"></span>
+            </button>
+            
+            <button type="button" role="menuitemradio" data-td-loc-chon="B" :aria-checked="loc === 'B'" @click="datLoc('B'); menuMo = ''"
+                    :class="loc === 'B' ? 'bg-indigo-50 font-semibold text-indigo-700' : 'text-slate-700'"
+                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm">
+              <span class="td-chammau td-chammau-B"></span>
+              <span>Ngắn</span>
+              <span data-td-dem class="ml-auto text-xs text-slate-400 tabular-nums" x-text="demLoc('B')"></span>
+            </button>
+            
+            <button type="button" role="menuitemradio" data-td-loc-chon="C" :aria-checked="loc === 'C'" @click="datLoc('C'); menuMo = ''"
+                    :class="loc === 'C' ? 'bg-indigo-50 font-semibold text-indigo-700' : 'text-slate-700'"
+                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm">
+              <span class="td-chammau td-chammau-C"></span>
+              <span>Vừa</span>
+              <span data-td-dem class="ml-auto text-xs text-slate-400 tabular-nums" x-text="demLoc('C')"></span>
+            </button>
+            
+            <button type="button" role="menuitemradio" data-td-loc-chon="D" :aria-checked="loc === 'D'" @click="datLoc('D'); menuMo = ''"
+                    :class="loc === 'D' ? 'bg-indigo-50 font-semibold text-indigo-700' : 'text-slate-700'"
+                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm">
+              <span class="td-chammau td-chammau-D"></span>
+              <span>Dài</span>
+              <span data-td-dem class="ml-auto text-xs text-slate-400 tabular-nums" x-text="demLoc('D')"></span>
+            </button>
+            
+          </div>
+        </div>
+        
+        <div class="relative min-w-0" @click.outside="if (menuMo === 'loai') menuMo = ''">
+          <button type="button" data-td-loai-mo aria-haspopup="menu" :aria-expanded="menuMo === 'loai'" @click="menuMo = menuMo === 'loai' ? '' : 'loai'"
+                  :class="loai === 'all' ? 'bg-white text-slate-700 font-medium border-slate-300' : 'bg-indigo-50 text-indigo-700 font-bold border-indigo-600 ring-1 ring-inset ring-indigo-600'"
+                  class="flex items-center gap-2 max-w-full px-3 py-2 rounded-full border text-sm">
+            
+            <span class="flex-none inline-flex"><span x-show="loai === 'all'" x-cloak class="inline-flex"><span class="td-ico"><img src="../assets/no_1f4da.b91fc6e1.svg" alt="" aria-hidden="true" width="20" height="20" draggable="false"></span></span><span x-show="loai === 'chua'" x-cloak class="inline-flex"><span class="td-ico"><img src="../assets/no_1f4d8.6cdedf18.svg" alt="" aria-hidden="true" width="20" height="20" draggable="false"></span></span><span x-show="loai === 'dang'" x-cloak class="inline-flex"><span class="td-ico"><img src="../assets/no_1f4d6.9ac6bca0.svg" alt="" aria-hidden="true" width="20" height="20" draggable="false"></span></span><span x-show="loai === 'da'" x-cloak class="inline-flex"><span class="td-ico"><img src="../assets/no_1f4d7.bbb97a89.svg" alt="" aria-hidden="true" width="20" height="20" draggable="false"><img class="td-ico-ck" src="../assets/no_2705.3ee09a78.svg" alt="" aria-hidden="true" width="11" height="11" draggable="false"></span></span></span>
+            <span data-td-nhan class="min-w-0 truncate" x-text="nhanLoai()"></span>
+            <span aria-hidden="true" class="flex-none text-xs">▾</span>
+          </button>
+          <div role="menu" data-td-loai-menu x-show="menuMo === 'loai'" x-cloak class="absolute right-0 z-20 mt-1 w-56 py-1 rounded-xl border border-slate-200 bg-white shadow-lg">
+            
+            <button type="button" role="menuitemradio" data-td-loai-chon="all" :aria-checked="loai === 'all'" @click="datLoai('all'); menuMo = ''"
+                    :class="loai === 'all' ? 'bg-indigo-50 font-semibold text-indigo-700' : 'text-slate-700'"
+                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm">
+              <span class="td-ico"><img src="../assets/no_1f4da.b91fc6e1.svg" alt="" aria-hidden="true" width="20" height="20" draggable="false"></span>
+              <span>Tất cả</span>
+              <span data-td-dem class="ml-auto text-xs text-slate-400 tabular-nums" x-text="demLoai('all')"></span>
+            </button>
+            
+            <button type="button" role="menuitemradio" data-td-loai-chon="chua" :aria-checked="loai === 'chua'" @click="datLoai('chua'); menuMo = ''"
+                    :class="loai === 'chua' ? 'bg-indigo-50 font-semibold text-indigo-700' : 'text-slate-700'"
+                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm">
+              <span class="td-ico"><img src="../assets/no_1f4d8.6cdedf18.svg" alt="" aria-hidden="true" width="20" height="20" draggable="false"></span>
+              <span>Chưa đọc</span>
+              <span data-td-dem class="ml-auto text-xs text-slate-400 tabular-nums" x-text="demLoai('chua')"></span>
+            </button>
+            
+            <button type="button" role="menuitemradio" data-td-loai-chon="dang" :aria-checked="loai === 'dang'" @click="datLoai('dang'); menuMo = ''"
+                    :class="loai === 'dang' ? 'bg-indigo-50 font-semibold text-indigo-700' : 'text-slate-700'"
+                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm">
+              <span class="td-ico"><img src="../assets/no_1f4d6.9ac6bca0.svg" alt="" aria-hidden="true" width="20" height="20" draggable="false"></span>
+              <span>Đang đọc</span>
+              <span data-td-dem class="ml-auto text-xs text-slate-400 tabular-nums" x-text="demLoai('dang')"></span>
+            </button>
+            
+            <button type="button" role="menuitemradio" data-td-loai-chon="da" :aria-checked="loai === 'da'" @click="datLoai('da'); menuMo = ''"
+                    :class="loai === 'da' ? 'bg-indigo-50 font-semibold text-indigo-700' : 'text-slate-700'"
+                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm">
+              <span class="td-ico"><img src="../assets/no_1f4d7.bbb97a89.svg" alt="" aria-hidden="true" width="20" height="20" draggable="false"><img class="td-ico-ck" src="../assets/no_2705.3ee09a78.svg" alt="" aria-hidden="true" width="11" height="11" draggable="false"></span>
+              <span>Đã đọc</span>
+              <span data-td-dem class="ml-auto text-xs text-slate-400 tabular-nums" x-text="demLoai('da')"></span>
+            </button>
+            
+          </div>
+        </div>
       </div>
-      <select data-td-loai aria-label="Lọc theo trạng thái đọc" @change="datLoai($event.target.value)"
-              class="flex-none px-3 py-2 rounded-full border border-slate-300 bg-white text-sm font-medium">
-        <option value="all" :selected="loai === 'all'">Tất cả</option>
-        <option value="dang" :selected="loai === 'dang'">📌 Đang đọc</option>
-        <option value="chua" :selected="loai === 'chua'">Chưa đọc</option>
-        <option value="da" :selected="loai === 'da'">✓ Đã đọc</option>
-      </select>
+
+      <div class="hidden sm:flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div role="group" aria-label="Lọc theo độ dài" class="flex flex-wrap gap-1.5">
+          
+          <button type="button" data-td-loc="all" @click="datLoc('all')" :aria-pressed="loc === 'all'" :class="loc === 'all' ? 'bg-indigo-50 text-indigo-700 font-bold border-indigo-600 ring-1 ring-inset ring-indigo-600' : 'bg-white text-slate-700 font-medium border-slate-300'"
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm"><span class="td-chammau td-chammau-all"></span>Tất cả</button>
+          
+          <button type="button" data-td-loc="A" @click="datLoc('A')" :aria-pressed="loc === 'A'" :class="loc === 'A' ? 'bg-indigo-50 text-indigo-700 font-bold border-indigo-600 ring-1 ring-inset ring-indigo-600' : 'bg-white text-slate-700 font-medium border-slate-300'"
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm"><span class="td-chammau td-chammau-A"></span>Rất ngắn</button>
+          
+          <button type="button" data-td-loc="B" @click="datLoc('B')" :aria-pressed="loc === 'B'" :class="loc === 'B' ? 'bg-indigo-50 text-indigo-700 font-bold border-indigo-600 ring-1 ring-inset ring-indigo-600' : 'bg-white text-slate-700 font-medium border-slate-300'"
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm"><span class="td-chammau td-chammau-B"></span>Ngắn</button>
+          
+          <button type="button" data-td-loc="C" @click="datLoc('C')" :aria-pressed="loc === 'C'" :class="loc === 'C' ? 'bg-indigo-50 text-indigo-700 font-bold border-indigo-600 ring-1 ring-inset ring-indigo-600' : 'bg-white text-slate-700 font-medium border-slate-300'"
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm"><span class="td-chammau td-chammau-C"></span>Vừa</button>
+          
+          <button type="button" data-td-loc="D" @click="datLoc('D')" :aria-pressed="loc === 'D'" :class="loc === 'D' ? 'bg-indigo-50 text-indigo-700 font-bold border-indigo-600 ring-1 ring-inset ring-indigo-600' : 'bg-white text-slate-700 font-medium border-slate-300'"
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm"><span class="td-chammau td-chammau-D"></span>Dài</button>
+          
+        </div>
+        <div role="group" aria-label="Lọc theo trạng thái đọc" class="flex flex-wrap gap-1.5">
+          
+          <button type="button" data-td-loai="all" @click="datLoai('all')" :aria-pressed="loai === 'all'" :class="loai === 'all' ? 'bg-indigo-50 text-indigo-700 font-bold border-indigo-600 ring-1 ring-inset ring-indigo-600' : 'bg-white text-slate-700 font-medium border-slate-300'"
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm"><span class="td-ico"><img src="../assets/no_1f4da.b91fc6e1.svg" alt="" aria-hidden="true" width="20" height="20" draggable="false"></span>Mọi trạng thái</button>
+          
+          <button type="button" data-td-loai="chua" @click="datLoai('chua')" :aria-pressed="loai === 'chua'" :class="loai === 'chua' ? 'bg-indigo-50 text-indigo-700 font-bold border-indigo-600 ring-1 ring-inset ring-indigo-600' : 'bg-white text-slate-700 font-medium border-slate-300'"
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm"><span class="td-ico"><img src="../assets/no_1f4d8.6cdedf18.svg" alt="" aria-hidden="true" width="20" height="20" draggable="false"></span>Chưa đọc</button>
+          
+          <button type="button" data-td-loai="dang" @click="datLoai('dang')" :aria-pressed="loai === 'dang'" :class="loai === 'dang' ? 'bg-indigo-50 text-indigo-700 font-bold border-indigo-600 ring-1 ring-inset ring-indigo-600' : 'bg-white text-slate-700 font-medium border-slate-300'"
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm"><span class="td-ico"><img src="../assets/no_1f4d6.9ac6bca0.svg" alt="" aria-hidden="true" width="20" height="20" draggable="false"></span>Đang đọc</button>
+          
+          <button type="button" data-td-loai="da" @click="datLoai('da')" :aria-pressed="loai === 'da'" :class="loai === 'da' ? 'bg-indigo-50 text-indigo-700 font-bold border-indigo-600 ring-1 ring-inset ring-indigo-600' : 'bg-white text-slate-700 font-medium border-slate-300'"
+                  class="flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm"><span class="td-ico"><img src="../assets/no_1f4d7.bbb97a89.svg" alt="" aria-hidden="true" width="20" height="20" draggable="false"><img class="td-ico-ck" src="../assets/no_2705.3ee09a78.svg" alt="" aria-hidden="true" width="11" height="11" draggable="false"></span>Đã đọc</button>
+          
+        </div>
+      </div>
     </div>
 
     
     
 
     <section data-td-tiep x-show="dsDocTiep().length" x-cloak class="mb-4">
-      <h2 class="text-base font-bold mb-2">📌 Đang đọc <span class="text-slate-400 font-normal" x-text="'(' + dsDocTiep().length + ')'"></span></h2>
+      <h2 class="flex items-center gap-2 text-base font-bold mb-2"><span class="td-ico"><img src="../assets/no_1f4d6.9ac6bca0.svg" alt="" aria-hidden="true" width="22" height="22" draggable="false"></span><span>Đang đọc</span><span class="text-slate-400 font-normal" x-text="'(' + dsDocTiep().length + ')'"></span></h2>
       <div class="td-hang">
         <template x-for="t in dsDocTiep()" :key="'tiep-' + t.id"><button type="button" :data-td-the="t.id" @click="bamThe(t.id)" :class="daDoc(t) ? 'td-da-doc' : ''" class="relative flex flex-col text-left bg-white rounded-2xl overflow-hidden shadow">
       <span class="td-bia block" :class="'td-nen-' + t.cap" :style="nenThe(t)"><span x-show="!t.bia">📖</span></span>
       <span class="td-cap" :class="'td-cap-' + t.cap" x-text="t.cap"></span>
-      <span x-show="daDoc(t)" class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-bold">✓ Đã đọc</span>
+      
+      <span x-show="daDoc(t)" data-td-nhan-da class="absolute top-2 right-2 inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full bg-white text-emerald-700 border border-emerald-200 shadow-sm text-xs font-bold"><span class="td-ico"><img src="../assets/no_1f4d7.bbb97a89.svg" alt="" aria-hidden="true" width="16" height="16" draggable="false"><img class="td-ico-ck" src="../assets/no_2705.3ee09a78.svg" alt="" aria-hidden="true" width="9" height="9" draggable="false"></span>Đã đọc</span>
       <span class="block px-3 pt-2 font-bold" x-text="t.ten"></span>
       <span class="block px-3 text-sm text-slate-500" x-text="moTa(t)"></span>
       <template x-if="Array.isArray(t.chuong)"><span class="block px-3 text-sm text-slate-500" data-td-the-chuong x-text="moTaChuong(t)"></span></template>
@@ -1868,12 +2023,13 @@ function tdAnhLat(lat, trang) {
     <p x-show="!tai && !err && ds.length && !dsHien().length" x-cloak class="text-slate-500">Không có truyện nào khớp bộ lọc.</p>
     <template x-for="g in nhom()" :key="g.cap">
       <section :data-td-nhom="g.cap" class="mb-4">
-        <h2 class="text-base font-bold mb-2"><span x-text="g.ten"></span> <span class="text-slate-400 font-normal" x-text="'(' + g.ds.length + ')'"></span></h2>
+        <h2 class="flex items-center gap-2 text-base font-bold mb-2"><span class="td-chammau" :class="'td-chammau-' + g.cap"></span><span x-text="g.ten"></span><span class="text-slate-400 font-normal" x-text="'(' + g.ds.length + ')'"></span></h2>
         <div :class="loc === 'all' ? 'td-hang' : 'td-luoi'">
           <template x-for="t in g.ds" :key="t.id"><button type="button" :data-td-the="t.id" :data-td-cap="t.cap" @click="bamThe(t.id)" :class="daDoc(t) ? 'td-da-doc' : ''" class="relative flex flex-col text-left bg-white rounded-2xl overflow-hidden shadow">
       <span class="td-bia block" :class="'td-nen-' + t.cap" :style="nenThe(t)"><span x-show="!t.bia">📖</span></span>
       <span class="td-cap" :class="'td-cap-' + t.cap" x-text="t.cap"></span>
-      <span x-show="daDoc(t)" class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-xs font-bold">✓ Đã đọc</span>
+      
+      <span x-show="daDoc(t)" data-td-nhan-da class="absolute top-2 right-2 inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full bg-white text-emerald-700 border border-emerald-200 shadow-sm text-xs font-bold"><span class="td-ico"><img src="../assets/no_1f4d7.bbb97a89.svg" alt="" aria-hidden="true" width="16" height="16" draggable="false"><img class="td-ico-ck" src="../assets/no_2705.3ee09a78.svg" alt="" aria-hidden="true" width="9" height="9" draggable="false"></span>Đã đọc</span>
       <span class="block px-3 pt-2 font-bold" x-text="t.ten"></span>
       <span class="block px-3 text-sm text-slate-500" x-text="moTa(t)"></span>
       <template x-if="Array.isArray(t.chuong)"><span class="block px-3 text-sm text-slate-500" data-td-the-chuong x-text="moTaChuong(t)"></span></template>
