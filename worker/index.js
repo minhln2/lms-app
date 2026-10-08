@@ -9,6 +9,8 @@
  *   /api/tapdoc/*  → tập đọc: tiến độ + quiz (D1), bản thu âm (R2) — mọi đường đòi mã
  *   /api/lookup    → tra nghĩa 1 từ / dịch 1 đoạn bằng Gemini (cần mã bí mật)
  *   /api/lookup/history → từ đã tra, gộp theo từ + số lần (cần mã bí mật)
+ *   /api/diem      → điểm thưởng: số dư + lịch sử (mã bí mật); /api/diem/doi: bố mẹ trừ (phiên quản trị)
+ *   /api/quantri/phien → đổi PARENT_SECRET lấy phiên quản trị 24 giờ (worker/diem.js, ADR 0061)
  *   /tap-doc/am/*.mp3 → audio tập đọc có HTTP Range (worker/range.js; chỉ đường này
  *                    chạy Worker trước tệp tĩnh — run_worker_first trong wrangler.toml)
  *   còn lại        → trả file tĩnh từ binding ASSETS (thư mục dist/)
@@ -16,7 +18,7 @@
  * API:
  *   GET  /api/progress          → toàn bộ tiến độ đã lưu (không cần xác thực)
  *   GET  /api/heartbeat         → {checked_at, changed_at, warnings}; 204 nếu chưa có
- *   POST /api/progress          → cập nhật, cần header x-progress-key
+ *   POST /api/progress          → cập nhật, cần header x-progress-key; trả thêm {cong, nhom} (điểm thưởng, ADR 0061)
  *   POST /api/progress?check=1  → chỉ kiểm tra mã bí mật
  *
  * Lưu trữ: một tài liệu JSON duy nhất trong KV, khoá "progress". Mỗi mục học
@@ -28,6 +30,7 @@
  *   PROGRESS_KV     — KV namespace lưu tiến độ
  *   STUDY_DB        — D1 database lưu lịch sử ôn tập
  *   LMS_SECRET      — mã bí mật để được phép ghi (đặt trên dashboard)
+ *   PARENT_SECRET   — mã của bố mẹ (điểm thưởng: trừ điểm), `wrangler secret put PARENT_SECRET`
  */
 
 import { readSheet, writeCell } from "./sheet.js";
@@ -35,6 +38,7 @@ import { readCards, writeSession, writeKnown, readStats } from "./study.js";
 import { handleTts } from "./tts.js";
 import { handleLookup, handleLookupHistory } from "./lookup.js";
 import { handleTapdoc } from "./tapdoc.js";
+import { handleDiem, doiChieuTick, an } from "./diem.js";
 import { laAm, phucVuAm } from "./range.js";
 
 const KEY = "progress";
@@ -75,7 +79,7 @@ async function handleHeartbeat(env) {
   return json(hb);
 }
 
-async function handlePost(request, env) {
+async function handlePost(request, env, url) {
   const secret = env.LMS_SECRET || "";
   if (!secret) return json({ error: "Chưa cấu hình LMS_SECRET" }, 503);
   if ((request.headers.get("x-progress-key") || "") !== secret) {
@@ -123,7 +127,17 @@ async function handlePost(request, env) {
   }
 
   await env.PROGRESS_KV.put(KEY, JSON.stringify(items));
-  return json({ ok: true, count: Object.keys(items).length });
+  // Điểm thưởng (ADR 0061): đối chiếu tick SAU khi KV đã ghi — học sinh có khoá trong lượt này (cả lượt bỏ tick: không
+  // cộng gì cho mục bỏ tick, nhưng nhặt luôn bài tự tick còn chờ). Sổ hỏng → cong 0, tiến độ vẫn đã lưu.
+  const hs = [...new Set(Object.keys(updates).filter((k) => KEY_RE.test(k)).map((k) => k.split("/")[0]))];
+  let cong = 0;
+  const nhom = [];
+  for (const u of hs) {
+    const r = await an("tick", () => doiChieuTick(env, url, u, items), { cong: 0, nhom: [] });
+    cong += r.cong;
+    nhom.push(...r.nhom);
+  }
+  return json({ ok: true, count: Object.keys(items).length, cong, nhom });
 }
 
 export default {
@@ -133,7 +147,7 @@ export default {
 
     if (pathname === "/api/progress") {
       if (request.method === "GET") return handleGet(env);
-      if (request.method === "POST") return handlePost(request, env);
+      if (request.method === "POST") return handlePost(request, env, url);
       return json({ error: "Method không hỗ trợ" }, 405);
     }
 
@@ -184,6 +198,9 @@ export default {
       return json({ error: "Method không hỗ trợ" }, 405);
     }
 
+    if (pathname === "/api/diem" || pathname === "/api/diem/doi" || pathname === "/api/quantri/phien") {
+      return handleDiem(request, env, url);
+    }
     if (pathname.startsWith("/api/tapdoc/")) return handleTapdoc(request, env, url);
     if (pathname === "/api/tts") return handleTts(request, env, url);
 
@@ -243,7 +260,7 @@ export default {
         try {
           return json(isKnown
             ? await writeKnown(env, user, course, body.known)
-            : await writeSession(env, user, course, body.attempts));
+            : await writeSession(env, user, course, body.attempts, url));
         } catch (e) {
           return json({ error: String(e.message || e) }, 500);
         }

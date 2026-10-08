@@ -16,6 +16,8 @@
  * thao tác nhiều câu lệnh BẮT BUỘC đi qua db.batch() — một vòng, và là một giao dịch.
  */
 
+import { an, congOn } from "./diem.js";
+
 // Cho phép chữ, số, gạch ngang, gạch dưới và dấu chấm (id có dạng "q.4f81b2c0").
 const ID_RE = /^[\w.-]{1,64}$/;
 const MAX_ATTEMPTS = 200; // một phiên dài nhất còn hợp lý
@@ -49,8 +51,11 @@ export async function readCards(env, user, course) {
  *
  * Máy chủ KHÔNG tin client: mốc thời gian bị kẹp vào [now-24h, now] để không lùi
  * ngày mà lách lịch ôn, còn box/ease/due bị kẹp vào khoảng hợp lệ.
+ *
+ * Điểm thưởng (ADR 0061): có `url` thì SAU khi ghi xong gọi congOn (worker/diem.js) — trả thêm `cong` = điểm của cả lô.
+ * Sổ hỏng / manifest hỏng → cong 0, kết quả ôn tập vẫn đã ghi.
  */
-export async function writeSession(env, user, course, attempts) {
+export async function writeSession(env, user, course, attempts, url = null) {
   const now = Math.floor(Date.now() / 1000);
 
   // Lọc trước ở JS cho rẻ; SQL vẫn kẹp lại lần nữa.
@@ -69,7 +74,7 @@ export async function writeSession(env, user, course, attempts) {
       ease: Number(a.ease) || 250,
       due: Number(a.due) || now,
     }));
-  if (!rows.length) return { ok: true, n: 0 };
+  if (!rows.length) return { ok: true, n: 0, cong: 0 };
 
   const payload = JSON.stringify(rows);
   const db = env.STUDY_DB;
@@ -122,7 +127,8 @@ export async function writeSession(env, user, course, attempts) {
     .bind(user, course, now, payload);
 
   await db.batch([insertAttempts, upsertCards]);
-  return { ok: true, n: rows.length };
+  const cong = url ? await an("on", () => congOn(env, url, user, course, rows, now)) : 0;
+  return { ok: true, n: rows.length, cong };
 }
 
 /**

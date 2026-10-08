@@ -4,6 +4,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -13,7 +14,7 @@
   <title>Ôn tập · Lịch Sử và Địa Lý 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.8ce8f1ff.css">
+  <link rel="stylesheet" href="../assets/tw.02a2ac72.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -2317,6 +2318,9 @@ timMo: false,
             if (!r.ok) throw new Error('HTTP ' + r.status);
             localStorage.removeItem('lms_study_buf');   // chỉ xoá khi CHẮC đã ghi
             this.err = '';
+            // Điểm thưởng (ADR 0061): `cong` = tổng điểm của CẢ lô (writeSession ghi theo lô).
+            const d = await r.json().catch(() => null);
+            if (d && window.baoDiem) window.baoDiem(d.cong);
           } catch (e) {
             this.err = 'Chưa lưu được kết quả — sẽ thử lại lần sau. (' + e.message + ')';
           }
@@ -4238,6 +4242,33 @@ timMo: false,
       else addEventListener('resize', do_);
     })();
   </script>
+<div data-diem-bao role="status" aria-live="polite"
+     class="hidden pointer-events-none fixed left-1/2 top-16 z-[70] -translate-x-1/2 max-w-[90vw] truncate rounded-full bg-amber-300 px-5 py-2 text-lg font-bold text-amber-950 shadow-lg"></div>
+<script>
+  (function () {
+    var hen = 0;
+    window.baoDiem = function (n, chu) {
+      n = Number(n);
+      if (!(n > 0)) return;
+      var el = document.querySelector('[data-diem-bao]');
+      if (!el) return;
+      el.textContent = '+' + n + ' ⭐' + (chu ? ' ' + chu : '');
+      el.classList.remove('hidden');
+      clearTimeout(hen);
+      hen = setTimeout(function () { el.classList.add('hidden'); }, 2000);
+    };
+    window.docSoDu = async function (user) {
+      var k = localStorage.getItem('lms_key');
+      if (!k) return null;
+      try {
+        var r = await fetch('/api/diem?gon=1&user=' + encodeURIComponent(user), { headers: { 'x-progress-key': k } });
+        if (!r.ok) return null;
+        var d = await r.json();
+        return Number.isInteger(d.du) ? d.du : null;
+      } catch (e) { return null; }
+    };
+  })();
+</script>
 <script>
   (function () {
     var vv = window.visualViewport;

@@ -13,6 +13,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -22,7 +23,7 @@
   <title>Tập đọc — MK</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.8ce8f1ff.css">
+  <link rel="stylesheet" href="../assets/tw.02a2ac72.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   
   <link rel="stylesheet" href="../tap-doc/phong/be-vietnam-pro/font-face.css">
@@ -1264,6 +1265,7 @@ function tdAnhLat(lat, trang) {
             body: JSON.stringify({ ts, doan: t.doan.map((d, n) => ({ n, dai: d.dai })), lat }) });
           if (!r.ok) { ma = r.status; throw new Error('HTTP ' + r.status); }
           kq = await r.json();
+          if (kq && kq.cong > 0) this.congDiem(kq.cong);   // điểm thưởng (ADR 0061): thu âm hoàn thành lần đầu
         } catch (e) {
           if (ma === 409) return this.thuXet409(t, ts);
           t.gui = false;
@@ -1450,6 +1452,7 @@ function tdAnhLat(lat, trang) {
         maSai: false,             // máy chủ trả 401 cho mã đang lưu → chỉ tới mục 🔑 cuối thư viện
         luuLoi: false,            // lượt ghi gần nhất hỏng → hiện "chưa lưu được tiến độ"
         tai: true, err: '',
+        diemDu: null,             // số dư ⭐ (ADR 0061) — null = không mã / không máy chủ: ẩn ô ở thanh trên
         // Trần chờ lượt GET state (ms): mạng treo không được để thẻ chết mãi. Bài test hạ
         // xuống qua window.TD_HAN_GET để khỏi chờ 8 s.
         hanGet: window.TD_HAN_GET || 8000,
@@ -1511,6 +1514,7 @@ function tdAnhLat(lat, trang) {
             this.luuCucBo();
           }
           this.tai = false;
+          if (this.online && window.docSoDu) window.docSoDu(this.user).then((v) => { this.diemDu = v; });
           // Đẩy lên mọi trang còn chờ — kể cả tiến độ làm từ trước khi nhập mã. Chỉ truyện
           // còn trong thư viện; truyện đã gỡ thì máy chủ trả 404 (guiMot bỏ cờ).
           if (this.online) {
@@ -1627,6 +1631,11 @@ function tdAnhLat(lat, trang) {
         },
         // GET khi không có `than`, POST khi có. Không có mã thì không gọi. Hỏng → null,
         // và chỉ lượt GHI hỏng mới bật cờ luuLoi (đọc hỏng = coi như không có mã).
+        // Điểm thưởng (ADR 0061): bật "+N ⭐" (đọc xong, câu quiz đúng lần đầu, thu âm hoàn thành) và cộng vào ô số dư.
+        congDiem(n) {
+          if (window.baoDiem) window.baoDiem(n);
+          if (this.diemDu !== null) this.diemDu += n;
+        },
         async api(duong, than) {
           return (await this.goiApi(duong, than)).d;
         },
@@ -1663,6 +1672,7 @@ function tdAnhLat(lat, trang) {
             if (!r.ok) throw new Error('HTTP ' + r.status);
             const d = await r.json();
             if (!doc) this.luuLoi = false;
+            if (!doc && d && d.cong > 0) this.congDiem(d.cong);
             return { ma, d };
           } catch (e) {
             if (!doc && ma !== 404 && !(boQua && boQua.includes(ma))) this.luuLoi = true;
@@ -1857,7 +1867,12 @@ function tdAnhLat(lat, trang) {
   <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">MK</a><span class="shrink-0 text-slate-300">›</span>
   <span aria-current="page"  class="truncate font-medium text-slate-700">Tập đọc</span>
 </nav>
-      <h1 class="mt-1 text-lg font-bold">📖 Tập đọc</h1>
+      <div class="mt-1 flex items-center justify-between gap-3">
+        <h1 class="text-lg font-bold">📖 Tập đọc</h1>
+        
+        <a href="diem.html" data-diem-o x-show="diemDu !== null" x-cloak title="Điểm thưởng"
+           class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1.5 -my-1.5 text-sm font-bold text-amber-900">⭐ <span x-text="diemDu"></span></a>
+      </div>
     </div>
   </header>
 
@@ -2347,5 +2362,32 @@ function tdAnhLat(lat, trang) {
   <audio x-ref="au" preload="auto" @ended="hetAm()" @error="loiAm()" @timeupdate="hetDoan()"></audio>
   <audio x-ref="au2" preload="auto"></audio>
   <audio x-ref="au3" preload="auto" @ended="ngheHetDoan()"></audio>
+  <div data-diem-bao role="status" aria-live="polite"
+     class="hidden pointer-events-none fixed left-1/2 top-16 z-[70] -translate-x-1/2 max-w-[90vw] truncate rounded-full bg-amber-300 px-5 py-2 text-lg font-bold text-amber-950 shadow-lg"></div>
+<script>
+  (function () {
+    var hen = 0;
+    window.baoDiem = function (n, chu) {
+      n = Number(n);
+      if (!(n > 0)) return;
+      var el = document.querySelector('[data-diem-bao]');
+      if (!el) return;
+      el.textContent = '+' + n + ' ⭐' + (chu ? ' ' + chu : '');
+      el.classList.remove('hidden');
+      clearTimeout(hen);
+      hen = setTimeout(function () { el.classList.add('hidden'); }, 2000);
+    };
+    window.docSoDu = async function (user) {
+      var k = localStorage.getItem('lms_key');
+      if (!k) return null;
+      try {
+        var r = await fetch('/api/diem?gon=1&user=' + encodeURIComponent(user), { headers: { 'x-progress-key': k } });
+        if (!r.ok) return null;
+        var d = await r.json();
+        return Number.isInteger(d.du) ? d.du : null;
+      } catch (e) { return null; }
+    };
+  })();
+</script>
 </body>
 </html>

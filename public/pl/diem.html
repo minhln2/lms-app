@@ -1,0 +1,243 @@
+
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+  <title>Điểm thưởng — PL</title>
+  <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
+       thay dòng này bằng Tailwind CDN. -->
+  <link rel="stylesheet" href="../assets/tw.02a2ac72.css">
+  <script defer src="../assets/alpine.63d2636a.js"></script>
+  <style>[x-cloak]{display:none!important}</style>
+  <script>
+    // Trang điểm thưởng (spec 2026-10-08 §7.2, ADR 0061) — /{id}/diem.
+    //   • Số dư + 100 dòng lịch sử gần nhất: GET /api/diem (mã bí mật lms_key — dữ liệu của trẻ có tên, như
+    //     /api/study/stats). Lượt GET này cũng là một lượt ĐỐI CHIẾU tick: bài tự tick (src/main.py) được cộng tại đây.
+    //   • Khối "Bố mẹ": phiên quản trị 24 giờ. POST /api/quantri/phien {ma} → {token, het}, cất ở localStorage `diem_qt`.
+    //     Phiên còn hạn → form trừ điểm → POST /api/diem/doi (header x-quantri). Worker trả 401 → phiên hỏng: xoá.
+    //   • Không gọi được API (GitHub Pages, file cục bộ, chưa có mã) → `online` false: lời nhắc + ô mã bí mật.
+    // `ready` để bài test chờ theo điều kiện (ADR 0039; test_tap_target đọc cờ này).
+    function trangDiem() {
+      return {
+        user: "pl",
+        secret: localStorage.getItem('lms_key') || '',
+        ready: false, online: false, du: 0, lichSu: [],
+        qt: null, moMa: false, ma: '', soTru: '', ghiChu: '', dang: false, loiQt: '', bao: '',
+
+        async init() {
+          this.qt = this.docPhien();
+          await this.tai();
+          this.ready = true;
+        },
+        docPhien() {
+          try {
+            const o = JSON.parse(localStorage.getItem('diem_qt') || 'null');
+            if (o && typeof o.token === 'string' && Number.isInteger(o.het) && o.het > Date.now() / 1000) return o;
+          } catch (e) { /* hỏng → coi như chưa có */ }
+          localStorage.removeItem('diem_qt');
+          return null;
+        },
+        async tai() {
+          if (!this.secret) { this.online = false; return; }
+          try {
+            const r = await fetch('/api/diem?user=' + encodeURIComponent(this.user), { headers: { 'x-progress-key': this.secret } });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const d = await r.json();
+            this.du = Number.isInteger(d.du) ? d.du : 0;
+            this.lichSu = Array.isArray(d.lich_su) ? d.lich_su : [];
+            this.online = true;
+          } catch (e) {
+            this.online = false;
+          }
+        },
+        ngay(ts) {
+          return new Date(ts * 1000).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+        },
+        gio(ts) {
+          return new Date(ts * 1000).toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit' });
+        },
+        // Lịch sử đã mới-nhất-trước (Worker sắp) → gom các dòng liền nhau cùng ngày (giờ Việt Nam).
+        theoNgay() {
+          const ra = [];
+          for (const x of this.lichSu) {
+            const n = this.ngay(x.ts);
+            if (!ra.length || ra[ra.length - 1].ngay !== n) ra.push({ ngay: n, ds: [] });
+            ra[ra.length - 1].ds.push(x);
+          }
+          return ra;
+        },
+        // Biểu tượng theo nguồn (tiền tố khoá — bảng §2 của spec).
+        bieuTuong(k) {
+          const p = String(k).split(':');
+          if (p[0] === 'td') return { doc: '📖', quiz: '❓', thuam: '🎙' }[p[1]] || '📖';
+          return { tick: '✅', nhom: '🏁', on: '🧠', doi: '🎁' }[p[0]] || '⭐';
+        },
+        soDiem(d) { return (d > 0 ? '+' : '') + d; },
+        async moPhien() {
+          const v = this.ma.trim();
+          if (!v || this.dang) return;
+          this.dang = true; this.loiQt = '';
+          try {
+            const r = await fetch('/api/quantri/phien', { method: 'POST', headers: { 'content-type': 'application/json' },
+                                                         body: JSON.stringify({ ma: v }) });
+            if (r.status === 401) { this.loiQt = 'Mã bố mẹ không đúng.'; return; }
+            if (!r.ok) { this.loiQt = 'Chưa mở được phiên (HTTP ' + r.status + ').'; return; }
+            const d = await r.json();
+            this.qt = { token: d.token, het: d.het };
+            localStorage.setItem('diem_qt', JSON.stringify(this.qt));
+            this.ma = ''; this.moMa = false;
+          } catch (e) {
+            this.loiQt = 'Không kết nối được máy chủ.';
+          } finally { this.dang = false; }
+        },
+        thoat() { localStorage.removeItem('diem_qt'); this.qt = null; this.loiQt = ''; this.bao = ''; },
+        hetLuc() {
+          return this.qt ? this.gio(this.qt.het) + ' ' + new Date(this.qt.het * 1000).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '';
+        },
+        async truDiem() {
+          if (this.dang) return;
+          const n = Number(this.soTru), g = this.ghiChu.trim();
+          if (!Number.isInteger(n) || n < 1) { this.loiQt = 'Số điểm phải là số nguyên dương.'; return; }
+          if (n > this.du) { this.loiQt = 'Không đủ điểm (còn ' + this.du + ').'; return; }
+          if (!g) { this.loiQt = 'Cần ghi chú (đổi quà gì).'; return; }
+          this.dang = true; this.loiQt = ''; this.bao = '';
+          try {
+            const r = await fetch('/api/diem/doi', { method: 'POST',
+              headers: { 'content-type': 'application/json', 'x-quantri': this.qt ? this.qt.token : '' },
+              body: JSON.stringify({ user: this.user, diem: n, ghi_chu: g }) });
+            const d = await r.json().catch(() => ({}));
+            if (r.status === 401) { this.thoat(); this.loiQt = 'Phiên bố mẹ đã hết hạn — mở lại.'; return; }
+            if (!r.ok) { this.loiQt = d.error || ('Chưa trừ được (HTTP ' + r.status + ').'); return; }
+            this.soTru = ''; this.ghiChu = '';
+            this.bao = 'Đã trừ ' + n + ' ⭐';
+            await this.tai();
+          } catch (e) {
+            this.loiQt = 'Không kết nối được máy chủ.';
+          } finally { this.dang = false; }
+        },
+      };
+    }
+  </script>
+</head>
+<!-- KHÔNG thêm x-init="init()": Alpine 3 TỰ gọi init() của object x-data. -->
+<body class="bg-slate-100 text-slate-800 min-h-screen" x-data="trangDiem()">
+  <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+    <div class="max-w-2xl mx-auto px-4 py-3">
+      <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-slate-500">
+  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
+  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">PL</a><span class="shrink-0 text-slate-300">›</span>
+  <span aria-current="page"  class="truncate font-medium text-slate-700">Điểm thưởng</span>
+</nav>
+      <h1 class="mt-1 text-lg font-bold">⭐ Điểm thưởng</h1>
+    </div>
+  </header>
+
+  <main class="max-w-2xl mx-auto px-4 py-4">
+    <template x-if="!ready"><p class="text-slate-500">Đang tải…</p></template>
+    <template x-if="ready && !online">
+      <div data-diem-ngoai class="bg-white rounded-2xl shadow px-4 py-4">
+        <p class="text-slate-700">Chưa xem được điểm: cần mã bí mật và kết nối máy chủ (bản trên GitHub Pages không có điểm).</p>
+        <div class="mt-4 pt-3 border-t border-slate-200"><div data-ma-bi-mat class="text-sm" @lms-key.window="co = !!localStorage.getItem('lms_key')" x-data="{
+       co: !!localStorage.getItem('lms_key'), mo: false, ma: '', loi: '', dang: false,
+       async luu() {
+         const v = this.ma.trim();
+         if (!v || this.dang) return;
+         this.dang = true; this.loi = '';
+         try {
+           const r = await fetch('/api/progress?check=1', { method: 'POST', body: '{}',
+             headers: { 'content-type': 'application/json', 'x-progress-key': v } });
+           if (r.status === 401) { this.loi = 'Mã không đúng.'; return; }
+           if (!r.ok) { this.loi = 'Không kiểm tra được mã lúc này. Thử lại sau.'; return; }
+           localStorage.setItem('lms_key', v);
+           location.reload();
+         } catch (e) {
+           this.loi = 'Không kiểm tra được mã lúc này (mất mạng?). Thử lại sau.';
+         } finally { this.dang = false; }
+       },
+       xoa() {
+         if (!confirm('Xoá mã bí mật trên máy này?')) return;
+         localStorage.removeItem('lms_key'); location.reload();
+       }
+     }">
+  <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Mã bí mật</p>
+  <div class="mt-1 flex flex-wrap items-center gap-2">
+    <span data-mbm-tt class="font-medium" :class="co ? 'text-emerald-700' : 'text-slate-600'" x-text="co ? '🔑 Đã nhập ✓' : '🔑 Chưa nhập'"></span>
+    <button type="button" data-mbm-mo x-show="!mo" @click="mo = true; $nextTick(() => $refs.o.focus())" class="px-3 py-2 rounded-full border border-slate-300 bg-white text-xs font-medium" x-text="co ? 'Đổi mã' : 'Nhập mã'"></button>
+    <button type="button" data-mbm-xoa x-show="co && !mo" @click="xoa()" class="px-3 py-2 rounded-full border border-slate-300 bg-white text-xs font-medium text-rose-700">Xoá mã</button>
+  </div>
+  <form x-show="mo" x-cloak @submit.prevent="luu()" class="mt-2 flex flex-wrap items-center gap-2">
+    <input x-ref="o" data-mbm-o type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" x-model="ma" placeholder="Mã bí mật" aria-label="Mã bí mật" class="h-9 px-3 rounded-lg border border-slate-300 text-sm">
+    <button type="submit" data-mbm-luu :disabled="dang" class="h-9 px-3 rounded-lg bg-indigo-600 text-white text-xs font-semibold" x-text="dang ? 'Đang kiểm…' : 'Lưu'"></button>
+    <button type="button" @click="mo = false; loi = ''" class="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs">Thôi</button>
+  </form>
+  <p data-mbm-loi x-show="loi" x-cloak x-text="loi" class="mt-1 text-xs text-rose-700"></p>
+</div></div>
+      </div>
+    </template>
+    <template x-if="ready && online">
+      <div>
+        <section class="bg-white rounded-2xl shadow px-4 py-5 text-center">
+          <p class="text-sm text-slate-500">Số điểm của PL</p>
+          <p class="text-4xl font-extrabold text-amber-600">⭐ <span data-diem-du x-text="du"></span></p>
+        </section>
+
+        <section class="mt-4">
+          <h2 class="text-base font-bold mb-2">Lịch sử</h2>
+          <p x-show="!lichSu.length" class="text-slate-500 text-sm">Chưa có điểm nào. Đọc truyện, làm quiz, tick bài đã học để nhận ⭐ nhé!</p>
+          <template x-for="g in theoNgay()" :key="g.ngay">
+            <div class="mb-3">
+              <p data-diem-ngay class="text-xs font-bold uppercase tracking-wide text-slate-400 mb-1" x-text="g.ngay"></p>
+              <ul class="bg-white rounded-2xl shadow divide-y divide-slate-100">
+                <template x-for="x in g.ds" :key="x.khoa">
+                  <li data-diem-dong class="flex items-center gap-3 px-4 py-2.5">
+                    <span class="text-xl" x-text="bieuTuong(x.khoa)"></span>
+                    <span class="flex-1 min-w-0 truncate" x-text="x.nhan || x.khoa"></span>
+                    <span class="text-xs text-slate-400" x-text="gio(x.ts)"></span>
+                    <span class="w-14 text-right font-bold" :class="x.diem > 0 ? 'text-emerald-700' : 'text-rose-700'" x-text="soDiem(x.diem)"></span>
+                  </li>
+                </template>
+              </ul>
+            </div>
+          </template>
+        </section>
+
+        <section data-diem-bo-me class="mt-6 bg-white rounded-2xl shadow px-4 py-4">
+          <h2 class="text-base font-bold">Bố mẹ</h2>
+          <template x-if="!qt">
+            <div>
+              <button type="button" data-diem-bo-me-mo x-show="!moMa" @click="moMa = true; $nextTick(() => $refs.ma && $refs.ma.focus())"
+                      class="mt-2 px-4 py-2 rounded-xl border border-slate-300 bg-white text-sm font-semibold">🔒 Bố mẹ</button>
+              <form x-show="moMa" @submit.prevent="moPhien()" class="mt-2 flex flex-wrap items-center gap-2">
+                <input x-ref="ma" data-diem-ma type="password" autocomplete="off" autocapitalize="off" spellcheck="false" x-model="ma"
+                       placeholder="Mã bố mẹ" aria-label="Mã bố mẹ" class="h-10 px-3 rounded-lg border border-slate-300 text-sm">
+                <button type="submit" data-diem-ma-gui :disabled="dang" class="h-10 px-4 rounded-lg bg-indigo-600 text-white text-sm font-semibold">Mở</button>
+                <button type="button" @click="moMa = false; ma = ''; loiQt = ''" class="h-10 px-4 rounded-lg border border-slate-300 bg-white text-sm">Thôi</button>
+              </form>
+            </div>
+          </template>
+          <template x-if="qt">
+            <div>
+              <form data-diem-tru @submit.prevent="truDiem()" class="mt-2 flex flex-wrap items-center gap-2">
+                <input data-diem-tru-so type="number" min="1" step="1" inputmode="numeric" x-model="soTru" placeholder="Số điểm"
+                       aria-label="Số điểm trừ" class="h-10 w-28 px-3 rounded-lg border border-slate-300 text-sm">
+                <input data-diem-tru-ghi type="text" maxlength="200" x-model="ghiChu" placeholder="Ghi chú (đổi quà gì)"
+                       aria-label="Ghi chú" class="h-10 flex-1 min-w-[10rem] px-3 rounded-lg border border-slate-300 text-sm">
+                <button type="submit" data-diem-tru-gui :disabled="dang" class="h-10 px-4 rounded-lg bg-rose-600 text-white text-sm font-semibold">Trừ điểm</button>
+              </form>
+              <p class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span data-diem-het x-text="'Phiên hết hạn lúc ' + hetLuc()"></span>
+                <button type="button" data-diem-thoat @click="thoat()" class="px-3 py-2 rounded-full border border-slate-300 bg-white text-xs font-medium">Thoát</button>
+              </p>
+            </div>
+          </template>
+          <p x-show="loiQt" x-text="loiQt" class="mt-2 text-sm text-rose-700"></p>
+          <p x-show="bao" x-text="bao" class="mt-2 text-sm text-emerald-700"></p>
+        </section>
+      </div>
+    </template>
+  </main>
+</body>
+</html>

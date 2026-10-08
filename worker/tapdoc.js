@@ -5,8 +5,9 @@
  * sai câu nào; bản thu là giọng của nó. Cùng lý do /api/study/stats bị khoá.
  *
  * Bốn mốc "lần đầu" — start_ts, read_ts, dung_ts, xong_ts — chỉ ghi MỘT lần (COALESCE giữ giá
- * trị cũ). Hệ điểm thưởng sau này cộng điểm theo chúng; để chúng bị ghi đè là cộng
- * trùng mà không có dấu hiệu nào.
+ * trị cũ). Điểm thưởng (ADR 0061, worker/diem.js) cộng ĐÚNG lượt read_ts / dung_ts / xong_ts chuyển NULL → có —
+ * phát hiện bằng hàng đọc TRƯỚC khi ghi (`cu`, câu SELECT đầu batch quiz, `truoc`). Gọi theo cờ trình duyệt (`xong:true`
+ * gửi lại mỗi lần mở truyện đã xong) là cộng cho việc làm trước hệ điểm. Mỗi route trả thêm `cong`.
  *
  * Truyện nào tồn tại, có mấy câu / trang (bố cục), đáp án đúng là gì: đọc từ file tĩnh qua ASSETS
  * (chính những file trang đang tải) — không tin số liệu trình duyệt gửi lên.
@@ -17,6 +18,7 @@
  */
 import { TD, tdHoanThanh, tdAnhLat } from "./td_luat.js";
 import { khoGhi, khoDoc, khoDau, khoLietCo, khoXoa } from "./kho.js";
+import { an, congDoc, congQuiz, congThuam } from "./diem.js";
 
 const USER_RE = /^[\w-]{1,32}$/;
 const ID_RE = /^[a-z0-9-]{1,48}$/;
@@ -110,7 +112,9 @@ async function ghiTrangThai(env, user, t, body) {
        read_ts = COALESCE(td_truyen.read_ts, excluded.read_ts), ts = excluded.ts`
   ).bind(user, t.id, viTri, batDau, xong, now).run();
   const docXong = (cu && cu.read_ts != null) || xong != null;
-  return { ok: true, bat_dau: daBatDau || batDau != null || docXong, doc_xong: docXong };
+  // Điểm: CHỈ lượt làm read_ts chuyển NULL → có. Sổ hỏng → 0, tiến độ vẫn đã ghi.
+  const cong = !(cu && cu.read_ts != null) && xong != null ? await an("doc", () => congDoc(env, user, t)) : 0;
+  return { ok: true, bat_dau: daBatDau || batDau != null || docXong, doc_xong: docXong, cong };
 }
 
 async function ghiQuiz(env, url, user, t, traLoi) {
@@ -127,6 +131,8 @@ async function ghiQuiz(env, url, user, t, traLoi) {
   const db = env.STUDY_DB;
   const now = giay();
   const kq = await db.batch([
+    // Câu đã đúng TRƯỚC lượt này (đọc trong CÙNG giao dịch, trước các câu ghi) — để biết câu nào dung_ts NULL → có.
+    db.prepare(`SELECT cau FROM td_quiz WHERE user_id = ?1 AND truyen = ?2 AND dung_ts IS NOT NULL`).bind(user, t.id),
     ...hang.map(([c, d]) => db.prepare(
       `INSERT INTO td_quiz (user_id, truyen, cau, dung, dung_ts, lan)
        VALUES (?1, ?2, ?3, ?4, CASE WHEN ?4 = 1 THEN ?5 END, 1)
@@ -135,8 +141,12 @@ async function ghiQuiz(env, url, user, t, traLoi) {
     ).bind(user, t.id, c, d, now)),
     db.prepare(`SELECT COALESCE(SUM(dung), 0) AS d FROM td_quiz WHERE user_id = ?1 AND truyen = ?2`).bind(user, t.id),
   ]);
+  // Điểm: câu đúng ở lượt này mà trước đó chưa từng đúng. `cong` là TỔNG điểm (không nói câu nào).
+  const daDung = new Set((kq[0].results || []).map((r) => r.cau));
+  const moi = hang.filter(([c, d]) => d === 1 && !daDung.has(c)).map(([c]) => c);
+  const cong = moi.length ? await an("quiz", () => congQuiz(env, user, t, moi)) : 0;
   // CHỈ trả tổng. Câu nào sai thì trang biết qua GET state để hỏi lại, không hiển thị.
-  return { dung: kq[kq.length - 1].results[0].d, tong: tr.quiz.length };
+  return { dung: kq[kq.length - 1].results[0].d, tong: tr.quiz.length, cong };
 }
 
 /** ts của bản đã chốt cho (học sinh, truyện); null = chưa chốt bản nào. */
@@ -255,10 +265,14 @@ async function chotBanThu(env, url, user, t, body) {
     }
     throw sai("Bản thu đã bị thay trong lúc chốt", 409);
   }
+  // Điểm: bản này hoàn thành và trước đó chưa có bản nào hoàn thành (xong_ts NULL → có). Cấp D: congThuam trả 0.
+  // Cộng TRƯỚC khi dọn R2: bản đã chốt trong D1, nên R2 lỗi lúc dọn (route trả lỗi) cũng không được làm mất điểm —
+  // thử lại sau đó thấy xong_ts đã có và không cộng nữa.
+  const cong = kq.xong && !(truoc && truoc.xong_ts != null) ? await an("thuam", () => congThuam(env, user, t)) : 0;
   // Dọn SAU khi đã ghi DB: đoạn của bản cũ và đoạn gửi dở không được chốt — chỉ những
   // đoạn ts ≤ bản vừa chốt. Đoạn ts lớn hơn là của lượt thu khác đang dở: để yên.
   await khoXoa(env, (await lietDoan(env, tienTo)).filter((d) => d.ts <= ts && !giu.has(d.khoa)).map((d) => d.khoa));
-  return { ok: true, dai, ...kq };
+  return { ok: true, dai, ...kq, cong };
 }
 
 export async function handleTapdoc(request, env, url) {

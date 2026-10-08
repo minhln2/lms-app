@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -10,7 +11,7 @@
   <title>Mĩ Thuật 5 — PL</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.8ce8f1ff.css">
+  <link rel="stylesheet" href="../assets/tw.02a2ac72.css">
   <script defer src="../assets/collapse.d0a27f2d.js"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>
@@ -197,6 +198,12 @@
         // Mục đánh dấu trước khi có tính năng này không có hash → không báo.
         redo: {},
 
+        // Điểm thưởng (ADR 0061): Worker trả `cong` (điểm vừa cộng) + `nhom` (tên section vừa đủ) sau mỗi lượt ghi.
+        baoCong(d) {
+          if (!d || !window.baoDiem) return;
+          window.baoDiem(d.cong, Array.isArray(d.nhom) && d.nhom.length ? '· hoàn thành ' + d.nhom.join(', ') : '');
+        },
+
         stale(key, hash) {
           return !!this.done[key] && !!this.hashes[key] && !!hash && this.hashes[key] !== hash;
         },
@@ -225,6 +232,7 @@
               throw new Error('Mã bí mật không đúng');
             }
             if (!r.ok) throw new Error('Không lưu được (HTTP ' + r.status + ')');
+            this.baoCong(await r.json().catch(() => null));
           } catch (e) {
             // hoàn tác cả trạng thái, vân tay LẪN cờ đang-thực-hiện. Thiếu vế
             // cuối thì ghi hỏng mạng sẽ âm thầm nuốt mất trạng thái giữa.
@@ -266,6 +274,7 @@
               throw new Error('Mã bí mật không đúng');
             }
             if (!r.ok) throw new Error('Không lưu được (HTTP ' + r.status + ')');
+            this.baoCong(await r.json().catch(() => null));
           } catch (e) {
             this.done = prevDone; this.hashes = prevHash;   // hoàn tác cả nhóm
             this.err = e.message;
@@ -1595,6 +1604,33 @@ timMo: false,
       else addEventListener('resize', do_);
     })();
   </script>
+  <div data-diem-bao role="status" aria-live="polite"
+     class="hidden pointer-events-none fixed left-1/2 top-16 z-[70] -translate-x-1/2 max-w-[90vw] truncate rounded-full bg-amber-300 px-5 py-2 text-lg font-bold text-amber-950 shadow-lg"></div>
+<script>
+  (function () {
+    var hen = 0;
+    window.baoDiem = function (n, chu) {
+      n = Number(n);
+      if (!(n > 0)) return;
+      var el = document.querySelector('[data-diem-bao]');
+      if (!el) return;
+      el.textContent = '+' + n + ' ⭐' + (chu ? ' ' + chu : '');
+      el.classList.remove('hidden');
+      clearTimeout(hen);
+      hen = setTimeout(function () { el.classList.add('hidden'); }, 2000);
+    };
+    window.docSoDu = async function (user) {
+      var k = localStorage.getItem('lms_key');
+      if (!k) return null;
+      try {
+        var r = await fetch('/api/diem?gon=1&user=' + encodeURIComponent(user), { headers: { 'x-progress-key': k } });
+        if (!r.ok) return null;
+        var d = await r.json();
+        return Number.isInteger(d.du) ? d.du : null;
+      } catch (e) { return null; }
+    };
+  })();
+</script>
   <script>
   (function () {
     var vv = window.visualViewport;
