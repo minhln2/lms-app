@@ -1,16 +1,19 @@
 /**
  * Kho file R2 dùng chung cho cả site (binding KHO, bucket lms-kho).
  *
- * Quyền quyết định theo TIỀN TỐ của khoá, khai một chỗ ở đây. Hôm nay chỉ có
- * `thu-am/` (bản thu giọng trẻ: đọc và ghi đều cần mã bí mật). Sau này chuyển tài
- * liệu / SGK sang R2 thì thêm dòng `tai-lieu/`, `sach/` với `doc: "cong-khai"` —
- * xem mục "Việc để sau" của spec tập đọc.
+ * Quyền quyết định theo TIỀN TỐ của khoá, khai một chỗ ở đây:
+ *   · `thu-am/`     — bản thu giọng trẻ: đọc và ghi đều cần mã bí mật.
+ *   · `tap-doc/am/` — audio máy đọc (tên = hash nội dung): ai cũng đọc được qua
+ *     worker/range.js; chỉ `scripts/day_am_r2.sh` ghi, từ máy, bằng wrangler.
+ * Sau này chuyển tài liệu / SGK sang R2 thì thêm dòng `tai-lieu/`, `sach/` với
+ * `doc: "cong-khai"` — xem mục "Việc để sau" của spec tập đọc.
  *
  * ⚠ Khoá ngoài bảng thì TỪ CHỐI, không mặc định cho qua: một tiền tố gõ nhầm mà
  * được ghi là một file nằm ngoài mọi luật quyền.
  */
 const QUYEN = [
   ["thu-am/", { doc: "ma", ghi: "ma" }],
+  ["tap-doc/am/", { doc: "cong-khai", ghi: "may" }],
 ];
 
 export function khoQuyen(khoa) {
