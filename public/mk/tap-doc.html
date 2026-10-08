@@ -424,7 +424,9 @@ function tdAnhLat(lat, trang) {
       // Chấm của ô số trang: trang đang mở · trang đọc gần nhất (vi_tri, giữ lớp td-ch-thay của CSS) · còn lại.
       loaiCham(p) {
         if (p.so === this.trang) return 'td-ch-nay';
-        const v = this.s(this.id).vi_tri;
+        const c = this.s(this.id);
+        if (!c.bat_dau && !c.doc_xong) return '';      // truyện chưa đọc mở từ trang 1 — vi_tri cũ không phải "trang đọc gần nhất"
+        const v = c.vi_tri;
         return p.c0 <= v && v <= p.c1 ? 'td-ch-thay' : '';
       },
       // Đang thu âm HOẶC đang đếm ngược 3-2-1: máy đọc trang không được phát (lọt vào bản thu).
@@ -1725,10 +1727,10 @@ function tdAnhLat(lat, trang) {
         // Hạng trong một nhóm: đang đọc → chưa đọc → đã đọc. sort của JS ổn định: cùng hạng giữ thứ tự index.
         hang(t) { return { dang: 0, chua: 1, da: 2 }[this.trangThai(t)]; },
         xep(ds) { return ds.slice().sort((a, b) => this.hang(a) - this.hang(b)); },
-        // Hàng "Đang đọc" trên cùng — chỉ ở chế độ Tất cả cấp và khi bộ lọc trạng thái là Tất cả / Đang đọc;
-        // xếp A → B → C → D, trong cấp theo index.
+        // Hàng "Đang đọc" trên cùng — CHỈ khi cả hai bộ lọc là Tất cả; xếp A → B → C → D, trong cấp theo index.
+        // Lọc Đang đọc thì các nhóm độ dài bên dưới đã chỉ còn truyện đang đọc — vẽ thêm hàng này là mỗi truyện hiện hai lần.
         dsDocTiep() {
-          if (this.loc !== 'all' || !(this.loai === 'all' || this.loai === 'dang')) return [];
+          if (this.loc !== 'all' || this.loai !== 'all') return [];
           const th = { A: 0, B: 1, C: 2, D: 3 };
           return this.ds.filter((t) => this.dangDo(t) && this.khop(t)).sort((a, b) => (th[a.cap] ?? 9) - (th[b.cap] ?? 9));
         },
@@ -1771,8 +1773,9 @@ function tdAnhLat(lat, trang) {
           for (let i = 0; i < ch.length; i++) if (ch[i].cau_dau <= ma) k = i;
           return k;
         },
-        // Chương k "đã qua" (ADR 0060 — không còn danh sách câu đã thấy): đọc xong cả truyện, hoặc đứng TRƯỚC chương của vi_tri.
-        chuongXong(t, k) { const c = this.s(t.id); return c.doc_xong || k < this.chuongTV(t, c.vi_tri); },
+        // Chương k "đã qua" (ADR 0060 — không còn danh sách câu đã thấy): đọc xong cả truyện, hoặc đã bat_dau và đứng TRƯỚC chương của vi_tri.
+        // Truyện chưa bat_dau mở từ trang 1 (mo()) — vi_tri cũ của nó không được đánh dấu chương nào là đã qua.
+        chuongXong(t, k) { const c = this.s(t.id); return !!(c.doc_xong || (c.bat_dau && k < this.chuongTV(t, c.vi_tri))); },
         moTaChuong(t) {
           const c = this.s(t.id), n = t.chuong.length, ten = t.kieu_chuong === 'phan' ? ' phần' : ' chương';
           if (c.doc_xong) return n + ten + ' · đã đọc hết';
@@ -1805,11 +1808,15 @@ function tdAnhLat(lat, trang) {
           this.id = id;
           this.mucLuc = false;
           const c = this.s(id);
-          // Dấu trang lúc mở: mục lục bấm lại chương đang dở thì về đúng chỗ này (spec mot-truyen §3, _td_doc.html moChuong).
-          this.viTriMo = c.vi_tri;
+          // Truyện CHƯA đọc (chưa bat_dau, chưa xong) luôn mở từ trang 1, bỏ qua vi_tri: vi_tri có thể đã đổi vì bé từng ở đủ giờ MỘT trang
+          // (chưa đủ hai để thành bat_dau — ADR 0060), mà thẻ ghi "mới" thì mở vào giữa truyện là sai. KHÔNG xoá vi_tri / dem đã lưu.
+          const moMoi = !c.bat_dau && !c.doc_xong;
+          // Dấu trang lúc mở: mục lục bấm lại chương đang dở thì về đúng chỗ này (spec mot-truyen §3, _td_doc.html moChuong) —
+          // theo đúng trang thực mở: truyện chưa đọc thì là câu đầu trang 1, không phải vi_tri cũ.
+          this.viTriMo = moMoi ? ((trs[0] && trs[0].c0) || 0) : c.vi_tri;
           // Đặt `trang` theo vị trí đã lưu để không sót trang của truyện mở trước (trạng thái dùng chung). Tiêu đề quiz / màn xong KHÔNG phụ
           // thuộc `trang`: tieuDe() chỉ hiện tên truyện ở hai màn đó (chương chỉ ở thanh trang đọc).
-          if (c.doc_xong) { this.trang = this.trangCua(c.vi_tri); this.view = 'xong'; } else this.vaoDoc(this.trangCua(c.vi_tri));
+          if (c.doc_xong) { this.trang = this.trangCua(c.vi_tri); this.view = 'xong'; } else this.vaoDoc(moMoi ? 1 : this.trangCua(c.vi_tri));
         },
         veThuVien() {
           this.huyDem();
@@ -2023,6 +2030,9 @@ function tdAnhLat(lat, trang) {
 
     <p x-show="!tai && !err && !ds.length" x-cloak data-td-trong class="text-slate-500">Thư viện chưa có truyện nào.</p>
     <p x-show="!tai && !err && ds.length && !dsHien().length" x-cloak class="text-slate-500">Không có truyện nào khớp bộ lọc.</p>
+    
+    <button type="button" data-td-bo-loc x-show="!tai && !err && ds.length && !dsHien().length" x-cloak @click="datLoc('all'); datLoai('all'); menuMo = ''"
+            class="inline-flex items-center mt-3 mb-4 px-3 py-2 rounded-full border text-sm bg-white text-slate-700 font-medium border-slate-300">Bỏ lọc</button>
     <template x-for="g in nhom()" :key="g.cap">
       <section :data-td-nhom="g.cap" class="mb-4">
         <h2 class="flex items-center gap-2 text-base font-bold mb-2"><span class="td-chammau" :class="'td-chammau-' + g.cap"></span><span x-text="g.ten"></span><span class="text-slate-400 font-normal" x-text="'(' + g.ds.length + ')'"></span></h2>
