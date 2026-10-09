@@ -1,0 +1,2714 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+  <title>Âm Nhạc 1 — MK</title>
+  <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
+       thay dòng này bằng Tailwind CDN. -->
+  <link rel="stylesheet" href="../assets/tw.02a2ac72.css">
+  <script defer src="../assets/collapse.d0a27f2d.js"></script>
+  <script defer src="../assets/alpine.63d2636a.js"></script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .lms-content img { max-width: 100%; height: auto; border-radius: 0.5rem; }
+    .lms-content iframe { max-width: 100%; }
+    .lms-content a { color: #4f46e5; text-decoration: underline; }
+    .lms-content p { margin: 0.5rem 0; }
+    .lms-content ul, .lms-content ol { margin: 0.5rem 0 0.5rem 1.5rem; list-style: revert; }
+    .lms-content table { border-collapse: collapse; margin: 0.5rem 0; }
+    .lms-content td, .lms-content th { border: 1px solid #e2e8f0; padding: 0.375rem 0.625rem; }
+    .lms-content h1, .lms-content h2, .lms-content h3, .lms-content h4 { font-weight: 700; margin: 0.75rem 0 0.375rem; }
+  </style>
+  <script>
+    // Tìm kiếm không phân biệt dấu tiếng Việt
+    function vnorm(s) {
+      return (s || '').toLowerCase().normalize('NFD')
+        .replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
+    }
+    // ── Mốc "7 ngày gần nhất" ───────────────────────────────────────────────
+    // So bằng giờ trình duyệt nên luôn đúng tương đối với lúc người xem mở trang.
+    // `data-ts` nằm trên thẻ bọc [data-item], KHÔNG nằm trên thẻ tiêu đề bên
+    // trong — từ Alpine phải truyền $el.closest('[data-item]'), không thì
+    // dataset.ts là undefined và mục nào cũng bị coi là cũ (hỏng không báo lỗi).
+    var RECENT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+    function isRecentEl(el) {
+      var ts = el && +el.dataset.ts;
+      return !!ts && (Date.now() - ts) <= RECENT_WINDOW_MS;
+    }
+    function recentItems() {
+      return Array.from(document.querySelectorAll('[data-item][data-ts]')).filter(isRecentEl);
+    }
+    function recentStats(done) {
+      var els = recentItems();
+      return {
+        total: els.length,
+        done: els.filter(function (el) { return done[el.dataset.pkey]; }).length
+      };
+    }
+    function recentPct(done) {
+      var s = recentStats(done);
+      return s.total ? Math.round(s.done / s.total * 100) : 0;
+    }
+    // box phải là chính thẻ [data-module] (dùng $el.closest), vì hàm tìm mục con
+    function moduleIsRecent(box) {
+      return Array.from(box.querySelectorAll('[data-item][data-ts]')).some(isRecentEl);
+    }
+    // Lọc loại nội dung (OR trong nhóm); Homework và "chưa học" nhân AND với nhóm đó
+    function typeOk(el, f) {
+      if (f.hw && el.dataset.hw !== '1') return false;
+      if (f.todo && f.done[el.dataset.pkey]) return false;
+      if (f.recent7 && !isRecentEl(el)) return false;
+      return !f.types.length || f.types.includes(el.dataset.type);
+    }
+    function itemMatches(el, f) {
+      return typeOk(el, f) && (!f.q || vnorm(el.dataset.title).includes(vnorm(f.q)));
+    }
+    // Đề mục (SubHeader) chỉ hiện khi còn ít nhất 1 mục thuộc nó đang hiển thị
+    function headingMatches(el, f) {
+      if (!f.q && !f.types.length && !f.hw && !f.todo && !f.recent7) return true;
+      const box = el.closest('[data-module]');
+      if (!box) return true;
+      return Array.from(box.querySelectorAll('[data-sec="' + el.dataset.sec + '"][data-item]'))
+        .some(c => itemMatches(c, f));
+    }
+    function moduleMatches(el, f) {
+      const items = Array.from(el.querySelectorAll('[data-item]'));
+      const pass = items.filter(c => typeOk(c, f));
+      if (!pass.length) return false;
+      if (!f.q) return true;
+      if (vnorm(el.dataset.title).includes(vnorm(f.q))) return true;
+      return pass.some(c => vnorm(c.dataset.title).includes(vnorm(f.q)));
+    }
+    // ---- Menu bên trái -------------------------------------------------------
+    /** Mục menu có hiện không. Dùng CHÍNH `moduleMatches` mà thân trang dùng —
+        chép lại luật lọc sang đây là tạo hai bản sẽ lệch nhau, và lệch theo
+        hướng menu chỉ tới một học phần đang bị ẩn. */
+    function mucHien(i, f) {
+      const el = document.getElementById('mod-' + i);
+      return !el || moduleMatches(el, f);
+    }
+    /** Nhảy tới học phần: phải MỞ nó ra trước, không thì cuộn tới một cái hộp
+        đang gập và người dùng tưởng bấm hụt. */
+    function toiMuc(i) {
+      const el = document.getElementById('mod-' + i);
+      if (!el) return;
+      try { Alpine.$data(el).open = true; } catch (e) {}
+      // ⚠ Phải chờ khối GIÃN RA XONG rồi mới cuộn. Lúc bấm thì mọi khối còn
+      // gập nên trang ngắn, `scrollTo` bị kẹp vào đáy trang và dừng giữa chừng
+      // — đo được hụt 471px. Khối mở ra làm trang cao thêm, nhưng lúc đó đã
+      // cuộn rồi, và không có gì cuộn tiếp.
+      //
+      // ⚠ Cũng KHÔNG dùng `scroll-margin-top` cố định: header dính cao khác
+      // nhau theo bề rộng (đo: 175px ở 1280px, 259px ở 390px vì chip lọc xuống
+      // dòng). Một con số CSS thì hoặc thừa chỗ, hoặc để tiêu đề chui xuống
+      // dưới header — mà cái sau trông y như bấm hụt.
+      const han = performance.now() + 800;      // trần, để không chờ mãi
+      let truoc = -1;
+      const thu = () => {
+        const cao = document.body.scrollHeight;
+        if (cao !== truoc && performance.now() < han) {
+          truoc = cao;
+          return requestAnimationFrame(thu);
+        }
+        const h = document.getElementById('hdr');
+        const vv = window.visualViewport;
+        const off = h ? h.getBoundingClientRect().height : 0;
+        // Khi phóng to, phần đang nhìn lệch khỏi đỉnh layout viewport `vv.offsetTop` — tiêu
+        // đề phải về ngay dưới thanh CỦA PHẦN ĐANG NHÌN (ADR 0054), không phải của layout.
+        const y = el.getBoundingClientRect().top + window.scrollY - (vv ? vv.offsetTop : 0) - off - 8;
+        window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+      };
+      requestAnimationFrame(thu);
+    }
+
+    // ---- Checkbox của tiêu đề nhóm ------------------------------------------
+    // Mọi mục con thuộc cùng data-sec trong cùng tuần/bài. Tiêu đề kiểu Page CÓ
+    // nội dung cũng là một mục nên tự nằm trong danh sách — tick nhóm là tick cả
+    // nó. Page rỗng thì không có [data-item] nên đứng ngoài phép đếm.
+    function secEntries(head) {
+      const box = head.closest('[data-module]');
+      if (!box) return [];
+      return Array.from(box.querySelectorAll('[data-item][data-sec="' + head.dataset.sec + '"]'))
+        .map(c => ({ key: c.dataset.pkey, hash: c.dataset.hash || '' }));
+    }
+    // Ba trạng thái: xong hết → tick; xong một phần → gạch ngang; chưa gì → trống
+    function syncSecBox(el, done) {
+      const e = secEntries(el.closest('[data-sechead]'));
+      const n = e.filter(x => done[x.key]).length;
+      el.checked = e.length > 0 && n === e.length;
+      el.indeterminate = n > 0 && n < e.length;
+      return e.length;
+    }
+
+    // Đếm số mục đã học trong một tuần/bài
+    function moduleDone(el, done) {
+      const items = Array.from(el.querySelectorAll('[data-item]'));
+      return items.filter(c => done[c.dataset.pkey]).length;
+    }
+
+    // ---- Tiến độ học tập ----------------------------------------------------
+    // Đọc/ghi qua /api/progress (Cloudflare Pages Function + Workers KV).
+    // Mã bí mật chỉ cần khi GHI, lưu trong localStorage của trình duyệt.
+    // Nếu không có backend (mở file cục bộ, hoặc bản trên GitHub Pages) thì
+    // trang vẫn xem được bình thường, chỉ tắt phần đánh dấu.
+
+    /* ── Tra cứu khi bôi đen ────────────────────────────────────────────────
+       Phải là HÀM trong <script>, không được nhét thẳng vào thuộc tính `x-data`:
+       `x-data` là một thuộc tính HTML, mà phần logic dùng chung dài ~160 dòng và
+       có cả dấu nháy kép — nhét vào là vỡ cú pháp HTML và TOÀN BỘ Alpine của
+       trang chết theo (đã dính: 70 lỗi "p is not defined"). `study.html` không
+       gặp vì logic của nó vốn nằm trong `studyStore()`. */
+    function progressStore() {
+      return {
+        done: {}, hashes: {}, ready: false, online: false, saving: 0, err: '',
+        secret: localStorage.getItem('lms_key') || '',
+
+        async init() {
+          try {
+            const r = await fetch('/api/progress', { headers: { accept: 'application/json' } });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const d = await r.json();
+            const items = d.items || {};
+            // Ba trạng thái, KHÔNG phải hai. `redo` do hệ thống đặt khi nội dung bài
+            // đổi sau lúc đánh dấu; người dùng không tự đặt được. Nó KHÔNG nằm trong
+            // `done`, nhờ vậy ô tick của nhóm và mọi phép đếm tự coi là chưa xong —
+            // không phải sửa chỗ nào khác.
+            this.redo = Object.fromEntries(Object.entries(items)
+              .filter(([, v]) => v && v.redo).map(([k]) => [k, true]));
+            this.done = Object.fromEntries(Object.keys(items)
+              .filter(k => !this.redo[k]).map(k => [k, true]));
+            // Vân tay nội dung lúc đánh dấu, để phát hiện bài bị sửa sau đó
+            this.hashes = Object.fromEntries(
+              Object.entries(items).filter(([, v]) => v && v.hash && !v.redo)
+                .map(([k, v]) => [k, v.hash]));
+            this.online = true;
+          } catch (e) {
+            this.online = false;   // không có backend → chế độ chỉ đọc
+          }
+          this.ready = true;
+        },
+
+        // Bài đã học nhưng nội dung đổi từ sau lúc đánh dấu.
+        // Mục đánh dấu trước khi có tính năng này không có hash → không báo.
+        redo: {},
+
+        // Điểm thưởng (ADR 0061): Worker trả `cong` (điểm vừa cộng) + `nhom` (tên section vừa đủ) sau mỗi lượt ghi.
+        baoCong(d) {
+          if (!d || !window.baoDiem) return;
+          window.baoDiem(d.cong, Array.isArray(d.nhom) && d.nhom.length ? '· hoàn thành ' + d.nhom.join(', ') : '');
+        },
+
+        stale(key, hash) {
+          return !!this.done[key] && !!this.hashes[key] && !!hash && this.hashes[key] !== hash;
+        },
+
+        async toggle(key, hash) {
+          if (!this.online) return;
+          if (!this.secret) { if (!(await this.askSecret())) return; }
+          const next = !this.done[key];
+          const prevHash = this.hashes[key];
+          const prevRedo = this.redo[key];
+          // Bấm vào ô "đang thực hiện" là xác nhận đã học lại → hoàn thành. Người
+          // dùng chỉ đi được giữa HOÀN THÀNH và CHƯA THỰC HIỆN; trạng thái giữa
+          // chỉ hệ thống đặt.
+          delete this.redo[key];
+          if (next) { this.done[key] = true; if (hash) this.hashes[key] = hash; }
+          else { delete this.done[key]; delete this.hashes[key]; }
+          this.saving++; this.err = '';
+          try {
+            const r = await fetch('/api/progress', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'x-progress-key': this.secret },
+              body: JSON.stringify({ key, done: next, hash: hash || '' }),
+            });
+            if (r.status === 401) {
+              this.secret = ''; localStorage.removeItem('lms_key'); window.dispatchEvent(new Event('lms-key'));
+              throw new Error('Mã bí mật không đúng');
+            }
+            if (!r.ok) throw new Error('Không lưu được (HTTP ' + r.status + ')');
+            this.baoCong(await r.json().catch(() => null));
+          } catch (e) {
+            // hoàn tác cả trạng thái, vân tay LẪN cờ đang-thực-hiện. Thiếu vế
+            // cuối thì ghi hỏng mạng sẽ âm thầm nuốt mất trạng thái giữa.
+            if (next) { delete this.done[key]; delete this.hashes[key]; }
+            else { this.done[key] = true; if (prevHash) this.hashes[key] = prevHash; }
+            if (prevRedo) { this.redo[key] = true; delete this.done[key]; }
+            this.err = e.message;
+            setTimeout(() => (this.err = ''), 4000);
+          } finally {
+            this.saving--;
+          }
+        },
+
+        // Tick/bỏ tick cả một nhóm trong một lượt gọi — tránh bắn N request
+        async setMany(entries, want) {
+          if (!this.online || !entries.length) return;
+          if (!this.secret) { if (!(await this.askSecret())) return; }
+          const prevDone = { ...this.done }, prevHash = { ...this.hashes };
+          const updates = {};
+          for (const e of entries) {
+            if (want) {
+              this.done[e.key] = true;
+              if (e.hash) this.hashes[e.key] = e.hash;
+              updates[e.key] = { hash: e.hash };
+            } else {
+              delete this.done[e.key]; delete this.hashes[e.key];
+              updates[e.key] = false;
+            }
+          }
+          this.saving++; this.err = '';
+          try {
+            const r = await fetch('/api/progress', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'x-progress-key': this.secret },
+              body: JSON.stringify({ updates }),
+            });
+            if (r.status === 401) {
+              this.secret = ''; localStorage.removeItem('lms_key'); window.dispatchEvent(new Event('lms-key'));
+              throw new Error('Mã bí mật không đúng');
+            }
+            if (!r.ok) throw new Error('Không lưu được (HTTP ' + r.status + ')');
+            this.baoCong(await r.json().catch(() => null));
+          } catch (e) {
+            this.done = prevDone; this.hashes = prevHash;   // hoàn tác cả nhóm
+            this.err = e.message;
+            setTimeout(() => (this.err = ''), 4000);
+          } finally {
+            this.saving--;
+          }
+        },
+
+        // Xác nhận đã xem lại bài vừa được cập nhật: giữ nguyên "đã học",
+        // chỉ ghi đè vân tay bằng nội dung mới nhất
+        async seen(key, hash) {
+          if (!this.online || !hash) return;
+          if (!this.secret) { if (!(await this.askSecret())) return; }
+          const prev = this.hashes[key];
+          this.hashes[key] = hash;
+          this.saving++;
+          try {
+            const r = await fetch('/api/progress', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'x-progress-key': this.secret },
+              body: JSON.stringify({ key, done: true, hash }),
+            });
+            if (!r.ok) throw new Error('Không lưu được (HTTP ' + r.status + ')');
+          } catch (e) {
+            this.hashes[key] = prev;
+            this.err = e.message;
+            setTimeout(() => (this.err = ''), 4000);
+          } finally {
+            this.saving--;
+          }
+        },
+
+        async askSecret() {
+          const v = (prompt('Nhập mã bí mật để đánh dấu tiến độ:') || '').trim();
+          if (!v) return false;
+          try {
+            const r = await fetch('/api/progress?check=1', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'x-progress-key': v },
+              body: '{}',
+            });
+            if (!r.ok) { alert('Mã không đúng.'); return false; }
+          } catch { alert('Không kết nối được máy chủ.'); return false; }
+          this.secret = v; localStorage.setItem('lms_key', v); window.dispatchEvent(new Event('lms-key'));
+          return true;
+        },
+      };
+    }
+
+    // Nhãn loại mục để dòng "Đang lọc" gọi tên chip đang bật. (tojson trong <script> — được.)
+    var LOAI = { "page": "\ud83d\udcc4 v\u0103n b\u1ea3n","file": "\ud83d\udcce t\u00e0i li\u1ec7u","external": "\ud83d\udd17 li\u00ean k\u1ebft ngo\u00e0i", };
+    var TIEN_DO_KEY = "mk/80065/";
+    var TONG_MUC = 24;
+    var CO_HW = false;
+    /** State của TRANG MÔN. Trước đây nằm thẳng trong `x-data` của <body>; nay phải là hàm vì
+        ô tìm dùng chung (`_timkiem.html`) chèn thêm thành viên — nhét vào thuộc tính HTML là
+        vỡ cú pháp khi có nháy kép (bài học của progressStore). */
+    function trangMon() {
+      return {
+        q: '', types: [], hw: false, todo: false, recent7: false, menuMo: false, locMo: false,
+        p: progressStore(),
+timMo: false,
+      timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
+      timDong() { this.q = ''; this.timMo = false; },
+        toggle(t) { this.types.includes(t) ? this.types.splice(this.types.indexOf(t), 1) : this.types.push(t); },
+        get filtering() { return this.types.length > 0 || this.hw || this.todo || this.recent7; },
+        get f() { return { q: this.q, types: this.types, hw: this.hw, todo: this.todo, recent7: this.recent7, done: this.p.done }; },
+        get soLoc() { return this.types.length + (this.hw ? 1 : 0) + (this.todo ? 1 : 0) + (this.recent7 ? 1 : 0); },
+        get tenLoc() {
+          return [...(this.recent7 ? ['7 ngày'] : []), ...(this.hw ? ['Homework'] : []),
+                  ...(this.todo ? ['Chưa học'] : []), ...this.types.map((t) => LOAI[t] || t)];
+        },
+        boLoc() { this.types = []; this.hw = false; this.todo = false; this.recent7 = false; },
+        get daHoc() { return Object.keys(this.p.done).filter((k) => k.startsWith(TIEN_DO_KEY)).length; },
+        get tienDo() {
+          if (this.recent7) { const s = recentStats(this.p.done); return s.done + '/' + s.total + ' · 7 ngày'; }
+          return this.daHoc + '/' + TONG_MUC;
+        },
+        get tienDoPct() {
+          return this.recent7 ? recentPct(this.p.done) : (TONG_MUC ? Math.round(this.daHoc / TONG_MUC * 100) : 0);
+        },
+        /** "Tuần này": mục mới = mục chip 7 ngày giữ lại; bài tập chưa xong = mục chip Homework
+            giữ lại, trong 7 ngày, chưa tick. `hw` null khi không có nhóm Homework hoặc chưa có
+            tiến độ — dòng khi đó chỉ nói số mục mới. Tính lúc mở trang (ADR 0046). */
+        get tuanNay() {
+          const els = recentItems();
+          const hw = CO_HW && this.p.online
+            ? els.filter((e) => e.dataset.hw === '1' && !this.p.done[e.dataset.pkey]).length : null;
+          return { moi: els.length, hw };
+        },
+        xemTuanNay() { this.recent7 = true; if (this.p.online) this.todo = true; },
+      };
+    }
+  </script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen"
+      x-data="trangMon()"
+      x-init="p.init()">
+
+  
+  <header id="hdr" data-bam="thanh" class="sticky top-0 z-10 bg-white border-b border-slate-200 shadow-sm">
+    <div class="bg-indigo-600">
+      <div class="max-w-[72rem] mx-auto px-4 py-2 min-w-0">
+        <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-indigo-200">
+  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">🏠 Home</a><span class="shrink-0 text-indigo-300">›</span>
+  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">MK</a><span class="shrink-0 text-indigo-300">›</span>
+  <span aria-current="page"  class="truncate font-medium text-white">Âm Nhạc 1</span>
+</nav>
+      </div>
+    </div>
+    <div class="max-w-[72rem] mx-auto px-3 sm:px-4">
+      
+      <div class="pt-2 flex items-start sm:items-center gap-2">
+        <h1 class="min-w-0 flex-1 sm:flex-initial text-lg font-bold text-slate-900 leading-snug break-words">Âm Nhạc 1</h1>
+        <div class="shrink-0 flex flex-col items-end gap-1 mt-1 sm:mt-0 sm:contents">
+          
+          <a href="https://lms.vinschool.edu.vn/courses/80065/modules" target="_blank" rel="noopener noreferrer"
+             title="Mở trang Các học phần của môn này trên LMS (cần đăng nhập)"
+             class="shrink-0 text-xs text-indigo-500 hover:text-indigo-700 hover:underline py-2 -my-2 whitespace-nowrap"><span class="lg:hidden">Trang gốc ↗</span><span class="hidden lg:inline">Xem trang gốc ↗</span></a>
+          
+          
+          <div x-show="p.ready && p.online" x-cloak data-tien-do
+               class="sm:ml-auto flex items-center gap-2 text-xs text-slate-500 whitespace-nowrap">
+            <span x-show="p.saving" x-cloak class="text-indigo-500">đang lưu…</span>
+            <span x-show="p.err" x-cloak class="text-rose-600 max-w-[10rem] truncate" x-text="p.err"></span>
+            <span class="tabular-nums" x-text="tienDo"></span><span x-show="!recent7" class="hidden lg:inline">đã học</span>
+            <div class="w-14 lg:w-36 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+              <div class="h-full bg-emerald-500 transition-all duration-300" :style="'width: ' + tienDoPct + '%'"></div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+      
+      
+      
+      <div class="py-2 flex items-center gap-1.5 sm:gap-2">
+        <button type="button" data-nut-menu :aria-expanded="String(menuMo)"
+        @click="menuMo = !menuMo; if (menuMo) { locMo = false }"
+        aria-label="Mục lục" title="Mục lục"
+        :class="[menuMo ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700',
+                 timMo ? 'max-sm:hidden' : '']"
+        class="lg:hidden h-9 min-w-9 shrink-0 px-2 sm:px-3 text-xs font-medium rounded-lg border whitespace-nowrap">☰<span class="hidden sm:inline"> Mục lục</span></button>
+        
+        
+        <div data-tim class="flex-1 min-w-0 flex items-center justify-end gap-1" :class="(false) ? 'invisible' : ''">
+  <button x-show="!timMo" @click="timMoRa()" type="button" data-tim-nut
+          aria-label="Tìm bài học…" title="Tìm bài học…"
+          :class="q ? 'border-amber-400 bg-amber-50' : 'border-slate-300 bg-white'"
+          class="sm:hidden w-9 h-9 shrink-0 rounded-lg border text-slate-700 grid place-items-center">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+  </button>
+  <input type="search" x-model="q" x-ref="timO"
+         @keydown.escape.prevent="timDong()"
+         placeholder="Tìm bài học…" aria-label="Tìm bài học…"
+         :class="timMo ? 'block' : 'hidden sm:block'"
+         class="flex-1 min-w-0 sm:max-w-56 lg:max-w-md h-9 px-2 text-xs rounded-lg border border-slate-300 bg-white">
+  <button x-show="timMo" x-cloak @click="timDong()" type="button" data-tim-dong
+          aria-label="Đóng ô tìm" title="Đóng ô tìm"
+          class="sm:hidden w-9 h-9 shrink-0 rounded-lg border border-slate-300 text-slate-700">✕</button>
+</div>
+        <button type="button" data-nut-loc :aria-expanded="String(locMo)" aria-label="Lọc" title="Lọc"
+        @click="locMo = !locMo; if (locMo) { menuMo = false }"
+        :class="[(soLoc) || locMo ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700',
+                 timMo ? 'max-sm:hidden' : '', (false) ? 'invisible' : '']"
+        class="h-9 min-w-9 shrink-0 px-2 rounded-lg border text-sm font-medium inline-flex items-center justify-center gap-1 whitespace-nowrap">⚙<span class="hidden lg:inline text-xs">Lọc</span><span x-show="soLoc" x-cloak data-so-loc class="text-xs tabular-nums" x-text="soLoc"></span></button>
+        
+      </div>
+      
+    </div>
+    
+    <div x-show="locMo" x-cloak data-ngan-loc @keydown.escape.window="locMo = false"
+     class="no-print absolute inset-x-0 top-full z-30">
+  <div @click="locMo = false" class="absolute inset-x-0 top-0 h-screen bg-slate-900/30"></div>
+  <div class="relative bg-white border-b border-slate-200 shadow-lg">
+    <div class="max-w-[72rem] mx-auto px-4 py-3 space-y-3">
+      
+      <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Hay dùng</p>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" @click="recent7 = !recent7"
+                :class="recent7 ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-700 border-amber-300 hover:border-amber-500'"
+                class="px-3 py-2 text-xs font-medium rounded-full border">🕓 7 ngày</button>
+        
+        <template x-if="p.online">
+          <button type="button" @click="todo = !todo"
+                  :class="todo ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-700 border-emerald-300 hover:border-emerald-500'"
+                  class="px-3 py-2 text-xs font-medium rounded-full border">○ Chưa học</button>
+        </template>
+      </div>
+      <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Loại mục</p>
+      <div class="flex flex-wrap gap-2">
+        
+        <button type="button" @click="toggle('page')"
+                :class="types.includes('page') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
+                class="px-3 py-2 text-xs rounded-full border">📄 văn bản</button>
+        
+        <button type="button" @click="toggle('file')"
+                :class="types.includes('file') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
+                class="px-3 py-2 text-xs rounded-full border">📎 tài liệu</button>
+        
+        <button type="button" @click="toggle('external')"
+                :class="types.includes('external') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
+                class="px-3 py-2 text-xs rounded-full border">🔗 liên kết ngoài</button>
+        
+      </div>
+      <div data-ma-bi-mat class="text-sm" @lms-key.window="co = !!localStorage.getItem('lms_key')" x-data="{
+       co: !!localStorage.getItem('lms_key'), mo: false, ma: '', loi: '', dang: false,
+       async luu() {
+         const v = this.ma.trim();
+         if (!v || this.dang) return;
+         this.dang = true; this.loi = '';
+         try {
+           const r = await fetch('/api/progress?check=1', { method: 'POST', body: '{}',
+             headers: { 'content-type': 'application/json', 'x-progress-key': v } });
+           if (r.status === 401) { this.loi = 'Mã không đúng.'; return; }
+           if (!r.ok) { this.loi = 'Không kiểm tra được mã lúc này. Thử lại sau.'; return; }
+           localStorage.setItem('lms_key', v);
+           location.reload();
+         } catch (e) {
+           this.loi = 'Không kiểm tra được mã lúc này (mất mạng?). Thử lại sau.';
+         } finally { this.dang = false; }
+       },
+       xoa() {
+         if (!confirm('Xoá mã bí mật trên máy này?')) return;
+         localStorage.removeItem('lms_key'); location.reload();
+       }
+     }">
+  <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Mã bí mật</p>
+  <div class="mt-1 flex flex-wrap items-center gap-2">
+    <span data-mbm-tt class="font-medium" :class="co ? 'text-emerald-700' : 'text-slate-600'" x-text="co ? '🔑 Đã nhập ✓' : '🔑 Chưa nhập'"></span>
+    <button type="button" data-mbm-mo x-show="!mo" @click="mo = true; $nextTick(() => $refs.o.focus())" class="px-3 py-2 rounded-full border border-slate-300 bg-white text-xs font-medium" x-text="co ? 'Đổi mã' : 'Nhập mã'"></button>
+    <button type="button" data-mbm-xoa x-show="co && !mo" @click="xoa()" class="px-3 py-2 rounded-full border border-slate-300 bg-white text-xs font-medium text-rose-700">Xoá mã</button>
+  </div>
+  <form x-show="mo" x-cloak @submit.prevent="luu()" class="mt-2 flex flex-wrap items-center gap-2">
+    <input x-ref="o" data-mbm-o type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" x-model="ma" placeholder="Mã bí mật" aria-label="Mã bí mật" class="h-9 px-3 rounded-lg border border-slate-300 text-sm">
+    <button type="submit" data-mbm-luu :disabled="dang" class="h-9 px-3 rounded-lg bg-indigo-600 text-white text-xs font-semibold" x-text="dang ? 'Đang kiểm…' : 'Lưu'"></button>
+    <button type="button" @click="mo = false; loi = ''" class="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs">Thôi</button>
+  </form>
+  <p data-mbm-loi x-show="loi" x-cloak x-text="loi" class="mt-1 text-xs text-rose-700"></p>
+</div>
+    
+      <div class="flex justify-between text-sm">
+        <button type="button" data-bo-loc @click="boLoc()" class="px-2 py-2 -mx-2 text-slate-500 hover:text-indigo-600">Bỏ lọc</button>
+        <button type="button" data-loc-xong @click="locMo = false" class="px-2 py-2 -mx-2 font-semibold text-indigo-600">Xong</button>
+      </div>
+    </div>
+  </div>
+</div>
+    
+  </header>
+
+  <div class="max-w-[72rem] mx-auto lg:flex lg:gap-5 lg:items-start">
+
+  
+  <!-- ⚠ Offset dính ĐO ĐƯỢC (`--hdr`), không viết cứng. Bản cũ dùng
+       `lg:top-[4.5rem]` = 72px trong khi header dính cao ~175px ở 1280px, nên
+       phần đầu mục lục chui xuống dưới header — vẫn thấy mục lục, chỉ mất mấy
+       mục trên cùng, nên trông y như "môn này ít tuần". Cùng bài học đã ghi ở
+       `toiMuc()` và đã giải ở study.html. -->
+  
+  <aside class="no-print lg:px-4 lg:pt-6 lg:w-64 lg:shrink-0 lg:sticky lg:top-[var(--hdr)] lg:self-start lg:pr-0"
+         @keydown.escape.window="menuMo = false">
+    
+    <div data-bam :class="menuMo ? 'block fixed inset-x-0 bottom-0 top-[var(--hdr)] z-30 overflow-y-auto rounded-none lg:static lg:rounded-xl' : 'hidden lg:block'"
+         class="rounded-xl border border-slate-200 bg-white p-2 shadow-sm lg:max-h-[calc(100vh-var(--hdr)-3rem)] lg:overflow-y-auto">
+      <p class="px-2 pb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Mục lục</p>
+      <ol class="space-y-0.5">
+        
+        <li x-show="mucHien(1, f)">
+          <button type="button" @click="toiMuc(1); menuMo = false"
+                  class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
+            <span class="min-w-0 flex-1">CHƯƠNG TRÌNH ÂM NHẠC KHỐI 1 NĂM HỌC 2025- 2026</span>
+            <template x-if="p.online">
+              <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
+                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/3'"></span>
+            </template>
+          </button>
+        </li>
+        
+        <li x-show="mucHien(2, f)">
+          <button type="button" @click="toiMuc(2); menuMo = false"
+                  class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
+            <span class="min-w-0 flex-1">[MUS1-Unit6] MÙA HÈ SÔI ĐỘNG</span>
+            <template x-if="p.online">
+              <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
+                    x-text="moduleDone(document.getElementById('mod-2'), p.done) + '/6'"></span>
+            </template>
+          </button>
+        </li>
+        
+        <li x-show="mucHien(3, f)">
+          <button type="button" @click="toiMuc(3); menuMo = false"
+                  class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
+            <span class="min-w-0 flex-1">[MUS1-Unit4] QUÊ HƯƠNG EM</span>
+            <template x-if="p.online">
+              <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
+                    x-text="moduleDone(document.getElementById('mod-3'), p.done) + '/2'"></span>
+            </template>
+          </button>
+        </li>
+        
+        <li x-show="mucHien(4, f)">
+          <button type="button" @click="toiMuc(4); menuMo = false"
+                  class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
+            <span class="min-w-0 flex-1">[MUS1-Unit5] QUÊ HƯƠNG EM</span>
+            <template x-if="p.online">
+              <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
+                    x-text="moduleDone(document.getElementById('mod-4'), p.done) + '/2'"></span>
+            </template>
+          </button>
+        </li>
+        
+        <li x-show="mucHien(5, f)">
+          <button type="button" @click="toiMuc(5); menuMo = false"
+                  class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
+            <span class="min-w-0 flex-1">[MUS1-Unit2] HÒA CA</span>
+            <template x-if="p.online">
+              <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
+                    x-text="moduleDone(document.getElementById('mod-5'), p.done) + '/3'"></span>
+            </template>
+          </button>
+        </li>
+        
+        <li x-show="mucHien(6, f)">
+          <button type="button" @click="toiMuc(6); menuMo = false"
+                  class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
+            <span class="min-w-0 flex-1">[MUS1-Unit3] NHỊP ĐIỆU VUI TƯƠI</span>
+            <template x-if="p.online">
+              <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
+                    x-text="moduleDone(document.getElementById('mod-6'), p.done) + '/3'"></span>
+            </template>
+          </button>
+        </li>
+        
+        <li x-show="mucHien(7, f)">
+          <button type="button" @click="toiMuc(7); menuMo = false"
+                  class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
+            <span class="min-w-0 flex-1">[MUS1-Unit1] ÂM NHẠC Ở QUANH TA</span>
+            <template x-if="p.online">
+              <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
+                    x-text="moduleDone(document.getElementById('mod-7'), p.done) + '/5'"></span>
+            </template>
+          </button>
+        </li>
+        
+      </ol>
+    </div>
+  </aside>
+  
+
+  <main class="min-w-0 lg:flex-1 px-4 py-6 space-y-4">
+
+    
+    <div x-show="soLoc" x-cloak data-dong-loc
+     class="no-print flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-900">
+  <span class="min-w-0"><b>Đang lọc:</b> <span x-text="(tenLoc).join(' · ')"></span></span>
+  <button type="button" data-bo-loc @click="boLoc()" class="ml-auto shrink-0 px-2 py-2 -my-2 font-semibold hover:text-indigo-600">✕ Bỏ lọc</button>
+</div>
+    
+    <div x-show="!soLoc && tuanNay.moi" x-cloak data-tuan-nay
+         class="no-print flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+      <span class="min-w-0"><b>Tuần này:</b>
+        <span x-text="tuanNay.moi + ' mục mới' + (tuanNay.hw !== null ? ' · ' + tuanNay.hw + ' bài tập chưa xong' : '')"></span></span>
+      <button type="button" data-xem-tuan @click="xemTuanNay()" class="ml-auto shrink-0 px-2 py-2 -my-2 font-semibold hover:text-amber-700">Xem ›</button>
+    </div>
+    
+
+    
+
+    
+    <!-- Một Tuần học / Bài học -->
+    <section x-data="{ open: true }"
+             x-effect="if (q || filtering) open = true"
+             id="mod-1" data-module data-title="CHƯƠNG TRÌNH ÂM NHẠC KHỐI 1 NĂM HỌC 2025- 2026"
+             x-show="moduleMatches($el, f)"
+             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <button @click="open = !open"
+              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
+        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
+             :class="open ? 'rotate-90' : ''"
+             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">CHƯƠNG TRÌNH ÂM NHẠC KHỐI 1 NĂM HỌC 2025- 2026</span>
+        <template x-if="p.online">
+          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 3
+                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/3'"></span>
+        </template>
+        <span class="text-xs text-slate-400 shrink-0">3 mục</span>
+      </button>
+
+      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-item data-title="NỘI QUY LỚP HỌC ÂM NHẠC" data-type="file" data-sec="0"
+             data-pkey="mk/80065/8875823" data-hash="5023fc23bed2dfd9390f8de82c7e558ed38dfc14" data-ts="1790913976000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875823'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875823'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875823']; $el.indeterminate = !!p.redo['mk/80065/8875823']"
+                     @change="await p.toggle('mk/80065/8875823', '5023fc23bed2dfd9390f8de82c7e558ed38dfc14'); $el.checked = !!p.done['mk/80065/8875823']; $el.indeterminate = !!p.redo['mk/80065/8875823']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="https://minhln2.github.io/lms/mk/materials/am-nhac-1/chuong-trinh-am-nhac-khoi-1-nam-hoc-2025-2026/Colorful Classroom Rules Education Poster in Colorful Hand-drawn Style (Bài thuyết trình).pdf" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                NỘI QUY LỚP HỌC ÂM NHẠC
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875823', '5023fc23bed2dfd9390f8de82c7e558ed38dfc14')">
+                  <button @click.stop="p.seen('mk/80065/8875823', '5023fc23bed2dfd9390f8de82c7e558ed38dfc14')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>12.5 MB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 02/10</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="PP CHƯƠNG TRÌNH ÂM NHẠC KHỐI 1.jpg" data-type="file" data-sec="0"
+             data-pkey="mk/80065/8875827" data-hash="89fe95ca8a61902531deb8c2d1ec562abb1e2eb8" data-ts="1790230469000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875827'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875827'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875827']; $el.indeterminate = !!p.redo['mk/80065/8875827']"
+                     @change="await p.toggle('mk/80065/8875827', '89fe95ca8a61902531deb8c2d1ec562abb1e2eb8'); $el.checked = !!p.done['mk/80065/8875827']; $el.indeterminate = !!p.redo['mk/80065/8875827']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="https://minhln2.github.io/lms/mk/materials/am-nhac-1/chuong-trinh-am-nhac-khoi-1-nam-hoc-2025-2026/PP CHƯƠNG TRÌNH ÂM NHẠC KHỐI 1.jpg" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                PP CHƯƠNG TRÌNH ÂM NHẠC KHỐI 1.jpg
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875827', '89fe95ca8a61902531deb8c2d1ec562abb1e2eb8')">
+                  <button @click.stop="p.seen('mk/80065/8875827', '89fe95ca8a61902531deb8c2d1ec562abb1e2eb8')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>720.5 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="PADLET SẢN PHẨM ÂM NHẠC KHỐI 1" data-type="external" data-sec="0"
+             data-pkey="mk/80065/8875831" data-hash="c47a3f3741f8350e1ab6ac2996e0b257028e4cf2" data-ts="1791509520000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875831'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875831'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875831']; $el.indeterminate = !!p.redo['mk/80065/8875831']"
+                     @change="await p.toggle('mk/80065/8875831', 'c47a3f3741f8350e1ab6ac2996e0b257028e4cf2'); $el.checked = !!p.done['mk/80065/8875831']; $el.indeterminate = !!p.redo['mk/80065/8875831']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://padlet.com/vhanglt3/padlet-vmusic-kh-i-1-2025-2026-y3hbems8mjtjqevm" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                PADLET SẢN PHẨM ÂM NHẠC KHỐI 1
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875831', 'c47a3f3741f8350e1ab6ac2996e0b257028e4cf2')">
+                  <button @click.stop="p.seen('mk/80065/8875831', 'c47a3f3741f8350e1ab6ac2996e0b257028e4cf2')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 09/10</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+      </div>
+    </section>
+    
+    <!-- Một Tuần học / Bài học -->
+    <section x-data="{ open: false }"
+             x-effect="if (q || filtering) open = true"
+             id="mod-2" data-module data-title="[MUS1-Unit6] MÙA HÈ SÔI ĐỘNG"
+             x-show="moduleMatches($el, f)"
+             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <button @click="open = !open"
+              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
+        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
+             :class="open ? 'rotate-90' : ''"
+             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">[MUS1-Unit6] MÙA HÈ SÔI ĐỘNG</span>
+        <template x-if="p.online">
+          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 6
+                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/6'"></span>
+        </template>
+        <span class="text-xs text-slate-400 shrink-0">6 mục</span>
+      </button>
+
+      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-item data-title="[MUS1-Lesson6.1] Kiến thức âm nhạc &#34; Once a Man Fell in a Well&#34;" data-type="page" data-sec="0"
+             data-pkey="mk/80065/8875903" data-hash="da39a3ee5e6b4b0d3255bfef95601890afd80709" data-ts="1790230941000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875903'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875903'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875903']; $el.indeterminate = !!p.redo['mk/80065/8875903']"
+                     @change="await p.toggle('mk/80065/8875903', 'da39a3ee5e6b4b0d3255bfef95601890afd80709'); $el.checked = !!p.done['mk/80065/8875903']; $el.indeterminate = !!p.redo['mk/80065/8875903']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson6-dot-1-kien-thuc-am-nhac-once-a-man-fell-in-a-well" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                [MUS1-Lesson6.1] Kiến thức âm nhạc &#34; Once a Man Fell in a Well&#34;
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875903', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')">
+                  <button @click.stop="p.seen('mk/80065/8875903', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson6-dot-1-kien-thuc-am-nhac-once-a-man-fell-in-a-well" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="[MUS1-Lesson6.2] Học hát: Bài hát tự chọn" data-type="page" data-sec="0"
+             data-pkey="mk/80065/8875906" data-hash="da39a3ee5e6b4b0d3255bfef95601890afd80709" data-ts="1790230941000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875906'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875906'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875906']; $el.indeterminate = !!p.redo['mk/80065/8875906']"
+                     @change="await p.toggle('mk/80065/8875906', 'da39a3ee5e6b4b0d3255bfef95601890afd80709'); $el.checked = !!p.done['mk/80065/8875906']; $el.indeterminate = !!p.redo['mk/80065/8875906']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson6-dot-2-hoc-hat-bai-hat-tu-chon" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                [MUS1-Lesson6.2] Học hát: Bài hát tự chọn
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875906', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')">
+                  <button @click.stop="p.seen('mk/80065/8875906', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson6-dot-2-hoc-hat-bai-hat-tu-chon" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="[MUS1-Lesson6.3] Hòa tấu: Eine kleine Nachtmusik" data-type="page" data-sec="0"
+             data-pkey="mk/80065/8875908" data-hash="da39a3ee5e6b4b0d3255bfef95601890afd80709" data-ts="1790230941000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875908'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875908'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875908']; $el.indeterminate = !!p.redo['mk/80065/8875908']"
+                     @change="await p.toggle('mk/80065/8875908', 'da39a3ee5e6b4b0d3255bfef95601890afd80709'); $el.checked = !!p.done['mk/80065/8875908']; $el.indeterminate = !!p.redo['mk/80065/8875908']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson6-dot-3-hoa-tau-eine-kleine-nachtmusik" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                [MUS1-Lesson6.3] Hòa tấu: Eine kleine Nachtmusik
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875908', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')">
+                  <button @click.stop="p.seen('mk/80065/8875908', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson6-dot-3-hoa-tau-eine-kleine-nachtmusik" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="[MUS1-Lesson6.4] Lập kế hoạch" data-type="page" data-sec="0"
+             data-pkey="mk/80065/8875912" data-hash="da39a3ee5e6b4b0d3255bfef95601890afd80709" data-ts="1790230941000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875912'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875912'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875912']; $el.indeterminate = !!p.redo['mk/80065/8875912']"
+                     @change="await p.toggle('mk/80065/8875912', 'da39a3ee5e6b4b0d3255bfef95601890afd80709'); $el.checked = !!p.done['mk/80065/8875912']; $el.indeterminate = !!p.redo['mk/80065/8875912']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson6-dot-4-lap-ke-hoach" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                [MUS1-Lesson6.4] Lập kế hoạch
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875912', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')">
+                  <button @click.stop="p.seen('mk/80065/8875912', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson6-dot-4-lap-ke-hoach" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="[MUS1-Lesson6.5] Luyện tập tiết mục" data-type="page" data-sec="0"
+             data-pkey="mk/80065/8875916" data-hash="da39a3ee5e6b4b0d3255bfef95601890afd80709" data-ts="1790230942000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875916'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875916'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875916']; $el.indeterminate = !!p.redo['mk/80065/8875916']"
+                     @change="await p.toggle('mk/80065/8875916', 'da39a3ee5e6b4b0d3255bfef95601890afd80709'); $el.checked = !!p.done['mk/80065/8875916']; $el.indeterminate = !!p.redo['mk/80065/8875916']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson6-dot-5-luyen-tap-tiet-muc" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                [MUS1-Lesson6.5] Luyện tập tiết mục
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875916', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')">
+                  <button @click.stop="p.seen('mk/80065/8875916', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson6-dot-5-luyen-tap-tiet-muc" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="[MUS1-Lesson6.6] Báo cáo dự án" data-type="page" data-sec="0"
+             data-pkey="mk/80065/8875918" data-hash="da39a3ee5e6b4b0d3255bfef95601890afd80709" data-ts="1790230942000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875918'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875918'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875918']; $el.indeterminate = !!p.redo['mk/80065/8875918']"
+                     @change="await p.toggle('mk/80065/8875918', 'da39a3ee5e6b4b0d3255bfef95601890afd80709'); $el.checked = !!p.done['mk/80065/8875918']; $el.indeterminate = !!p.redo['mk/80065/8875918']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson6-dot-6-bao-cao-du-an" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                [MUS1-Lesson6.6] Báo cáo dự án
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875918', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')">
+                  <button @click.stop="p.seen('mk/80065/8875918', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson6-dot-6-bao-cao-du-an" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+      </div>
+    </section>
+    
+    <!-- Một Tuần học / Bài học -->
+    <section x-data="{ open: false }"
+             x-effect="if (q || filtering) open = true"
+             id="mod-3" data-module data-title="[MUS1-Unit4] QUÊ HƯƠNG EM"
+             x-show="moduleMatches($el, f)"
+             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <button @click="open = !open"
+              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
+        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
+             :class="open ? 'rotate-90' : ''"
+             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">[MUS1-Unit4] QUÊ HƯƠNG EM</span>
+        <template x-if="p.online">
+          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 2
+                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/2'"></span>
+        </template>
+        <span class="text-xs text-slate-400 shrink-0">2 mục</span>
+      </button>
+
+      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-item data-title="[MUS1-Lesson4.1] Hòa tấu nhạc cụ: William Tell Overture" data-type="page" data-sec="0"
+             data-pkey="mk/80065/8875889" data-hash="da39a3ee5e6b4b0d3255bfef95601890afd80709" data-ts="1790230940000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875889'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875889'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875889']; $el.indeterminate = !!p.redo['mk/80065/8875889']"
+                     @change="await p.toggle('mk/80065/8875889', 'da39a3ee5e6b4b0d3255bfef95601890afd80709'); $el.checked = !!p.done['mk/80065/8875889']; $el.indeterminate = !!p.redo['mk/80065/8875889']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson4-dot-1-hoa-tau-nhac-cu-william-tell-overture" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                [MUS1-Lesson4.1] Hòa tấu nhạc cụ: William Tell Overture
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875889', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')">
+                  <button @click.stop="p.seen('mk/80065/8875889', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson4-dot-1-hoa-tau-nhac-cu-william-tell-overture" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="[MUS1-Lesson4.2] Học hát: You Are My Sunshine" data-type="page" data-sec="0"
+             data-pkey="mk/80065/8875890" data-hash="df18ee132c3514a9135f2e120d9a41651fbb1bc3" data-ts="1790230941000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875890'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875890'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875890']; $el.indeterminate = !!p.redo['mk/80065/8875890']"
+                     @change="await p.toggle('mk/80065/8875890', 'df18ee132c3514a9135f2e120d9a41651fbb1bc3'); $el.checked = !!p.done['mk/80065/8875890']; $el.indeterminate = !!p.redo['mk/80065/8875890']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">[MUS1-Lesson4.2] Học hát: You Are My Sunshine</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875890', 'df18ee132c3514a9135f2e120d9a41651fbb1bc3')">
+                  <button @click.stop="p.seen('mk/80065/8875890', 'df18ee132c3514a9135f2e120d9a41651fbb1bc3')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson4-dot-2-hoc-hat-you-are-my-sunshine" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><img alt="MUS1 L4.2.gif" height="421" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit4-que-huong-em/MUS1 L4.2.gif" width="2105"/></p>
+<p>Nghe bài hát mẫu: <a class="inline_disabled" href="https://youtu.be/EWSXD2HGuwA?si=LOMeX4VXHzYKQAjW" rel="noopener" target="_blank"><img alt="NGHE ICON.gif" id="5470272" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit4-que-huong-em/NGHE ICON.gif"/></a></p>
+<p>Beat luyện tập: <a class="inline_disabled" href="https://youtu.be/koU1d7Pb4lI?si=1o6mqTF4ffv7_duX" rel="noopener" target="_blank"><img alt="HÁT ICON.gif" id="5470361" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit4-que-huong-em/HÁT ICON.gif"/></a></p>
+<p><img alt="YOU ARE MY SUNSHINE SHEET .jpg" height="2907" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit4-que-huong-em/YOU ARE MY SUNSHINE SHEET .jpg" width="2055"/></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+      </div>
+    </section>
+    
+    <!-- Một Tuần học / Bài học -->
+    <section x-data="{ open: false }"
+             x-effect="if (q || filtering) open = true"
+             id="mod-4" data-module data-title="[MUS1-Unit5] QUÊ HƯƠNG EM"
+             x-show="moduleMatches($el, f)"
+             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <button @click="open = !open"
+              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
+        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
+             :class="open ? 'rotate-90' : ''"
+             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">[MUS1-Unit5] QUÊ HƯƠNG EM</span>
+        <template x-if="p.online">
+          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 2
+                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/2'"></span>
+        </template>
+        <span class="text-xs text-slate-400 shrink-0">2 mục</span>
+      </button>
+
+      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-item data-title="[MUS1-Lesson5.1] Học hát: Xúc xắc xúc xẻ" data-type="page" data-sec="0"
+             data-pkey="mk/80065/8875895" data-hash="ebd140f5bfb6e8151ed6941aa17033c3b3e09bab" data-ts="1790230941000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875895'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875895'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875895']; $el.indeterminate = !!p.redo['mk/80065/8875895']"
+                     @change="await p.toggle('mk/80065/8875895', 'ebd140f5bfb6e8151ed6941aa17033c3b3e09bab'); $el.checked = !!p.done['mk/80065/8875895']; $el.indeterminate = !!p.redo['mk/80065/8875895']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">[MUS1-Lesson5.1] Học hát: Xúc xắc xúc xẻ</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875895', 'ebd140f5bfb6e8151ed6941aa17033c3b3e09bab')">
+                  <button @click.stop="p.seen('mk/80065/8875895', 'ebd140f5bfb6e8151ed6941aa17033c3b3e09bab')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson5-dot-1-hoc-hat-xuc-xac-xuc-xe" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><img alt="MUS1 L5.1.gif" height="418" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit5-que-huong-em/MUS1 L5.1.gif" width="2090"/></p>
+<p>Nghe bài hát mẫu : <a class="inline_disabled" href="https://youtu.be/2lTbj84ppac?si=FZgpHs0Za_DnMxkS" rel="noopener" target="_blank"><img alt="NGHE ICON-1.gif" id="6566009" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit5-que-huong-em/NGHE ICON-1.gif"/></a></p>
+<p>Beat nhạc luyện tập : <a class="inline_disabled" href="https://youtu.be/QHCgZxHcK1o?si=4u9BViuLD9KfmoRa" rel="noopener" target="_blank"><img alt="ICON HÁT.gif" id="5478423" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit5-que-huong-em/ICON HÁT.gif"/></a></p>
+<p><img alt="XÚC XẮC XÚC XẺ  SHEET .jpg" height="2911" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit5-que-huong-em/XÚC XẮC XÚC XẺ SHEET .jpg" width="2058"/></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="[MUS1-Lesson5.2] Học hát: Gà gáy" data-type="page" data-sec="0"
+             data-pkey="mk/80065/8875896" data-hash="286a39f5d7c8300da11d81ba322088ad85f072c5" data-ts="1790230941000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875896'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875896'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875896']; $el.indeterminate = !!p.redo['mk/80065/8875896']"
+                     @change="await p.toggle('mk/80065/8875896', '286a39f5d7c8300da11d81ba322088ad85f072c5'); $el.checked = !!p.done['mk/80065/8875896']; $el.indeterminate = !!p.redo['mk/80065/8875896']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">[MUS1-Lesson5.2] Học hát: Gà gáy</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875896', '286a39f5d7c8300da11d81ba322088ad85f072c5')">
+                  <button @click.stop="p.seen('mk/80065/8875896', '286a39f5d7c8300da11d81ba322088ad85f072c5')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson5-dot-2-hoc-hat-ga-gay" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><img alt="MUS1 L5.2.gif" height="426" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit5-que-huong-em/MUS1 L5.2.gif" width="2130"/></p>
+<p>Bài hát mẫu:<a class="inline_disabled" href="https://youtu.be/1GBAXjt9yUU?si=IrLsgA34cgIN7xC0" rel="noopener" target="_blank"><img alt="NGHE ICON-1.gif" id="6566009" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit5-que-huong-em/NGHE ICON-1.gif"/></a></p>
+<p>Beat nhạc:<a class="inline_disabled" href="https://youtu.be/pfFZZvFW6tg?si=bOFbIFyYsfjzQ5Bj" rel="noopener" target="_blank"><img alt="ICON HÁT.gif" id="5478423" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit5-que-huong-em/ICON HÁT.gif"/></a></p>
+<p><img alt="Red Illustration Chinese Restaurant Food Menu-1.jpg" height="2925" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit5-que-huong-em/Red Illustration Chinese Restaurant Food Menu-1.jpg" width="2068"/></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+      </div>
+    </section>
+    
+    <!-- Một Tuần học / Bài học -->
+    <section x-data="{ open: false }"
+             x-effect="if (q || filtering) open = true"
+             id="mod-5" data-module data-title="[MUS1-Unit2] HÒA CA"
+             x-show="moduleMatches($el, f)"
+             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <button @click="open = !open"
+              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
+        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
+             :class="open ? 'rotate-90' : ''"
+             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">[MUS1-Unit2] HÒA CA</span>
+        <template x-if="p.online">
+          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 3
+                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/3'"></span>
+        </template>
+        <span class="text-xs text-slate-400 shrink-0">3 mục</span>
+      </button>
+
+      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-item data-title="[MUS1-Lesson2.1] Câu chuyện âm nhạc &#34;Peter và chó sói&#34;" data-type="page" data-sec="0"
+             data-pkey="mk/80065/8875862" data-hash="b6cd344d14cc958e9cbb490275c347f3d59bd523" data-ts="1790230939000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875862'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875862'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875862']; $el.indeterminate = !!p.redo['mk/80065/8875862']"
+                     @change="await p.toggle('mk/80065/8875862', 'b6cd344d14cc958e9cbb490275c347f3d59bd523'); $el.checked = !!p.done['mk/80065/8875862']; $el.indeterminate = !!p.redo['mk/80065/8875862']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">[MUS1-Lesson2.1] Câu chuyện âm nhạc &#34;Peter và chó sói&#34;</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875862', 'b6cd344d14cc958e9cbb490275c347f3d59bd523')">
+                  <button @click.stop="p.seen('mk/80065/8875862', 'b6cd344d14cc958e9cbb490275c347f3d59bd523')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson2-dot-1-cau-chuyen-am-nhac-peter-va-cho-soi" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p> <img alt="UNIT1 l2.1.gif" height="504" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/UNIT1 l2.1.gif" width="2520"/><img alt="CÂU HOI UNIT 1 L2.1.gif" height="1416" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/CÂU HOI UNIT 1 L2.1.gif" width="2517"/></p>
+<p> </p>
+<p><strong><span style="font-size: 14pt;">Câu chuyện âm nhạc "Peter và chó sói" : <a class="inline_disabled" href="https://www.youtube.com/watch?v=Va8Uz6MoKLg" rel="noopener" target="_blank"><img alt="Nhạc cụ ICON-1.gif" height="250" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/Nhạc cụ ICON-1.gif" width="500"/></a></span></strong></p>
+<p> </p>
+<p><img alt="PETER.jpg" height="1414" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/PETER.jpg" width="2514"/></p>
+<ul>
+<li><strong><span style="font-size: 18pt;">Trò chơi : " Tôi là ai " bạn hãy nghe giai điệu và đoán chính xác tên nhân vật trong câu chuyện "Peter và chó sói"</span></strong> <a class="inline_disabled" href="https://www.youtube.com/watch?v=QT4-X3t2gKY" rel="noopener" target="_blank"><img alt="NGHE ICON-1.gif" height="226" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/NGHE ICON-1.gif" width="452"/></a></li>
+</ul>
+<p><img alt="peter-wolf-1.jpeg" height="1898" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/peter-wolf-1.jpeg" width="2512"/></p>
+<p><img alt="peter-wolf-2.jpeg" height="1862" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/peter-wolf-2.jpeg" width="2491"/></p>
+<p><img alt="peter-wolf-3.jpeg" height="1854" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/peter-wolf-3.jpeg" width="2466"/></p>
+<p><img alt="peter-wolf-4.jpeg" height="1829" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/peter-wolf-4.jpeg" width="2430"/></p>
+<p><img alt="peter-wolf-5.jpeg" height="1803" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/peter-wolf-5.jpeg" width="2404"/></p>
+<p> </p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="[MUS1-Lesson2.2] Học hát: A gift to you" data-type="page" data-sec="0"
+             data-pkey="mk/80065/8875865" data-hash="c0d68693697955fa920b959a9e4ddd592145ae81" data-ts="1790230939000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875865'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875865'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875865']; $el.indeterminate = !!p.redo['mk/80065/8875865']"
+                     @change="await p.toggle('mk/80065/8875865', 'c0d68693697955fa920b959a9e4ddd592145ae81'); $el.checked = !!p.done['mk/80065/8875865']; $el.indeterminate = !!p.redo['mk/80065/8875865']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">[MUS1-Lesson2.2] Học hát: A gift to you</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875865', 'c0d68693697955fa920b959a9e4ddd592145ae81')">
+                  <button @click.stop="p.seen('mk/80065/8875865', 'c0d68693697955fa920b959a9e4ddd592145ae81')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson2-dot-2-hoc-hat-a-gift-to-you" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><img alt="UNIT1 l2.2.gif" height="420" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/UNIT1 l2.2.gif" width="2100"/></p>
+<p><strong><span style="font-size: 18pt;"><a class="inline_disabled" href="https://www.youtube.com/watch?v=ADJ0pVT8nbs" rel="noopener" target="_blank"><img alt="NGHE ICON-1.gif" class="instructure_file_link inline_disabled" height="253" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/NGHE ICON-1.gif" width="506"/></a>  Bài nghe mẫu</span></strong></p>
+<p><a class="inline_disabled" href="https://www.youtube.com/watch?v=zYOLQILfOMI" rel="noopener" target="_blank"><strong><span style="font-size: 18pt;"><img alt="HÁT ICON.gif" id="5470361" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/HÁT ICON.gif"/> Beat nhạc luyện tập</span></strong></a></p>
+<p><img alt="A GIFT TO YOU SHEET  (1).jpg" height="3597" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/A GIFT TO YOU SHEET (1).jpg" width="2543"/></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="[MUS1-Lesson2.3] Kiến thức âm nhạc: Giới thiệu nốt nhạc fa, sol - Bài đọc nhạc &#34; Hát cùng Đô rê mi fa sol&#34;" data-type="page" data-sec="0"
+             data-pkey="mk/80065/8875867" data-hash="a680a10ce3b4323e1bff3bf5a17d1457b58d45e6" data-ts="1790230940000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875867'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875867'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875867']; $el.indeterminate = !!p.redo['mk/80065/8875867']"
+                     @change="await p.toggle('mk/80065/8875867', 'a680a10ce3b4323e1bff3bf5a17d1457b58d45e6'); $el.checked = !!p.done['mk/80065/8875867']; $el.indeterminate = !!p.redo['mk/80065/8875867']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">[MUS1-Lesson2.3] Kiến thức âm nhạc: Giới thiệu nốt nhạc fa, sol - Bài đọc nhạc &#34; Hát cùng Đô rê mi fa sol&#34;</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875867', 'a680a10ce3b4323e1bff3bf5a17d1457b58d45e6')">
+                  <button @click.stop="p.seen('mk/80065/8875867', 'a680a10ce3b4323e1bff3bf5a17d1457b58d45e6')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson2-dot-3-kien-thuc-am-nhac-gioi-thieu-not-nhac-fa-sol-bai-doc-nhac-hat-cung-do-re-mi-fa-sol" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Hình nốt : Nốt đen , chùm móc đơn</p>
+<p><img alt="HÌNH NỐT.jpg" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/HÌNH NỐT.jpg"/></p>
+<p>Nốt Fa và nốt Sol trên khuông nhạc khóa sol</p>
+<p><img alt="NỐT FA VÀ SOL.jpg" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/NỐT FA VÀ SOL.jpg"/></p>
+<p> </p>
+<p>Thực hiện đọc nhạc với kí hiệu bàn tay: <a class="inline_disabled" href="https://youtu.be/v9ulRCZEAtw?si=82igt-CmI2VaKqRG" rel="noopener" target="_blank"><img alt="A073E410-E91A-44D6-AD97-7568376FE124.png" height="114" id="14737627" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/A073E410-E91A-44D6-AD97-7568376FE124.png" width="224"/></a></p>
+<p>Thực hiện bài đọc nhạc hát lời ca kết hợp gõ phách :  <a class="inline_disabled" href="https://www.youtube.com/watch?v=wHAGjDs1Nng" rel="noopener" target="_blank"><img alt="A073E410-E91A-44D6-AD97-7568376FE124.png" height="114" id="14737627" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/A073E410-E91A-44D6-AD97-7568376FE124.png" width="224"/></a></p>
+<p><img alt="14.png" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/14.png"/></p>
+<p><img alt="15.png" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/15.png"/></p>
+<p><img alt="16.png" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit2-hoa-ca/16.png"/></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+      </div>
+    </section>
+    
+    <!-- Một Tuần học / Bài học -->
+    <section x-data="{ open: false }"
+             x-effect="if (q || filtering) open = true"
+             id="mod-6" data-module data-title="[MUS1-Unit3] NHỊP ĐIỆU VUI TƯƠI"
+             x-show="moduleMatches($el, f)"
+             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <button @click="open = !open"
+              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
+        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
+             :class="open ? 'rotate-90' : ''"
+             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">[MUS1-Unit3] NHỊP ĐIỆU VUI TƯƠI</span>
+        <template x-if="p.online">
+          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 3
+                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/3'"></span>
+        </template>
+        <span class="text-xs text-slate-400 shrink-0">3 mục</span>
+      </button>
+
+      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-item data-title="[MUS1-Lesson3.1] Học hát: Món quà tặng cô" data-type="page" data-sec="0"
+             data-pkey="mk/80065/8875874" data-hash="6556c5931aad3433f97874390df01fcda4c0e03b" data-ts="1790230940000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875874'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875874'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875874']; $el.indeterminate = !!p.redo['mk/80065/8875874']"
+                     @change="await p.toggle('mk/80065/8875874', '6556c5931aad3433f97874390df01fcda4c0e03b'); $el.checked = !!p.done['mk/80065/8875874']; $el.indeterminate = !!p.redo['mk/80065/8875874']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">[MUS1-Lesson3.1] Học hát: Món quà tặng cô</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875874', '6556c5931aad3433f97874390df01fcda4c0e03b')">
+                  <button @click.stop="p.seen('mk/80065/8875874', '6556c5931aad3433f97874390df01fcda4c0e03b')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson3-dot-1-hoc-hat-mon-qua-tang-co" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><a class="inline_disabled" href="https://www.youtube.com/watch?v=-Mw6WLIWiuI" rel="noopener" target="_blank"><img alt="NGHE ICON.gif" id="5470272" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit3-nhip-dieu-vui-tuoi/NGHE ICON.gif"/></a></p>
+<p><a class="inline_disabled" href="https://www.youtube.com/watch?v=9SLK6kCuiMg" rel="noopener" target="_blank"><img alt="ICON HÁT.gif" id="5478423" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit3-nhip-dieu-vui-tuoi/ICON HÁT.gif"/></a></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="MUS1-Lesson3.2 Giới thiệu nhạc cụ bộ gõ" data-type="page" data-sec="0"
+             data-pkey="mk/80065/8875878" data-hash="b73494c16b72d3a6266cbc52a7fa8366c4721cee" data-ts="1790230940000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875878'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875878'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875878']; $el.indeterminate = !!p.redo['mk/80065/8875878']"
+                     @change="await p.toggle('mk/80065/8875878', 'b73494c16b72d3a6266cbc52a7fa8366c4721cee'); $el.checked = !!p.done['mk/80065/8875878']; $el.indeterminate = !!p.redo['mk/80065/8875878']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">MUS1-Lesson3.2 Giới thiệu nhạc cụ bộ gõ</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875878', 'b73494c16b72d3a6266cbc52a7fa8366c4721cee')">
+                  <button @click.stop="p.seen('mk/80065/8875878', 'b73494c16b72d3a6266cbc52a7fa8366c4721cee')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson3-dot-2-gioi-thieu-nhac-cu-bo-go" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Giới thiệu nhạc cụ bộ gõ :<a class="inline_disabled" href="https://www.youtube.com/watch?v=0vrK1POQPiE" rel="noopener" target="_blank"><img alt="9DD0EE31-1C0A-4290-8617-74F80D038CE9.PNG" class="instructure_file_link inline_disabled" height="107" loading="lazy" src="https://lms.vinschool.edu.vn/users/1618/files/3964018/preview?verifier=256IvX6KOBqfowkS2eMDQ0ZYBC9chXcDQYuT82nj" width="210"/></a></p>
+<p> </p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="[MUS1-Lesson3.3] Học hát: Deck the Halls" data-type="page" data-sec="0"
+             data-pkey="mk/80065/8875882" data-hash="da39a3ee5e6b4b0d3255bfef95601890afd80709" data-ts="1790230940000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875882'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875882'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875882']; $el.indeterminate = !!p.redo['mk/80065/8875882']"
+                     @change="await p.toggle('mk/80065/8875882', 'da39a3ee5e6b4b0d3255bfef95601890afd80709'); $el.checked = !!p.done['mk/80065/8875882']; $el.indeterminate = !!p.redo['mk/80065/8875882']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson3-dot-3-hoc-hat-deck-the-halls" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                [MUS1-Lesson3.3] Học hát: Deck the Halls
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875882', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')">
+                  <button @click.stop="p.seen('mk/80065/8875882', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson3-dot-3-hoc-hat-deck-the-halls" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+      </div>
+    </section>
+    
+    <!-- Một Tuần học / Bài học -->
+    <section x-data="{ open: false }"
+             x-effect="if (q || filtering) open = true"
+             id="mod-7" data-module data-title="[MUS1-Unit1] ÂM NHẠC Ở QUANH TA"
+             x-show="moduleMatches($el, f)"
+             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <button @click="open = !open"
+              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
+        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
+             :class="open ? 'rotate-90' : ''"
+             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">[MUS1-Unit1] ÂM NHẠC Ở QUANH TA</span>
+        <template x-if="p.online">
+          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 5
+                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/5'"></span>
+        </template>
+        <span class="text-xs text-slate-400 shrink-0">5 mục</span>
+      </button>
+
+      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-item data-title=" Mô tả nội dung [MUS1-Unit1] ÂM NHẠC Ở QUANH TA" data-type="page" data-sec="1"
+             data-pkey="mk/80065/8875839" data-hash="017e5028279e5b18a368ab37b80e90cfb65eab0d" data-ts="1790230938000"
+             data-sechead
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875839'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Mục này vừa là nội dung vừa là tiêu đề nhóm → checkbox của nó
+                   điều khiển cả nhóm (gồm chính nó) -->
+              <input type="checkbox" title="Đánh dấu cả nhóm này"
+                     x-effect="syncSecBox($el, p.done)"
+                     @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'"> Mô tả nội dung [MUS1-Unit1] ÂM NHẠC Ở QUANH TA</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875839', '017e5028279e5b18a368ab37b80e90cfb65eab0d')">
+                  <button @click.stop="p.seen('mk/80065/8875839', '017e5028279e5b18a368ab37b80e90cfb65eab0d')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mo-ta-noi-dung-mus1-unit1-am-nhac-o-quanh-ta" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <div class="html-viewer-content">
+<p><strong>Giới thiệu chung</strong></p>
+<p><span>Trong chương này, học sinh sẽ ý thức được những âm thanh xung quanh. Không gian chúng ta đang sống vẫn tràn ngập những âm thanh đẹp đẽ, nhưng đôi khi, chúng ta không để ý đến sự tồn tại của chúng. Mỗi buổi sáng, trên đường đến trường, các con có thể nghe thấy tiếng chim hót, tiếng gió thổi vào lá, thậm chí tiếng nước róc rách từ một đài phun nước bên đường. Công việc của các thầy cô là giúp các con dành sự chú tâm vào những âm thanh xung quanh để ý thức được sự tồn tại của những âm thanh xung quanh.</span></p>
+<p><span>Sâu xa hơn, khi con người ý thức được những điều nhỏ bé xung quanh, họ sẽ thấy được vẻ đẹp của cuộc sống và sẽ hạnh phúc hơn. Đó cũng là một trong những mục đích chính của chương trình giáo dục âm nhạc.</span></p>
+<p> </p>
+<p><span>Giáo viên cần có cách tiếp cận bài học một cách tự nhiên, không nặng về học thuật. Giáo viên nên để học sinh nói lên được sự hiểu biết và cảm nhận của mình về những âm thanh mà con được nghe thấy hàng ngày.<br/>Việc dạy cường độ, trường độ chỉ trên dựa trên cảm nhận chưa cần phải đưa các thuật ngữ âm nhạc vào chương này ( không nói là Forte, Allegro....)</span></p>
+<p><span>Với định hướng "âm thanh trước ký hiệu", việc dạy nốt nhạc không yêu cầu HS phải đọc được nốt nhạc dựa trên vị trí, chỉ cần HS có cảm nhận đúng về cao độ và nhớ được tên các nốt nhạc.</span></p>
+<p> </p>
+<p><strong>Quá trình học tập</strong></p>
+<ul>
+<li><span>Thời lượng: 8 tiết</span></li>
+</ul>
+<p><strong>Kiến thức và kĩ năng chính:</strong></p>
+<p><span>1.</span><span>     </span><strong>Kiến thức</strong></p>
+<ul>
+<li><span>Trong chương này, học sinh sẽ khám phá âm thanh tự nhiên trong cuộc sống như âm thanh các loài vật, âm thanh kim loại và gỗ, âm thanh của nước v.v...</span></li>
+<li><span>Tốc độ nhanh/chậm, âm thanh dài/ngắn, cao/thấp, to/nhỏ qua hình ảnh, đường nét và vận động cơ thể.</span></li>
+<li><span>Cao độ, kí hiệu bàn tay (hand signs) 3 nốt nhạc Đô-Rê-Mi</span></li>
+</ul>
+<p><span>1.</span><span>     </span><strong>Kĩ năng</strong></p>
+<ul>
+<li><span>Học sinh đọc đúng tên nốt, cao độ và vận động kí hiệu bàn tay với 3 nốt nhạc Đô-Rê-Mi.</span></li>
+<li><span>Hát đúng lời ca và giai điệu bài hát</span></li>
+<li><span>Vận động đúng theo điệu nhạc</span></li>
+<li><span>Sử dụng bộ gõ cơ thể (body percussion) theo nhịp điệu bài hát</span></li>
+<li><span>Tạo và chơi nhạc cụ handmade (nhạc cụ tự tạo)</span></li>
+</ul>
+<p><strong>Từ vựng được tiếp cận:</strong></p>
+<ul>
+<li><span>Cao độ (âm thanh cao/thấp)</span></li>
+<li><span>Tốc độ (nhanh/chậm)</span></li>
+<li><span>Cường độ (âm thanh to/nhỏ)</span></li>
+<li><span>Trường độ (âm thanh dài/ngắn)</span></li>
+<li><span>Âm sắc (âm thanh khác nhau từ các loại nhạc cụ và vật dụng xung quanh)</span></li>
+</ul>
+<p><strong>Dụng cụ, cơ sở vật chất:</strong></p>
+<ul>
+<li><span>Đàn Piano hoặc Organ</span></li>
+<li><span>Giấy, bút màu, hình ảnh</span></li>
+<li><span>Bản nhạc</span></li>
+<li><span>File âm thanh</span></li>
+<li><span>Nhạc cụ không định âm (thanh phách, trống con,...)</span></li>
+<li><span>Nhạc cụ định âm (hand bells, boomwhackers...)</span></li>
+<li><span>Vật dụng xung quanh để làm nhạc cụ tự tạo (lon sữa, 2 cây bút, chai nước, hạt,...)</span></li>
+</ul>
+<p><strong>Định hướng/gợi ý dạy học:</strong></p>
+<ul>
+<li><span>Giáo viên cần xây dựng hoạt động học hát, đọc nhạc, chơi nhạc cụ, trò chơi, v.v... để học sinh cảm nhận về các đặc tính của âm thanh.</span></li>
+<li><span>Tất cả những kiến thức đều cần được dạy qua cảm nhận và các hoạt động thực hành như vận động cơ thể, chơi nhạc cụ, hát v.v...</span></li>
+<li><span>Khi đã nhận biết được nhịp và phách trong âm nhạc, học sinh sẽ có thể lắng nghe và phản hồi với âm nhạc bằng cách nói, tạo âm thanh hoặc tạo chuyển động cơ thể một cách phù hợp. Vì vậy, để kiểm tra, đánh giá mức độ hoàn thành của học sinh, giáo viên có thể quan sát thông qua những hoạt động lắng nghe và phản hồi đó.</span></li>
+</ul>
+<p> </p>
+</div>
+<p> </p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="[MUS1-Lesson1.1] Giới thiệu bài hát &#34;Quốc ca&#34;" data-type="page" data-sec="1"
+             data-pkey="mk/80065/8875843" data-hash="a4b1ed6c5e5c5b1125c9327f310dac0f8061b979" data-ts="1790230938000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875843'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875843'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875843']; $el.indeterminate = !!p.redo['mk/80065/8875843']"
+                     @change="await p.toggle('mk/80065/8875843', 'a4b1ed6c5e5c5b1125c9327f310dac0f8061b979'); $el.checked = !!p.done['mk/80065/8875843']; $el.indeterminate = !!p.redo['mk/80065/8875843']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">[MUS1-Lesson1.1] Giới thiệu bài hát &#34;Quốc ca&#34;</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875843', 'a4b1ed6c5e5c5b1125c9327f310dac0f8061b979')">
+                  <button @click.stop="p.seen('mk/80065/8875843', 'a4b1ed6c5e5c5b1125c9327f310dac0f8061b979')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson1-dot-1-gioi-thieu-bai-hat-quoc-ca" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><img alt="LESSON1.1BIA.gif" height="418" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/LESSON1.1BIA.gif" width="2090"/></p>
+<p><span style="font-size: 36pt;"><sub>[MUS1-Lesson1.1] Giới thiệu bài hát "Quốc ca"</sub></span></p>
+<ul>
+<li><span style="font-size: 24pt;"><sub>Hát mẫu: <a class="inline_disabled" href="https://youtu.be/dLY5TsY0dTY?si=EgZug99nVUprL-st" rel="noopener" target="_blank"><img alt="Chưa có tên (400 x 200 px).gif" class="instructure_file_link inline_disabled" height="198" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/Chưa có tên (400 x 200 px).gif" width="396"/></a></sub></span></li>
+<li><span style="font-size: 24pt;"><sub>Beat nhạc luyện tập: <a class="inline_disabled" href="https://youtu.be/2jro_GnChIc?si=-JQBLIDnmJ3f8G6E" rel="noopener" target="_blank"><img alt="Chưa có tên (400 x 200 px).gif" class="instructure_file_link inline_disabled" height="213" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/Chưa có tên (400 x 200 px).gif" width="426"/></a></sub></span><span style="font-size: 24pt;"><sub><img alt="SHEET NHẠC V MUSIC.jpg" class="instructure_file_link inline_disabled" height="2883" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/SHEET NHẠC V MUSIC.jpg" width="2038"/></sub></span></li>
+</ul>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="MUS1-Lesson1.2 Lễ hội muông thú" data-type="page" data-sec="1"
+             data-pkey="mk/80065/8875846" data-hash="a798c578b772a17f117ed001f8ccf9da00f9ae1b" data-ts="1790230938000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875846'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875846'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875846']; $el.indeterminate = !!p.redo['mk/80065/8875846']"
+                     @change="await p.toggle('mk/80065/8875846', 'a798c578b772a17f117ed001f8ccf9da00f9ae1b'); $el.checked = !!p.done['mk/80065/8875846']; $el.indeterminate = !!p.redo['mk/80065/8875846']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">MUS1-Lesson1.2 Lễ hội muông thú</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875846', 'a798c578b772a17f117ed001f8ccf9da00f9ae1b')">
+                  <button @click.stop="p.seen('mk/80065/8875846', 'a798c578b772a17f117ed001f8ccf9da00f9ae1b')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson1-dot-2-le-hoi-muong-thu" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <h4><span style="font-size: 36pt;"><img alt="LESSON1.2.gif" height="409" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/LESSON1.2.gif" width="2045"/></span></h4>
+<h4><span style="font-size: 36pt;">MUS1-Lesson1.2 Lễ hội muông thú</span></h4>
+<h4><img alt="Camille Saint-Saëns (Bài đăng Facebook).png" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/Camille Saint-Saëns (Bài đăng Facebook).png"/></h4>
+<h4><strong>Cô mời các bạn hãy cùng thưởng thức : <span class="yt-core-attributed-string--link-inherit-color">The Carnival of the Animals</span>" Lễ hội muông thú " sáng tác : Nhạc sĩ <span class="yt-core-attributed-string--link-inherit-color">Camille Saint-Saëns</span></strong></h4>
+<p><a class="inline_disabled" href="https://www.youtube.com/watch?v=tMY5wSWFT2E&amp;list=PLYYmY-vauoO9gP1X2bq_ur4lpgE9XrAw2" rel="noopener" target="_blank"><span class="yt-core-attributed-string--link-inherit-color"><img alt="Chưa có tên (3000 x 1024 px) (3000 x 1500 px).jpg" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/Chưa có tên (3000 x 1024 px) (3000 x 1500 px).jpg"/></span></a></p>
+<p style="text-align: center;"><span style="font-size: 18pt;"><strong>Dưới đây là phần dịch nghĩa nội dung và tính chất của 14 chương trong </strong></span></p>
+<p style="text-align: center;"><span style="font-size: 18pt;"><strong>"The Carnival of the Animals" ("Lễ hội muông thú") của Camille Saint-Saëns:</strong></span></p>
+<p><strong><span style="font-size: 14pt;"> I. Introduction and Royal March of the Lion</span></strong><br/><span style="font-size: 14pt;">- Dịch nghĩa: "Khúc Dạo đầu và Hành khúc Hoàng gia của Sư tử"</span><br/><span style="font-size: 14pt;">- Tính chất: Nhạc mạnh mẽ và uy quyền, dùng các âm thanh trống và kèn để tạo ra một cảm giác hoành tráng, thể hiện hình ảnh sư tử với tiếng gầm và bước đi vương giả.</span></p>
+<p><strong><span style="font-size: 14pt;"> II. Hens and Roosters</span></strong><br/><span style="font-size: 14pt;">- Dịch nghĩa:Gà mái và Gà trống</span><br/><span style="font-size: 14pt;">- Tính chất: Nhạc vui tươi, nhanh nhẹn, với âm thanh líu lo giống như tiếng gà cục tác. Nhạc cụ chính là violin và piano, mô phỏng các âm thanh đặc trưng của gà.</span></p>
+<p><strong><span style="font-size: 14pt;">III. Wild Asses (Swift Animals)</span></strong><br/><span style="font-size: 14pt;">- Dịch nghĩa: Lừa hoang (Những động vật nhanh nhẹn)</span><br/><span style="font-size: 14pt;">- Tính chất: Nhạc rất nhanh và sôi nổi, mô phỏng sự di chuyển nhanh nhẹn và năng động của lừa hoang, được biểu hiện qua piano với các đoạn nhạc chạy nhanh.</span></p>
+<p><strong><span style="font-size: 14pt;"> IV. Tortoises </span></strong><br/><span style="font-size: 14pt;">- Dịch nghĩa: Rùa</span><br/><span style="font-size: 14pt;">- Tính chất: Nhạc chậm và nhẹ nhàng, biểu hiện sự chậm chạp của loài rùa. Âm nhạc dùng âm điệu của bản "Can-Can" (Jacques Offenbach) nhưng với tốc độ chậm, tạo ra cảm giác hài hước.</span></p>
+<p><strong><span style="font-size: 14pt;">V. The Elephant</span></strong><br/><span style="font-size: 14pt;">- Dịch nghĩa: "Voi"</span><br/><span style="font-size: 14pt;">- Tính chất: Nhạc trầm, nặng nề, dùng contrabass (đàn bass lớn) để tạo ra âm thanh mô phỏng bước đi của voi. Âm nhạc sử dụng nhịp điệu chậm và nặng.</span></p>
+<p><strong><span style="font-size: 14pt;">VI. Kangaroos</span></strong><br/><span style="font-size: 14pt;">- Dịch nghĩa: "Chuột túi"</span><br/><span style="font-size: 14pt;">- Tính chất: Nhạc nhẹ nhàng, nhảy nhót, thể hiện sự nhảy lên của chuột túi. Piano chơi những nốt nhanh và ngắn, mô phỏng sự nhảy nhanh của động vật.</span></p>
+<p><strong><span style="font-size: 14pt;">VII. Aquarium</span></strong><br/><span style="font-size: 14pt;">- Dịch nghĩa: "Thủy cung"</span><br/><span style="font-size: 14pt;">- Tính chất: Nhạc nhẹ nhàng, mơ màng, mô tả cảnh dưới nước với những con cá bơi lội. Được tạo ra bằng cách sử dụng đàn dây, piano và flute để tạo cảm giác lấp lánh, huyền bí.</span></p>
+<p><strong><span style="font-size: 14pt;">VIII. Characters with Long Ears  </span></strong><br/><span style="font-size: 14pt;">- Dịch nghĩa: "Nhân vật có tai dài" (Lừa)</span><br/><span style="font-size: 14pt;">- Tính chất: Nhạc hài hước, vui nhộn, với âm thanh cao và mạnh từ violin để mô tả tiếng "be hee" của lừa, thể hiện một cách dí dỏm.</span></p>
+<p><strong><span style="font-size: 14pt;">IX. The Cuckoo in the Depths of the Woods</span></strong><br/><span style="font-size: 14pt;">- Dịch nghĩa: Chim cu gáy trong rừng sâu</span><br/><span style="font-size: 14pt;">- Tính chất: Nhạc trầm và vang vọng, với clarinet chơi những nốt đơn lặp đi lặp lại mô phỏng tiếng kêu của chim cu gáy, tạo cảm giác thanh tĩnh và sâu lắng trong rừng.</span></p>
+<p><strong><span style="font-size: 14pt;">X. Aviary  </span></strong><br/><span style="font-size: 14pt;">- Dịch nghĩa: Chuồng chim</span><br/><span style="font-size: 14pt;">- Tính chất: Nhạc líu lo, vui tươi, với sự sử dụng của flute để mô phỏng tiếng chim hót, cùng với đàn dây tạo ra không khí vui vẻ, sôi động.</span></p>
+<p><strong><span style="font-size: 14pt;"> XI. Pianists  </span></strong><br/><span style="font-size: 14pt;">- Dịch nghĩa: "Người chơi piano"</span><br/><span style="font-size: 14pt;">- Tính chất: Nhạc nhanh, vui nhộn, mô tả người học chơi piano với những đoạn nhạc luyện tập đơn giản nhưng vui tươi, mang tính hài hước.</span></p>
+<p><strong><span style="font-size: 14pt;">XII. Fossils</span></strong></p>
+<p><span style="font-size: 14pt;">- Dịch nghĩa:Hóa thạch</span><br/><span style="font-size: 14pt;">- Tính chất: Nhạc sử dụng nhiều nhạc cụ gõ như xylophone để tạo ra âm thanh của xương và hóa thạch, kết hợp với các âm điệu vui vẻ, hài hước.</span></p>
+<p><strong><span style="font-size: 14pt;">XIII. The Swan</span></strong><br/><span style="font-size: 14pt;">- Dịch nghĩa: "Thiên nga"</span><br/><span style="font-size: 14pt;">- Tính chất: Nhạc nhẹ nhàng, mềm mại và thanh thoát, mô tả sự chuyển động duyên dáng của thiên nga trên mặt nước. Sử dụng cello solo cùng piano đệm tạo nên giai điệu mượt mà và trữ tình.</span></p>
+<p><strong><span style="font-size: 14pt;">XIV. Finale</span></strong><br/><span style="font-size: 14pt;">- **Dịch nghĩa**: "Phần kết thúc"</span><br/><span style="font-size: 14pt;">- **Tính chất**: Nhạc sôi động và vui tươi, tổng kết lại các phần trước với nhịp điệu nhanh, sử dụng tất cả các nhạc cụ, tạo ra không khí lễ hội và kết thúc tác phẩm một cách hoành tráng.</span></p>
+<p><strong><em><span style="font-size: 14pt;">Tác phẩm "The Carnival of the Animals" sử dụng âm nhạc để mô phỏng và miêu tả tính cách của từng loài vật, kết hợp với yếu tố hài hước và sáng tạo, rất thích hợp để giới thiệu cho trẻ em về âm nhạc cổ điển.</span></em></strong></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="MUS1-Lesson1.3 Ngôi sao lấp lánh/ Twinkle Twinkle Little Star" data-type="page" data-sec="1"
+             data-pkey="mk/80065/8875848" data-hash="75bd4a679d6778273b89b6d55c05facc2db79358" data-ts="1790230939000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875848'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875848'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875848']; $el.indeterminate = !!p.redo['mk/80065/8875848']"
+                     @change="await p.toggle('mk/80065/8875848', '75bd4a679d6778273b89b6d55c05facc2db79358'); $el.checked = !!p.done['mk/80065/8875848']; $el.indeterminate = !!p.redo['mk/80065/8875848']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">MUS1-Lesson1.3 Ngôi sao lấp lánh/ Twinkle Twinkle Little Star</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875848', '75bd4a679d6778273b89b6d55c05facc2db79358')">
+                  <button @click.stop="p.seen('mk/80065/8875848', '75bd4a679d6778273b89b6d55c05facc2db79358')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson1-dot-3-ngoi-sao-lap-lanh-slash-twinkle-twinkle-little-star" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><img alt="LESSON1.3-1.gif" height="508" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/LESSON1.3-1.gif" width="2540"/></p>
+<p><span style="font-size: 36pt;">[MUS1-Lesson1.3] Ngôi sao lấp lánh</span></p>
+<p>Cô mời các bạn lắng nghe ca khúc : Ngôi sao lấp lánh <a class="inline_disabled" href="https://www.youtube.com/watch?v=h_OeK7LU1_w" rel="noopener" target="_blank"><img alt="NGHE ICON.gif" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/NGHE ICON.gif"/></a></p>
+<p>Các bạn có thể luyện tập với beat nhạc <a class="inline_disabled" href="https://www.youtube.com/watch?v=MsAsYW5SxvE" rel="noopener" target="_blank"><img alt="ICON HÁT.gif" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/ICON HÁT.gif"/></a></p>
+<p>Trò chơi bộ gõ cơ thể <img alt="Nhạc cụ ICON.gif" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/Nhạc cụ ICON.gif"/><a class="inline_disabled" href="https://www.youtube.com/watch?v=5he1sCixSLM&amp;t=29s" rel="noopener" target="_blank"></a></p>
+<p><img alt="Gõ đệm theo hình tiết tấu.jpg" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/Gõ đệm theo hình tiết tấu.jpg"/></p>
+<p> </p>
+<p><img alt="IMG_6817.jpg" height="2040" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/IMG_6817.jpg" width="2040"/> </p>
+<p> </p>
+<p><img alt="NGÔI SAO LẤP LÁNH SHEET 01.JPEG" height="2872" id="14199113" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/NGÔI SAO LẤP LÁNH SHEET 01.JPEG" width="2029"/></p>
+<p><img alt="NGÔI SAO LẤP LÁNH SHEET 02.jpg" height="2880" id="14199114" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/NGÔI SAO LẤP LÁNH SHEET 02.jpg" width="2035"/></p>
+<p> </p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="MUS1-Lesson1.4: Kiến thức âm nhạc: Giới thiệu 3 nốt Đô, rê, mi - Bài đọc nhạc &#34; Bậc thang Đô rê mi&#34;" data-type="page" data-sec="1"
+             data-pkey="mk/80065/8875852" data-hash="f80a108b879351cb7591c35adc8b98bfa0c1ca2f" data-ts="1790230939000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80065/8875852'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80065/8875852'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80065/8875852']; $el.indeterminate = !!p.redo['mk/80065/8875852']"
+                     @change="await p.toggle('mk/80065/8875852', 'f80a108b879351cb7591c35adc8b98bfa0c1ca2f'); $el.checked = !!p.done['mk/80065/8875852']; $el.indeterminate = !!p.redo['mk/80065/8875852']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">MUS1-Lesson1.4: Kiến thức âm nhạc: Giới thiệu 3 nốt Đô, rê, mi - Bài đọc nhạc &#34; Bậc thang Đô rê mi&#34;</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80065/8875852', 'f80a108b879351cb7591c35adc8b98bfa0c1ca2f')">
+                  <button @click.stop="p.seen('mk/80065/8875852', 'f80a108b879351cb7591c35adc8b98bfa0c1ca2f')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 24/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80065/pages/mus1-lesson1-dot-4-kien-thuc-am-nhac-gioi-thieu-3-not-do-re-mi-bai-doc-nhac-bac-thang-do-re-mi" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p style="text-align: left;"><span style="font-size: 36pt;"><img alt="LESSON1.4.gif" height="417" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/LESSON1.4.gif" width="2086"/></span></p>
+<p style="text-align: left;"><span style="font-size: 36pt;">MUS1-Lesson1.4: Kiến thức âm nhạc: Giới thiệu 3 nốt Đô, rê, mi - Bài đọc nhạc " Bậc thang Đô rê mi"</span></p>
+<p>Đọc nhạc với nhạc đệm <a class="inline_disabled" href="http:// https://www.youtube.com/watch?v=1aa65REZtio" rel="noopener" target="_blank"><img alt="ICON ĐỌC NHẠC.gif" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/ICON ĐỌC NHẠC.gif"/></a></p>
+<p><em><span style="font-size: 18pt;"><strong>Giới thiệu 3 nốt " ĐÔ , RÊ ,MI"</strong></span></em></p>
+<p> </p>
+<p><img alt="1-2.jpg" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/1-2.jpg"/></p>
+<p><img alt="2-3.jpg" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/2-3.jpg"/></p>
+<p> </p>
+<p><img alt="1-1.jpg" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/1-1.jpg"/></p>
+<p> </p>
+<p><img alt="2-2.jpg" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/2-2.jpg"/></p>
+<p><img alt="3.jpg" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/am-nhac-1/mus1-unit1-am-nhac-o-quanh-ta/3.jpg"/></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+      </div>
+    </section>
+    
+
+  </main>
+  </div>
+
+  <footer class="max-w-[72rem] mx-auto px-4 pb-8 text-center text-xs text-slate-400">
+    Cập nhật tự động · bản lưu offline
+  </footer>
+  <!-- Chiều cao header dính ĐO bằng ResizeObserver, không viết cứng: chip lọc
+       xuống dòng ở màn hẹp và tên môn dài hai dòng đều đổi con số này (ADR 0054:
+       ~137px ở 390px, ~147px khi tên môn dài; trước đó 259px). Cùng khuôn với study.html. -->
+  <script>
+    (function () {
+      var h = document.getElementById('hdr');
+      if (!h) return;
+      var r = document.documentElement;
+      r.style.setProperty('--hdr', '0px');
+      var do_ = function () { r.style.setProperty('--hdr', h.offsetHeight + 'px'); };
+      do_();
+      if (window.ResizeObserver) new ResizeObserver(do_).observe(h);
+      else addEventListener('resize', do_);
+    })();
+  </script>
+  <div data-diem-bao role="status" aria-live="polite"
+     class="hidden pointer-events-none fixed left-1/2 top-16 z-[70] -translate-x-1/2 max-w-[90vw] truncate rounded-full bg-amber-300 px-5 py-2 text-lg font-bold text-amber-950 shadow-lg"></div>
+<script>
+  (function () {
+    var hen = 0;
+    window.baoDiem = function (n, chu) {
+      n = Number(n);
+      if (!(n > 0)) return;
+      var el = document.querySelector('[data-diem-bao]');
+      if (!el) return;
+      el.textContent = '+' + n + ' ⭐' + (chu ? ' ' + chu : '');
+      el.classList.remove('hidden');
+      clearTimeout(hen);
+      hen = setTimeout(function () { el.classList.add('hidden'); }, 2000);
+    };
+    window.docSoDu = async function (user) {
+      var k = localStorage.getItem('lms_key');
+      if (!k) return null;
+      try {
+        var r = await fetch('/api/diem?gon=1&user=' + encodeURIComponent(user), { headers: { 'x-progress-key': k } });
+        if (!r.ok) return null;
+        var d = await r.json();
+        return Number.isInteger(d.du) ? d.du : null;
+      } catch (e) { return null; }
+    };
+  })();
+</script>
+  <script>
+  (function () {
+    var vv = window.visualViewport;
+    if (!vv) return;
+    var hen = 0, cham = false, dung = 0;
+    function dat() {
+      hen = 0;
+      var s = vv.scale, phong = s > 1.01;
+      document.querySelectorAll('[data-bam]').forEach(function (e) {
+        // Chỉ bám THANH (data-bam="thanh") và lớp phủ đang `fixed` (ngăn mở ở màn hẹp).
+        // ≥1024px cột mục lục là cột cố định trong luồng: bám nó là một cột 256px đè lên
+        // chính chữ vừa phóng (duyệt nhánh 2026-09-25).
+        var ghim = phong && (e.dataset.bam === 'thanh' || getComputedStyle(e).position === 'fixed');
+        if (!ghim) { e.style.transform = ''; e.style.transformOrigin = ''; e.style.opacity = ''; return; }
+        e.style.transform = '';
+        var r = e.getBoundingClientRect();
+        e.style.transformOrigin = (-r.left) + 'px ' + (-r.top) + 'px';
+        e.style.transform = 'translate(' + vv.offsetLeft + 'px,' + vv.offsetTop + 'px) scale(' + (1 / s) + ')';
+        e.style.opacity = cham ? '0' : '';
+      });
+    }
+    function lich() { if (!hen) hen = requestAnimationFrame(dat); }
+    vv.addEventListener('resize', lich);
+    vv.addEventListener('scroll', lich);
+    addEventListener('scroll', lich, { passive: true });
+    addEventListener('touchstart', function (e) {
+      if (vv.scale <= 1.01 || (e.target.closest && e.target.closest('[data-bam]'))) return;
+      cham = true; clearTimeout(dung); lich();
+    }, { passive: true });
+    addEventListener('touchend', function (e) {
+      if (e.touches && e.touches.length) return;
+      clearTimeout(dung);
+      dung = setTimeout(function () { cham = false; lich(); }, 120);
+    }, { passive: true });
+    // Ngăn mở/đóng bằng đổi class → đặt lại (ngăn vừa hiện chưa có transform).
+    new MutationObserver(lich).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+    window.bamKhungNhin = dat;
+    lich();
+  })();
+</script>
+</body>
+</html>

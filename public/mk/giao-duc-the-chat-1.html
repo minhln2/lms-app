@@ -1,0 +1,1240 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+  <title>Giáo Dục Thể Chất 1 — MK</title>
+  <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
+       thay dòng này bằng Tailwind CDN. -->
+  <link rel="stylesheet" href="../assets/tw.02a2ac72.css">
+  <script defer src="../assets/collapse.d0a27f2d.js"></script>
+  <script defer src="../assets/alpine.63d2636a.js"></script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .lms-content img { max-width: 100%; height: auto; border-radius: 0.5rem; }
+    .lms-content iframe { max-width: 100%; }
+    .lms-content a { color: #4f46e5; text-decoration: underline; }
+    .lms-content p { margin: 0.5rem 0; }
+    .lms-content ul, .lms-content ol { margin: 0.5rem 0 0.5rem 1.5rem; list-style: revert; }
+    .lms-content table { border-collapse: collapse; margin: 0.5rem 0; }
+    .lms-content td, .lms-content th { border: 1px solid #e2e8f0; padding: 0.375rem 0.625rem; }
+    .lms-content h1, .lms-content h2, .lms-content h3, .lms-content h4 { font-weight: 700; margin: 0.75rem 0 0.375rem; }
+  </style>
+  <script>
+    // Tìm kiếm không phân biệt dấu tiếng Việt
+    function vnorm(s) {
+      return (s || '').toLowerCase().normalize('NFD')
+        .replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
+    }
+    // ── Mốc "7 ngày gần nhất" ───────────────────────────────────────────────
+    // So bằng giờ trình duyệt nên luôn đúng tương đối với lúc người xem mở trang.
+    // `data-ts` nằm trên thẻ bọc [data-item], KHÔNG nằm trên thẻ tiêu đề bên
+    // trong — từ Alpine phải truyền $el.closest('[data-item]'), không thì
+    // dataset.ts là undefined và mục nào cũng bị coi là cũ (hỏng không báo lỗi).
+    var RECENT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+    function isRecentEl(el) {
+      var ts = el && +el.dataset.ts;
+      return !!ts && (Date.now() - ts) <= RECENT_WINDOW_MS;
+    }
+    function recentItems() {
+      return Array.from(document.querySelectorAll('[data-item][data-ts]')).filter(isRecentEl);
+    }
+    function recentStats(done) {
+      var els = recentItems();
+      return {
+        total: els.length,
+        done: els.filter(function (el) { return done[el.dataset.pkey]; }).length
+      };
+    }
+    function recentPct(done) {
+      var s = recentStats(done);
+      return s.total ? Math.round(s.done / s.total * 100) : 0;
+    }
+    // box phải là chính thẻ [data-module] (dùng $el.closest), vì hàm tìm mục con
+    function moduleIsRecent(box) {
+      return Array.from(box.querySelectorAll('[data-item][data-ts]')).some(isRecentEl);
+    }
+    // Lọc loại nội dung (OR trong nhóm); Homework và "chưa học" nhân AND với nhóm đó
+    function typeOk(el, f) {
+      if (f.hw && el.dataset.hw !== '1') return false;
+      if (f.todo && f.done[el.dataset.pkey]) return false;
+      if (f.recent7 && !isRecentEl(el)) return false;
+      return !f.types.length || f.types.includes(el.dataset.type);
+    }
+    function itemMatches(el, f) {
+      return typeOk(el, f) && (!f.q || vnorm(el.dataset.title).includes(vnorm(f.q)));
+    }
+    // Đề mục (SubHeader) chỉ hiện khi còn ít nhất 1 mục thuộc nó đang hiển thị
+    function headingMatches(el, f) {
+      if (!f.q && !f.types.length && !f.hw && !f.todo && !f.recent7) return true;
+      const box = el.closest('[data-module]');
+      if (!box) return true;
+      return Array.from(box.querySelectorAll('[data-sec="' + el.dataset.sec + '"][data-item]'))
+        .some(c => itemMatches(c, f));
+    }
+    function moduleMatches(el, f) {
+      const items = Array.from(el.querySelectorAll('[data-item]'));
+      const pass = items.filter(c => typeOk(c, f));
+      if (!pass.length) return false;
+      if (!f.q) return true;
+      if (vnorm(el.dataset.title).includes(vnorm(f.q))) return true;
+      return pass.some(c => vnorm(c.dataset.title).includes(vnorm(f.q)));
+    }
+    // ---- Menu bên trái -------------------------------------------------------
+    /** Mục menu có hiện không. Dùng CHÍNH `moduleMatches` mà thân trang dùng —
+        chép lại luật lọc sang đây là tạo hai bản sẽ lệch nhau, và lệch theo
+        hướng menu chỉ tới một học phần đang bị ẩn. */
+    function mucHien(i, f) {
+      const el = document.getElementById('mod-' + i);
+      return !el || moduleMatches(el, f);
+    }
+    /** Nhảy tới học phần: phải MỞ nó ra trước, không thì cuộn tới một cái hộp
+        đang gập và người dùng tưởng bấm hụt. */
+    function toiMuc(i) {
+      const el = document.getElementById('mod-' + i);
+      if (!el) return;
+      try { Alpine.$data(el).open = true; } catch (e) {}
+      // ⚠ Phải chờ khối GIÃN RA XONG rồi mới cuộn. Lúc bấm thì mọi khối còn
+      // gập nên trang ngắn, `scrollTo` bị kẹp vào đáy trang và dừng giữa chừng
+      // — đo được hụt 471px. Khối mở ra làm trang cao thêm, nhưng lúc đó đã
+      // cuộn rồi, và không có gì cuộn tiếp.
+      //
+      // ⚠ Cũng KHÔNG dùng `scroll-margin-top` cố định: header dính cao khác
+      // nhau theo bề rộng (đo: 175px ở 1280px, 259px ở 390px vì chip lọc xuống
+      // dòng). Một con số CSS thì hoặc thừa chỗ, hoặc để tiêu đề chui xuống
+      // dưới header — mà cái sau trông y như bấm hụt.
+      const han = performance.now() + 800;      // trần, để không chờ mãi
+      let truoc = -1;
+      const thu = () => {
+        const cao = document.body.scrollHeight;
+        if (cao !== truoc && performance.now() < han) {
+          truoc = cao;
+          return requestAnimationFrame(thu);
+        }
+        const h = document.getElementById('hdr');
+        const vv = window.visualViewport;
+        const off = h ? h.getBoundingClientRect().height : 0;
+        // Khi phóng to, phần đang nhìn lệch khỏi đỉnh layout viewport `vv.offsetTop` — tiêu
+        // đề phải về ngay dưới thanh CỦA PHẦN ĐANG NHÌN (ADR 0054), không phải của layout.
+        const y = el.getBoundingClientRect().top + window.scrollY - (vv ? vv.offsetTop : 0) - off - 8;
+        window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+      };
+      requestAnimationFrame(thu);
+    }
+
+    // ---- Checkbox của tiêu đề nhóm ------------------------------------------
+    // Mọi mục con thuộc cùng data-sec trong cùng tuần/bài. Tiêu đề kiểu Page CÓ
+    // nội dung cũng là một mục nên tự nằm trong danh sách — tick nhóm là tick cả
+    // nó. Page rỗng thì không có [data-item] nên đứng ngoài phép đếm.
+    function secEntries(head) {
+      const box = head.closest('[data-module]');
+      if (!box) return [];
+      return Array.from(box.querySelectorAll('[data-item][data-sec="' + head.dataset.sec + '"]'))
+        .map(c => ({ key: c.dataset.pkey, hash: c.dataset.hash || '' }));
+    }
+    // Ba trạng thái: xong hết → tick; xong một phần → gạch ngang; chưa gì → trống
+    function syncSecBox(el, done) {
+      const e = secEntries(el.closest('[data-sechead]'));
+      const n = e.filter(x => done[x.key]).length;
+      el.checked = e.length > 0 && n === e.length;
+      el.indeterminate = n > 0 && n < e.length;
+      return e.length;
+    }
+
+    // Đếm số mục đã học trong một tuần/bài
+    function moduleDone(el, done) {
+      const items = Array.from(el.querySelectorAll('[data-item]'));
+      return items.filter(c => done[c.dataset.pkey]).length;
+    }
+
+    // ---- Tiến độ học tập ----------------------------------------------------
+    // Đọc/ghi qua /api/progress (Cloudflare Pages Function + Workers KV).
+    // Mã bí mật chỉ cần khi GHI, lưu trong localStorage của trình duyệt.
+    // Nếu không có backend (mở file cục bộ, hoặc bản trên GitHub Pages) thì
+    // trang vẫn xem được bình thường, chỉ tắt phần đánh dấu.
+
+    /* ── Tra cứu khi bôi đen ────────────────────────────────────────────────
+       Phải là HÀM trong <script>, không được nhét thẳng vào thuộc tính `x-data`:
+       `x-data` là một thuộc tính HTML, mà phần logic dùng chung dài ~160 dòng và
+       có cả dấu nháy kép — nhét vào là vỡ cú pháp HTML và TOÀN BỘ Alpine của
+       trang chết theo (đã dính: 70 lỗi "p is not defined"). `study.html` không
+       gặp vì logic của nó vốn nằm trong `studyStore()`. */
+    function progressStore() {
+      return {
+        done: {}, hashes: {}, ready: false, online: false, saving: 0, err: '',
+        secret: localStorage.getItem('lms_key') || '',
+
+        async init() {
+          try {
+            const r = await fetch('/api/progress', { headers: { accept: 'application/json' } });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const d = await r.json();
+            const items = d.items || {};
+            // Ba trạng thái, KHÔNG phải hai. `redo` do hệ thống đặt khi nội dung bài
+            // đổi sau lúc đánh dấu; người dùng không tự đặt được. Nó KHÔNG nằm trong
+            // `done`, nhờ vậy ô tick của nhóm và mọi phép đếm tự coi là chưa xong —
+            // không phải sửa chỗ nào khác.
+            this.redo = Object.fromEntries(Object.entries(items)
+              .filter(([, v]) => v && v.redo).map(([k]) => [k, true]));
+            this.done = Object.fromEntries(Object.keys(items)
+              .filter(k => !this.redo[k]).map(k => [k, true]));
+            // Vân tay nội dung lúc đánh dấu, để phát hiện bài bị sửa sau đó
+            this.hashes = Object.fromEntries(
+              Object.entries(items).filter(([, v]) => v && v.hash && !v.redo)
+                .map(([k, v]) => [k, v.hash]));
+            this.online = true;
+          } catch (e) {
+            this.online = false;   // không có backend → chế độ chỉ đọc
+          }
+          this.ready = true;
+        },
+
+        // Bài đã học nhưng nội dung đổi từ sau lúc đánh dấu.
+        // Mục đánh dấu trước khi có tính năng này không có hash → không báo.
+        redo: {},
+
+        // Điểm thưởng (ADR 0061): Worker trả `cong` (điểm vừa cộng) + `nhom` (tên section vừa đủ) sau mỗi lượt ghi.
+        baoCong(d) {
+          if (!d || !window.baoDiem) return;
+          window.baoDiem(d.cong, Array.isArray(d.nhom) && d.nhom.length ? '· hoàn thành ' + d.nhom.join(', ') : '');
+        },
+
+        stale(key, hash) {
+          return !!this.done[key] && !!this.hashes[key] && !!hash && this.hashes[key] !== hash;
+        },
+
+        async toggle(key, hash) {
+          if (!this.online) return;
+          if (!this.secret) { if (!(await this.askSecret())) return; }
+          const next = !this.done[key];
+          const prevHash = this.hashes[key];
+          const prevRedo = this.redo[key];
+          // Bấm vào ô "đang thực hiện" là xác nhận đã học lại → hoàn thành. Người
+          // dùng chỉ đi được giữa HOÀN THÀNH và CHƯA THỰC HIỆN; trạng thái giữa
+          // chỉ hệ thống đặt.
+          delete this.redo[key];
+          if (next) { this.done[key] = true; if (hash) this.hashes[key] = hash; }
+          else { delete this.done[key]; delete this.hashes[key]; }
+          this.saving++; this.err = '';
+          try {
+            const r = await fetch('/api/progress', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'x-progress-key': this.secret },
+              body: JSON.stringify({ key, done: next, hash: hash || '' }),
+            });
+            if (r.status === 401) {
+              this.secret = ''; localStorage.removeItem('lms_key'); window.dispatchEvent(new Event('lms-key'));
+              throw new Error('Mã bí mật không đúng');
+            }
+            if (!r.ok) throw new Error('Không lưu được (HTTP ' + r.status + ')');
+            this.baoCong(await r.json().catch(() => null));
+          } catch (e) {
+            // hoàn tác cả trạng thái, vân tay LẪN cờ đang-thực-hiện. Thiếu vế
+            // cuối thì ghi hỏng mạng sẽ âm thầm nuốt mất trạng thái giữa.
+            if (next) { delete this.done[key]; delete this.hashes[key]; }
+            else { this.done[key] = true; if (prevHash) this.hashes[key] = prevHash; }
+            if (prevRedo) { this.redo[key] = true; delete this.done[key]; }
+            this.err = e.message;
+            setTimeout(() => (this.err = ''), 4000);
+          } finally {
+            this.saving--;
+          }
+        },
+
+        // Tick/bỏ tick cả một nhóm trong một lượt gọi — tránh bắn N request
+        async setMany(entries, want) {
+          if (!this.online || !entries.length) return;
+          if (!this.secret) { if (!(await this.askSecret())) return; }
+          const prevDone = { ...this.done }, prevHash = { ...this.hashes };
+          const updates = {};
+          for (const e of entries) {
+            if (want) {
+              this.done[e.key] = true;
+              if (e.hash) this.hashes[e.key] = e.hash;
+              updates[e.key] = { hash: e.hash };
+            } else {
+              delete this.done[e.key]; delete this.hashes[e.key];
+              updates[e.key] = false;
+            }
+          }
+          this.saving++; this.err = '';
+          try {
+            const r = await fetch('/api/progress', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'x-progress-key': this.secret },
+              body: JSON.stringify({ updates }),
+            });
+            if (r.status === 401) {
+              this.secret = ''; localStorage.removeItem('lms_key'); window.dispatchEvent(new Event('lms-key'));
+              throw new Error('Mã bí mật không đúng');
+            }
+            if (!r.ok) throw new Error('Không lưu được (HTTP ' + r.status + ')');
+            this.baoCong(await r.json().catch(() => null));
+          } catch (e) {
+            this.done = prevDone; this.hashes = prevHash;   // hoàn tác cả nhóm
+            this.err = e.message;
+            setTimeout(() => (this.err = ''), 4000);
+          } finally {
+            this.saving--;
+          }
+        },
+
+        // Xác nhận đã xem lại bài vừa được cập nhật: giữ nguyên "đã học",
+        // chỉ ghi đè vân tay bằng nội dung mới nhất
+        async seen(key, hash) {
+          if (!this.online || !hash) return;
+          if (!this.secret) { if (!(await this.askSecret())) return; }
+          const prev = this.hashes[key];
+          this.hashes[key] = hash;
+          this.saving++;
+          try {
+            const r = await fetch('/api/progress', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'x-progress-key': this.secret },
+              body: JSON.stringify({ key, done: true, hash }),
+            });
+            if (!r.ok) throw new Error('Không lưu được (HTTP ' + r.status + ')');
+          } catch (e) {
+            this.hashes[key] = prev;
+            this.err = e.message;
+            setTimeout(() => (this.err = ''), 4000);
+          } finally {
+            this.saving--;
+          }
+        },
+
+        async askSecret() {
+          const v = (prompt('Nhập mã bí mật để đánh dấu tiến độ:') || '').trim();
+          if (!v) return false;
+          try {
+            const r = await fetch('/api/progress?check=1', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'x-progress-key': v },
+              body: '{}',
+            });
+            if (!r.ok) { alert('Mã không đúng.'); return false; }
+          } catch { alert('Không kết nối được máy chủ.'); return false; }
+          this.secret = v; localStorage.setItem('lms_key', v); window.dispatchEvent(new Event('lms-key'));
+          return true;
+        },
+      };
+    }
+
+    // Nhãn loại mục để dòng "Đang lọc" gọi tên chip đang bật. (tojson trong <script> — được.)
+    var LOAI = { "page": "\ud83d\udcc4 v\u0103n b\u1ea3n", };
+    var TIEN_DO_KEY = "mk/80554/";
+    var TONG_MUC = 6;
+    var CO_HW = false;
+    /** State của TRANG MÔN. Trước đây nằm thẳng trong `x-data` của <body>; nay phải là hàm vì
+        ô tìm dùng chung (`_timkiem.html`) chèn thêm thành viên — nhét vào thuộc tính HTML là
+        vỡ cú pháp khi có nháy kép (bài học của progressStore). */
+    function trangMon() {
+      return {
+        q: '', types: [], hw: false, todo: false, recent7: false, menuMo: false, locMo: false,
+        p: progressStore(),
+timMo: false,
+      timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
+      timDong() { this.q = ''; this.timMo = false; },
+        toggle(t) { this.types.includes(t) ? this.types.splice(this.types.indexOf(t), 1) : this.types.push(t); },
+        get filtering() { return this.types.length > 0 || this.hw || this.todo || this.recent7; },
+        get f() { return { q: this.q, types: this.types, hw: this.hw, todo: this.todo, recent7: this.recent7, done: this.p.done }; },
+        get soLoc() { return this.types.length + (this.hw ? 1 : 0) + (this.todo ? 1 : 0) + (this.recent7 ? 1 : 0); },
+        get tenLoc() {
+          return [...(this.recent7 ? ['7 ngày'] : []), ...(this.hw ? ['Homework'] : []),
+                  ...(this.todo ? ['Chưa học'] : []), ...this.types.map((t) => LOAI[t] || t)];
+        },
+        boLoc() { this.types = []; this.hw = false; this.todo = false; this.recent7 = false; },
+        get daHoc() { return Object.keys(this.p.done).filter((k) => k.startsWith(TIEN_DO_KEY)).length; },
+        get tienDo() {
+          if (this.recent7) { const s = recentStats(this.p.done); return s.done + '/' + s.total + ' · 7 ngày'; }
+          return this.daHoc + '/' + TONG_MUC;
+        },
+        get tienDoPct() {
+          return this.recent7 ? recentPct(this.p.done) : (TONG_MUC ? Math.round(this.daHoc / TONG_MUC * 100) : 0);
+        },
+        /** "Tuần này": mục mới = mục chip 7 ngày giữ lại; bài tập chưa xong = mục chip Homework
+            giữ lại, trong 7 ngày, chưa tick. `hw` null khi không có nhóm Homework hoặc chưa có
+            tiến độ — dòng khi đó chỉ nói số mục mới. Tính lúc mở trang (ADR 0046). */
+        get tuanNay() {
+          const els = recentItems();
+          const hw = CO_HW && this.p.online
+            ? els.filter((e) => e.dataset.hw === '1' && !this.p.done[e.dataset.pkey]).length : null;
+          return { moi: els.length, hw };
+        },
+        xemTuanNay() { this.recent7 = true; if (this.p.online) this.todo = true; },
+      };
+    }
+  </script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen"
+      x-data="trangMon()"
+      x-init="p.init()">
+
+  
+  <header id="hdr" data-bam="thanh" class="sticky top-0 z-10 bg-white border-b border-slate-200 shadow-sm">
+    <div class="bg-indigo-600">
+      <div class="max-w-[72rem] mx-auto px-4 py-2 min-w-0">
+        <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-indigo-200">
+  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">🏠 Home</a><span class="shrink-0 text-indigo-300">›</span>
+  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">MK</a><span class="shrink-0 text-indigo-300">›</span>
+  <span aria-current="page"  class="truncate font-medium text-white">Giáo Dục Thể Chất 1</span>
+</nav>
+      </div>
+    </div>
+    <div class="max-w-[72rem] mx-auto px-3 sm:px-4">
+      
+      <div class="pt-2 flex items-start sm:items-center gap-2">
+        <h1 class="min-w-0 flex-1 sm:flex-initial text-lg font-bold text-slate-900 leading-snug break-words">Giáo Dục Thể Chất 1</h1>
+        <div class="shrink-0 flex flex-col items-end gap-1 mt-1 sm:mt-0 sm:contents">
+          
+          <a href="https://lms.vinschool.edu.vn/courses/80554/modules" target="_blank" rel="noopener noreferrer"
+             title="Mở trang Các học phần của môn này trên LMS (cần đăng nhập)"
+             class="shrink-0 text-xs text-indigo-500 hover:text-indigo-700 hover:underline py-2 -my-2 whitespace-nowrap"><span class="lg:hidden">Trang gốc ↗</span><span class="hidden lg:inline">Xem trang gốc ↗</span></a>
+          
+          
+          <div x-show="p.ready && p.online" x-cloak data-tien-do
+               class="sm:ml-auto flex items-center gap-2 text-xs text-slate-500 whitespace-nowrap">
+            <span x-show="p.saving" x-cloak class="text-indigo-500">đang lưu…</span>
+            <span x-show="p.err" x-cloak class="text-rose-600 max-w-[10rem] truncate" x-text="p.err"></span>
+            <span class="tabular-nums" x-text="tienDo"></span><span x-show="!recent7" class="hidden lg:inline">đã học</span>
+            <div class="w-14 lg:w-36 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+              <div class="h-full bg-emerald-500 transition-all duration-300" :style="'width: ' + tienDoPct + '%'"></div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+      
+      
+      
+      <div class="py-2 flex items-center gap-1.5 sm:gap-2">
+        <button type="button" data-nut-menu :aria-expanded="String(menuMo)"
+        @click="menuMo = !menuMo; if (menuMo) { locMo = false }"
+        aria-label="Mục lục" title="Mục lục"
+        :class="[menuMo ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700',
+                 timMo ? 'max-sm:hidden' : '']"
+        class="lg:hidden h-9 min-w-9 shrink-0 px-2 sm:px-3 text-xs font-medium rounded-lg border whitespace-nowrap">☰<span class="hidden sm:inline"> Mục lục</span></button>
+        
+        
+        <div data-tim class="flex-1 min-w-0 flex items-center justify-end gap-1" :class="(false) ? 'invisible' : ''">
+  <button x-show="!timMo" @click="timMoRa()" type="button" data-tim-nut
+          aria-label="Tìm bài học…" title="Tìm bài học…"
+          :class="q ? 'border-amber-400 bg-amber-50' : 'border-slate-300 bg-white'"
+          class="sm:hidden w-9 h-9 shrink-0 rounded-lg border text-slate-700 grid place-items-center">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+  </button>
+  <input type="search" x-model="q" x-ref="timO"
+         @keydown.escape.prevent="timDong()"
+         placeholder="Tìm bài học…" aria-label="Tìm bài học…"
+         :class="timMo ? 'block' : 'hidden sm:block'"
+         class="flex-1 min-w-0 sm:max-w-56 lg:max-w-md h-9 px-2 text-xs rounded-lg border border-slate-300 bg-white">
+  <button x-show="timMo" x-cloak @click="timDong()" type="button" data-tim-dong
+          aria-label="Đóng ô tìm" title="Đóng ô tìm"
+          class="sm:hidden w-9 h-9 shrink-0 rounded-lg border border-slate-300 text-slate-700">✕</button>
+</div>
+        <button type="button" data-nut-loc :aria-expanded="String(locMo)" aria-label="Lọc" title="Lọc"
+        @click="locMo = !locMo; if (locMo) { menuMo = false }"
+        :class="[(soLoc) || locMo ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700',
+                 timMo ? 'max-sm:hidden' : '', (false) ? 'invisible' : '']"
+        class="h-9 min-w-9 shrink-0 px-2 rounded-lg border text-sm font-medium inline-flex items-center justify-center gap-1 whitespace-nowrap">⚙<span class="hidden lg:inline text-xs">Lọc</span><span x-show="soLoc" x-cloak data-so-loc class="text-xs tabular-nums" x-text="soLoc"></span></button>
+        
+      </div>
+      
+    </div>
+    
+    <div x-show="locMo" x-cloak data-ngan-loc @keydown.escape.window="locMo = false"
+     class="no-print absolute inset-x-0 top-full z-30">
+  <div @click="locMo = false" class="absolute inset-x-0 top-0 h-screen bg-slate-900/30"></div>
+  <div class="relative bg-white border-b border-slate-200 shadow-lg">
+    <div class="max-w-[72rem] mx-auto px-4 py-3 space-y-3">
+      
+      <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Hay dùng</p>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" @click="recent7 = !recent7"
+                :class="recent7 ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-700 border-amber-300 hover:border-amber-500'"
+                class="px-3 py-2 text-xs font-medium rounded-full border">🕓 7 ngày</button>
+        
+        <template x-if="p.online">
+          <button type="button" @click="todo = !todo"
+                  :class="todo ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-700 border-emerald-300 hover:border-emerald-500'"
+                  class="px-3 py-2 text-xs font-medium rounded-full border">○ Chưa học</button>
+        </template>
+      </div>
+      <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Loại mục</p>
+      <div class="flex flex-wrap gap-2">
+        
+        <button type="button" @click="toggle('page')"
+                :class="types.includes('page') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
+                class="px-3 py-2 text-xs rounded-full border">📄 văn bản</button>
+        
+      </div>
+      <div data-ma-bi-mat class="text-sm" @lms-key.window="co = !!localStorage.getItem('lms_key')" x-data="{
+       co: !!localStorage.getItem('lms_key'), mo: false, ma: '', loi: '', dang: false,
+       async luu() {
+         const v = this.ma.trim();
+         if (!v || this.dang) return;
+         this.dang = true; this.loi = '';
+         try {
+           const r = await fetch('/api/progress?check=1', { method: 'POST', body: '{}',
+             headers: { 'content-type': 'application/json', 'x-progress-key': v } });
+           if (r.status === 401) { this.loi = 'Mã không đúng.'; return; }
+           if (!r.ok) { this.loi = 'Không kiểm tra được mã lúc này. Thử lại sau.'; return; }
+           localStorage.setItem('lms_key', v);
+           location.reload();
+         } catch (e) {
+           this.loi = 'Không kiểm tra được mã lúc này (mất mạng?). Thử lại sau.';
+         } finally { this.dang = false; }
+       },
+       xoa() {
+         if (!confirm('Xoá mã bí mật trên máy này?')) return;
+         localStorage.removeItem('lms_key'); location.reload();
+       }
+     }">
+  <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Mã bí mật</p>
+  <div class="mt-1 flex flex-wrap items-center gap-2">
+    <span data-mbm-tt class="font-medium" :class="co ? 'text-emerald-700' : 'text-slate-600'" x-text="co ? '🔑 Đã nhập ✓' : '🔑 Chưa nhập'"></span>
+    <button type="button" data-mbm-mo x-show="!mo" @click="mo = true; $nextTick(() => $refs.o.focus())" class="px-3 py-2 rounded-full border border-slate-300 bg-white text-xs font-medium" x-text="co ? 'Đổi mã' : 'Nhập mã'"></button>
+    <button type="button" data-mbm-xoa x-show="co && !mo" @click="xoa()" class="px-3 py-2 rounded-full border border-slate-300 bg-white text-xs font-medium text-rose-700">Xoá mã</button>
+  </div>
+  <form x-show="mo" x-cloak @submit.prevent="luu()" class="mt-2 flex flex-wrap items-center gap-2">
+    <input x-ref="o" data-mbm-o type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" x-model="ma" placeholder="Mã bí mật" aria-label="Mã bí mật" class="h-9 px-3 rounded-lg border border-slate-300 text-sm">
+    <button type="submit" data-mbm-luu :disabled="dang" class="h-9 px-3 rounded-lg bg-indigo-600 text-white text-xs font-semibold" x-text="dang ? 'Đang kiểm…' : 'Lưu'"></button>
+    <button type="button" @click="mo = false; loi = ''" class="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs">Thôi</button>
+  </form>
+  <p data-mbm-loi x-show="loi" x-cloak x-text="loi" class="mt-1 text-xs text-rose-700"></p>
+</div>
+    
+      <div class="flex justify-between text-sm">
+        <button type="button" data-bo-loc @click="boLoc()" class="px-2 py-2 -mx-2 text-slate-500 hover:text-indigo-600">Bỏ lọc</button>
+        <button type="button" data-loc-xong @click="locMo = false" class="px-2 py-2 -mx-2 font-semibold text-indigo-600">Xong</button>
+      </div>
+    </div>
+  </div>
+</div>
+    
+  </header>
+
+  <div class="max-w-[72rem] mx-auto lg:flex lg:gap-5 lg:items-start">
+
+  
+  <!-- ⚠ Offset dính ĐO ĐƯỢC (`--hdr`), không viết cứng. Bản cũ dùng
+       `lg:top-[4.5rem]` = 72px trong khi header dính cao ~175px ở 1280px, nên
+       phần đầu mục lục chui xuống dưới header — vẫn thấy mục lục, chỉ mất mấy
+       mục trên cùng, nên trông y như "môn này ít tuần". Cùng bài học đã ghi ở
+       `toiMuc()` và đã giải ở study.html. -->
+  
+  <aside class="no-print lg:px-4 lg:pt-6 lg:w-64 lg:shrink-0 lg:sticky lg:top-[var(--hdr)] lg:self-start lg:pr-0"
+         @keydown.escape.window="menuMo = false">
+    
+    <div data-bam :class="menuMo ? 'block fixed inset-x-0 bottom-0 top-[var(--hdr)] z-30 overflow-y-auto rounded-none lg:static lg:rounded-xl' : 'hidden lg:block'"
+         class="rounded-xl border border-slate-200 bg-white p-2 shadow-sm lg:max-h-[calc(100vh-var(--hdr)-3rem)] lg:overflow-y-auto">
+      <p class="px-2 pb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Mục lục</p>
+      <ol class="space-y-0.5">
+        
+        <li x-show="mucHien(1, f)">
+          <button type="button" @click="toiMuc(1); menuMo = false"
+                  class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
+            <span class="min-w-0 flex-1">Unit 1: Khám phá các kiểu vận động ( Từ ngày 15/8 - 12/9)</span>
+            <template x-if="p.online">
+              <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
+                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/6'"></span>
+            </template>
+          </button>
+        </li>
+        
+      </ol>
+    </div>
+  </aside>
+  
+
+  <main class="min-w-0 lg:flex-1 px-4 py-6 space-y-4">
+
+    
+    <div x-show="soLoc" x-cloak data-dong-loc
+     class="no-print flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-900">
+  <span class="min-w-0"><b>Đang lọc:</b> <span x-text="(tenLoc).join(' · ')"></span></span>
+  <button type="button" data-bo-loc @click="boLoc()" class="ml-auto shrink-0 px-2 py-2 -my-2 font-semibold hover:text-indigo-600">✕ Bỏ lọc</button>
+</div>
+    
+    <div x-show="!soLoc && tuanNay.moi" x-cloak data-tuan-nay
+         class="no-print flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+      <span class="min-w-0"><b>Tuần này:</b>
+        <span x-text="tuanNay.moi + ' mục mới' + (tuanNay.hw !== null ? ' · ' + tuanNay.hw + ' bài tập chưa xong' : '')"></span></span>
+      <button type="button" data-xem-tuan @click="xemTuanNay()" class="ml-auto shrink-0 px-2 py-2 -my-2 font-semibold hover:text-amber-700">Xem ›</button>
+    </div>
+    
+
+    
+
+    
+    <!-- Một Tuần học / Bài học -->
+    <section x-data="{ open: true }"
+             x-effect="if (q || filtering) open = true"
+             id="mod-1" data-module data-title="Unit 1: Khám phá các kiểu vận động ( Từ ngày 15/8 - 12/9)"
+             x-show="moduleMatches($el, f)"
+             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <button @click="open = !open"
+              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
+        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
+             :class="open ? 'rotate-90' : ''"
+             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">Unit 1: Khám phá các kiểu vận động ( Từ ngày 15/8 - 12/9)</span>
+        <template x-if="p.online">
+          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 6
+                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/6'"></span>
+        </template>
+        <span class="text-xs text-slate-400 shrink-0">6 mục</span>
+      </button>
+
+      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-item data-title="Lesson 1: Xác định không gian cá nhân" data-type="page" data-sec="0"
+             data-pkey="mk/80554/8618786" data-hash="9c42cfb88f9962d750cbd4431605803fec3ca6c4" data-ts="1787732968000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80554/8618786'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80554/8618786'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80554/8618786']; $el.indeterminate = !!p.redo['mk/80554/8618786']"
+                     @change="await p.toggle('mk/80554/8618786', '9c42cfb88f9962d750cbd4431605803fec3ca6c4'); $el.checked = !!p.done['mk/80554/8618786']; $el.indeterminate = !!p.redo['mk/80554/8618786']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Lesson 1: Xác định không gian cá nhân</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80554/8618786', '9c42cfb88f9962d750cbd4431605803fec3ca6c4')">
+                  <button @click.stop="p.seen('mk/80554/8618786', '9c42cfb88f9962d750cbd4431605803fec3ca6c4')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 26/08</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80554/pages/lesson-1-xac-dinh-khong-gian-ca-nhan-2" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Thầy Trình gửi các con nội dung học của Tuần 1:</p>
+<p><strong>Xác định không gian cá nhân</strong></p>
+<p><strong>1. Page giảng dạy trên lớp</strong></p>
+<ul>
+<li><strong>Mục tiêu 1: Thực hiện nhiều vận động dịch chuyển khác nhau, di chuyển theo các hướng khác nhau và sử dụng các bộ phận cơ thể khác nhau.</strong></li>
+<li><strong>Mục  tiêu 2: Đảm bảo an toàn cho bản thân và những người xung quanh bằng cách duy trì không gian cá nhân khi đang di chuyển.</strong></li>
+</ul>
+<p>Các con xem link video vài tập dưới đây nhé:</p>
+<ul>
+<li><strong>Link bài tập: <a class="inline_disabled" href="https://youtu.be/TkqoHbtJbxM" rel="noopener" target="_blank">https://youtu.be/TkqoHbtJbxM</a></strong></li>
+<li><strong>Câu hỏi: Trong quá trình tập luyện con tự thấy mình đã tập luyện tích cực chưa?</strong><strong></strong></li>
+</ul>
+<p><strong>2. Kiến thức mở rộng</strong></p>
+<p>Sau khi thực hiện thành thục các bài tập cơ bản đã học trên lớp, các con thực hiện bài tập nâng cao dưới đây:</p>
+<p>Yêu cầu: Thực hiện đúng kỹ thuật, đúng, đủ khối lượng tập luyện và những tiêu chí đánh giá đã được học.</p>
+<p><strong>Mục tiêu: Thực hiện bài tập nâng cao phát triển kỹ năng giữ thăng bằng trọng tâm cơ thể từ những động tác cơ bản đã được học.</strong></p>
+<ul>
+<li><strong>Link bài tập: <a class="inline_disabled" href="https://youtu.be/tvGehkXlh4E" rel="noopener" target="_blank">https://youtu.be/tvGehkXlh4E</a></strong></li>
+<li><a class="external youtubed" href="https://www.youtube.com/watch?v=rCg-MkVkxyU" rel="noopener" target="_blank"></a>Chúc các con học tập vui vẻ và hiệu quả !</li>
+</ul>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Lesson 2: Di chuyển bằng các kiểu vận động dịch chuyển khác nhau" data-type="page" data-sec="0"
+             data-pkey="mk/80554/8618787" data-hash="713412c3145a09beb62eb52e256f8d8856fb6452" data-ts="1787732969000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80554/8618787'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80554/8618787'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80554/8618787']; $el.indeterminate = !!p.redo['mk/80554/8618787']"
+                     @change="await p.toggle('mk/80554/8618787', '713412c3145a09beb62eb52e256f8d8856fb6452'); $el.checked = !!p.done['mk/80554/8618787']; $el.indeterminate = !!p.redo['mk/80554/8618787']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Lesson 2: Di chuyển bằng các kiểu vận động dịch chuyển khác nhau</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80554/8618787', '713412c3145a09beb62eb52e256f8d8856fb6452')">
+                  <button @click.stop="p.seen('mk/80554/8618787', '713412c3145a09beb62eb52e256f8d8856fb6452')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 26/08</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80554/pages/lesson-2-di-chuyen-bang-cac-kieu-van-dong-dich-chuyen-khac-nhau-2" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Thầy Trình gửi các con nội dung học của Tuần 2:</p>
+<p><strong>Di chuyển bằng các kiểu vận động dịch chuyển khác nhau</strong></p>
+<p><strong>1. Page giảng dạy trên lớp</strong></p>
+<ul>
+<li><strong><strong>Mục tiêu 1: </strong></strong>
+<p><strong>Thực hiện nhiều chuyển động vận động ở các tốc độ và hướng khác nhau trong khu vực hoạt động. thể hiện sự</strong></p>
+<p><strong>hiểu biết của họ về không gian cá nhân và sử dụng các chiến lược đơn giản để giữ khoảng cách an toàn với những</strong></p>
+<strong>người khác.</strong></li>
+<li><strong><strong></strong></strong><strong></strong></li>
+<li><strong>Mục  tiêu 2: Đảm bảo an toàn cho bản thân và những người xung quanh bằng cách duy trì không gian cá nhân khi đang di chuyển.</strong></li>
+</ul>
+<p>Các con xem link video vài tập dưới đây nhé:</p>
+<ul>
+<li><strong>Link bài tập: <a class="inline_disabled" href="https://youtu.be/MyrXcFqt2YY" rel="noopener" target="_blank">https://youtu.be/MyrXcFqt2YY</a></strong></li>
+<li><strong>Câu hỏi: Trong quá trình tập luyện con tự thấy mình đã tập luyện tích cực chưa?</strong><strong></strong></li>
+</ul>
+<p><strong>2. Kiến thức mở rộng</strong></p>
+<p>Sau khi thực hiện thành thục các bài tập cơ bản đã học trên lớp, các con thực hiện bài tập nâng cao dưới đây:</p>
+<p>Yêu cầu: Thực hiện đúng kỹ thuật, đúng, đủ khối lượng tập luyện và những tiêu chí đánh giá đã được học.</p>
+<p><strong>Mục tiêu: Thực hiện bài tập nâng cao phát triển kỹ năng giữ thăng bằng trọng tâm cơ thể từ những động tác cơ bản đã được học.</strong></p>
+<ul>
+<li><strong>Link bài tập:<span> </span><a class="inline_disabled external" href="https://youtu.be/tvGehkXlh4E" rel="noopener" target="_blank"><span>https://youtu.be/tvGehkXlh4E</span><span class="screenreader-only"> (Links to an external site.)</span></a></strong></li>
+<li><a class="external youtubed" href="https://www.youtube.com/watch?v=rCg-MkVkxyU" rel="noopener" target="_blank"></a>Chúc các con học tập vui vẻ và hiệu quả !</li>
+</ul>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Lesson 3: Di chuyển bằng các bộ phận cơ thể khác nhau" data-type="page" data-sec="0"
+             data-pkey="mk/80554/8618788" data-hash="5f8a2d188adbcaba9fb55773d8ec956b857b1d73" data-ts="1787732969000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80554/8618788'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80554/8618788'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80554/8618788']; $el.indeterminate = !!p.redo['mk/80554/8618788']"
+                     @change="await p.toggle('mk/80554/8618788', '5f8a2d188adbcaba9fb55773d8ec956b857b1d73'); $el.checked = !!p.done['mk/80554/8618788']; $el.indeterminate = !!p.redo['mk/80554/8618788']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Lesson 3: Di chuyển bằng các bộ phận cơ thể khác nhau</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80554/8618788', '5f8a2d188adbcaba9fb55773d8ec956b857b1d73')">
+                  <button @click.stop="p.seen('mk/80554/8618788', '5f8a2d188adbcaba9fb55773d8ec956b857b1d73')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 26/08</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80554/pages/lesson-3-di-chuyen-bang-cac-bo-phan-co-the-khac-nhau-2" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Thầy Trình gửi các con nội dung học của Tuần 3:</p>
+<p><strong>Di chuyển bằng các bộ phận cơ thể khác nhau</strong></p>
+<p><strong>1. Page giảng dạy trên lớp</strong></p>
+<ul>
+<li><strong>Mục tiêu 1: Thực hiện nhiều vận động dịch chuyển khác nhau, di chuyển theo các hướng khác nhau và sử dụng các bộ phận cơ thể khác nhau.</strong></li>
+<li><strong>Mục  tiêu 2: Đảm bảo an toàn cho bản thân và những người xung quanh bằng cách duy trì không gian cá nhân khi đang di chuyển.</strong></li>
+</ul>
+<p>Các con xem link video vài tập dưới đây nhé:</p>
+<ul>
+<li><strong>Link bài tập:<span> <a class="inline_disabled" href="https://youtu.be/6cLwFxBSafg?si=bn0f_WIPdOXUBnvY" rel="noopener" target="_blank">https://youtu.be/6cLwFxBSafg?si=bn0f_WIPdOXUBnvY</a></span></strong></li>
+<li><strong>Câu hỏi: Điều nào con thấy quan trọng nhất với con khi di chuyển?</strong><strong></strong></li>
+</ul>
+<p><strong>2. Kiến thức mở rộng</strong></p>
+<p>Sau khi thực hiện thành thục các bài tập cơ bản đã học trên lớp, các con thực hiện bài tập nâng cao dưới đây:</p>
+<p>Yêu cầu: Thực hiện đúng kỹ thuật, đúng, đủ khối lượng tập luyện và những tiêu chí đánh giá đã được học.</p>
+<p><strong>Mục tiêu: Thực hiện bài tập nâng cao phát triển kỹ năng giữ thăng bằng trọng tâm cơ thể từ những động tác cơ bản đã được học.</strong></p>
+<ul>
+<li><strong>Link bài tập:<span> <a class="inline_disabled" href="https://youtu.be/ZYdje8MDRhQ?si=kHSl1JwuM-Cp1mNB" rel="noopener" target="_blank">https://youtu.be/ZYdje8MDRhQ?si=kHSl1JwuM-Cp1mNB</a></span></strong></li>
+<li><a class="external youtubed" href="https://www.youtube.com/watch?v=rCg-MkVkxyU" rel="noopener" target="_blank"></a>Chúc các con học tập vui vẻ và hiệu quả !</li>
+</ul>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Lesson 4: Di chuyển cùng người khác" data-type="page" data-sec="0"
+             data-pkey="mk/80554/8618789" data-hash="e056d78bfa6fce60dffa32914e3836359641e738" data-ts="1787732969000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80554/8618789'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80554/8618789'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80554/8618789']; $el.indeterminate = !!p.redo['mk/80554/8618789']"
+                     @change="await p.toggle('mk/80554/8618789', 'e056d78bfa6fce60dffa32914e3836359641e738'); $el.checked = !!p.done['mk/80554/8618789']; $el.indeterminate = !!p.redo['mk/80554/8618789']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Lesson 4: Di chuyển cùng người khác</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80554/8618789', 'e056d78bfa6fce60dffa32914e3836359641e738')">
+                  <button @click.stop="p.seen('mk/80554/8618789', 'e056d78bfa6fce60dffa32914e3836359641e738')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 26/08</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80554/pages/lesson-4-di-chuyen-cung-nguoi-khac-2" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Thầy Trình gửi các con nội dung học của Tuần 4:</p>
+<p><strong>Di chuyển cùng người khác</strong></p>
+<p><strong>1. Page giảng dạy trên lớp</strong></p>
+<ul>
+<li><strong>Mục tiêu 1: Thực hiện nhiều vận động dịch chuyển khác nhau, di chuyển theo các hướng khác nhau và sử dụng các bộ phận cơ thể khác nhau.</strong></li>
+<li><strong>Mục  tiêu 2: Đảm bảo an toàn cho bản thân và những người xung quanh bằng cách duy trì không gian cá nhân khi đang di chuyển.</strong></li>
+</ul>
+<p>Các con xem link video vài tập dưới đây nhé:</p>
+<ul>
+<li><strong>Link bài tập:<span> <a class="inline_disabled" href="https://youtu.be/FGOJVqFKK1c?si=VPgMeHqcOQAf1ggd" rel="noopener" target="_blank">https://youtu.be/FGOJVqFKK1c?si=VPgMeHqcOQAf1ggd</a></span></strong></li>
+<li><strong>Câu hỏi: Trong quá trình tập luyện con tự thấy mình đã tập luyện tích cực chưa?</strong><strong></strong></li>
+</ul>
+<p><strong>2. Kiến thức mở rộng</strong></p>
+<p>Sau khi thực hiện thành thục các bài tập cơ bản đã học trên lớp, các con thực hiện bài tập nâng cao dưới đây:</p>
+<p>Yêu cầu: Thực hiện đúng kỹ thuật, đúng, đủ khối lượng tập luyện và những tiêu chí đánh giá đã được học.</p>
+<p><strong>Mục tiêu: Thực hiện bài tập nâng cao phát triển kỹ năng giữ thăng bằng trọng tâm cơ thể từ những động tác cơ bản đã được học.</strong></p>
+<ul>
+<li><strong>Link bài tập:<span> </span><a class="inline_disabled external" href="https://youtu.be/tvGehkXlh4E" rel="noopener" target="_blank"><span>https://youtu.be/tvGehkXlh4E</span><span class="screenreader-only"> (Links to an external site.)</span></a></strong></li>
+<li><a class="external youtubed" href="https://www.youtube.com/watch?v=rCg-MkVkxyU" rel="noopener" target="_blank"></a>Chúc các con học tập vui vẻ và hiệu quả !</li>
+</ul>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Lesson 5: Di chuyển sang hai bên bằng cách nhảy chân sáo và bước sang ngang" data-type="page" data-sec="0"
+             data-pkey="mk/80554/8618790" data-hash="fd64d6bbcea4edcf60acd34e5138b6d92c6568e7" data-ts="1787732969000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80554/8618790'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80554/8618790'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80554/8618790']; $el.indeterminate = !!p.redo['mk/80554/8618790']"
+                     @change="await p.toggle('mk/80554/8618790', 'fd64d6bbcea4edcf60acd34e5138b6d92c6568e7'); $el.checked = !!p.done['mk/80554/8618790']; $el.indeterminate = !!p.redo['mk/80554/8618790']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Lesson 5: Di chuyển sang hai bên bằng cách nhảy chân sáo và bước sang ngang</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80554/8618790', 'fd64d6bbcea4edcf60acd34e5138b6d92c6568e7')">
+                  <button @click.stop="p.seen('mk/80554/8618790', 'fd64d6bbcea4edcf60acd34e5138b6d92c6568e7')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 26/08</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80554/pages/lesson-5-di-chuyen-sang-hai-ben-bang-cach-nhay-chan-sao-va-buoc-sang-ngang-2" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Thầy Trình gửi các con nội dung học của Tuần 4:</p>
+<p><strong>Di chuyển sang hai bên bằng cách nhảy chân sáo và bước sang ngang</strong></p>
+<p><strong>1. Page giảng dạy trên lớp</strong></p>
+<ul>
+<li><strong>Mục tiêu 1: Thực hiện nhiều vận động dịch chuyển khác nhau, di chuyển sang hai bên bằng cách nhảy chân sáo và bước sang ngang theo các hướng khác nhau và sử dụng các bộ phận cơ thể khác nhau.</strong></li>
+<li><strong>Mục  tiêu 2: Đảm bảo an toàn cho bản thân và những người xung quanh bằng cách duy trì không gian cá nhân khi đang di chuyển.</strong></li>
+</ul>
+<p>Các con xem link video vài tập dưới đây nhé:</p>
+<ul>
+<li><strong>Link bài tập:<span> <a class="inline_disabled" href="https://youtu.be/mziPKITnPeQ?si=yw2R6sDlCQ3PwZEN" rel="noopener" target="_blank">https://youtu.be/mziPKITnPeQ?si=yw2R6sDlCQ3PwZEN</a></span></strong></li>
+<li><strong>Câu hỏi: khi di chuyển chân sáo con cần chú ý điều gì?</strong><strong></strong></li>
+</ul>
+<p><strong>2. Kiến thức mở rộng</strong></p>
+<p>Sau khi thực hiện thành thục các bài tập cơ bản đã học trên lớp, các con thực hiện bài tập nâng cao dưới đây:</p>
+<p>Yêu cầu: Thực hiện đúng kỹ thuật, đúng, đủ khối lượng tập luyện và những tiêu chí đánh giá đã được học.</p>
+<p><strong>Mục tiêu: Thực hiện bài tập nâng cao phát triển kỹ năng giữ thăng bằng trọng tâm cơ thể từ những động tác cơ bản đã được học.</strong></p>
+<ul>
+<li><strong>Link bài tập:<span> <a class="inline_disabled" href="https://youtu.be/-Fm4AO8nfyA?si=Nu4-cDHW2XJcxKfz" rel="noopener" target="_blank">https://youtu.be/-Fm4AO8nfyA?si=Nu4-cDHW2XJcxKfz</a></span></strong></li>
+<li><a class="external youtubed" href="https://www.youtube.com/watch?v=rCg-MkVkxyU" rel="noopener" target="_blank"></a>Chúc các con học tập vui vẻ và hiệu quả !</li>
+</ul>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Lesson 6: Cùng thử thách với vận động dịch chuyển" data-type="page" data-sec="0"
+             data-pkey="mk/80554/8618791" data-hash="c61b5aeb8da88117b1bd6d4d216e004c7c734d06" data-ts="1787732969000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80554/8618791'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80554/8618791'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80554/8618791']; $el.indeterminate = !!p.redo['mk/80554/8618791']"
+                     @change="await p.toggle('mk/80554/8618791', 'c61b5aeb8da88117b1bd6d4d216e004c7c734d06'); $el.checked = !!p.done['mk/80554/8618791']; $el.indeterminate = !!p.redo['mk/80554/8618791']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Lesson 6: Cùng thử thách với vận động dịch chuyển</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80554/8618791', 'c61b5aeb8da88117b1bd6d4d216e004c7c734d06')">
+                  <button @click.stop="p.seen('mk/80554/8618791', 'c61b5aeb8da88117b1bd6d4d216e004c7c734d06')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 26/08</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80554/pages/lesson-6-cung-thu-thach-voi-van-dong-dich-chuyen-2" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Thầy Trình gửi các con nội dung học của Tuần 4:</p>
+<p><strong>Cùng thử thách với vận động dịch chuyển</strong></p>
+<p><strong>1. Page giảng dạy trên lớp</strong></p>
+<ul>
+<li><strong>Mục tiêu 1: Thực hiện nhiều vận động dịch chuyển khác nhau, di chuyển sang hai bên bằng cách nhảy chân sáo và bước sang ngang theo các hướng khác nhau và sử dụng các bộ phận cơ thể khác nhau.</strong></li>
+<li><strong>Mục  tiêu 2: Đảm bảo an toàn cho bản thân và những người xung quanh bằng cách duy trì không gian cá nhân khi đang di chuyển.</strong></li>
+</ul>
+<p>Các con xem link video vài tập dưới đây nhé:</p>
+<ul>
+<li><strong>Link bài tập:<span> <a class="inline_disabled external" href="https://youtu.be/mziPKITnPeQ?si=yw2R6sDlCQ3PwZEN" rel="noopener" target="_blank">https://youtu.be/mziPKITnPeQ?si=yw2R6sDlCQ3PwZEN<span class="screenreader-only"> (Links to an external site.)</span></a></span></strong></li>
+<li><strong>Câu hỏi: khi di chuyển chân sáo con cần chú ý điều gì?</strong><strong></strong></li>
+</ul>
+<p><strong>2. Kiến thức mở rộng</strong></p>
+<p>Sau khi thực hiện thành thục các bài tập cơ bản đã học trên lớp, các con thực hiện bài tập nâng cao dưới đây:</p>
+<p>Yêu cầu: Thực hiện đúng kỹ thuật, đúng, đủ khối lượng tập luyện và những tiêu chí đánh giá đã được học.</p>
+<p><strong>Mục tiêu: Thực hiện bài tập nâng cao phát triển kỹ năng giữ thăng bằng trọng tâm cơ thể từ những động tác cơ bản đã được học.</strong></p>
+<ul>
+<li><strong>Link bài tập:<span> <a class="inline_disabled" href="https://youtu.be/_79yPpjFw98?si=5jQ1N3ylztHWTRXL" rel="noopener" target="_blank">https://youtu.be/_79yPpjFw98?si=5jQ1N3ylztHWTRXL</a></span></strong></li>
+<li><a class="external youtubed" href="https://www.youtube.com/watch?v=rCg-MkVkxyU" rel="noopener" target="_blank"></a>Chúc các con học tập vui vẻ và hiệu quả !</li>
+</ul>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+      </div>
+    </section>
+    
+
+  </main>
+  </div>
+
+  <footer class="max-w-[72rem] mx-auto px-4 pb-8 text-center text-xs text-slate-400">
+    Cập nhật tự động · bản lưu offline
+  </footer>
+  <!-- Chiều cao header dính ĐO bằng ResizeObserver, không viết cứng: chip lọc
+       xuống dòng ở màn hẹp và tên môn dài hai dòng đều đổi con số này (ADR 0054:
+       ~137px ở 390px, ~147px khi tên môn dài; trước đó 259px). Cùng khuôn với study.html. -->
+  <script>
+    (function () {
+      var h = document.getElementById('hdr');
+      if (!h) return;
+      var r = document.documentElement;
+      r.style.setProperty('--hdr', '0px');
+      var do_ = function () { r.style.setProperty('--hdr', h.offsetHeight + 'px'); };
+      do_();
+      if (window.ResizeObserver) new ResizeObserver(do_).observe(h);
+      else addEventListener('resize', do_);
+    })();
+  </script>
+  <div data-diem-bao role="status" aria-live="polite"
+     class="hidden pointer-events-none fixed left-1/2 top-16 z-[70] -translate-x-1/2 max-w-[90vw] truncate rounded-full bg-amber-300 px-5 py-2 text-lg font-bold text-amber-950 shadow-lg"></div>
+<script>
+  (function () {
+    var hen = 0;
+    window.baoDiem = function (n, chu) {
+      n = Number(n);
+      if (!(n > 0)) return;
+      var el = document.querySelector('[data-diem-bao]');
+      if (!el) return;
+      el.textContent = '+' + n + ' ⭐' + (chu ? ' ' + chu : '');
+      el.classList.remove('hidden');
+      clearTimeout(hen);
+      hen = setTimeout(function () { el.classList.add('hidden'); }, 2000);
+    };
+    window.docSoDu = async function (user) {
+      var k = localStorage.getItem('lms_key');
+      if (!k) return null;
+      try {
+        var r = await fetch('/api/diem?gon=1&user=' + encodeURIComponent(user), { headers: { 'x-progress-key': k } });
+        if (!r.ok) return null;
+        var d = await r.json();
+        return Number.isInteger(d.du) ? d.du : null;
+      } catch (e) { return null; }
+    };
+  })();
+</script>
+  <script>
+  (function () {
+    var vv = window.visualViewport;
+    if (!vv) return;
+    var hen = 0, cham = false, dung = 0;
+    function dat() {
+      hen = 0;
+      var s = vv.scale, phong = s > 1.01;
+      document.querySelectorAll('[data-bam]').forEach(function (e) {
+        // Chỉ bám THANH (data-bam="thanh") và lớp phủ đang `fixed` (ngăn mở ở màn hẹp).
+        // ≥1024px cột mục lục là cột cố định trong luồng: bám nó là một cột 256px đè lên
+        // chính chữ vừa phóng (duyệt nhánh 2026-09-25).
+        var ghim = phong && (e.dataset.bam === 'thanh' || getComputedStyle(e).position === 'fixed');
+        if (!ghim) { e.style.transform = ''; e.style.transformOrigin = ''; e.style.opacity = ''; return; }
+        e.style.transform = '';
+        var r = e.getBoundingClientRect();
+        e.style.transformOrigin = (-r.left) + 'px ' + (-r.top) + 'px';
+        e.style.transform = 'translate(' + vv.offsetLeft + 'px,' + vv.offsetTop + 'px) scale(' + (1 / s) + ')';
+        e.style.opacity = cham ? '0' : '';
+      });
+    }
+    function lich() { if (!hen) hen = requestAnimationFrame(dat); }
+    vv.addEventListener('resize', lich);
+    vv.addEventListener('scroll', lich);
+    addEventListener('scroll', lich, { passive: true });
+    addEventListener('touchstart', function (e) {
+      if (vv.scale <= 1.01 || (e.target.closest && e.target.closest('[data-bam]'))) return;
+      cham = true; clearTimeout(dung); lich();
+    }, { passive: true });
+    addEventListener('touchend', function (e) {
+      if (e.touches && e.touches.length) return;
+      clearTimeout(dung);
+      dung = setTimeout(function () { cham = false; lich(); }, 120);
+    }, { passive: true });
+    // Ngăn mở/đóng bằng đổi class → đặt lại (ngăn vừa hiện chưa có transform).
+    new MutationObserver(lich).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+    window.bamKhungNhin = dat;
+    lich();
+  })();
+</script>
+</body>
+</html>
