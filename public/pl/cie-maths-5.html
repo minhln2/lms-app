@@ -561,10 +561,10 @@ timMo: false,
         <li x-show="mucHien(1, f)">
           <button type="button" @click="toiMuc(1); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
-            <span class="min-w-0 flex-1">Week 8 - 8.1 Addition and Subtraction &amp; Unit 4 and 6 Revision</span>
+            <span class="min-w-0 flex-1">Week 7 - 6.3 Equivalence and Comparison + 8.1 Addition and Subtraction</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/17'"></span>
+                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/12'"></span>
             </template>
           </button>
         </li>
@@ -572,10 +572,10 @@ timMo: false,
         <li x-show="mucHien(2, f)">
           <button type="button" @click="toiMuc(2); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
-            <span class="min-w-0 flex-1">Week 7 - 6.3 Equivalence and Comparison + 8.1 Addition and Subtraction</span>
+            <span class="min-w-0 flex-1">Week 8 - 8.1 Addition and Subtraction &amp; Unit 4 and 6 Revision</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-2'), p.done) + '/12'"></span>
+                    x-text="moduleDone(document.getElementById('mod-2'), p.done) + '/17'"></span>
             </template>
           </button>
         </li>
@@ -714,7 +714,830 @@ timMo: false,
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: true }"
              x-effect="if (q || filtering) open = true"
-             id="mod-1" data-module data-title="Week 8 - 8.1 Addition and Subtraction &amp; Unit 4 and 6 Revision"
+             id="mod-1" data-module data-title="Week 7 - 6.3 Equivalence and Comparison + 8.1 Addition and Subtraction"
+             x-show="moduleMatches($el, f)"
+             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <button @click="open = !open"
+              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
+        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
+             :class="open ? 'rotate-90' : ''"
+             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">Week 7 - 6.3 Equivalence and Comparison + 8.1 Addition and Subtraction</span>
+        <template x-if="p.online">
+          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 12
+                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/12'"></span>
+        </template>
+        <span class="text-xs text-slate-400 shrink-0">12 mục</span>
+      </button>
+
+      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-sechead data-title="Class Resources" data-sec="2"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>Class Resources</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="1. 6Nf.04 Recognise that fractions, decimals and percentages can have equivalent values..pptx" data-type="file" data-sec="2"
+             data-pkey="pl/79608/8948577" data-hash="d6887270dddb6937ffed9f758a08b5e8437b2f5a" data-ts="1791007777000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/8948577'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/8948577'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/8948577']; $el.indeterminate = !!p.redo['pl/79608/8948577']"
+                     @change="await p.toggle('pl/79608/8948577', 'd6887270dddb6937ffed9f758a08b5e8437b2f5a'); $el.checked = !!p.done['pl/79608/8948577']; $el.indeterminate = !!p.redo['pl/79608/8948577']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/1-6nf-04-recognise-that-fractions-decimals-and-percentages-can-have-equivalent-values/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                1. 6Nf.04 Recognise that fractions, decimals and percentages can have equivalent values..pptx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/8948577', 'd6887270dddb6937ffed9f758a08b5e8437b2f5a')">
+                  <button @click.stop="p.seen('pl/79608/8948577', 'd6887270dddb6937ffed9f758a08b5e8437b2f5a')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>672.2 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 03/10</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="2. 6Nf.08 Understand the relative size of quantities to compare and order numbers.pptx" data-type="file" data-sec="2"
+             data-pkey="pl/79608/8935887" data-hash="1e17729ce782772e0b8cb5aba43c707c73d9b61f" data-ts="1791374929000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/8935887'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/8935887'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/8935887']; $el.indeterminate = !!p.redo['pl/79608/8935887']"
+                     @change="await p.toggle('pl/79608/8935887', '1e17729ce782772e0b8cb5aba43c707c73d9b61f'); $el.checked = !!p.done['pl/79608/8935887']; $el.indeterminate = !!p.redo['pl/79608/8935887']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/2-6nf-08-understand-the-relative-size-of-quantities-to-compare-and-order-numbers/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                2. 6Nf.08 Understand the relative size of quantities to compare and order numbers.pptx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/8935887', '1e17729ce782772e0b8cb5aba43c707c73d9b61f')">
+                  <button @click.stop="p.seen('pl/79608/8935887', '1e17729ce782772e0b8cb5aba43c707c73d9b61f')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>474.8 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 07/10</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="3. 6Nf.02 Understand that a fraction can be represented as a division of the numerator by the denominator..pptx" data-type="file" data-sec="2"
+             data-pkey="pl/79608/8935885" data-hash="fa118ad7f7c6f8fb78e469ea24cd39b3c3793b57" data-ts="1790841372000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/8935885'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/8935885'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/8935885']; $el.indeterminate = !!p.redo['pl/79608/8935885']"
+                     @change="await p.toggle('pl/79608/8935885', 'fa118ad7f7c6f8fb78e469ea24cd39b3c3793b57'); $el.checked = !!p.done['pl/79608/8935885']; $el.indeterminate = !!p.redo['pl/79608/8935885']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/3-6nf-02-understand-that-a-fraction-can-be-represented-as-a-division-of-the-numerator-by-the-denominator/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                3. 6Nf.02 Understand that a fraction can be represented as a division of the numerator by the denominator..pptx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/8935885', 'fa118ad7f7c6f8fb78e469ea24cd39b3c3793b57')">
+                  <button @click.stop="p.seen('pl/79608/8935885', 'fa118ad7f7c6f8fb78e469ea24cd39b3c3793b57')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>1.1 MB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 01/10</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-sechead data-title="Optional Activities" data-sec="3"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>Optional Activities</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="Equivalent-Fractions-Decimals-and-Percentages.pdf" data-type="file" data-sec="3"
+             data-pkey="pl/79608/8948552" data-hash="0be96b7307be2332c8f1dbb06e2010af58eb4b49" data-ts="1791184940000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/8948552'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/8948552'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/8948552']; $el.indeterminate = !!p.redo['pl/79608/8948552']"
+                     @change="await p.toggle('pl/79608/8948552', '0be96b7307be2332c8f1dbb06e2010af58eb4b49'); $el.checked = !!p.done['pl/79608/8948552']; $el.indeterminate = !!p.redo['pl/79608/8948552']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/equivalent-fractions-decimals-and-percentages/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Equivalent-Fractions-Decimals-and-Percentages.pdf
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/8948552', '0be96b7307be2332c8f1dbb06e2010af58eb4b49')">
+                  <button @click.stop="p.seen('pl/79608/8948552', '0be96b7307be2332c8f1dbb06e2010af58eb4b49')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>118.2 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 05/10</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Equivalent fractions SATS questions.pdf" data-type="file" data-sec="3"
+             data-pkey="pl/79608/8948483" data-hash="7f7b4bea865746f760e3948a66c04b6733d9f6b0" data-ts="1790855420000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/8948483'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/8948483'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/8948483']; $el.indeterminate = !!p.redo['pl/79608/8948483']"
+                     @change="await p.toggle('pl/79608/8948483', '7f7b4bea865746f760e3948a66c04b6733d9f6b0'); $el.checked = !!p.done['pl/79608/8948483']; $el.indeterminate = !!p.redo['pl/79608/8948483']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/equivalent-fractions-sats-questions/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Equivalent fractions SATS questions.pdf
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/8948483', '7f7b4bea865746f760e3948a66c04b6733d9f6b0')">
+                  <button @click.stop="p.seen('pl/79608/8948483', '7f7b4bea865746f760e3948a66c04b6733d9f6b0')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>117.1 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 01/10</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Equivalent Fractions and Simplifying.pdf" data-type="file" data-sec="3"
+             data-pkey="pl/79608/8948484" data-hash="f9bc633d72e1e36284bed2ddd754a96d9417370e" data-ts="1790855462000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/8948484'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/8948484'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/8948484']; $el.indeterminate = !!p.redo['pl/79608/8948484']"
+                     @change="await p.toggle('pl/79608/8948484', 'f9bc633d72e1e36284bed2ddd754a96d9417370e'); $el.checked = !!p.done['pl/79608/8948484']; $el.indeterminate = !!p.redo['pl/79608/8948484']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/year-6-equivalent-fractions-and-simplifying-ma/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Equivalent Fractions and Simplifying.pdf
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/8948484', 'f9bc633d72e1e36284bed2ddd754a96d9417370e')">
+                  <button @click.stop="p.seen('pl/79608/8948484', 'f9bc633d72e1e36284bed2ddd754a96d9417370e')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>112.3 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 01/10</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Equivalent fractions, decimals and percentages WS.pdf" data-type="file" data-sec="3"
+             data-pkey="pl/79608/8948551" data-hash="2d333ffa439095528d772b0d1d48222bb939a9be" data-ts="1790858756000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/8948551'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/8948551'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/8948551']; $el.indeterminate = !!p.redo['pl/79608/8948551']"
+                     @change="await p.toggle('pl/79608/8948551', '2d333ffa439095528d772b0d1d48222bb939a9be'); $el.checked = !!p.done['pl/79608/8948551']; $el.indeterminate = !!p.redo['pl/79608/8948551']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/equivalent-fractions-decimals-and-percentages-ws/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Equivalent fractions, decimals and percentages WS.pdf
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/8948551', '2d333ffa439095528d772b0d1d48222bb939a9be')">
+                  <button @click.stop="p.seen('pl/79608/8948551', '2d333ffa439095528d772b0d1d48222bb939a9be')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>75.9 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 01/10</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="MyiMaths - Complete the tasks on fractions" data-type="page" data-sec="3"
+             data-pkey="pl/79608/8928489" data-hash="eb8d6f2a74bb8b14ca17f53f859f9a0ae9989d9e" data-ts="1790648251000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/8928489'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/8928489'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/8928489']; $el.indeterminate = !!p.redo['pl/79608/8928489']"
+                     @change="await p.toggle('pl/79608/8928489', 'eb8d6f2a74bb8b14ca17f53f859f9a0ae9989d9e'); $el.checked = !!p.done['pl/79608/8928489']; $el.indeterminate = !!p.redo['pl/79608/8928489']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">MyiMaths - Complete the tasks on fractions</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/8928489', 'eb8d6f2a74bb8b14ca17f53f859f9a0ae9989d9e')">
+                  <button @click.stop="p.seen('pl/79608/8928489', 'eb8d6f2a74bb8b14ca17f53f859f9a0ae9989d9e')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 29/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/79608/pages/myimaths-complete-the-tasks-on-fractions" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Log onto MyiMaths and complete the following tasks:</p>
+<p>Equivalent Fractions</p>
+<p>Comparing Fractions</p>
+<p>Ordering and Simplifying Fractions</p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Fraction, Decimal, Percent Equivalents" data-type="external" data-sec="3"
+             data-pkey="pl/79608/8928397" data-hash="02d692d861b42a71109751b658d63117b43ea060" data-ts="1790764260000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/8928397'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/8928397'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/8928397']; $el.indeterminate = !!p.redo['pl/79608/8928397']"
+                     @change="await p.toggle('pl/79608/8928397', '02d692d861b42a71109751b658d63117b43ea060'); $el.checked = !!p.done['pl/79608/8928397']; $el.indeterminate = !!p.redo['pl/79608/8928397']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://www.youtube.com/watch?v=0AITcfW7nFo" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Fraction, Decimal, Percent Equivalents
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/8928397', '02d692d861b42a71109751b658d63117b43ea060')">
+                  <button @click.stop="p.seen('pl/79608/8928397', '02d692d861b42a71109751b658d63117b43ea060')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 30/09</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Converting Fractions, Decimals and Percentages - Worksheet" data-type="external" data-sec="3"
+             data-pkey="pl/79608/8928398" data-hash="d008cb4385462722acf7a6b2b9f8de98c9e8a52f" data-ts="1790764260000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/8928398'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/8928398'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/8928398']; $el.indeterminate = !!p.redo['pl/79608/8928398']"
+                     @change="await p.toggle('pl/79608/8928398', 'd008cb4385462722acf7a6b2b9f8de98c9e8a52f'); $el.checked = !!p.done['pl/79608/8928398']; $el.indeterminate = !!p.redo['pl/79608/8928398']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://drive.google.com/open?id=1pYlF733bF8zyCXePUMhezQjmtBLgb6g6&amp;usp=drive_copy" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Converting Fractions, Decimals and Percentages - Worksheet
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/8928398', 'd008cb4385462722acf7a6b2b9f8de98c9e8a52f')">
+                  <button @click.stop="p.seen('pl/79608/8928398', 'd008cb4385462722acf7a6b2b9f8de98c9e8a52f')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 30/09</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Ordering Fractions Percentages and Decimals - Worksheet" data-type="external" data-sec="3"
+             data-pkey="pl/79608/8928399" data-hash="6bb956eb40f7d0b1fbe9cb32e9d12b227fa85db8" data-ts="1790764260000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/8928399'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/8928399'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/8928399']; $el.indeterminate = !!p.redo['pl/79608/8928399']"
+                     @change="await p.toggle('pl/79608/8928399', '6bb956eb40f7d0b1fbe9cb32e9d12b227fa85db8'); $el.checked = !!p.done['pl/79608/8928399']; $el.indeterminate = !!p.redo['pl/79608/8928399']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://corbettmaths.com/wp-content/uploads/2013/02/ordering-fdp-pdf.pdf" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Ordering Fractions Percentages and Decimals - Worksheet
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/8928399', '6bb956eb40f7d0b1fbe9cb32e9d12b227fa85db8')">
+                  <button @click.stop="p.seen('pl/79608/8928399', '6bb956eb40f7d0b1fbe9cb32e9d12b227fa85db8')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 30/09</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-sechead data-title="Homework" data-sec="1"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>Homework</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="Complete Workbook pages 86 - 89" data-type="page" data-sec="1"
+             data-pkey="pl/79608/8935895" data-hash="da39a3ee5e6b4b0d3255bfef95601890afd80709" data-ts="1790748279000"
+             
+             data-hw="1"
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/8935895'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/8935895'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/8935895']; $el.indeterminate = !!p.redo['pl/79608/8935895']"
+                     @change="await p.toggle('pl/79608/8935895', 'da39a3ee5e6b4b0d3255bfef95601890afd80709'); $el.checked = !!p.done['pl/79608/8935895']; $el.indeterminate = !!p.redo['pl/79608/8935895']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://lms.vinschool.edu.vn/courses/79608/pages/complete-workbook-pages-86-89" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Complete Workbook pages 86 - 89
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/8935895', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')">
+                  <button @click.stop="p.seen('pl/79608/8935895', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 30/09</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/79608/pages/complete-workbook-pages-86-89" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+      </div>
+    </section>
+    
+    <!-- Một Tuần học / Bài học -->
+    <section x-data="{ open: false }"
+             x-effect="if (q || filtering) open = true"
+             id="mod-2" data-module data-title="Week 8 - 8.1 Addition and Subtraction &amp; Unit 4 and 6 Revision"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -754,7 +1577,7 @@ timMo: false,
         
         
         <div data-item data-title="Worded Problems addition and subtraction.pdf" data-type="file" data-sec="3"
-             data-pkey="pl/79608/8998150" data-hash="108002c946dae401625c693c6b48dbda4f0ea426" data-ts="1791334039000"
+             data-pkey="pl/79608/8998150" data-hash="108002c946dae401625c693c6b48dbda4f0ea426" data-ts="1791348311000"
              
              
              x-show="itemMatches($el, f)"
@@ -814,7 +1637,7 @@ timMo: false,
         
         
         <div data-item data-title="Column Addition.pdf" data-type="file" data-sec="3"
-             data-pkey="pl/79608/8998151" data-hash="24605444646c4f7e480430a584a2213bd9b6e5fd" data-ts="1791334040000"
+             data-pkey="pl/79608/8998151" data-hash="24605444646c4f7e480430a584a2213bd9b6e5fd" data-ts="1791348328000"
              
              
              x-show="itemMatches($el, f)"
@@ -874,7 +1697,7 @@ timMo: false,
         
         
         <div data-item data-title="Subtraction Written Method.pdf" data-type="file" data-sec="3"
-             data-pkey="pl/79608/8998156" data-hash="174c863f32f9824ae4d02855580e9055964d78e5" data-ts="1791334078000"
+             data-pkey="pl/79608/8998156" data-hash="174c863f32f9824ae4d02855580e9055964d78e5" data-ts="1791348346000"
              
              
              x-show="itemMatches($el, f)"
@@ -1610,7 +2433,7 @@ timMo: false,
         
         
         <div data-item data-title="1. 6Np.03 – Compose, decompose and regroup numbers, including decimals..pptx" data-type="file" data-sec="2"
-             data-pkey="pl/79608/8994215" data-hash="055247dedd559c3a64152c86d71d581eb952c1fa" data-ts="1791276534000"
+             data-pkey="pl/79608/8994215" data-hash="055247dedd559c3a64152c86d71d581eb952c1fa" data-ts="1791285369000"
              
              
              x-show="itemMatches($el, f)"
@@ -1746,7 +2569,7 @@ timMo: false,
         
         
         <div data-item data-title="Complete the revision pack for Unit 4 + 6" data-type="page" data-sec="1"
-             data-pkey="pl/79608/8994208" data-hash="da39a3ee5e6b4b0d3255bfef95601890afd80709" data-ts="1791276289000"
+             data-pkey="pl/79608/8994208" data-hash="e54c22ec24e5c153e4345caa2662dd4336824d49" data-ts="1791338568000"
              
              data-hw="1"
              x-show="itemMatches($el, f)"
@@ -1761,554 +2584,7 @@ timMo: false,
               <input type="checkbox"
                      :title="p.redo['pl/79608/8994208'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
                      x-effect="$el.checked = !!p.done['pl/79608/8994208']; $el.indeterminate = !!p.redo['pl/79608/8994208']"
-                     @change="await p.toggle('pl/79608/8994208', 'da39a3ee5e6b4b0d3255bfef95601890afd80709'); $el.checked = !!p.done['pl/79608/8994208']; $el.indeterminate = !!p.redo['pl/79608/8994208']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
-              <a href="https://lms.vinschool.edu.vn/courses/79608/pages/complete-the-revision-pack-for-unit-4-+-6" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                Complete the revision pack for Unit 4 + 6
-                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                </svg>
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79608/8994208', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')">
-                  <button @click.stop="p.seen('pl/79608/8994208', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 06/10</span>
-                
-                
-                <a href="https://lms.vinschool.edu.vn/courses/79608/pages/complete-the-revision-pack-for-unit-4-+-6" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-      </div>
-    </section>
-    
-    <!-- Một Tuần học / Bài học -->
-    <section x-data="{ open: false }"
-             x-effect="if (q || filtering) open = true"
-             id="mod-2" data-module data-title="Week 7 - 6.3 Equivalence and Comparison + 8.1 Addition and Subtraction"
-             x-show="moduleMatches($el, f)"
-             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <button @click="open = !open"
-              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
-        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
-             :class="open ? 'rotate-90' : ''"
-             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-        </svg>
-        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">Week 7 - 6.3 Equivalence and Comparison + 8.1 Addition and Subtraction</span>
-        <template x-if="p.online">
-          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
-                :class="moduleDone($el.closest('[data-module]'), p.done) === 12
-                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
-                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/12'"></span>
-        </template>
-        <span class="text-xs text-slate-400 shrink-0">12 mục</span>
-      </button>
-
-      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
-        
-        
-        <div data-sechead data-title="Class Resources" data-sec="2"
-             x-show="headingMatches($el, f)"
-             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
-             style="padding-left: 1.0rem">
-          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
-          <template x-if="p.online">
-            <input type="checkbox" title="Đánh dấu cả nhóm này"
-                   x-effect="syncSecBox($el, p.done)"
-                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
-                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-          </template>
-          <span>Class Resources</span>
-        </div>
-        
-        
-        
-        <div data-item data-title="1. 6Nf.04 Recognise that fractions, decimals and percentages can have equivalent values..pptx" data-type="file" data-sec="2"
-             data-pkey="pl/79608/8948577" data-hash="d6887270dddb6937ffed9f758a08b5e8437b2f5a" data-ts="1791007777000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['pl/79608/8948577'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79608/8948577'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79608/8948577']; $el.indeterminate = !!p.redo['pl/79608/8948577']"
-                     @change="await p.toggle('pl/79608/8948577', 'd6887270dddb6937ffed9f758a08b5e8437b2f5a'); $el.checked = !!p.done['pl/79608/8948577']; $el.indeterminate = !!p.redo['pl/79608/8948577']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Tài liệu đã tải về local -->
-              <a href="doc/cie-maths-5/1-6nf-04-recognise-that-fractions-decimals-and-percentages-can-have-equivalent-values/index.html" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                1. 6Nf.04 Recognise that fractions, decimals and percentages can have equivalent values..pptx
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79608/8948577', 'd6887270dddb6937ffed9f758a08b5e8437b2f5a')">
-                  <button @click.stop="p.seen('pl/79608/8948577', 'd6887270dddb6937ffed9f758a08b5e8437b2f5a')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                <span>672.2 KB</span>
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 03/10</span>
-                
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="2. 6Nf.08 Understand the relative size of quantities to compare and order numbers.pptx" data-type="file" data-sec="2"
-             data-pkey="pl/79608/8935887" data-hash="1e17729ce782772e0b8cb5aba43c707c73d9b61f" data-ts="1790841367000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['pl/79608/8935887'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79608/8935887'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79608/8935887']; $el.indeterminate = !!p.redo['pl/79608/8935887']"
-                     @change="await p.toggle('pl/79608/8935887', '1e17729ce782772e0b8cb5aba43c707c73d9b61f'); $el.checked = !!p.done['pl/79608/8935887']; $el.indeterminate = !!p.redo['pl/79608/8935887']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Tài liệu đã tải về local -->
-              <a href="doc/cie-maths-5/2-6nf-08-understand-the-relative-size-of-quantities-to-compare-and-order-numbers/index.html" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                2. 6Nf.08 Understand the relative size of quantities to compare and order numbers.pptx
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79608/8935887', '1e17729ce782772e0b8cb5aba43c707c73d9b61f')">
-                  <button @click.stop="p.seen('pl/79608/8935887', '1e17729ce782772e0b8cb5aba43c707c73d9b61f')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                <span>474.8 KB</span>
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 01/10</span>
-                
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="3. 6Nf.02 Understand that a fraction can be represented as a division of the numerator by the denominator..pptx" data-type="file" data-sec="2"
-             data-pkey="pl/79608/8935885" data-hash="fa118ad7f7c6f8fb78e469ea24cd39b3c3793b57" data-ts="1790841372000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['pl/79608/8935885'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79608/8935885'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79608/8935885']; $el.indeterminate = !!p.redo['pl/79608/8935885']"
-                     @change="await p.toggle('pl/79608/8935885', 'fa118ad7f7c6f8fb78e469ea24cd39b3c3793b57'); $el.checked = !!p.done['pl/79608/8935885']; $el.indeterminate = !!p.redo['pl/79608/8935885']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Tài liệu đã tải về local -->
-              <a href="doc/cie-maths-5/3-6nf-02-understand-that-a-fraction-can-be-represented-as-a-division-of-the-numerator-by-the-denominator/index.html" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                3. 6Nf.02 Understand that a fraction can be represented as a division of the numerator by the denominator..pptx
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79608/8935885', 'fa118ad7f7c6f8fb78e469ea24cd39b3c3793b57')">
-                  <button @click.stop="p.seen('pl/79608/8935885', 'fa118ad7f7c6f8fb78e469ea24cd39b3c3793b57')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                <span>1.1 MB</span>
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 01/10</span>
-                
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-sechead data-title="Optional Activities" data-sec="3"
-             x-show="headingMatches($el, f)"
-             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
-             style="padding-left: 1.0rem">
-          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
-          <template x-if="p.online">
-            <input type="checkbox" title="Đánh dấu cả nhóm này"
-                   x-effect="syncSecBox($el, p.done)"
-                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
-                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-          </template>
-          <span>Optional Activities</span>
-        </div>
-        
-        
-        
-        <div data-item data-title="Equivalent fractions SATS questions.pdf" data-type="file" data-sec="3"
-             data-pkey="pl/79608/8948483" data-hash="7f7b4bea865746f760e3948a66c04b6733d9f6b0" data-ts="1790855420000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['pl/79608/8948483'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79608/8948483'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79608/8948483']; $el.indeterminate = !!p.redo['pl/79608/8948483']"
-                     @change="await p.toggle('pl/79608/8948483', '7f7b4bea865746f760e3948a66c04b6733d9f6b0'); $el.checked = !!p.done['pl/79608/8948483']; $el.indeterminate = !!p.redo['pl/79608/8948483']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Tài liệu đã tải về local -->
-              <a href="doc/cie-maths-5/equivalent-fractions-sats-questions/index.html" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                Equivalent fractions SATS questions.pdf
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79608/8948483', '7f7b4bea865746f760e3948a66c04b6733d9f6b0')">
-                  <button @click.stop="p.seen('pl/79608/8948483', '7f7b4bea865746f760e3948a66c04b6733d9f6b0')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                <span>117.1 KB</span>
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 01/10</span>
-                
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="Equivalent Fractions and Simplifying.pdf" data-type="file" data-sec="3"
-             data-pkey="pl/79608/8948484" data-hash="f9bc633d72e1e36284bed2ddd754a96d9417370e" data-ts="1790855462000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['pl/79608/8948484'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79608/8948484'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79608/8948484']; $el.indeterminate = !!p.redo['pl/79608/8948484']"
-                     @change="await p.toggle('pl/79608/8948484', 'f9bc633d72e1e36284bed2ddd754a96d9417370e'); $el.checked = !!p.done['pl/79608/8948484']; $el.indeterminate = !!p.redo['pl/79608/8948484']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Tài liệu đã tải về local -->
-              <a href="doc/cie-maths-5/year-6-equivalent-fractions-and-simplifying-ma/index.html" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                Equivalent Fractions and Simplifying.pdf
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79608/8948484', 'f9bc633d72e1e36284bed2ddd754a96d9417370e')">
-                  <button @click.stop="p.seen('pl/79608/8948484', 'f9bc633d72e1e36284bed2ddd754a96d9417370e')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                <span>112.3 KB</span>
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 01/10</span>
-                
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="Equivalent fractions, decimals and percentages WS.pdf" data-type="file" data-sec="3"
-             data-pkey="pl/79608/8948551" data-hash="2d333ffa439095528d772b0d1d48222bb939a9be" data-ts="1790858756000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['pl/79608/8948551'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79608/8948551'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79608/8948551']; $el.indeterminate = !!p.redo['pl/79608/8948551']"
-                     @change="await p.toggle('pl/79608/8948551', '2d333ffa439095528d772b0d1d48222bb939a9be'); $el.checked = !!p.done['pl/79608/8948551']; $el.indeterminate = !!p.redo['pl/79608/8948551']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Tài liệu đã tải về local -->
-              <a href="doc/cie-maths-5/equivalent-fractions-decimals-and-percentages-ws/index.html" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                Equivalent fractions, decimals and percentages WS.pdf
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79608/8948551', '2d333ffa439095528d772b0d1d48222bb939a9be')">
-                  <button @click.stop="p.seen('pl/79608/8948551', '2d333ffa439095528d772b0d1d48222bb939a9be')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                <span>75.9 KB</span>
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 01/10</span>
-                
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="Equivalent-Fractions-Decimals-and-Percentages.pdf" data-type="file" data-sec="3"
-             data-pkey="pl/79608/8948552" data-hash="0be96b7307be2332c8f1dbb06e2010af58eb4b49" data-ts="1790855490000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['pl/79608/8948552'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79608/8948552'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79608/8948552']; $el.indeterminate = !!p.redo['pl/79608/8948552']"
-                     @change="await p.toggle('pl/79608/8948552', '0be96b7307be2332c8f1dbb06e2010af58eb4b49'); $el.checked = !!p.done['pl/79608/8948552']; $el.indeterminate = !!p.redo['pl/79608/8948552']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Tài liệu đã tải về local -->
-              <a href="doc/cie-maths-5/equivalent-fractions-decimals-and-percentages/index.html" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                Equivalent-Fractions-Decimals-and-Percentages.pdf
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79608/8948552', '0be96b7307be2332c8f1dbb06e2010af58eb4b49')">
-                  <button @click.stop="p.seen('pl/79608/8948552', '0be96b7307be2332c8f1dbb06e2010af58eb4b49')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                <span>118.2 KB</span>
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 01/10</span>
-                
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="MyiMaths - Complete the tasks on fractions" data-type="page" data-sec="3"
-             data-pkey="pl/79608/8928489" data-hash="eb8d6f2a74bb8b14ca17f53f859f9a0ae9989d9e" data-ts="1790648251000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['pl/79608/8928489'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79608/8928489'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79608/8928489']; $el.indeterminate = !!p.redo['pl/79608/8928489']"
-                     @change="await p.toggle('pl/79608/8928489', 'eb8d6f2a74bb8b14ca17f53f859f9a0ae9989d9e'); $el.checked = !!p.done['pl/79608/8928489']; $el.indeterminate = !!p.redo['pl/79608/8928489']"
+                     @change="await p.toggle('pl/79608/8994208', 'e54c22ec24e5c153e4345caa2662dd4336824d49'); $el.checked = !!p.done['pl/79608/8994208']; $el.indeterminate = !!p.redo['pl/79608/8994208']"
                      class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
               
             </template>
@@ -2317,7 +2593,7 @@ timMo: false,
               
               <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
               <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
-                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">MyiMaths - Complete the tasks on fractions</span>
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Complete the revision pack for Unit 4 + 6</span>
                 <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
                      :class="o ? 'rotate-180' : ''"
                      fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -2330,8 +2606,8 @@ timMo: false,
                 <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
                 <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
                      KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79608/8928489', 'eb8d6f2a74bb8b14ca17f53f859f9a0ae9989d9e')">
-                  <button @click.stop="p.seen('pl/79608/8928489', 'eb8d6f2a74bb8b14ca17f53f859f9a0ae9989d9e')"
+                <template x-if="p.stale('pl/79608/8994208', 'e54c22ec24e5c153e4345caa2662dd4336824d49')">
+                  <button @click.stop="p.seen('pl/79608/8994208', 'e54c22ec24e5c153e4345caa2662dd4336824d49')"
                           title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
                           class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
                     ⟳ có cập nhật mới
@@ -2343,10 +2619,10 @@ timMo: false,
                 
                 
                 
-                <span title="Cập nhật lần cuối tại nguồn">🕓 29/09</span>
+                <span title="Cập nhật lần cuối tại nguồn">🕓 07/10</span>
                 
                 
-                <a href="https://lms.vinschool.edu.vn/courses/79608/pages/myimaths-complete-the-tasks-on-fractions" target="_blank" rel="noopener"
+                <a href="https://lms.vinschool.edu.vn/courses/79608/pages/complete-the-revision-pack-for-unit-4-+-6" target="_blank" rel="noopener"
                    class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
                 
               </div>
@@ -2354,279 +2630,10 @@ timMo: false,
               
               <div x-show="o" x-collapse x-cloak
                    class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
-                <p>Log onto MyiMaths and complete the following tasks:</p>
-<p>Equivalent Fractions</p>
-<p>Comparing Fractions</p>
-<p>Ordering and Simplifying Fractions</p>
+                <p><a class="instructure_file_link instructure_scribd_file inline_disabled" data-canvas-previewable="false" href="doc/cie-maths-5/week-8-homework/index.html" target="_blank" title="Week 8 homework.docx">Week 8 homework.docx</a></p>
+<p>Complete the booklet as revision for your Unit 4 and Unit 6 test.</p>
+<p>Due - Tuesday 13th October.</p>
               </div>
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="Fraction, Decimal, Percent Equivalents" data-type="external" data-sec="3"
-             data-pkey="pl/79608/8928397" data-hash="02d692d861b42a71109751b658d63117b43ea060" data-ts="1790764260000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['pl/79608/8928397'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79608/8928397'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79608/8928397']; $el.indeterminate = !!p.redo['pl/79608/8928397']"
-                     @change="await p.toggle('pl/79608/8928397', '02d692d861b42a71109751b658d63117b43ea060'); $el.checked = !!p.done['pl/79608/8928397']; $el.indeterminate = !!p.redo['pl/79608/8928397']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
-              <a href="https://www.youtube.com/watch?v=0AITcfW7nFo" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                Fraction, Decimal, Percent Equivalents
-                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                </svg>
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79608/8928397', '02d692d861b42a71109751b658d63117b43ea060')">
-                  <button @click.stop="p.seen('pl/79608/8928397', '02d692d861b42a71109751b658d63117b43ea060')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 30/09</span>
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="Converting Fractions, Decimals and Percentages - Worksheet" data-type="external" data-sec="3"
-             data-pkey="pl/79608/8928398" data-hash="d008cb4385462722acf7a6b2b9f8de98c9e8a52f" data-ts="1790764260000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['pl/79608/8928398'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79608/8928398'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79608/8928398']; $el.indeterminate = !!p.redo['pl/79608/8928398']"
-                     @change="await p.toggle('pl/79608/8928398', 'd008cb4385462722acf7a6b2b9f8de98c9e8a52f'); $el.checked = !!p.done['pl/79608/8928398']; $el.indeterminate = !!p.redo['pl/79608/8928398']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
-              <a href="https://drive.google.com/open?id=1pYlF733bF8zyCXePUMhezQjmtBLgb6g6&amp;usp=drive_copy" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                Converting Fractions, Decimals and Percentages - Worksheet
-                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                </svg>
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79608/8928398', 'd008cb4385462722acf7a6b2b9f8de98c9e8a52f')">
-                  <button @click.stop="p.seen('pl/79608/8928398', 'd008cb4385462722acf7a6b2b9f8de98c9e8a52f')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 30/09</span>
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="Ordering Fractions Percentages and Decimals - Worksheet" data-type="external" data-sec="3"
-             data-pkey="pl/79608/8928399" data-hash="6bb956eb40f7d0b1fbe9cb32e9d12b227fa85db8" data-ts="1790764260000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['pl/79608/8928399'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79608/8928399'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79608/8928399']; $el.indeterminate = !!p.redo['pl/79608/8928399']"
-                     @change="await p.toggle('pl/79608/8928399', '6bb956eb40f7d0b1fbe9cb32e9d12b227fa85db8'); $el.checked = !!p.done['pl/79608/8928399']; $el.indeterminate = !!p.redo['pl/79608/8928399']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
-              <a href="https://corbettmaths.com/wp-content/uploads/2013/02/ordering-fdp-pdf.pdf" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                Ordering Fractions Percentages and Decimals - Worksheet
-                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                </svg>
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79608/8928399', '6bb956eb40f7d0b1fbe9cb32e9d12b227fa85db8')">
-                  <button @click.stop="p.seen('pl/79608/8928399', '6bb956eb40f7d0b1fbe9cb32e9d12b227fa85db8')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 30/09</span>
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-sechead data-title="Homework" data-sec="1"
-             x-show="headingMatches($el, f)"
-             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
-             style="padding-left: 1.0rem">
-          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
-          <template x-if="p.online">
-            <input type="checkbox" title="Đánh dấu cả nhóm này"
-                   x-effect="syncSecBox($el, p.done)"
-                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
-                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-          </template>
-          <span>Homework</span>
-        </div>
-        
-        
-        
-        <div data-item data-title="Complete Workbook pages 86 - 89" data-type="page" data-sec="1"
-             data-pkey="pl/79608/8935895" data-hash="da39a3ee5e6b4b0d3255bfef95601890afd80709" data-ts="1790748279000"
-             
-             data-hw="1"
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['pl/79608/8935895'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79608/8935895'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79608/8935895']; $el.indeterminate = !!p.redo['pl/79608/8935895']"
-                     @change="await p.toggle('pl/79608/8935895', 'da39a3ee5e6b4b0d3255bfef95601890afd80709'); $el.checked = !!p.done['pl/79608/8935895']; $el.indeterminate = !!p.redo['pl/79608/8935895']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
-              <a href="https://lms.vinschool.edu.vn/courses/79608/pages/complete-workbook-pages-86-89" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                Complete Workbook pages 86 - 89
-                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                </svg>
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79608/8935895', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')">
-                  <button @click.stop="p.seen('pl/79608/8935895', 'da39a3ee5e6b4b0d3255bfef95601890afd80709')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 30/09</span>
-                
-                
-                <a href="https://lms.vinschool.edu.vn/courses/79608/pages/complete-workbook-pages-86-89" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
-                
-              </div>
-
               
             </div>
           </div>
