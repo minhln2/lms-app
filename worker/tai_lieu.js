@@ -2,6 +2,7 @@
  * Tài liệu tải về (`/<hs>/materials/<môn>/<học phần>/<tên>`) phục vụ từ R2 `lms-kho`, khoá
  * `tai-lieu/<hs>/<môn>/<học phần>/<tên>` — ADR 0062. `scripts/day_tai_lieu_r2.py` đẩy từ
  * `dist/<hs>/materials/` TRƯỚC deploy, xoá tệp giáo viên đã gỡ SAU deploy.
+ * Khoá R2 KHÔNG chứa `..`: tên có `..` (vd `Tuan 1..pdf`) nằm dưới khoá `Tuan 1.~.pdf` — `khoaR2`, xem hàm đó.
  *
  * Vì sao Worker mà không phải tệp tĩnh: tài liệu to tới ~100 MB (trần tệp tĩnh 25 MiB) và cần
  * HTTP Range (video tua được, PDF.js xin từng đoạn) mà tệp tĩnh bỏ qua Range (đo 2026-10-03,
@@ -44,7 +45,21 @@ export function laTepChayMa(khoa) {
 
 export const laTaiLieu = (pathname) => TL_RE.test(pathname);
 
-/** Pathname → khoá R2, hoặc null (URI `%` hỏng, có đoạn `..`, ra ngoài `tai-lieu/`). */
+/**
+ * Khoá logic → khoá R2 THẬT: mọi `..` → `.~.`, LẶP tới khi hết `..` (`...` → `.~.~.`). Phép đổi tất định của
+ * `scripts/day_tai_lieu_r2.py › khoa_r2` — script đẩy tệp `Tuan 1..pdf` dưới khoá `Tuan 1.~.pdf`, URL trên site
+ * giữ tên gốc, nên Worker phải đổi y hệt để tìm đúng khoá.
+ * Vì sao có phép đổi: wrangler đặt khoá không mã hoá vào đường dẫn API, Cloudflare từ chối mọi đường dẫn chứa `..`
+ * (`r2 bulk put` → `403: Forbidden`; đo thật 2026-10-09: `a..b.txt` và `a%2E%2Eb.txt` đều 403, `a.~.b.txt` OK,
+ * 31 tệp thật có `..` trong tên). Hai bên PHẢI giống nhau: tests/test_day_tai_lieu_r2.py (17) chạy hàm này qua node.
+ * ⚠ Chỉ áp SAU `khoaHopLe`: đoạn `..` (thoát thư mục) phải bị từ chối 400, không được thành `.~.` rồi lọt.
+ */
+export function khoaR2(khoa) {
+  while (khoa.includes("..")) khoa = khoa.replaceAll("..", ".~.");
+  return khoa;
+}
+
+/** Pathname → khoá R2 (đã qua `khoaR2`: `..` giữa tên → `.~.`), hoặc null (URI `%` hỏng, có CẢ ĐOẠN `..`/`.`, ra ngoài `tai-lieu/`). */
 export function khoaTaiLieu(pathname) {
   const m = TL_RE.exec(pathname);
   if (!m) return null;
@@ -54,7 +69,7 @@ export function khoaTaiLieu(pathname) {
   } catch {
     return null;
   }
-  return khoaHopLe(khoa) ? khoa : null;
+  return khoaHopLe(khoa) ? khoaR2(khoa) : null;
 }
 
 const loi = (status, msg) =>
