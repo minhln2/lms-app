@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -17,6 +18,7 @@
   <style>
     [x-cloak] { display: none !important; }
     .lms-content img { max-width: 100%; height: auto; border-radius: 0.5rem; }
+    .lms-content video { max-width: 100%; height: auto; border-radius: 0.5rem; }
     .lms-content iframe { max-width: 100%; }
     .lms-content a { color: #4f46e5; text-decoration: underline; }
     .lms-content p { margin: 0.5rem 0; }
@@ -1412,7 +1414,7 @@ timMo: false,
 <p>Để hỗ trợ tốt cho việc học tập của học sinh, mỗi chủ đề (module học tập) bao gồm những tư liệu như video, bài viết, webside, sách tham khảo được giáo viên lựa chọn cũng như sản phẩm báo cáo của học sinh.</p>
 <p>Học sinh cần có thói quen ghi chép, tra cứu, chọn lọc thông tin để có thể hoàn thành các nhiệm vụ cá nhân, nhiệm vụ nhóm trong từng dự án, chủ đề của năm học.</p>
 <p><em><strong>Để bắt đầu với các nội dung chi tiết, học sinh lựa chọn "Modules" ở khung điều hướng bên trái hoặc nhấp vào liên kết dưới đây:</strong></em></p>
-<p style="text-align: center;"><a href="https://lms.vinschool.edu.vn/courses/80104/modules" rel="noopener" target="_blank"><img alt="unnamed.png" height="88" loading="lazy" src="https://minhln2.github.io/lms/pl/materials/viet-nam-hoc-5/chu-de-1-hoa-van-dinh-den-chua/unnamed.png" width="302"/></a></p>
+<p style="text-align: center;"><a href="https://lms.vinschool.edu.vn/courses/80104/modules" rel="noopener" target="_blank"><img alt="unnamed.png" height="88" loading="lazy" src="materials/viet-nam-hoc-5/chu-de-1-hoa-van-dinh-den-chua/unnamed.png" width="302"/></a></p>
               </div>
               
             </div>
@@ -2323,5 +2325,26 @@ timMo: false,
     lich();
   })();
 </script>
+  
+<script>
+  (function () {
+    var vs = document.querySelectorAll('video[data-src]');
+    if (!vs.length) return;
+    function nap(v) {
+      if (v.getAttribute('src')) return;
+      v.src = v.getAttribute('data-src');
+      var p = v.play();
+      if (p && p.catch) p.catch(function () {});
+    }
+    if (!('IntersectionObserver' in window)) { vs.forEach(nap); return; }
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (e.isIntersecting) { io.unobserve(e.target); nap(e.target); }
+      });
+    }, { rootMargin: '200px' });
+    vs.forEach(function (v) { io.observe(v); });
+  })();
+</script>
+
 </body>
 </html>

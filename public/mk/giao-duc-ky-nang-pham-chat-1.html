@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -17,6 +18,7 @@
   <style>
     [x-cloak] { display: none !important; }
     .lms-content img { max-width: 100%; height: auto; border-radius: 0.5rem; }
+    .lms-content video { max-width: 100%; height: auto; border-radius: 0.5rem; }
     .lms-content iframe { max-width: 100%; }
     .lms-content a { color: #4f46e5; text-decoration: underline; }
     .lms-content p { margin: 0.5rem 0; }
@@ -698,7 +700,7 @@ timMo: false,
 <p>Bước 1: Thể hiện đúng cảm xúc của mình</p>
 <p style="text-align: center;"><iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" height="315" loading="lazy" src="https://www.youtube.com/embed/jetoWelJJJk?si=H-hZ_ttYvQYq4r_L" title="YouTube video player" width="560"></iframe></p>
 <p>Bước 2: Nhận diện và gọi tên cảm xúc của người khác dựa vào:</p>
-<p><img alt="K1_Clise_ Tuan 9.jpg" height="265" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/giao-duc-ky-nang-pham-chat-1/chuong-2-nhung-manh-ghep-cam-xuc/K1_Clise_ Tuan 9.jpg" style="display: block; margin-left: auto; margin-right: auto;" width="471"/></p>
+<p><img alt="K1_Clise_ Tuan 9.jpg" height="265" loading="lazy" src="materials/giao-duc-ky-nang-pham-chat-1/chuong-2-nhung-manh-ghep-cam-xuc/K1_Clise_ Tuan 9.jpg" style="display: block; margin-left: auto; margin-right: auto;" width="471"/></p>
 <p>Bước 3: Có thái độ phù hợp với tâm trạng, cảm xúc của người khác</p>
 <p>+ Vui vẻ, hưởng ứng, chúc mừng nếu họ vui.</p>
 <p>+ An ủi, vỗ về nếu họ buồn/sợ hãi</p>
@@ -1067,7 +1069,7 @@ timMo: false,
 <p>-<span> </span><strong> </strong>Học sinh mô tả và thực hiện được tác phong, giọng điệu để thể hiện sự mạnh dạn.</p>
 <p>-<span> Học sinh thể hiện kĩ năng giao tiếp mạnh dạn trong các tình huống thường gặp ở lớp, ở trường.</span></p>
 <p><span><em><strong>2. Hướng dẫn cách học: </strong></em></span>Các bạn nhỏ hãy cùng thực hiện các bước sau:</p>
-<p><img alt="cxmd.png" height="788" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/giao-duc-ky-nang-pham-chat-1/chuong-1-the-gioi-moi-cua-em/cxmd.png" width="1316"/></p>
+<p><img alt="cxmd.png" height="788" loading="lazy" src="materials/giao-duc-ky-nang-pham-chat-1/chuong-1-the-gioi-moi-cua-em/cxmd.png" width="1316"/></p>
 <p> </p>
 <p style="text-align: center;"><iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" height="315" loading="lazy" src="https://www.youtube.com/embed/hIFV7PDmOTE?si=VKHlEoJ9X4LfiICz" title="YouTube video player" width="560"></iframe></p>
               </div>
@@ -1230,7 +1232,7 @@ timMo: false,
                    class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
                 <p style="text-align: center;"><span style="font-size: 14pt;"><strong><br/>Các bạn nhỏ hãy nhớ bộ quy tắc lắng nghe nhé!</strong></span></p>
 <p style="text-align: center;"><span style="font-size: 14pt;"><strong>Cô mong rằng chúng mình sẽ luôn sử dụng trong các tiết học để học thật tốt!</strong></span></p>
-<p style="text-align: left;"><span style="font-size: 14pt;"><strong><img alt="9.png" height="1143" loading="lazy" src="https://minhln2.github.io/lms/mk/materials/giao-duc-ky-nang-pham-chat-1/chuong-1-the-gioi-moi-cua-em/9.png" width="1495"/></strong></span></p>
+<p style="text-align: left;"><span style="font-size: 14pt;"><strong><img alt="9.png" height="1143" loading="lazy" src="materials/giao-duc-ky-nang-pham-chat-1/chuong-1-the-gioi-moi-cua-em/9.png" width="1495"/></strong></span></p>
               </div>
               
             </div>
@@ -1491,5 +1493,26 @@ timMo: false,
     lich();
   })();
 </script>
+  
+<script>
+  (function () {
+    var vs = document.querySelectorAll('video[data-src]');
+    if (!vs.length) return;
+    function nap(v) {
+      if (v.getAttribute('src')) return;
+      v.src = v.getAttribute('data-src');
+      var p = v.play();
+      if (p && p.catch) p.catch(function () {});
+    }
+    if (!('IntersectionObserver' in window)) { vs.forEach(nap); return; }
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (e.isIntersecting) { io.unobserve(e.target); nap(e.target); }
+      });
+    }, { rootMargin: '200px' });
+    vs.forEach(function (v) { io.observe(v); });
+  })();
+</script>
+
 </body>
 </html>

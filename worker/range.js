@@ -5,8 +5,10 @@
  * `Range: bytes=100-199` vẫn nhận 200 + đủ 52.800 byte, không có `Accept-Ranges`.
  * Thiếu Range thì Chromium không tua được (đặt 3,6 s rơi về 0,09 s): chạm một từ là
  * nghe lại cả lượt đánh vần từ đầu, thanh tua của bài đọc vô dụng; Safari iOS có thể
- * từ chối phát hẳn. `wrangler.toml` `[assets] run_worker_first = ["/tap-doc/am/*"]`
- * cho Worker chạy trước CHỈ ở đường này; mọi tệp tĩnh khác vẫn đi thẳng.
+ * từ chối phát hẳn. `wrangler.toml` `[assets] run_worker_first` cho Worker chạy trước CHỈ ở
+ * HAI đường: audio này và tài liệu tải về `/<hs>/materials/…` (worker/tai_lieu.js, ADR 0062);
+ * mọi tệp tĩnh khác vẫn đi thẳng. (Đừng chép nguyên mẫu glob vào chú thích khối: chuỗi "/" + "*"
+ * + "/" kết thúc chú thích.)
  *
  * Nguồn: R2 `lms-kho` khoá `tap-doc/am/<hash>.mp3` (đẩy bởi scripts/day_am_r2.sh trước
  * deploy) — audio KHÔNG nằm trong public/ để khỏi tính vào trần 20.000 tệp tĩnh mỗi

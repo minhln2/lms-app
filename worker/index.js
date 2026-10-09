@@ -13,6 +13,7 @@
  *   /api/quantri/phien → đổi PARENT_SECRET lấy phiên quản trị 24 giờ (worker/diem.js, ADR 0061)
  *   /tap-doc/am/*.mp3 → audio tập đọc có HTTP Range (worker/range.js; chỉ đường này
  *                    chạy Worker trước tệp tĩnh — run_worker_first trong wrangler.toml)
+ *   /<hs>/materials/* → tài liệu tải về từ R2 `tai-lieu/` (worker/tai_lieu.js, ADR 0062; run_worker_first)
  *   còn lại        → trả file tĩnh từ binding ASSETS (thư mục dist/)
  *
  * API:
@@ -40,6 +41,7 @@ import { handleLookup, handleLookupHistory } from "./lookup.js";
 import { handleTapdoc } from "./tapdoc.js";
 import { handleDiem, doiChieuTick, an } from "./diem.js";
 import { laAm, phucVuAm } from "./range.js";
+import { laTaiLieu, phucVuTaiLieu } from "./tai_lieu.js";
 
 const KEY = "progress";
 // Nhịp tim nằm ở khoá RIÊNG, không nhét chung vào `progress`. Tiến độ học là thứ
@@ -279,8 +281,10 @@ export default {
     //   3. "/pl" (thư mục, không đuôi) không còn tìm ra pl/index.html → hỏng
     //      trang riêng của học sinh
     // Audio tập đọc: tệp tĩnh của Workers bỏ qua Range → tự cắt (worker/range.js).
-    // wrangler.toml cho Worker chạy trước CHỈ ở /tap-doc/am/*.
+    // Tài liệu tải về: R2 `tai-lieu/`, truyền luồng + Range (worker/tai_lieu.js, ADR 0062).
+    // wrangler.toml cho Worker chạy trước CHỈ ở /tap-doc/am/* và /*/materials/*.
     if (laAm(pathname)) return phucVuAm(request, env);
+    if (laTaiLieu(pathname)) return phucVuTaiLieu(request, env);
 
     const asset = (path) => env.ASSETS.fetch(new Request(new URL(path, url), request));
 

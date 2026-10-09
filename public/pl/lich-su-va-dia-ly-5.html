@@ -2,6 +2,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -17,6 +18,7 @@
   <style>
     [x-cloak] { display: none !important; }
     .lms-content img { max-width: 100%; height: auto; border-radius: 0.5rem; }
+    .lms-content video { max-width: 100%; height: auto; border-radius: 0.5rem; }
     .lms-content iframe { max-width: 100%; }
     .lms-content a { color: #4f46e5; text-decoration: underline; }
     .lms-content p { margin: 0.5rem 0; }
@@ -2117,5 +2119,26 @@ timMo: false,
     lich();
   })();
 </script>
+  
+<script>
+  (function () {
+    var vs = document.querySelectorAll('video[data-src]');
+    if (!vs.length) return;
+    function nap(v) {
+      if (v.getAttribute('src')) return;
+      v.src = v.getAttribute('data-src');
+      var p = v.play();
+      if (p && p.catch) p.catch(function () {});
+    }
+    if (!('IntersectionObserver' in window)) { vs.forEach(nap); return; }
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (e.isIntersecting) { io.unobserve(e.target); nap(e.target); }
+      });
+    }, { rootMargin: '200px' });
+    vs.forEach(function (v) { io.observe(v); });
+  })();
+</script>
+
 </body>
 </html>
