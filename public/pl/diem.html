@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -9,7 +10,7 @@
   <title>Điểm thưởng — PL</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.91d57ade.css">
+  <link rel="stylesheet" href="../assets/tw.ebf0ac4b.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>[x-cloak]{display:none!important}</style>
   <script>
@@ -18,18 +19,30 @@
     //     /api/study/stats). Lượt GET này cũng là một lượt ĐỐI CHIẾU tick: bài tự tick (src/main.py) được cộng tại đây.
     //   • Khối "Bố mẹ": phiên quản trị 24 giờ. POST /api/quantri/phien {ma} → {token, het}, cất ở localStorage `diem_qt`.
     //     Phiên còn hạn → form trừ điểm → POST /api/diem/doi (header x-quantri). Worker trả 401 → phiên hỏng: xoá.
+    //   • Gỡ đánh dấu (ADR 0063) — CHỈ khi phiên bố mẹ mở: dòng lịch sử có `go` hiện nút ("Gỡ" · "Gỡ cả truyện" · "Gỡ ngày");
+    //     bấm → hộp xác nhận nêu việc gì mất + số ⭐ trừ → tick: POST /api/progress {key, done: false} (mã lms_key, đúng như bé
+    //     bỏ tick); truyện: POST /api/quantri/truyen/go; ngày ôn: POST /api/quantri/on/go (x-quantri). Khối "⭐ Thẻ đã thuộc":
+    //     GET /api/quantri/thuoc + chữ thẻ từ study/<môn>.json; gỡ = POST /api/study known v 0 (mã lms_key, không dính sao).
     //   • Không gọi được API (GitHub Pages, file cục bộ, chưa có mã) → `online` false: lời nhắc + ô mã bí mật.
     // `ready` để bài test chờ theo điều kiện (ADR 0039; test_tap_target đọc cờ này).
     function trangDiem() {
       return {
         user: "pl",
+        // slug môn → tên (môn có học liệu ôn tập; builder truyền study_courses) — tên nhóm ôn / khối thẻ đã thuộc.
+        tenMonCua: Object.fromEntries([{"name": "Ti\u1ebfng Vi\u1ec7t 5", "slug": "tieng-viet-5"}, {"name": "CIE Maths 5", "slug": "cie-maths-5"}, {"name": "CIE ESL 5", "slug": "cie-esl-5"}, {"name": "CIE Science 5", "slug": "cie-science-5"}, {"name": "L\u1ecbch S\u1eed v\u00e0 \u0110\u1ecba L\u00fd 5", "slug": "lich-su-va-dia-ly-5"}].map((c) => [c.slug, c.name])),
+        // khối tóm tắt → các trường chữ làm id tick `m.*` (src/study.py MARK_KEYS): chữ của thẻ đã thuộc loại `m.*`.
+        markKeys: {"checklists": ["title"], "compares": ["title"], "experiments": ["title"], "grammar": ["title"], "phrases": ["title"], "points": ["t"], "readings": ["title"], "sounds": ["title"], "topics": ["title", "def"], "watch_out": ["wrong"], "worked": ["title", "problem"]},
         secret: localStorage.getItem('lms_key') || '',
         ready: false, online: false, du: 0, lichSu: [],
         qt: null, moMa: false, ma: '', soTru: '', ghiChu: '', dang: false, loiQt: '', bao: '',
+        hoi: null,                // hộp xác nhận gỡ: {loai: 'tick'|'truyen'|'on'|'thuoc', chu, loi, het?, x?, mon?, t?}
+                                  // `loi` = dòng lỗi NGAY TRONG hộp (gỡ hỏng thì hộp giữ mở); `het` = phiên bố mẹ vừa hết hạn.
+        thuoc: [], thuocLoi: '',  // [{mon, ten, the: [{i, c, chu}]}]
 
         async init() {
           this.qt = this.docPhien();
           await this.tai();
+          if (this.qt && this.online) await this.taiThuoc();
           this.ready = true;
         },
         docPhien() {
@@ -50,7 +63,9 @@
             this.lichSu = Array.isArray(d.lich_su) ? d.lich_su : [];
             this.online = true;
           } catch (e) {
-            this.online = false;
+            // Lượt nạp LẠI (sau khi gỡ / trừ) mà hỏng thì giữ số liệu cũ trên màn hình — đừng lật cả trang sang "ngoại tuyến"
+            // (hộp xác nhận đang báo lỗi nằm trong khối online). Lượt nạp đầu (chưa ready) hỏng mới là ngoại tuyến thật.
+            if (!this.ready) this.online = false;
           }
         },
         ngay(ts) {
@@ -69,13 +84,136 @@
           }
           return ra;
         },
-        // Biểu tượng theo nguồn (tiền tố khoá — bảng §2 của spec).
+        // Biểu tượng theo nguồn (tiền tố khoá — bảng §2 của spec; huy: = dòng gỡ, ADR 0063).
         bieuTuong(k) {
           const p = String(k).split(':');
           if (p[0] === 'td') return { doc: '📖', quiz: '❓', thuam: '🎙' }[p[1]] || '📖';
-          return { tick: '✅', nhom: '🏁', on: '🧠', doi: '🎁' }[p[0]] || '⭐';
+          return { tick: '✅', nhom: '🏁', on: '🧠', doi: '🎁', huy: '↩' }[p[0]] || '⭐';
         },
         soDiem(d) { return (d > 0 ? '+' : '') + d; },
+        tenMon(slug) { return this.tenMonCua[slug] || slug; },
+        // ── Gỡ đánh dấu (ADR 0063) ───────────────────────────────────────────
+        nhanNut(x) { return { tick: 'Gỡ', truyen: 'Gỡ cả truyện', on: 'Gỡ ngày' }[x.go.loai] || 'Gỡ'; },
+        // Tên truyện từ nhãn: "Đọc xong · <tên>" · "Quiz · <tên> · câu N" · "Thu âm · <tên>".
+        tenTruyen(x) { const p = String(x.nhan || '').split(' · '); return p.length > 1 ? p[1] : x.go.truyen; },
+        // Sao của cả truyện = tổng các dòng ĐANG gỡ được của truyện đó trong 100 dòng đã tải (số thật: `tru` máy chủ trả).
+        saoTruyen(id) {
+          return this.lichSu.filter((y) => y.go && y.go.loai === 'truyen' && y.go.truyen === id).reduce((s, y) => s + y.diem, 0);
+        },
+        hoiGo(x) {
+          const g = x.go;
+          let chu;
+          if (g.loai === 'tick') {
+            chu = 'Bỏ dấu "đã học" của "' + (x.nhan || g.key) + '": trừ ' + x.diem + ' ⭐ (kèm thưởng hoàn thành phần, nếu đang có).';
+          } else if (g.loai === 'truyen') {
+            chu = 'Gỡ cả truyện "' + this.tenTruyen(x) + '": xoá tiến độ đọc, quiz, bản thu; trừ khoảng ' + this.saoTruyen(g.truyen) + ' ⭐.';
+          } else {
+            chu = 'Gỡ ngày ôn ' + this.tenMon(g.mon) + ' ' + g.ngay.split('-').reverse().join('/') +
+                  ': xoá các lượt làm bài của ngày đó, lịch ôn quay về như chưa làm; trừ ' + x.diem + ' ⭐.';
+          }
+          this.loiQt = ''; this.bao = '';
+          this.hoi = { loai: g.loai, chu, loi: '', x };
+        },
+        hoiThuoc(m, t) {
+          this.loiQt = ''; this.bao = '';
+          this.hoi = { loai: 'thuoc', mon: m.mon, t, loi: '', chu: 'Bỏ cờ "đã thuộc" của thẻ "' + t.chu + '" (' + m.ten + '): thẻ quay lại lịch ôn; không trừ ⭐.' };
+        },
+        // Đóng hộp bằng Escape / "Thôi" — KHÔNG đóng khi đang gửi (lỗi hay kết quả sẽ không còn chỗ hiện).
+        dongHoi() { if (!this.dang) this.hoi = null; },
+        // 401 của route x-quantri: xoá phiên (nút gỡ biến mất) nhưng GIỮ hộp, đổi thành lời báo hết hạn — để bố mẹ chắc chắn thấy.
+        hetPhien(h) {
+          this.thoat();
+          this.loiQt = 'Phiên bố mẹ đã hết hạn — mở lại.';
+          this.hoi = { loai: h.loai, chu: h.chu, het: true, loi: 'Phiên bố mẹ đã hết hạn — mở lại phiên (nút 🔒 Bố mẹ ở cuối trang) rồi gỡ lại.' };
+        },
+        // Thành công → đóng hộp, báo "−N ⭐", nạp lại số dư. Thất bại → hộp GIỮ MỞ, lỗi hiện ngay trong hộp (không phải ở khối
+        // "Bố mẹ" cuối trang, nơi bố mẹ không nhìn tới); bấm "Gỡ" lần nữa để thử lại.
+        async goThat() {
+          const h = this.hoi;
+          if (!h || this.dang) return;
+          this.dang = true; h.loi = '';
+          try {
+            const qt = { 'content-type': 'application/json', 'x-quantri': this.qt ? this.qt.token : '' };
+            const ma = { 'content-type': 'application/json', 'x-progress-key': this.secret };
+            let r;
+            if (h.loai === 'tick') {
+              r = await fetch('/api/progress', { method: 'POST', headers: ma, body: JSON.stringify({ key: h.x.go.key, done: false }) });
+            } else if (h.loai === 'truyen') {
+              r = await fetch('/api/quantri/truyen/go', { method: 'POST', headers: qt, body: JSON.stringify({ user: this.user, truyen: h.x.go.truyen }) });
+            } else if (h.loai === 'on') {
+              r = await fetch('/api/quantri/on/go', { method: 'POST', headers: qt,
+                body: JSON.stringify({ user: this.user, mon: h.x.go.mon, ngay: h.x.go.ngay }) });
+            } else {
+              r = await fetch('/api/study?user=' + encodeURIComponent(this.user) + '&course=' + encodeURIComponent(h.mon), { method: 'POST',
+                headers: ma, body: JSON.stringify({ known: [{ i: h.t.i, c: h.t.c, v: 0 }] }) });
+            }
+            const d = await r.json().catch(() => ({}));
+            if (r.status === 401 && (h.loai === 'truyen' || h.loai === 'on')) { this.hetPhien(h); return; }
+            if (r.status === 401) { h.loi = 'Mã bí mật của máy này không đúng — nhập lại ở trang chủ.'; return; }
+            if (!r.ok) { h.loi = d.error || ('Chưa gỡ được (HTTP ' + r.status + ').'); return; }
+            this.hoi = null;
+            if (h.loai === 'thuoc') {
+              this.bao = 'Đã bỏ cờ "đã thuộc".';
+              await this.taiThuoc();
+              return;
+            }
+            const n = Number(d.tru) || 0;
+            this.bao = n > 0 ? 'Đã gỡ — −' + n + ' ⭐' : 'Đã gỡ (không còn ⭐ nào để trừ).';
+            if (window.baoTru) window.baoTru(n);
+            await this.tai();
+          } catch (e) {
+            h.loi = 'Không kết nối được máy chủ.';
+            // Mất mạng giữa chừng: máy chủ có thể ĐÃ gỡ xong mà câu trả lời không về → nạp lại để số dư / lịch sử không cũ.
+            // (Gỡ thẻ đã thuộc không dính ⭐ và có danh sách riêng — không nạp lại ở đây, tránh xoá trống danh sách lúc mất mạng.)
+            if (h.loai !== 'thuoc') { try { await this.tai(); } catch (e2) { /* giữ số cũ */ } }
+          } finally { this.dang = false; }
+        },
+        // ── Thẻ đã thuộc ──────────────────────────────────────────────────────
+        async taiThuoc() {
+          this.thuocLoi = '';
+          if (!this.qt) { this.thuoc = []; return; }
+          try {
+            const r = await fetch('/api/quantri/thuoc?user=' + encodeURIComponent(this.user), { headers: { 'x-quantri': this.qt.token } });
+            if (r.status === 401) { this.thoat(); this.loiQt = 'Phiên bố mẹ đã hết hạn — mở lại.'; return; }
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const ds = await r.json();
+            const theoMon = {};
+            for (const t of Array.isArray(ds) ? ds : []) (theoMon[t.mon] = theoMon[t.mon] || []).push(t);
+            const ra = [];
+            for (const [mon, the] of Object.entries(theoMon)) {
+              const chu = await this.chuThe(mon);
+              ra.push({ mon, ten: this.tenMon(mon), the: the.map((t) => ({ i: t.i, c: t.c, chu: chu[t.i] || t.i })) });
+            }
+            this.thuoc = ra;
+          } catch (e) {
+            this.thuoc = [];
+            this.thuocLoi = 'Chưa tải được danh sách thẻ đã thuộc.';
+          }
+        },
+        // Chữ của thẻ: CÙNG file học liệu trang ôn tập dùng (study/<môn>.json, cạnh trang này). Không có → {} (hiện id).
+        // Cờ `known` ghi cho HAI loại id (study.html tick cả mục một lượt): thẻ ghi nhớ / câu hỏi (`f.*` / `q.*` →
+        // flashcards[].front_en / quiz[].stem_en) và khối tóm tắt (`m.*` → summary[<khối>][].mark; chữ = trường đầu tiên có chữ
+        // trong MARK_KEYS của src/study.py — đúng các trường băm ra id đó, builder truyền xuống). Từ vựng trong tóm tắt dùng
+        // chung id `f.*` với thẻ nên đã nằm trong flashcards. id không còn trong học liệu → không có khoá → hiện id (spec §5.3).
+        async chuThe(mon) {
+          try {
+            const r = await fetch('study/' + encodeURIComponent(mon) + '.json', { headers: { accept: 'application/json' } });
+            if (!r.ok) return {};
+            const d = await r.json();
+            const m = {};
+            for (const q of [...(d.flashcards || []), ...(d.quiz || [])]) if (q && q.id) m[q.id] = q.front_en || q.stem_en || q.id;
+            for (const sec of d.summary || []) {
+              for (const [khoi, truong] of Object.entries(this.markKeys)) {
+                for (const x of (sec && sec[khoi]) || []) {
+                  if (!x || !x.mark) continue;
+                  const chu = truong.map((k) => x[k]).find((v) => typeof v === 'string' && v.trim());
+                  if (chu) m[x.mark] = chu.trim();
+                }
+              }
+            }
+            return m;
+          } catch (e) { return {}; }
+        },
         async moPhien() {
           const v = this.ma.trim();
           if (!v || this.dang) return;
@@ -89,11 +227,12 @@
             this.qt = { token: d.token, het: d.het };
             localStorage.setItem('diem_qt', JSON.stringify(this.qt));
             this.ma = ''; this.moMa = false;
+            this.taiThuoc();
           } catch (e) {
             this.loiQt = 'Không kết nối được máy chủ.';
           } finally { this.dang = false; }
         },
-        thoat() { localStorage.removeItem('diem_qt'); this.qt = null; this.loiQt = ''; this.bao = ''; },
+        thoat() { localStorage.removeItem('diem_qt'); this.qt = null; this.loiQt = ''; this.bao = ''; this.hoi = null; this.thuoc = []; },
         hetLuc() {
           return this.qt ? this.gio(this.qt.het) + ' ' + new Date(this.qt.het * 1000).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '';
         },
@@ -123,7 +262,42 @@
   </script>
 </head>
 <!-- KHÔNG thêm x-init="init()": Alpine 3 TỰ gọi init() của object x-data. -->
-<body class="bg-slate-100 text-slate-800 min-h-screen" x-data="trangDiem()">
+<body class="bg-slate-100 text-slate-800 min-h-screen" x-data="trangDiem()" @keydown.escape.window="dongHoi()">
+  <div data-diem-bao role="status" aria-live="polite"
+     class="hidden pointer-events-none fixed left-1/2 top-16 z-[70] -translate-x-1/2 max-w-[90vw] truncate rounded-full bg-amber-300 px-5 py-2 text-lg font-bold text-amber-950 shadow-lg"></div>
+<script>
+  (function () {
+    var hen = 0;
+    function hien(chu) {
+      var el = document.querySelector('[data-diem-bao]');
+      if (!el) return;
+      el.textContent = chu;
+      el.classList.remove('hidden');
+      clearTimeout(hen);
+      hen = setTimeout(function () { el.classList.add('hidden'); }, 2000);
+    }
+    window.baoDiem = function (n, chu) {
+      n = Number(n);
+      if (!(n > 0)) return;
+      hien('+' + n + ' ⭐' + (chu ? ' ' + chu : ''));
+    };
+    window.baoTru = function (n, chu) {
+      n = Number(n);
+      if (!(n > 0)) return;
+      hien('−' + n + ' ⭐' + (chu ? ' ' + chu : ''));
+    };
+    window.docSoDu = async function (user) {
+      var k = localStorage.getItem('lms_key');
+      if (!k) return null;
+      try {
+        var r = await fetch('/api/diem?gon=1&user=' + encodeURIComponent(user), { headers: { 'x-progress-key': k } });
+        if (!r.ok) return null;
+        var d = await r.json();
+        return Number.isInteger(d.du) ? d.du : null;
+      } catch (e) { return null; }
+    };
+  })();
+</script>
   <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
     <div class="max-w-2xl mx-auto px-4 py-3">
       <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-slate-500">
@@ -190,13 +364,21 @@
           <template x-for="g in theoNgay()" :key="g.ngay">
             <div class="mb-3">
               <p data-diem-ngay class="text-xs font-bold uppercase tracking-wide text-slate-400 mb-1" x-text="g.ngay"></p>
+              
               <ul class="bg-white rounded-2xl shadow divide-y divide-slate-100">
                 <template x-for="x in g.ds" :key="x.khoa">
-                  <li data-diem-dong class="flex items-center gap-3 px-4 py-2.5">
+                  <li data-diem-dong class="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-2.5">
                     <span class="text-xl" x-text="bieuTuong(x.khoa)"></span>
-                    <span class="flex-1 min-w-0 truncate" x-text="x.nhan || x.khoa"></span>
+                    <span data-diem-nhan class="flex-1 min-w-0 break-words" x-text="x.nhan || x.khoa"></span>
                     <span class="text-xs text-slate-400" x-text="gio(x.ts)"></span>
                     <span class="w-14 text-right font-bold" :class="x.diem > 0 ? 'text-emerald-700' : 'text-rose-700'" x-text="soDiem(x.diem)"></span>
+                    <template x-if="qt && x.go">
+                      <div class="basis-full flex justify-end">
+                        <button type="button" data-diem-go :data-loai="x.go.loai" @click="hoiGo(x)" :disabled="dang"
+                                class="shrink-0 px-3 py-2 -my-1 rounded-full border border-rose-300 bg-white text-xs font-semibold text-rose-700"
+                                x-text="nhanNut(x)"></button>
+                      </div>
+                    </template>
                   </li>
                 </template>
               </ul>
@@ -231,11 +413,49 @@
                 <span data-diem-het x-text="'Phiên hết hạn lúc ' + hetLuc()"></span>
                 <button type="button" data-diem-thoat @click="thoat()" class="px-3 py-2 rounded-full border border-slate-300 bg-white text-xs font-medium">Thoát</button>
               </p>
+              <p class="mt-2 text-xs text-slate-500">Phiên đang mở: dòng lịch sử gỡ được có nút "Gỡ" — dùng khi bấm thử hoặc tick nhầm.</p>
             </div>
           </template>
           <p x-show="loiQt" x-text="loiQt" class="mt-2 text-sm text-rose-700"></p>
-          <p x-show="bao" x-text="bao" class="mt-2 text-sm text-emerald-700"></p>
+          <p x-show="bao" data-diem-bao-qt x-text="bao" class="mt-2 text-sm text-emerald-700"></p>
         </section>
+
+        <template x-if="qt">
+          <section data-diem-thuoc class="mt-4 bg-white rounded-2xl shadow px-4 py-4">
+            <h2 class="text-base font-bold">⭐ Thẻ đã thuộc</h2>
+            <p x-show="thuocLoi" x-text="thuocLoi" class="mt-2 text-sm text-rose-700"></p>
+            <p x-show="!thuocLoi && !thuoc.length" class="mt-2 text-sm text-slate-500">Chưa có thẻ nào được đánh dấu đã thuộc.</p>
+            <template x-for="m in thuoc" :key="m.mon">
+              <div class="mt-3">
+                <p data-diem-thuoc-mon class="text-xs font-bold uppercase tracking-wide text-slate-400" x-text="m.ten"></p>
+                <ul class="mt-1 divide-y divide-slate-100">
+                  <template x-for="t in m.the" :key="t.i">
+                    <li data-diem-thuoc-the class="flex items-center gap-3 py-2">
+                      <span class="flex-1 min-w-0 break-words text-sm" x-text="t.chu"></span>
+                      <button type="button" data-diem-thuoc-go @click="hoiThuoc(m, t)" :disabled="dang"
+                              class="shrink-0 px-3 py-2 -my-1 rounded-full border border-rose-300 bg-white text-xs font-semibold text-rose-700">Gỡ</button>
+                    </li>
+                  </template>
+                </ul>
+              </div>
+            </template>
+          </section>
+        </template>
+
+        <template x-if="hoi">
+          <div data-diem-hoi role="dialog" aria-modal="true" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4">
+            <div class="w-full max-w-md bg-white rounded-2xl shadow-xl px-5 py-4">
+              <p class="font-bold text-slate-800">Gỡ đánh dấu?</p>
+              <p data-diem-hoi-chu class="mt-2 text-sm text-slate-700" x-text="hoi.chu"></p>
+              <p data-diem-hoi-loi x-show="hoi.loi" x-text="hoi.loi" role="alert" class="mt-2 text-sm font-semibold text-rose-700"></p>
+              <div class="mt-4 flex justify-end gap-2">
+                <button type="button" data-diem-hoi-thoi @click="dongHoi()" :disabled="dang" class="h-10 px-4 rounded-lg border border-slate-300 bg-white text-sm"
+                        x-text="hoi.het ? 'Đóng' : 'Thôi'"></button>
+                <button type="button" data-diem-hoi-go x-show="!hoi.het" @click="goThat()" :disabled="dang" class="h-10 px-4 rounded-lg bg-rose-600 text-white text-sm font-semibold">Gỡ</button>
+              </div>
+            </div>
+          </div>
+        </template>
       </div>
     </template>
   </main>

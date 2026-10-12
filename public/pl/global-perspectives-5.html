@@ -12,7 +12,7 @@
   <title>Global Perspectives 5 — PL</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.91d57ade.css">
+  <link rel="stylesheet" href="../assets/tw.ebf0ac4b.css">
   <script defer src="../assets/collapse.d0a27f2d.js"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>
@@ -200,10 +200,13 @@
         // Mục đánh dấu trước khi có tính năng này không có hash → không báo.
         redo: {},
 
-        // Điểm thưởng (ADR 0061): Worker trả `cong` (điểm vừa cộng) + `nhom` (tên section vừa đủ) sau mỗi lượt ghi.
+        // Điểm thưởng (ADR 0061): Worker trả `cong` (điểm vừa cộng) + `nhom` (tên section vừa đủ) sau mỗi lượt ghi; bỏ tick
+        // → `tru` (điểm vừa gỡ, ADR 0063) → "−N ⭐". Lô vừa cộng vừa gỡ: một ô "+N ⭐ … · −M ⭐".
         baoCong(d) {
-          if (!d || !window.baoDiem) return;
-          window.baoDiem(d.cong, Array.isArray(d.nhom) && d.nhom.length ? '· hoàn thành ' + d.nhom.join(', ') : '');
+          if (!d) return;
+          const nhom = Array.isArray(d.nhom) && d.nhom.length ? '· hoàn thành ' + d.nhom.join(', ') : '';
+          if (d.cong > 0 && window.baoDiem) window.baoDiem(d.cong, d.tru > 0 ? (nhom + ' · −' + d.tru + ' ⭐').trim() : nhom);
+          else if (d.tru > 0 && window.baoTru) window.baoTru(d.tru);
         },
 
         stale(key, hash) {
@@ -2176,15 +2179,23 @@ timMo: false,
 <script>
   (function () {
     var hen = 0;
-    window.baoDiem = function (n, chu) {
-      n = Number(n);
-      if (!(n > 0)) return;
+    function hien(chu) {
       var el = document.querySelector('[data-diem-bao]');
       if (!el) return;
-      el.textContent = '+' + n + ' ⭐' + (chu ? ' ' + chu : '');
+      el.textContent = chu;
       el.classList.remove('hidden');
       clearTimeout(hen);
       hen = setTimeout(function () { el.classList.add('hidden'); }, 2000);
+    }
+    window.baoDiem = function (n, chu) {
+      n = Number(n);
+      if (!(n > 0)) return;
+      hien('+' + n + ' ⭐' + (chu ? ' ' + chu : ''));
+    };
+    window.baoTru = function (n, chu) {
+      n = Number(n);
+      if (!(n > 0)) return;
+      hien('−' + n + ' ⭐' + (chu ? ' ' + chu : ''));
     };
     window.docSoDu = async function (user) {
       var k = localStorage.getItem('lms_key');

@@ -14,7 +14,12 @@
   <title>Ôn tập · CIE Maths 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.91d57ade.css">
+  <link rel="stylesheet" href="../assets/tw.ebf0ac4b.css">
+  
+  <script type="module">
+    import { sched, phatLai } from "../assets/lich_on.ebee479f.js";
+    window.lichOn = { sched, phatLai };
+  </script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
     // ── Vỏ tĩnh, nội dung nạp bằng fetch ────────────────────────────────────
@@ -89,26 +94,9 @@
         },
 
         // ── Lịch ôn giãn cách (Leitner + SM-2 rút gọn) ────────────────────────
-        // Tính bằng SỐ NGUYÊN từ đầu tới cuối: ease lưu ×100 để client và mọi
-        // phép dựng lại phía máy chủ ra cùng kết quả từng bit. Máy chủ kẹp lại
-        // mọi giá trị lần nữa, không tin client.
-        sched(id, c, g, now) {
-          const BOX = [0, 1, 2, 4, 8, 16, 32];   // số ngày theo bậc 1..6
-          let box = c ? c.box : 1, ease = c ? c.ease : 250;
-          if (g <= 1) {
-            box = Math.max(1, box - 1);
-            ease = Math.max(130, ease - 20);
-            return { box, ease, due: now + 600 };   // gặp lại NGAY trong phiên
-          }
-          box = Math.min(6, box + 1);
-          ease = Math.min(350, Math.max(130, ease + (g === 3 ? 10 : -10)));
-          // Nhiễu ±10% suy TẤT ĐỊNH từ id: để các mốc ôn không dồn hết vào một
-          // ngày, mà vẫn tính lại được y hệt khi phát lại lịch sử.
-          let h = 0;
-          for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-          const days = BOX[box] * ease / 250 * (1 + ((h % 21) - 10) / 100);
-          return { box, ease, due: now + Math.max(1, Math.round(days)) * 86400 };
-        },
+        // MỘT bản cho trang này và Worker: worker/lich_on.js (ADR 0063 — Worker phát lại khi bố mẹ gỡ ngày ôn, phải ra cùng
+        // card từng bit). Nạp ở <head> bằng <script type="module">.
+        sched(id, c, g, now) { return window.lichOn.sched(id, c, g, now); },
 
         // ── Chọn câu cho phiên ────────────────────────────────────────────────
         get allItems() { return [...(this.data?.quiz || []), ...(this.data?.flashcards || [])]; },
@@ -4247,15 +4235,23 @@ timMo: false,
 <script>
   (function () {
     var hen = 0;
-    window.baoDiem = function (n, chu) {
-      n = Number(n);
-      if (!(n > 0)) return;
+    function hien(chu) {
       var el = document.querySelector('[data-diem-bao]');
       if (!el) return;
-      el.textContent = '+' + n + ' ⭐' + (chu ? ' ' + chu : '');
+      el.textContent = chu;
       el.classList.remove('hidden');
       clearTimeout(hen);
       hen = setTimeout(function () { el.classList.add('hidden'); }, 2000);
+    }
+    window.baoDiem = function (n, chu) {
+      n = Number(n);
+      if (!(n > 0)) return;
+      hien('+' + n + ' ⭐' + (chu ? ' ' + chu : ''));
+    };
+    window.baoTru = function (n, chu) {
+      n = Number(n);
+      if (!(n > 0)) return;
+      hien('−' + n + ' ⭐' + (chu ? ' ' + chu : ''));
     };
     window.docSoDu = async function (user) {
       var k = localStorage.getItem('lms_key');

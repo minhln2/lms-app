@@ -23,7 +23,7 @@
   <title>Tập đọc — MK</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.91d57ade.css">
+  <link rel="stylesheet" href="../assets/tw.ebf0ac4b.css">
   <script defer src="../assets/alpine.63d2636a.js"></script>
   
   <link rel="stylesheet" href="../tap-doc/phong/be-vietnam-pro/font-face.css">
@@ -1429,6 +1429,7 @@ function tdAnhLat(lat, trang) {
     // bat_dau và doc_xong là HOẶC. Vị trí: mục cục bộ mang cờ `cho` (chờ gửi) và `ts_vt` (ms, lúc ghi
     // vi_tri ở máy này) MỚI HƠN `ts` của máy chủ (giây) thì máy này thắng và đẩy lên; không thì máy chủ
     // thắng, bỏ cờ — nhưng máy này còn mốc máy chủ chưa có thì vẫn đẩy, với vị trí của máy chủ.
+    // Bố mẹ gỡ cả truyện (ADR 0063): GET state trả `go: {truyện: ts}`; mục cục bộ nhớ `go` đã thấy — mốc mới hơn thì bỏ cả mục.
     // Dạng trước ADR 0060 (mảng da_thay): suyCu() đổi một lần thành bat_dau (phủ ≥ 2 trang) rồi bỏ mảng.
     //
     // Bộ lọc thư viện (spec giao diện 10-03 §2) là thiết lập của MÁY, không nằm trong td_st_<user>:
@@ -1486,6 +1487,15 @@ function tdAnhLat(lat, trang) {
           this.maSai = ma === 401;
           if (d && d.truyen) {
             this.online = true;
+            // Bố mẹ gỡ cả truyện (ADR 0063): mốc gỡ của máy chủ MỚI HƠN mốc máy này đã thấy → bỏ TOÀN BỘ trạng thái cục bộ của
+            // truyện đó (vị trí, bat_dau, doc_xong, dem, cờ cho, quiz kể cả `chon`, bản thu) rồi nhớ mốc — TRƯỚC bước gộp. Không
+            // thì phép gộp HOẶC và lượt nộp lại quiz bên dưới đẩy tiến độ cũ lên lại, bé được cộng lại ngay sao vừa bị gỡ.
+            const go = d.go && typeof d.go === 'object' && !Array.isArray(d.go) ? d.go : {};
+            for (const [id, ts] of Object.entries(go)) {
+              if (!Number.isInteger(ts) || ts <= 0) continue;
+              if (this.st[id] && (this.st[id].go || 0) >= ts) continue;
+              this.st[id] = this.chuan({ go: ts });
+            }
             for (const [id, m0] of Object.entries(d.truyen)) {
               const m = this.chuan(m0);
               this.suyMot(id, m);
@@ -1583,6 +1593,7 @@ function tdAnhLat(lat, trang) {
           };
           if (Number.isInteger(o.ts_vt) && o.ts_vt > 0) m.ts_vt = o.ts_vt;
           if (Number.isInteger(o.ts) && o.ts > 0) m.ts = o.ts;                 // lượt ghi gần nhất của MÁY CHỦ (giây) — chỉ có ở bản GET
+          if (Number.isInteger(o.go) && o.go > 0) m.go = o.go;                 // mốc bố mẹ gỡ cả truyện máy này đã thấy (giây, ADR 0063)
           if (!m.bat_dau && Array.isArray(o.dem)) {
             const dem = [...new Set(o.dem.filter(so))];
             if (dem.length) m.dem = dem;
@@ -2367,15 +2378,23 @@ function tdAnhLat(lat, trang) {
 <script>
   (function () {
     var hen = 0;
-    window.baoDiem = function (n, chu) {
-      n = Number(n);
-      if (!(n > 0)) return;
+    function hien(chu) {
       var el = document.querySelector('[data-diem-bao]');
       if (!el) return;
-      el.textContent = '+' + n + ' ⭐' + (chu ? ' ' + chu : '');
+      el.textContent = chu;
       el.classList.remove('hidden');
       clearTimeout(hen);
       hen = setTimeout(function () { el.classList.add('hidden'); }, 2000);
+    }
+    window.baoDiem = function (n, chu) {
+      n = Number(n);
+      if (!(n > 0)) return;
+      hien('+' + n + ' ⭐' + (chu ? ' ' + chu : ''));
+    };
+    window.baoTru = function (n, chu) {
+      n = Number(n);
+      if (!(n > 0)) return;
+      hien('−' + n + ' ⭐' + (chu ? ' ' + chu : ''));
     };
     window.docSoDu = async function (user) {
       var k = localStorage.getItem('lms_key');

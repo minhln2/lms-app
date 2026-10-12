@@ -11,6 +11,7 @@
  *   /api/lookup/history → từ đã tra, gộp theo từ + số lần (cần mã bí mật)
  *   /api/diem      → điểm thưởng: số dư + lịch sử (mã bí mật); /api/diem/doi: bố mẹ trừ (phiên quản trị)
  *   /api/quantri/phien → đổi PARENT_SECRET lấy phiên quản trị 24 giờ (worker/diem.js, ADR 0061)
+ *   /api/quantri/*  → bố mẹ gỡ đánh dấu: cả truyện, một ngày ôn, thẻ đã thuộc (worker/quantri.js, ADR 0063; header x-quantri)
  *   /tap-doc/am/*.mp3 → audio tập đọc có HTTP Range (worker/range.js; chỉ đường này
  *                    chạy Worker trước tệp tĩnh — run_worker_first trong wrangler.toml)
  *   /<hs>/materials/* → tài liệu tải về từ R2 `tai-lieu/` (worker/tai_lieu.js, ADR 0062; run_worker_first)
@@ -19,7 +20,7 @@
  * API:
  *   GET  /api/progress          → toàn bộ tiến độ đã lưu (không cần xác thực)
  *   GET  /api/heartbeat         → {checked_at, changed_at, warnings}; 204 nếu chưa có
- *   POST /api/progress          → cập nhật, cần header x-progress-key; trả thêm {cong, nhom} (điểm thưởng, ADR 0061)
+ *   POST /api/progress          → cập nhật, cần header x-progress-key; trả thêm {cong, nhom, tru} (điểm thưởng, ADR 0061 / 0063)
  *   POST /api/progress?check=1  → chỉ kiểm tra mã bí mật
  *
  * Lưu trữ: một tài liệu JSON duy nhất trong KV, khoá "progress". Mỗi mục học
@@ -40,6 +41,7 @@ import { handleTts } from "./tts.js";
 import { handleLookup, handleLookupHistory } from "./lookup.js";
 import { handleTapdoc } from "./tapdoc.js";
 import { handleDiem, doiChieuTick, an } from "./diem.js";
+import { handleQuantri } from "./quantri.js";
 import { laAm, phucVuAm } from "./range.js";
 import { laTaiLieu, phucVuTaiLieu } from "./tai_lieu.js";
 
@@ -129,17 +131,23 @@ async function handlePost(request, env, url) {
   }
 
   await env.PROGRESS_KV.put(KEY, JSON.stringify(items));
-  // Điểm thưởng (ADR 0061): đối chiếu tick SAU khi KV đã ghi — học sinh có khoá trong lượt này (cả lượt bỏ tick: không
-  // cộng gì cho mục bỏ tick, nhưng nhặt luôn bài tự tick còn chờ). Sổ hỏng → cong 0, tiến độ vẫn đã lưu.
-  const hs = [...new Set(Object.keys(updates).filter((k) => KEY_RE.test(k)).map((k) => k.split("/")[0]))];
-  let cong = 0;
+  // Điểm thưởng (ADR 0061): đối chiếu tick SAU khi KV đã ghi — học sinh có khoá trong lượt này (nhặt luôn bài tự tick còn
+  // chờ). Khoá BỎ TICK RÕ RÀNG trong lượt (giá trị false) → gỡ lượt đang hiệu lực của tick: + nhom: (ADR 0063). KHÔNG gỡ theo
+  // đối chiếu cả KV: KV đọc ra rỗng / hỏng (readAll → {}) mà gỡ theo đối chiếu là xoá sạch sao của bé. Sổ hỏng → cong / tru
+  // 0, tiến độ vẫn đã lưu.
+  const hop = Object.entries(updates).filter(([k]) => KEY_RE.test(k));
+  const hs = [...new Set(hop.map(([k]) => k.split("/")[0]))];
+  const bo = hop.filter(([, v]) => !v).map(([k]) => k);
+  let cong = 0, tru = 0;
   const nhom = [];
   for (const u of hs) {
-    const r = await an("tick", () => doiChieuTick(env, url, u, items), { cong: 0, nhom: [] });
+    const r = await an("tick", () => doiChieuTick(env, url, u, items, bo.filter((k) => k.startsWith(u + "/"))),
+                       { cong: 0, nhom: [], tru: 0 });
     cong += r.cong;
+    tru += r.tru;
     nhom.push(...r.nhom);
   }
-  return json({ ok: true, count: Object.keys(items).length, cong, nhom });
+  return json({ ok: true, count: Object.keys(items).length, cong, nhom, tru });
 }
 
 export default {
@@ -203,6 +211,7 @@ export default {
     if (pathname === "/api/diem" || pathname === "/api/diem/doi" || pathname === "/api/quantri/phien") {
       return handleDiem(request, env, url);
     }
+    if (pathname.startsWith("/api/quantri/")) return handleQuantri(request, env, url);
     if (pathname.startsWith("/api/tapdoc/")) return handleTapdoc(request, env, url);
     if (pathname === "/api/tts") return handleTts(request, env, url);
 

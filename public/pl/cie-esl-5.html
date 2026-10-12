@@ -12,7 +12,7 @@
   <title>CIE ESL 5 — PL</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.91d57ade.css">
+  <link rel="stylesheet" href="../assets/tw.ebf0ac4b.css">
   <script defer src="../assets/collapse.d0a27f2d.js"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>
@@ -200,10 +200,13 @@
         // Mục đánh dấu trước khi có tính năng này không có hash → không báo.
         redo: {},
 
-        // Điểm thưởng (ADR 0061): Worker trả `cong` (điểm vừa cộng) + `nhom` (tên section vừa đủ) sau mỗi lượt ghi.
+        // Điểm thưởng (ADR 0061): Worker trả `cong` (điểm vừa cộng) + `nhom` (tên section vừa đủ) sau mỗi lượt ghi; bỏ tick
+        // → `tru` (điểm vừa gỡ, ADR 0063) → "−N ⭐". Lô vừa cộng vừa gỡ: một ô "+N ⭐ … · −M ⭐".
         baoCong(d) {
-          if (!d || !window.baoDiem) return;
-          window.baoDiem(d.cong, Array.isArray(d.nhom) && d.nhom.length ? '· hoàn thành ' + d.nhom.join(', ') : '');
+          if (!d) return;
+          const nhom = Array.isArray(d.nhom) && d.nhom.length ? '· hoàn thành ' + d.nhom.join(', ') : '';
+          if (d.cong > 0 && window.baoDiem) window.baoDiem(d.cong, d.tru > 0 ? (nhom + ' · −' + d.tru + ' ⭐').trim() : nhom);
+          else if (d.tru > 0 && window.baoTru) window.baoTru(d.tru);
         },
 
         stale(key, hash) {
@@ -330,7 +333,7 @@
     // Nhãn loại mục để dòng "Đang lọc" gọi tên chip đang bật. (tojson trong <script> — được.)
     var LOAI = { "page": "\ud83d\udcc4 v\u0103n b\u1ea3n","file": "\ud83d\udcce t\u00e0i li\u1ec7u","assignment": "\ud83d\udcdd b\u00e0i t\u1eadp","external": "\ud83d\udd17 li\u00ean k\u1ebft ngo\u00e0i", };
     var TIEN_DO_KEY = "pl/79605/";
-    var TONG_MUC = 64;
+    var TONG_MUC = 69;
     var CO_HW = true;
     /** State của TRANG MÔN. Trước đây nằm thẳng trong `x-data` của <body>; nay phải là hàm vì
         ô tìm dùng chung (`_timkiem.html`) chèn thêm thành viên — nhét vào thuộc tính HTML là
@@ -568,7 +571,7 @@ timMo: false,
             <span class="min-w-0 flex-1">Week 8 - 2.5 + 2.6 </span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/5'"></span>
+                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/10'"></span>
             </template>
           </button>
         </li>
@@ -731,11 +734,11 @@ timMo: false,
         <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">Week 8 - 2.5 + 2.6 </span>
         <template x-if="p.online">
           <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
-                :class="moduleDone($el.closest('[data-module]'), p.done) === 5
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 10
                         ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
-                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/5'"></span>
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/10'"></span>
         </template>
-        <span class="text-xs text-slate-400 shrink-0">5 mục</span>
+        <span class="text-xs text-slate-400 shrink-0">10 mục</span>
       </button>
 
       <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
@@ -753,6 +756,126 @@ timMo: false,
                    class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
           </template>
           <span>Class Resources</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="First Conditional Revision.pptx" data-type="file" data-sec="2"
+             data-pkey="pl/79605/8998904" data-hash="7f57c8ba4d493c2cc2e12599644b2413598f270f" data-ts="1791729264000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79605/8998904'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8998904'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8998904']; $el.indeterminate = !!p.redo['pl/79605/8998904']"
+                     @change="await p.toggle('pl/79605/8998904', '7f57c8ba4d493c2cc2e12599644b2413598f270f'); $el.checked = !!p.done['pl/79605/8998904']; $el.indeterminate = !!p.redo['pl/79605/8998904']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-esl-5/first-conditional-revision/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                First Conditional Revision.pptx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79605/8998904', '7f57c8ba4d493c2cc2e12599644b2413598f270f')">
+                  <button @click.stop="p.seen('pl/79605/8998904', '7f57c8ba4d493c2cc2e12599644b2413598f270f')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>249.0 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 11/10</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Modal Verbs Revision.pptx" data-type="file" data-sec="2"
+             data-pkey="pl/79605/8998905" data-hash="c34c0d1628b7982e31513172531b267600e41634" data-ts="1791723621000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79605/8998905'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/8998905'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/8998905']; $el.indeterminate = !!p.redo['pl/79605/8998905']"
+                     @change="await p.toggle('pl/79605/8998905', 'c34c0d1628b7982e31513172531b267600e41634'); $el.checked = !!p.done['pl/79605/8998905']; $el.indeterminate = !!p.redo['pl/79605/8998905']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-esl-5/modal-verbs-revision/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Modal Verbs Revision.pptx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79605/8998905', 'c34c0d1628b7982e31513172531b267600e41634')">
+                  <button @click.stop="p.seen('pl/79605/8998905', 'c34c0d1628b7982e31513172531b267600e41634')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>298.9 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 11/10</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
         </div>
         
         
@@ -889,6 +1012,186 @@ timMo: false,
                    class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
           </template>
           <span>Optional Activities</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="Modal Verbs WS.pdf" data-type="file" data-sec="3"
+             data-pkey="pl/79605/9032277" data-hash="d84f5d5d62fe9ec029e18a6b55d78dc1b28e4acc" data-ts="1791722528000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79605/9032277'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/9032277'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/9032277']; $el.indeterminate = !!p.redo['pl/79605/9032277']"
+                     @change="await p.toggle('pl/79605/9032277', 'd84f5d5d62fe9ec029e18a6b55d78dc1b28e4acc'); $el.checked = !!p.done['pl/79605/9032277']; $el.indeterminate = !!p.redo['pl/79605/9032277']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-esl-5/modal-verbs-ws/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Modal Verbs WS.pdf
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79605/9032277', 'd84f5d5d62fe9ec029e18a6b55d78dc1b28e4acc')">
+                  <button @click.stop="p.seen('pl/79605/9032277', 'd84f5d5d62fe9ec029e18a6b55d78dc1b28e4acc')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>113.0 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 11/10</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Writing Modal sentences.pdf" data-type="file" data-sec="3"
+             data-pkey="pl/79605/9032278" data-hash="616a692f3cd6994e9a41445c95fd0348fd85016c" data-ts="1791723742000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79605/9032278'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/9032278'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/9032278']; $el.indeterminate = !!p.redo['pl/79605/9032278']"
+                     @change="await p.toggle('pl/79605/9032278', '616a692f3cd6994e9a41445c95fd0348fd85016c'); $el.checked = !!p.done['pl/79605/9032278']; $el.indeterminate = !!p.redo['pl/79605/9032278']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-esl-5/writing-modal-sentences/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Writing Modal sentences.pdf
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79605/9032278', '616a692f3cd6994e9a41445c95fd0348fd85016c')">
+                  <button @click.stop="p.seen('pl/79605/9032278', '616a692f3cd6994e9a41445c95fd0348fd85016c')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>252.8 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 11/10</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="First Conditional Chains.pdf" data-type="file" data-sec="3"
+             data-pkey="pl/79605/9032280" data-hash="35a71c30785fcfa32cec9485dc4386e5f3b334c4" data-ts="1791723827000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79605/9032280'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79605/9032280'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79605/9032280']; $el.indeterminate = !!p.redo['pl/79605/9032280']"
+                     @change="await p.toggle('pl/79605/9032280', '35a71c30785fcfa32cec9485dc4386e5f3b334c4'); $el.checked = !!p.done['pl/79605/9032280']; $el.indeterminate = !!p.redo['pl/79605/9032280']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-esl-5/first-conditional-chains/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                First Conditional Chains.pdf
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79605/9032280', '35a71c30785fcfa32cec9485dc4386e5f3b334c4')">
+                  <button @click.stop="p.seen('pl/79605/9032280', '35a71c30785fcfa32cec9485dc4386e5f3b334c4')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>91.0 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 11/10</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
         </div>
         
         
@@ -5357,15 +5660,23 @@ timMo: false,
 <script>
   (function () {
     var hen = 0;
-    window.baoDiem = function (n, chu) {
-      n = Number(n);
-      if (!(n > 0)) return;
+    function hien(chu) {
       var el = document.querySelector('[data-diem-bao]');
       if (!el) return;
-      el.textContent = '+' + n + ' ⭐' + (chu ? ' ' + chu : '');
+      el.textContent = chu;
       el.classList.remove('hidden');
       clearTimeout(hen);
       hen = setTimeout(function () { el.classList.add('hidden'); }, 2000);
+    }
+    window.baoDiem = function (n, chu) {
+      n = Number(n);
+      if (!(n > 0)) return;
+      hien('+' + n + ' ⭐' + (chu ? ' ' + chu : ''));
+    };
+    window.baoTru = function (n, chu) {
+      n = Number(n);
+      if (!(n > 0)) return;
+      hien('−' + n + ' ⭐' + (chu ? ' ' + chu : ''));
     };
     window.docSoDu = async function (user) {
       var k = localStorage.getItem('lms_key');

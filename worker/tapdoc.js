@@ -45,14 +45,14 @@ async function tinh(env, url, path) {
   try { return await r.json(); } catch { return null; }
 }
 
-async function kiemUser(env, url, user) {
+export async function kiemUser(env, url, user) {
   if (!USER_RE.test(user || "")) throw sai("Thiếu hoặc sai 'user'");
   const cm = await tinh(env, url, "/tap-doc/index.json");
   if (!cm || !(cm.hoc_sinh || []).includes(user)) throw sai("Học sinh này không có mục Tập đọc", 404);
   return cm;
 }
 
-function kiemTruyen(cm, id) {
+export function kiemTruyen(cm, id) {
   if (!ID_RE.test(id || "")) throw sai("Thiếu hoặc sai 'truyen'");
   const t = (cm.truyen || []).find((x) => x.id === id);
   if (!t) throw sai("Không có truyện này", 404);
@@ -68,10 +68,11 @@ const tsTuongLai = (ts) => ts > Date.now() + 86400000;
 
 async function docTrangThai(env, user) {
   const db = env.STUDY_DB;
-  const [a, b, c] = await db.batch([
+  const [a, b, c, g] = await db.batch([
     db.prepare(`SELECT truyen, vi_tri, start_ts, read_ts, ts FROM td_truyen WHERE user_id = ?1`).bind(user),
     db.prepare(`SELECT truyen, cau, dung, lan FROM td_quiz WHERE user_id = ?1`).bind(user),
     db.prepare(`SELECT truyen, ts, dai, doan, lat, xong FROM td_thuam WHERE user_id = ?1`).bind(user),
+    db.prepare(`SELECT truyen, ts FROM td_go WHERE user_id = ?1`).bind(user),
   ]);
   const out = {};
   const o = (id) => (out[id] ??= { vi_tri: 0, ts: 0, bat_dau: false, doc_xong: false, quiz: {}, thu: null });
@@ -84,7 +85,10 @@ async function docTrangThai(env, user) {
   for (const r of c.results || []) {
     o(r.truyen).thu = { ts: r.ts, dai: r.dai, doan: mang(r.doan), lat: mang(r.lat), xong: !!r.xong };
   }
-  return { truyen: out };
+  // Mốc bố mẹ gỡ cả truyện (ADR 0063, migration 0010): trang bỏ trạng thái cục bộ của truyện có mốc mới hơn mốc nó đã thấy.
+  const go = {};
+  for (const r of g.results || []) go[r.truyen] = r.ts;
+  return { truyen: out, go };
 }
 
 async function ghiTrangThai(env, user, t, body) {
