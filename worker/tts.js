@@ -98,6 +98,7 @@ export function speakable(doc) {
   }
   for (const c of doc.flashcards || []) add(c.front_en);   // learnCard.front_en · q.front_en
   for (const q of doc.quiz || []) add(q.stem_en);          // q.stem_en
+  for (const s of doc.noi || []) add(s);                 // sổ tay: mọi câu tiếng Anh (src/sotay.py du_lieu)
   return set;
 }
 
