@@ -22,14 +22,15 @@
     //   • Gỡ đánh dấu (ADR 0063) — CHỈ khi phiên bố mẹ mở: dòng lịch sử có `go` hiện nút ("Gỡ" · "Gỡ cả truyện" · "Gỡ ngày");
     //     bấm → hộp xác nhận nêu việc gì mất + số ⭐ trừ → tick: POST /api/progress {key, done: false} (mã lms_key, đúng như bé
     //     bỏ tick); truyện: POST /api/quantri/truyen/go; ngày ôn: POST /api/quantri/on/go (x-quantri). Khối "⭐ Thẻ đã thuộc":
-    //     GET /api/quantri/thuoc + chữ thẻ từ study/<môn>.json; gỡ = POST /api/study known v 0 (mã lms_key, không dính sao).
+    //     GET /api/quantri/thuoc + chữ thẻ từ study/<môn>.json (sổ tay: `nhan`); gỡ = POST /api/study known v 0 (mã lms_key, không dính sao).
     //   • Không gọi được API (GitHub Pages, file cục bộ, chưa có mã) → `online` false: lời nhắc + ô mã bí mật.
     // `ready` để bài test chờ theo điều kiện (ADR 0039; test_tap_target đọc cờ này).
     function trangDiem() {
       return {
         user: "mk",
         // slug môn → tên (môn có học liệu ôn tập; builder truyền study_courses) — tên nhóm ôn / khối thẻ đã thuộc.
-        tenMonCua: Object.fromEntries([{"name": "CIE Maths 1", "slug": "cie-maths-1"}, {"name": "CIE ESL 1", "slug": "cie-esl-1"}, {"name": "CIE Science 1", "slug": "cie-science-1"}].map((c) => [c.slug, c.name])),
+        // `so-tay` (ADR 0064) không có học liệu ôn tập nên không nằm trong study_courses: tên khai ở đây, một chỗ.
+        tenMonCua: { ...Object.fromEntries([{"name": "CIE Maths 1", "slug": "cie-maths-1"}, {"name": "CIE ESL 1", "slug": "cie-esl-1"}, {"name": "CIE Science 1", "slug": "cie-science-1"}].map((c) => [c.slug, c.name])), 'so-tay': '📒 Sổ tay tiếng Anh' },
         // khối tóm tắt → các trường chữ làm id tick `m.*` (src/study.py MARK_KEYS): chữ của thẻ đã thuộc loại `m.*`.
         markKeys: {"checklists": ["title"], "compares": ["title"], "experiments": ["title"], "grammar": ["title"], "phrases": ["title"], "points": ["t"], "readings": ["title"], "sounds": ["title"], "topics": ["title", "def"], "watch_out": ["wrong"], "worked": ["title", "problem"]},
         secret: localStorage.getItem('lms_key') || '',
@@ -116,7 +117,11 @@
         },
         hoiThuoc(m, t) {
           this.loiQt = ''; this.bao = '';
-          this.hoi = { loai: 'thuoc', mon: m.mon, t, loi: '', chu: 'Bỏ cờ "đã thuộc" của thẻ "' + t.chu + '" (' + m.ten + '): thẻ quay lại lịch ôn; không trừ ⭐.' };
+          // Sổ tay không có lịch ôn: ô "đã thuộc" chỉ là dấu tiến độ của một mục / cặp câu / khối (ADR 0064) — không có "thẻ" để quay lại.
+          const chu = m.mon === 'so-tay'
+            ? 'Bỏ đánh dấu "đã thuộc" của "' + t.chu + '" (' + m.ten + '): không trừ ⭐.'
+            : 'Bỏ cờ "đã thuộc" của thẻ "' + t.chu + '" (' + m.ten + '): thẻ quay lại lịch ôn; không trừ ⭐.';
+          this.hoi = { loai: 'thuoc', mon: m.mon, t, loi: '', chu };
         },
         // Đóng hộp bằng Escape / "Thôi" — KHÔNG đóng khi đang gửi (lỗi hay kết quả sẽ không còn chỗ hiện).
         dongHoi() { if (!this.dang) this.hoi = null; },
@@ -182,13 +187,18 @@
             const ra = [];
             for (const [mon, the] of Object.entries(theoMon)) {
               const chu = await this.chuThe(mon);
-              ra.push({ mon, ten: this.tenMon(mon), the: the.map((t) => ({ i: t.i, c: t.c, chu: chu[t.i] || t.i })) });
+              ra.push({ mon, ten: this.tenMon(mon), the: the.map((t) => ({ i: t.i, c: t.c, chu: chu[t.i] || this.chuLa(mon, t.i) })) });
             }
             this.thuoc = ra;
           } catch (e) {
             this.thuoc = [];
             this.thuocLoi = 'Chưa tải được danh sách thẻ đã thuộc.';
           }
+        },
+        // Khoá không còn trong học liệu → hiện id (spec §5.3). Riêng sổ tay: `st.<trang>.<đơn-vị>` (trang / đơn vị đã gỡ khỏi
+        // sổ tay) → "trang · đơn-vị", đừng bắt bố mẹ đọc tiền tố `st.`.
+        chuLa(mon, i) {
+          return mon === 'so-tay' ? String(i).replace(/^st\./, '').replace('.', ' · ') : i;
         },
         // Chữ của thẻ: CÙNG file học liệu trang ôn tập dùng (study/<môn>.json, cạnh trang này). Không có → {} (hiện id).
         // Cờ `known` ghi cho HAI loại id (study.html tick cả mục một lượt): thẻ ghi nhớ / câu hỏi (`f.*` / `q.*` →
@@ -201,6 +211,8 @@
             if (!r.ok) return {};
             const d = await r.json();
             const m = {};
+            // Sổ tay (src/sotay.py `du_lieu`): `nhan` = {khoá st.* → "Tên trang · nhãn đơn vị"}, không có flashcards / quiz.
+            if (mon === 'so-tay') for (const [k, v] of Object.entries(d.nhan || {})) if (typeof v === 'string' && v) m[k] = v;
             for (const q of [...(d.flashcards || []), ...(d.quiz || [])]) if (q && q.id) m[q.id] = q.front_en || q.stem_en || q.id;
             for (const sec of d.summary || []) {
               for (const [khoi, truong] of Object.entries(this.markKeys)) {
