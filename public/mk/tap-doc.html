@@ -240,7 +240,8 @@ function tdAnhLat(lat, trang) {
   .td-bong-chu i.td-sang{background:#fde047;color:#b91c1c}
   .td-bong-buoc{min-height:2.2rem;margin:.3rem 0 .7rem;font-size:1.3rem;color:#5b21b6}
   .td-bong-buoc span{display:inline-block;margin:0 .2rem;padding:0 .35rem;border-radius:.5rem}
-  .td-bong-buoc span.td-sang{background:#fde047;color:#713f12;font-weight:700}
+  /* Bước đang sáng KHÔNG đổi font-weight: chữ đậm rộng hơn → hàng bước xuống dòng ở 320–360 px, bong bóng cao thêm ~27 px giữa lúc đánh vần và tràn khỏi trang (mở bong bóng là đánh vần ngay, 2026-10-13). Đậm giả bằng text-shadow, không chiếm chỗ. */
+  .td-bong-buoc span.td-sang{background:#fde047;color:#713f12;text-shadow:.4px 0 0 currentColor,-.4px 0 0 currentColor}
   .td-bong-nut{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap}
   .td-n-vang{background:#fde047;color:#713f12}
   .td-bong-che{margin-top:.6rem;font-size:.95rem;color:#555}
@@ -819,7 +820,8 @@ function tdAnhLat(lat, trang) {
         // Chữ phóng to là KHOÁ `k` (viết thường, bỏ dấu câu) chứ không phải chữ trong truyện: các
         // khoảng chữ cái của từng bước (`buoc`) tính trên đúng chuỗi này.
         this.bong = { i, chu: this.tg().tu[i].k, g, bs: -1, che: this.cheDV(), viTri: 'visibility:hidden' };
-        this.bongDoc();                          // phát NGAY (còn trong cử chỉ nếu mở bằng chạm lại)
+        // Mở là ĐÁNH VẦN ngay (chủ dự án 2026-10-13); từ chỉ-đọc thì đọc. Phát NGAY (còn trong cử chỉ nếu mở bằng chạm lại).
+        if (g.buoc) this.bongVan(); else this.bongDoc();
         this.$nextTick(() => {
           this.datBong(i);                       // đặt chỗ cần kích thước thật của bong bóng
           // Phông đậm của chữ phóng to nạp LƯỜI, lúc bong bóng đầu tiên hiện: lần đo trên đây còn dùng phông dự phòng (hàng "Kiểu đánh vần" xuống dòng → cao hơn
@@ -827,6 +829,13 @@ function tdAnhLat(lat, trang) {
           if (document.fonts)   // luôn nối: lúc này `status` có thể chưa là 'loading' (phông bắt đầu nạp sau lần bố cục kế); đã xong sẵn thì lần đặt lại này là phép thừa vô hại
             document.fonts.ready.then(() => this.bong && this.bong.i === i && this.datBong(i));
         });
+      },
+      // Chạm RA NGOÀI bong bóng = đóng. Chạm vào một TỪ thì để luật bấm từ lo: chạm = đóng + đọc (docTu),
+      // giữ = mở bong bóng của từ đó — đóng ở đây sẽ làm lần giữ / chạm lại mở bong bóng xong bị đóng ngay.
+      ngoaiBong(e) {
+        if (!this.bong || !e.target || !e.target.closest) return;
+        if (e.target.closest('[data-td-bong], .td-tu')) return;
+        this.dongBong();
       },
       dongBong() {
         if (!this.bong) return;
@@ -2121,7 +2130,7 @@ function tdAnhLat(lat, trang) {
   <section class="td-doc" x-show="view === 'doc' || view === 'nghe'" x-cloak :class="tr ? 'td-' + tr.cap : ''"
          @keydown.arrow-left.window="phim(-1, $event)" @keydown.arrow-right.window="phim(1, $event)"
          @resize.window="bong && $nextTick(() => bong && datBong(bong.i))"
-         @pointerdown="moKhoa()" @pointerup="moKhoa()">
+         @pointerdown="moKhoa(); ngoaiBong($event)" @pointerup="moKhoa()">
   <template x-if="tr && (view === 'doc' || view === 'nghe')">
     <div style="display:contents">
       <div class="td-thanh" :class="tieuSo(tr) ? 'td-thanh-ch' : ''">
