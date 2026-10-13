@@ -9,11 +9,28 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+
+<style>input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }</style>
+<script>
+  // Nhớ regex của từ khoá cuối: trang lọc gọi hàng trăm lần cho cùng một từ khoá.
+  var _khop = { q: null, rx: null };
+  function khopRx(q, co) {
+    var e = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Từ khoá mở đầu bằng ký hiệu («+b», «(a)») thì chính nó đã là ranh giới.
+    var dau = /^[\p{L}\p{N}]/u.test(q) ? '(^|[^\\p{L}\\p{N}\\p{M}])' : '()';
+    return new RegExp(dau + '(' + e + ')', co || 'u');
+  }
+  function khopTu(t, q) {
+    if (!q) return true;
+    if (_khop.q !== q) _khop = { q: q, rx: khopRx(q) };
+    return _khop.rx.test(t || '');
+  }
+</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <title>Modal verbs — Sổ tay tiếng Anh · PL</title>
-  <link rel="stylesheet" href="../../assets/tw.a04b2b97.css">
+  <link rel="stylesheet" href="../../assets/tw.fd2db1dd.css">
   <script defer src="../../assets/alpine.63d2636a.js"></script>
   <style>
     [x-cloak]{display:none!important}
@@ -115,8 +132,7 @@
         <br><span class="text-[11px] font-normal text-slate-500">chọn điều mình muốn</span></th></tr>
     
     <tr>
-      <th class="border border-slate-200 bg-slate-100 px-2"><a href="modal-can-could.html" class="st-cham text-indigo-600">🧩 can</a></th>
-      <td class="border border-slate-200 p-1.5 min-w-[7rem]">
+      <th class="border border-slate-200 bg-slate-100 px-2"><a href="modal-can-could.html" class="st-cham text-indigo-600">🧩 can</a></th><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="modal-ability.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">can, could &amp; be able to
           <span class="block text-[11px] font-normal text-slate-500">I can swim.</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="modal-xin-phep.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">Permission &amp; requests
@@ -124,8 +140,7 @@
         <a href="modal-deduction.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">must be &amp; can&#39;t be
           <span class="block text-[11px] font-normal text-slate-500">It can&#39;t be true!</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td>
     </tr><tr>
-      <th class="border border-slate-200 bg-slate-100 px-2"><a href="modal-can-could.html" class="st-cham text-indigo-600">🧩 could</a></th>
-      <td class="border border-slate-200 p-1.5 min-w-[7rem]">
+      <th class="border border-slate-200 bg-slate-100 px-2"><a href="modal-can-could.html" class="st-cham text-indigo-600">🧩 could</a></th><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="modal-ability.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">can, could &amp; be able to
           <span class="block text-[11px] font-normal text-slate-500">I could read at four.</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="modal-xin-phep.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">Permission &amp; requests
@@ -133,49 +148,41 @@
         <a href="modal-may-might.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">may, might &amp; could
           <span class="block text-[11px] font-normal text-slate-500">It could rain.</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td>
     </tr><tr>
-      <th class="border border-slate-200 bg-slate-100 px-2">be able to</th>
-      <td class="border border-slate-200 p-1.5 min-w-[7rem]">
+      <th class="border border-slate-200 bg-slate-100 px-2">be able to</th><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="modal-ability.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">can, could &amp; be able to
           <span class="block text-[11px] font-normal text-slate-500">I&#39;ll be able to swim.</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td>
     </tr><tr>
-      <th class="border border-slate-200 bg-slate-100 px-2">may · might</th>
-      <td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
+      <th class="border border-slate-200 bg-slate-100 px-2">may · might</th><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="modal-xin-phep.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">Permission &amp; requests
           <span class="block text-[11px] font-normal text-slate-500">May I come in?</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="modal-may-might.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">may, might &amp; could
           <span class="block text-[11px] font-normal text-slate-500">I might be late.</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td>
     </tr><tr>
-      <th class="border border-slate-200 bg-slate-100 px-2"><a href="modal-would.html" class="st-cham text-indigo-600">🧩 would</a></th>
-      <td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
+      <th class="border border-slate-200 bg-slate-100 px-2"><a href="modal-would.html" class="st-cham text-indigo-600">🧩 would</a></th><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="modal-xin-phep.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">Permission &amp; requests
           <span class="block text-[11px] font-normal text-slate-500">Would you like some?</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="modal-would-rather.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">would rather
           <span class="block text-[11px] font-normal text-slate-500">I&#39;d rather walk.</span></a></td>
     </tr><tr>
-      <th class="border border-slate-200 bg-slate-100 px-2"><a href="modal-must.html" class="st-cham text-indigo-600">🧩 must</a></th>
-      <td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
+      <th class="border border-slate-200 bg-slate-100 px-2"><a href="modal-must.html" class="st-cham text-indigo-600">🧩 must</a></th><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="modal-must-have-to.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">must &amp; have to
           <span class="block text-[11px] font-normal text-slate-500">You must stop.</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="modal-deduction.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">must be &amp; can&#39;t be
           <span class="block text-[11px] font-normal text-slate-500">You must be tired.</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td>
     </tr><tr>
-      <th class="border border-slate-200 bg-slate-100 px-2">have to · need to</th>
-      <td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
+      <th class="border border-slate-200 bg-slate-100 px-2">have to · need to</th><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="modal-must-have-to.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">must &amp; have to
           <span class="block text-[11px] font-normal text-slate-500">I have to go.</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td>
     </tr><tr>
-      <th class="border border-slate-200 bg-slate-100 px-2">should · ought to</th>
-      <td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
+      <th class="border border-slate-200 bg-slate-100 px-2">should · ought to</th><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="modal-should.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">should, ought to &amp; had better
           <span class="block text-[11px] font-normal text-slate-500">You should rest.</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td>
     </tr><tr>
-      <th class="border border-slate-200 bg-slate-100 px-2">had better</th>
-      <td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
+      <th class="border border-slate-200 bg-slate-100 px-2">had better</th><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="modal-should.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">should, ought to &amp; had better
           <span class="block text-[11px] font-normal text-slate-500">You&#39;d better hurry.</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td>
     </tr><tr>
-      <th class="border border-slate-200 bg-slate-100 px-2"><a href="modal-have-v3.html" class="st-cham text-indigo-600">🧩 … + have + V3</a></th>
-      <td class="border border-slate-200 p-1.5 min-w-[7rem]">
+      <th class="border border-slate-200 bg-slate-100 px-2"><a href="modal-have-v3.html" class="st-cham text-indigo-600">🧩 … + have + V3</a></th><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="modal-have-v3.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">Modal + have + V3
           <span class="block text-[11px] font-normal text-slate-500">We could have won!</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="modal-have-v3.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">Modal + have + V3
@@ -289,6 +296,8 @@
       timMo: false,
       timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
       timDong() { this.q = ''; this.timMo = false; },
+      timXoa() { this.q = ''; this.$refs.timO && this.$refs.timO.focus(); },
+      timCuoi(el) { setTimeout(() => { const n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) { /* bỏ qua */ } }, 0); },
       get canMark() { return this.online && !!this.secret; },
       boDau,
       async init() {
@@ -338,7 +347,7 @@
       get ketQua() {
         const q = boDau(this.q.trim());
         if (!q || !this.du) return [];
-        return this.du.tim.filter(r => boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')).includes(q)).slice(0, 30);
+        return this.du.tim.filter(r => khopTu(boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')), q)).slice(0, 30);
       },
       // setTimeout: cú bấm mở thẻ còn đang nổi bọt lên document — gán ngay thì @click.outside đóng nó luôn.
       async moXem(el) {

@@ -9,11 +9,28 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+
+<style>input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }</style>
+<script>
+  // Nhớ regex của từ khoá cuối: trang lọc gọi hàng trăm lần cho cùng một từ khoá.
+  var _khop = { q: null, rx: null };
+  function khopRx(q, co) {
+    var e = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Từ khoá mở đầu bằng ký hiệu («+b», «(a)») thì chính nó đã là ranh giới.
+    var dau = /^[\p{L}\p{N}]/u.test(q) ? '(^|[^\\p{L}\\p{N}\\p{M}])' : '()';
+    return new RegExp(dau + '(' + e + ')', co || 'u');
+  }
+  function khopTu(t, q) {
+    if (!q) return true;
+    if (_khop.q !== q) _khop = { q: q, rx: khopRx(q) };
+    return _khop.rx.test(t || '');
+  }
+</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <title>Câu điều kiện — Sổ tay tiếng Anh · PL</title>
-  <link rel="stylesheet" href="../../assets/tw.a04b2b97.css">
+  <link rel="stylesheet" href="../../assets/tw.fd2db1dd.css">
   <script defer src="../../assets/alpine.63d2636a.js"></script>
   <style>
     [x-cloak]{display:none!important}
@@ -25,7 +42,7 @@
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen" x-data="soTay()">
-<script type="application/json" id="st-du">{"nhom": {"dieu-kien-bay-gio-tuong-lai": ["st.dieu-kien-bay-gio-tuong-lai.chon", "st.dieu-kien-bay-gio-tuong-lai.cap-thoi-gian", "st.dieu-kien-bay-gio-tuong-lai.cap-cuoc-dua", "st.dieu-kien-bay-gio-tuong-lai.cap-con-cho"], "dieu-kien-co-that": ["st.dieu-kien-co-that.chon", "st.dieu-kien-co-that.cap-keo", "st.dieu-kien-co-that.cap-kem", "st.dieu-kien-co-that.chon-tu"], "dieu-kien-khong-co-that": ["st.dieu-kien-khong-co-that.chon", "st.dieu-kien-khong-co-that.cap-diem", "st.dieu-kien-khong-co-that.cap-cau-vong", "st.dieu-kien-khong-co-that.cap-uoc-con-cho", "st.dieu-kien-khong-co-that.cap-uoc-on-bai", "st.dieu-kien-khong-co-that.cap-uoc-hai-moc"], "first-conditional": ["st.first-conditional.co-the", "st.first-conditional.canh-bao-hua", "st.first-conditional.khong-chac"], "if-when": ["st.if-when.if-chua-chac", "st.if-when.when-chac", "st.if-when.luon-dung", "st.if-when.dau-phay"], "second-conditional": ["st.second-conditional.trai-that", "st.second-conditional.kho-xay-ra", "st.second-conditional.khuyen", "st.second-conditional.khong-chac"], "third-conditional": ["st.third-conditional.tiec", "st.third-conditional.may-trach"], "trang": ["st.zero-conditional.su-that", "st.zero-conditional.luat-le", "st.zero-conditional.thoi-quen", "st.first-conditional.co-the", "st.first-conditional.canh-bao-hua", "st.first-conditional.khong-chac", "st.second-conditional.trai-that", "st.second-conditional.kho-xay-ra", "st.second-conditional.khuyen", "st.second-conditional.khong-chac", "st.third-conditional.tiec", "st.third-conditional.may-trach", "st.unless.if-not", "st.unless.khang-dinh", "st.unless.dung-voi", "st.if-when.if-chua-chac", "st.if-when.when-chac", "st.if-when.luon-dung", "st.if-when.dau-phay", "st.wish.bay-gio", "st.wish.could", "st.wish.da-qua", "st.wish.if-only", "st.dieu-kien-bay-gio-tuong-lai.chon", "st.dieu-kien-bay-gio-tuong-lai.cap-thoi-gian", "st.dieu-kien-bay-gio-tuong-lai.cap-cuoc-dua", "st.dieu-kien-bay-gio-tuong-lai.cap-con-cho", "st.dieu-kien-co-that.chon", "st.dieu-kien-co-that.cap-keo", "st.dieu-kien-co-that.cap-kem", "st.dieu-kien-co-that.chon-tu", "st.dieu-kien-khong-co-that.chon", "st.dieu-kien-khong-co-that.cap-diem", "st.dieu-kien-khong-co-that.cap-cau-vong", "st.dieu-kien-khong-co-that.cap-uoc-con-cho", "st.dieu-kien-khong-co-that.cap-uoc-on-bai", "st.dieu-kien-khong-co-that.cap-uoc-hai-moc"], "unless": ["st.unless.if-not", "st.unless.khang-dinh", "st.unless.dung-voi"], "wish": ["st.wish.bay-gio", "st.wish.could", "st.wish.da-qua", "st.wish.if-only"], "zero-conditional": ["st.zero-conditional.su-that", "st.zero-conditional.luat-le", "st.zero-conditional.thoi-quen"]}, "user": "pl"}</script>
+<script type="application/json" id="st-du">{"nhom": {"as-if": ["st.as-if.co-that", "st.as-if.khong-that"], "dieu-kien-bay-gio-tuong-lai": ["st.dieu-kien-bay-gio-tuong-lai.chon", "st.dieu-kien-bay-gio-tuong-lai.cap-thoi-gian", "st.dieu-kien-bay-gio-tuong-lai.cap-cuoc-dua", "st.dieu-kien-bay-gio-tuong-lai.cap-con-cho"], "dieu-kien-co-that": ["st.dieu-kien-co-that.chon", "st.dieu-kien-co-that.cap-keo", "st.dieu-kien-co-that.cap-kem", "st.dieu-kien-co-that.chon-tu"], "first-conditional": ["st.first-conditional.co-the", "st.first-conditional.canh-bao-hua", "st.first-conditional.khong-chac"], "if-when": ["st.if-when.if-chua-chac", "st.if-when.when-chac", "st.if-when.luon-dung", "st.if-when.dau-phay"], "its-time": ["st.its-time.to-v", "st.its-time.v2"], "second-conditional": ["st.second-conditional.trai-that", "st.second-conditional.kho-xay-ra", "st.second-conditional.khuyen", "st.second-conditional.khong-chac"], "third-conditional": ["st.third-conditional.tiec", "st.third-conditional.may-trach"], "trang": ["st.zero-conditional.su-that", "st.zero-conditional.luat-le", "st.zero-conditional.thoi-quen", "st.first-conditional.co-the", "st.first-conditional.canh-bao-hua", "st.first-conditional.khong-chac", "st.second-conditional.trai-that", "st.second-conditional.kho-xay-ra", "st.second-conditional.khuyen", "st.second-conditional.khong-chac", "st.third-conditional.tiec", "st.third-conditional.may-trach", "st.unless.if-not", "st.unless.khang-dinh", "st.unless.dung-voi", "st.if-when.if-chua-chac", "st.if-when.when-chac", "st.if-when.luon-dung", "st.if-when.dau-phay", "st.wish.bay-gio", "st.wish.could", "st.wish.da-qua", "st.wish.would", "st.wish.if-only", "st.its-time.to-v", "st.its-time.v2", "st.as-if.co-that", "st.as-if.khong-that", "st.dieu-kien-bay-gio-tuong-lai.chon", "st.dieu-kien-bay-gio-tuong-lai.cap-thoi-gian", "st.dieu-kien-bay-gio-tuong-lai.cap-cuoc-dua", "st.dieu-kien-bay-gio-tuong-lai.cap-con-cho", "st.dieu-kien-co-that.chon", "st.dieu-kien-co-that.cap-keo", "st.dieu-kien-co-that.cap-kem", "st.dieu-kien-co-that.chon-tu"], "unless": ["st.unless.if-not", "st.unless.khang-dinh", "st.unless.dung-voi"], "wish": ["st.wish.bay-gio", "st.wish.could", "st.wish.da-qua", "st.wish.would", "st.wish.if-only"], "zero-conditional": ["st.zero-conditional.su-that", "st.zero-conditional.luat-le", "st.zero-conditional.thoi-quen"]}, "user": "pl"}</script>
 <header class="bg-white border-b border-slate-200">
   <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3 min-h-[3.5rem]">
     
@@ -46,13 +63,13 @@
     
     <a href="#ban-do" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Bản đồ câu điều kiện</a>
     
-    <a href="#cau-uoc" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">🌠 Câu ước — lùi thì y như cột Không có thật</a>
+    <a href="#cau-uoc" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">🌠 Câu ước, it&#39;s time, as if — lùi thì y như cột Không có thật</a>
     
     <a href="#thang" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">📏 Từ chắc chắn tới không thể</a>
     
     
       <p class="px-2 pt-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">🧩 Tổng hợp</p>
-      <a href="dieu-kien-bay-gio-tuong-lai.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Điều kiện về bây giờ &amp; tương lai (loại 1, 2)</a><a href="dieu-kien-co-that.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Điều kiện có thật (loại 0, 1)</a><a href="dieu-kien-khong-co-that.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Điều kiện không có thật (loại 2, 3) &amp; câu ước</a>
+      <a href="dieu-kien-bay-gio-tuong-lai.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Điều kiện về bây giờ &amp; tương lai (loại 1, 2)</a><a href="dieu-kien-co-that.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Điều kiện có thật (loại 0, 1)</a>
       <p class="px-2 pt-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">📄 Mục</p>
       <a href="zero-conditional.html" class="flex justify-between px-2 py-1.5 rounded-md hover:bg-indigo-50 text-slate-700">Zero Conditional
         <small x-show="online" x-cloak class="text-slate-400" x-text="dem('zero-conditional')"></small></a><a href="first-conditional.html" class="flex justify-between px-2 py-1.5 rounded-md hover:bg-indigo-50 text-slate-700">First Conditional
@@ -61,7 +78,9 @@
         <small x-show="online" x-cloak class="text-slate-400" x-text="dem('third-conditional')"></small></a><a href="unless.html" class="flex justify-between px-2 py-1.5 rounded-md hover:bg-indigo-50 text-slate-700">unless
         <small x-show="online" x-cloak class="text-slate-400" x-text="dem('unless')"></small></a><a href="if-when.html" class="flex justify-between px-2 py-1.5 rounded-md hover:bg-indigo-50 text-slate-700">if &amp; when
         <small x-show="online" x-cloak class="text-slate-400" x-text="dem('if-when')"></small></a><a href="wish.html" class="flex justify-between px-2 py-1.5 rounded-md hover:bg-indigo-50 text-slate-700">wish &amp; if only
-        <small x-show="online" x-cloak class="text-slate-400" x-text="dem('wish')"></small></a>
+        <small x-show="online" x-cloak class="text-slate-400" x-text="dem('wish')"></small></a><a href="its-time.html" class="flex justify-between px-2 py-1.5 rounded-md hover:bg-indigo-50 text-slate-400">It&#39;s time ➕
+        <small x-show="online" x-cloak class="text-slate-400" x-text="dem('its-time')"></small></a><a href="as-if.html" class="flex justify-between px-2 py-1.5 rounded-md hover:bg-indigo-50 text-slate-400">as if &amp; as though ➕
+        <small x-show="online" x-cloak class="text-slate-400" x-text="dem('as-if')"></small></a>
     
   
 </div></nav>
@@ -73,13 +92,13 @@
     
     <a href="#ban-do" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Bản đồ câu điều kiện</a>
     
-    <a href="#cau-uoc" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">🌠 Câu ước — lùi thì y như cột Không có thật</a>
+    <a href="#cau-uoc" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">🌠 Câu ước, it&#39;s time, as if — lùi thì y như cột Không có thật</a>
     
     <a href="#thang" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">📏 Từ chắc chắn tới không thể</a>
     
     
       <p class="px-2 pt-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">🧩 Tổng hợp</p>
-      <a href="dieu-kien-bay-gio-tuong-lai.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Điều kiện về bây giờ &amp; tương lai (loại 1, 2)</a><a href="dieu-kien-co-that.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Điều kiện có thật (loại 0, 1)</a><a href="dieu-kien-khong-co-that.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Điều kiện không có thật (loại 2, 3) &amp; câu ước</a>
+      <a href="dieu-kien-bay-gio-tuong-lai.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Điều kiện về bây giờ &amp; tương lai (loại 1, 2)</a><a href="dieu-kien-co-that.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Điều kiện có thật (loại 0, 1)</a>
       <p class="px-2 pt-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">📄 Mục</p>
       <a href="zero-conditional.html" class="flex justify-between px-2 py-1.5 rounded-md hover:bg-indigo-50 text-slate-700">Zero Conditional
         <small x-show="online" x-cloak class="text-slate-400" x-text="dem('zero-conditional')"></small></a><a href="first-conditional.html" class="flex justify-between px-2 py-1.5 rounded-md hover:bg-indigo-50 text-slate-700">First Conditional
@@ -88,13 +107,15 @@
         <small x-show="online" x-cloak class="text-slate-400" x-text="dem('third-conditional')"></small></a><a href="unless.html" class="flex justify-between px-2 py-1.5 rounded-md hover:bg-indigo-50 text-slate-700">unless
         <small x-show="online" x-cloak class="text-slate-400" x-text="dem('unless')"></small></a><a href="if-when.html" class="flex justify-between px-2 py-1.5 rounded-md hover:bg-indigo-50 text-slate-700">if &amp; when
         <small x-show="online" x-cloak class="text-slate-400" x-text="dem('if-when')"></small></a><a href="wish.html" class="flex justify-between px-2 py-1.5 rounded-md hover:bg-indigo-50 text-slate-700">wish &amp; if only
-        <small x-show="online" x-cloak class="text-slate-400" x-text="dem('wish')"></small></a>
+        <small x-show="online" x-cloak class="text-slate-400" x-text="dem('wish')"></small></a><a href="its-time.html" class="flex justify-between px-2 py-1.5 rounded-md hover:bg-indigo-50 text-slate-400">It&#39;s time ➕
+        <small x-show="online" x-cloak class="text-slate-400" x-text="dem('its-time')"></small></a><a href="as-if.html" class="flex justify-between px-2 py-1.5 rounded-md hover:bg-indigo-50 text-slate-400">as if &amp; as though ➕
+        <small x-show="online" x-cloak class="text-slate-400" x-text="dem('as-if')"></small></a>
     
   
 </div></div>
     </details>
     <p class="flex flex-wrap gap-2">
-      <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-indigo-100 text-indigo-700">🧩 tổng hợp cả chủ đề · 7 mục</span>
+      <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-indigo-100 text-indigo-700">🧩 tổng hợp cả chủ đề · 9 mục</span>
       
       <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-indigo-50 text-indigo-700">📘 Close Up B1 U6</span><span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-indigo-50 text-indigo-700">📘 CIE ESL 5 U2</span><span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-indigo-50 text-indigo-700">📘 Grammar &amp; Vocabulary Practice B1 U11·22·23</span>
       
@@ -116,20 +137,17 @@
         <br><span class="text-[11px] font-normal text-slate-500">chỉ tưởng tượng</span></th></tr>
     
     <tr>
-      <th class="border border-slate-200 bg-slate-100 px-2">Luôn đúng</th>
-      <td class="border border-slate-200 p-1.5 min-w-[7rem]">
+      <th class="border border-slate-200 bg-slate-100 px-2">Luôn đúng</th><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="zero-conditional.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">Zero Conditional
           <span class="block text-[11px] font-normal text-slate-500">If + V(s), V(s)</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td>
     </tr><tr>
-      <th class="border border-slate-200 bg-slate-100 px-2"><a href="dieu-kien-bay-gio-tuong-lai.html" class="st-cham text-indigo-600">🧩 Bây giờ &amp; tương lai</a></th>
-      <td class="border border-slate-200 p-1.5 min-w-[7rem]">
+      <th class="border border-slate-200 bg-slate-100 px-2"><a href="dieu-kien-bay-gio-tuong-lai.html" class="st-cham text-indigo-600">🧩 Bây giờ &amp; tương lai</a></th><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="first-conditional.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">First Conditional
           <span class="block text-[11px] font-normal text-slate-500">If + V(s), will + V</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="second-conditional.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">Second Conditional
           <span class="block text-[11px] font-normal text-slate-500">If + V2, would + V</span></a></td>
     </tr><tr>
-      <th class="border border-slate-200 bg-slate-100 px-2">Quá khứ</th>
-      <td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
+      <th class="border border-slate-200 bg-slate-100 px-2">Quá khứ</th><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="third-conditional.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">Third Conditional
           <span class="block text-[11px] font-normal text-slate-500">If + had V3, would have V3</span></a></td>
     </tr>
@@ -137,7 +155,7 @@
   
 </section><section id="cau-uoc" data-st-khoi="the" class="scroll-mt-4">
   
-  <h2 class="text-lg font-bold mt-7 mb-2 flex items-center gap-2 scroll-mt-4">🌠 Câu ước — lùi thì y như cột Không có thật</h2>
+  <h2 class="text-lg font-bold mt-7 mb-2 flex items-center gap-2 scroll-mt-4">🌠 Câu ước, it&#39;s time, as if — lùi thì y như cột Không có thật</h2>
   
   
   <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -147,6 +165,22 @@
       <p class="text-sm text-slate-700 mt-1">Ước điều KHÔNG có thật thì lùi thì: bây giờ → wish + V2 (were, could); chuyện đã qua → wish + had V3. if only = I wish, nghe tiếc hơn.</p>
       <code class="inline-block mt-2 font-mono text-sm bg-slate-100 rounded px-1.5 py-0.5">S + wish(es) + S + V2 / were</code>
       <p class="mt-1.5 text-sm font-medium">I <b>wish</b> I <b>had</b> a puppy. <button type="button" data-st-loa data-noi="I wish I had a puppy." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
+        class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p>
+    </div>
+    
+    <div class="bg-white border border-slate-200 rounded-xl border-t-4 border-t-rose-500 p-4">
+      <h3 class="font-semibold"><a class="xr" href="its-time.html" data-xem="its-time" @click.prevent="moXem($el)">It&#39;s time</a> <span class="text-xs rounded-full px-2 bg-amber-100 text-amber-700">➕</span></h3>
+      <p class="text-sm text-slate-700 mt-1">Đến giờ làm gì: It&#39;s time + to V. Lẽ ra làm rồi mà chưa: It&#39;s time + S + V2 — dạng quá khứ nhưng nói về BÂY GIỜ.</p>
+      <code class="inline-block mt-2 font-mono text-sm bg-slate-100 rounded px-1.5 py-0.5">It&#39;s time + to V / It&#39;s time + S + V2</code>
+      <p class="mt-1.5 text-sm font-medium">It&#39;s time <b>to go</b> home. / It&#39;s time we <b>went</b> home. <button type="button" data-st-loa data-noi="It&#39;s time to go home. / It&#39;s time we went home." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
+        class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p>
+    </div>
+    
+    <div class="bg-white border border-slate-200 rounded-xl border-t-4 border-t-indigo-500 p-4">
+      <h3 class="font-semibold"><a class="xr" href="as-if.html" data-xem="as-if" @click.prevent="moXem($el)">as if &amp; as though</a> <span class="text-xs rounded-full px-2 bg-amber-100 text-amber-700">➕</span></h3>
+      <p class="text-sm text-slate-700 mt-1">Trông như, như thể. Có thể đúng thật → giữ thì thường. Biết là KHÔNG thật → lùi thì: as if he were the teacher.</p>
+      <code class="inline-block mt-2 font-mono text-sm bg-slate-100 rounded px-1.5 py-0.5">S + V + as if / as though + S + V</code>
+      <p class="mt-1.5 text-sm font-medium">You look <b>as if</b> you<b>&#39;re</b> tired. <button type="button" data-st-loa data-noi="You look as if you&#39;re tired." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p>
     </div>
     
@@ -181,9 +215,7 @@
         <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-sky-100 text-sky-700">tổng quan</span>
         <h3 class="font-semibold mt-1.5">Điều kiện về bây giờ &amp; tương lai (loại 1, 2)</h3><p class="text-sm text-slate-600 mt-1">Nói về bây giờ hay sắp tới: chuyện CÓ THỂ xảy ra thật (loại 1), hay chỉ TƯỞNG TƯỢNG, khó xảy ra (loại 2)?</p></a><a href="dieu-kien-co-that.html" class="block bg-white rounded-xl border border-slate-200 p-4 hover:border-indigo-400">
         <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-sky-100 text-sky-700">tổng quan</span>
-        <h3 class="font-semibold mt-1.5">Điều kiện có thật (loại 0, 1)</h3><p class="text-sm text-slate-600 mt-1">Chuyện thật: điều LẦN NÀO cũng đúng (loại 0), hay chuyện CÓ THỂ xảy ra một lần sắp tới (loại 1)? Và nối bằng if, when hay unless?</p></a><a href="dieu-kien-khong-co-that.html" class="block bg-white rounded-xl border border-slate-200 p-4 hover:border-indigo-400">
-        <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-sky-100 text-sky-700">tổng quan</span>
-        <h3 class="font-semibold mt-1.5">Điều kiện không có thật (loại 2, 3) &amp; câu ước</h3><p class="text-sm text-slate-600 mt-1">Chuyện chỉ TƯỞNG TƯỢNG: về bây giờ, sắp tới (loại 2), hay về chuyện ĐÃ QUA, không đổi được (loại 3)? Câu ước wish lùi thì y như vế if.</p></a>
+        <h3 class="font-semibold mt-1.5">Điều kiện có thật (loại 0, 1)</h3><p class="text-sm text-slate-600 mt-1">Chuyện thật: điều LẦN NÀO cũng đúng (loại 0), hay chuyện CÓ THỂ xảy ra một lần sắp tới (loại 1)? Và nối bằng if, when hay unless?</p></a>
     </div>
     
 
@@ -270,6 +302,8 @@
       timMo: false,
       timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
       timDong() { this.q = ''; this.timMo = false; },
+      timXoa() { this.q = ''; this.$refs.timO && this.$refs.timO.focus(); },
+      timCuoi(el) { setTimeout(() => { const n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) { /* bỏ qua */ } }, 0); },
       get canMark() { return this.online && !!this.secret; },
       boDau,
       async init() {
@@ -319,7 +353,7 @@
       get ketQua() {
         const q = boDau(this.q.trim());
         if (!q || !this.du) return [];
-        return this.du.tim.filter(r => boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')).includes(q)).slice(0, 30);
+        return this.du.tim.filter(r => khopTu(boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')), q)).slice(0, 30);
       },
       // setTimeout: cú bấm mở thẻ còn đang nổi bọt lên document — gán ngay thì @click.outside đóng nó luôn.
       async moXem(el) {

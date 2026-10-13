@@ -9,11 +9,28 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+
+<style>input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }</style>
+<script>
+  // Nhớ regex của từ khoá cuối: trang lọc gọi hàng trăm lần cho cùng một từ khoá.
+  var _khop = { q: null, rx: null };
+  function khopRx(q, co) {
+    var e = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Từ khoá mở đầu bằng ký hiệu («+b», «(a)») thì chính nó đã là ranh giới.
+    var dau = /^[\p{L}\p{N}]/u.test(q) ? '(^|[^\\p{L}\\p{N}\\p{M}])' : '()';
+    return new RegExp(dau + '(' + e + ')', co || 'u');
+  }
+  function khopTu(t, q) {
+    if (!q) return true;
+    if (_khop.q !== q) _khop = { q: q, rx: khopRx(q) };
+    return _khop.rx.test(t || '');
+  }
+</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <title>Giới từ đi kèm tính từ, động từ, danh từ — Sổ tay tiếng Anh · PL</title>
-  <link rel="stylesheet" href="../../assets/tw.a04b2b97.css">
+  <link rel="stylesheet" href="../../assets/tw.fd2db1dd.css">
   <script defer src="../../assets/alpine.63d2636a.js"></script>
   <style>
     [x-cloak]{display:none!important}
@@ -77,13 +94,12 @@
     <p class="flex flex-wrap gap-2">
       <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-sky-100 text-sky-700">🧩 tổng quan</span>
       
-      <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-indigo-50 text-indigo-700">📘 Close Up B1 U3·4·9·11</span><span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-indigo-50 text-indigo-700">📘 CIE ESL 5 U7·9</span><span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-indigo-50 text-indigo-700">📘 Grammar &amp; Vocabulary Practice B1 U1·3·5·9·13·16·17·19·21 · Phụ lục</span>
+      <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-indigo-50 text-indigo-700">📘 Close Up B1 U3·4·9·11</span><span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-indigo-50 text-indigo-700">📘 CIE ESL 5 U7·9</span><span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-indigo-50 text-indigo-700">📘 Grammar &amp; Vocabulary Practice B1 U1·2·3·5·9·13·16·17·19·21 · Phụ lục</span>
       
     </p>
     <h1 class="text-2xl font-bold mt-1.5">Giới từ đi kèm tính từ, động từ, danh từ</h1>
     
-    <p class="mt-2 flex flex-wrap items-center gap-2 text-sm"><span class="text-slate-500">Gồm:</span>
-      <span class="rounded-lg border border-indigo-100 bg-white px-2 py-1"><a class="xr" href="tinh-tu-gioi-tu.html" data-xem="tinh-tu-gioi-tu" @click.prevent="moXem($el)">Adjective + preposition</a></span><span class="rounded-lg border border-indigo-100 bg-white px-2 py-1"><a class="xr" href="dong-tu-gioi-tu.html" data-xem="dong-tu-gioi-tu" @click.prevent="moXem($el)">Verb + preposition</a></span><span class="rounded-lg border border-indigo-100 bg-white px-2 py-1"><a class="xr" href="danh-tu-gioi-tu.html" data-xem="danh-tu-gioi-tu" @click.prevent="moXem($el)">Nouns &amp; phrases with prepositions</a></span><span class="rounded-lg border border-indigo-100 bg-white px-2 py-1"><a class="xr" href="gioi-tu-v-ing.html" data-xem="gioi-tu-v-ing" @click.prevent="moXem($el)">Preposition + V-ing</a></span></p>
+    <p class="mt-2 flex flex-wrap items-center gap-2 text-sm"><span class="text-slate-500">Gồm:</span><span class="rounded-lg border border-indigo-100 bg-white px-2 py-1"><a class="xr" href="tinh-tu-gioi-tu.html" data-xem="tinh-tu-gioi-tu" @click.prevent="moXem($el)">Adjective + preposition</a></span><span class="rounded-lg border border-indigo-100 bg-white px-2 py-1"><a class="xr" href="dong-tu-gioi-tu.html" data-xem="dong-tu-gioi-tu" @click.prevent="moXem($el)">Verb + preposition</a></span><span class="rounded-lg border border-indigo-100 bg-white px-2 py-1"><a class="xr" href="hai-tan-ngu-to-for.html" data-xem="hai-tan-ngu-to-for" @click.prevent="moXem($el)">Verbs with two objects</a></span><span class="rounded-lg border border-indigo-100 bg-white px-2 py-1"><a class="xr" href="danh-tu-gioi-tu.html" data-xem="danh-tu-gioi-tu" @click.prevent="moXem($el)">Nouns &amp; phrases with prepositions</a></span><span class="rounded-lg border border-indigo-100 bg-white px-2 py-1"><a class="xr" href="gioi-tu-v-ing.html" data-xem="gioi-tu-v-ing" @click.prevent="moXem($el)">Preposition + V-ing</a></span></p>
     
     <p class="mt-3 text-lg font-semibold bg-indigo-50 border-l-4 border-indigo-600 rounded-lg px-4 py-3">Có những giới từ &#34;dính&#34; với từ đứng trước nó: good AT, listen TO, reason FOR. Không đoán theo nghĩa được — tra bảng, học theo cặp; sau giới từ dùng V-ing.</p>
 
@@ -111,6 +127,14 @@
     </div>
     
     <div class="bg-white border border-slate-200 rounded-xl border-t-4 border-t-amber-500 p-4">
+      <h3 class="font-semibold"><a class="xr" href="hai-tan-ngu-to-for.html" data-xem="hai-tan-ngu-to-for" @click.prevent="moXem($el)">Verbs with two objects</a></h3>
+      <p class="text-sm text-slate-700 mt-1">give me a book = give a book TO me. Đưa, gửi, kể cho ai → to; mua, làm hộ ai → for. Vật là it / them thì nói give it to me.</p>
+      
+      <p class="mt-1.5 text-sm font-medium">Mom <b>gave me</b> a new backpack. <button type="button" data-st-loa data-noi="Mom gave me a new backpack." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
+        class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p>
+    </div>
+    
+    <div class="bg-white border border-slate-200 rounded-xl border-t-4 border-t-rose-500 p-4">
       <h3 class="font-semibold"><a class="xr" href="danh-tu-gioi-tu.html" data-xem="danh-tu-gioi-tu" @click.prevent="moXem($el)">Nouns &amp; phrases with prepositions</a></h3>
       <p class="text-sm text-slate-700 mt-1">Danh từ cũng có giới từ &#34;ruột&#34; (the reason for, an expert on); nhiều cụm giới từ + danh từ phải thuộc lòng: on purpose, by mistake, in common.</p>
       
@@ -118,7 +142,7 @@
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p>
     </div>
     
-    <div class="bg-white border border-slate-200 rounded-xl border-t-4 border-t-rose-500 p-4">
+    <div class="bg-white border border-slate-200 rounded-xl border-t-4 border-t-indigo-500 p-4">
       <h3 class="font-semibold"><a class="xr" href="gioi-tu-v-ing.html" data-xem="gioi-tu-v-ing" @click.prevent="moXem($el)">Preposition + V-ing</a></h3>
       <p class="text-sm text-slate-700 mt-1">Sau giới từ (at, of, in, about, for, without, before…) động từ luôn ở dạng V-ing: good at drawing, thanks for helping.</p>
       
@@ -182,9 +206,27 @@
       <span aria-hidden="true" class="inline-block w-4 shrink-0 text-center text-slate-300">•</span>
       <div class="min-w-0 flex-1">
         <p class="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+          <span data-st-cay-nhan class="font-semibold rounded-lg px-2 py-0.5 bg-slate-100 text-slate-800 border border-slate-200">Đưa, gửi, mua cái gì CHO ai: to hay for?</span>
+          <span class="inline-flex items-baseline gap-1.5 max-w-full"><span class="text-slate-400">→</span>
+            <span data-st-cay-la class="min-w-0 font-bold rounded-lg px-2 py-0.5 bg-amber-100 text-amber-800">Verbs with two objects</span></span>
+        </p>
+        <span data-st-dau-hieu class="flex flex-wrap gap-1.5 mt-1"><span class="rounded-md bg-amber-100 text-amber-800 font-semibold text-sm px-2 py-0.5">give it to</span><span class="rounded-md bg-amber-100 text-amber-800 font-semibold text-sm px-2 py-0.5">buy it for</span></span>
+        <p data-st-cay-vd class="mt-1 text-sm"><span class="font-medium">Dad <b>bought</b> a kite <b>for</b> me.</span> <button type="button" data-st-loa data-noi="Dad bought a kite for me." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
+        class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p>
+      </div>
+    </div>
+    
+  </li>
+  
+  <li>
+    
+    <div class="flex items-start gap-1.5">
+      <span aria-hidden="true" class="inline-block w-4 shrink-0 text-center text-slate-300">•</span>
+      <div class="min-w-0 flex-1">
+        <p class="flex flex-wrap items-center gap-x-1.5 gap-y-1">
           <span data-st-cay-nhan class="font-semibold rounded-lg px-2 py-0.5 bg-slate-100 text-slate-800 border border-slate-200">Sau giới từ, động từ ở dạng nào?</span>
           <span class="inline-flex items-baseline gap-1.5 max-w-full"><span class="text-slate-400">→</span>
-            <span data-st-cay-la class="min-w-0 font-bold rounded-lg px-2 py-0.5 bg-rose-100 text-rose-700">Preposition + V-ing</span></span>
+            <span data-st-cay-la class="min-w-0 font-bold rounded-lg px-2 py-0.5 bg-indigo-100 text-indigo-700">Preposition + V-ing</span></span>
         </p>
         <span data-st-dau-hieu class="flex flex-wrap gap-1.5 mt-1"><span class="rounded-md bg-amber-100 text-amber-800 font-semibold text-sm px-2 py-0.5">for helping</span><span class="rounded-md bg-amber-100 text-amber-800 font-semibold text-sm px-2 py-0.5">before eating</span></span>
         <p data-st-cay-vd class="mt-1 text-sm"><span class="font-medium">Thank you <b>for helping</b> me.</span> <button type="button" data-st-loa data-noi="Thank you for helping me." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
@@ -202,7 +244,7 @@
         <p class="flex flex-wrap items-center gap-x-1.5 gap-y-1">
           <span data-st-cay-nhan class="font-semibold rounded-lg px-2 py-0.5 bg-slate-100 text-slate-800 border border-slate-200">Sau một DANH TỪ, hay một cụm cố định?</span>
           <span class="inline-flex items-baseline gap-1.5 max-w-full"><span class="text-slate-400">→</span>
-            <span data-st-cay-la class="min-w-0 font-bold rounded-lg px-2 py-0.5 bg-amber-100 text-amber-800">Nouns &amp; phrases with prepositions</span></span>
+            <span data-st-cay-la class="min-w-0 font-bold rounded-lg px-2 py-0.5 bg-rose-100 text-rose-700">Nouns &amp; phrases with prepositions</span></span>
         </p>
         <span data-st-dau-hieu class="flex flex-wrap gap-1.5 mt-1"><span class="rounded-md bg-amber-100 text-amber-800 font-semibold text-sm px-2 py-0.5">reason for</span><span class="rounded-md bg-amber-100 text-amber-800 font-semibold text-sm px-2 py-0.5">on purpose</span><span class="rounded-md bg-amber-100 text-amber-800 font-semibold text-sm px-2 py-0.5">by mistake</span></span>
         <p data-st-cay-vd class="mt-1 text-sm"><span class="font-medium">What&#39;s the <b>reason for</b> the noise?</span> <button type="button" data-st-loa data-noi="What&#39;s the reason for the noise?" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
@@ -408,6 +450,8 @@
       timMo: false,
       timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
       timDong() { this.q = ''; this.timMo = false; },
+      timXoa() { this.q = ''; this.$refs.timO && this.$refs.timO.focus(); },
+      timCuoi(el) { setTimeout(() => { const n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) { /* bỏ qua */ } }, 0); },
       get canMark() { return this.online && !!this.secret; },
       boDau,
       async init() {
@@ -457,7 +501,7 @@
       get ketQua() {
         const q = boDau(this.q.trim());
         if (!q || !this.du) return [];
-        return this.du.tim.filter(r => boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')).includes(q)).slice(0, 30);
+        return this.du.tim.filter(r => khopTu(boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')), q)).slice(0, 30);
       },
       // setTimeout: cú bấm mở thẻ còn đang nổi bọt lên document — gán ngay thì @click.outside đóng nó luôn.
       async moXem(el) {

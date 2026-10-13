@@ -9,11 +9,28 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+
+<style>input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }</style>
+<script>
+  // Nhớ regex của từ khoá cuối: trang lọc gọi hàng trăm lần cho cùng một từ khoá.
+  var _khop = { q: null, rx: null };
+  function khopRx(q, co) {
+    var e = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Từ khoá mở đầu bằng ký hiệu («+b», «(a)») thì chính nó đã là ranh giới.
+    var dau = /^[\p{L}\p{N}]/u.test(q) ? '(^|[^\\p{L}\\p{N}\\p{M}])' : '()';
+    return new RegExp(dau + '(' + e + ')', co || 'u');
+  }
+  function khopTu(t, q) {
+    if (!q) return true;
+    if (_khop.q !== q) _khop = { q: q, rx: khopRx(q) };
+    return _khop.rx.test(t || '');
+  }
+</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <title>Theo sách — Sổ tay tiếng Anh · PL</title>
-  <link rel="stylesheet" href="../../assets/tw.a04b2b97.css">
+  <link rel="stylesheet" href="../../assets/tw.fd2db1dd.css">
   <script defer src="../../assets/alpine.63d2636a.js"></script>
   <style>
     [x-cloak]{display:none!important}
@@ -83,7 +100,7 @@
     <tr><td class="w-1/3 p-3 border-b border-slate-200 align-top"><b>6</b> Ready, Steady, Go!</td>
       <td class="p-3 border-b border-slate-200">
         📄 <a href="zero-conditional.html" class="st-cham text-indigo-600 font-medium">Zero Conditional</a> · 📄 <a href="first-conditional.html" class="st-cham text-indigo-600 font-medium">First Conditional</a> · 📄 <a href="second-conditional.html" class="st-cham text-indigo-600 font-medium">Second Conditional</a> · 📄 <a href="unless.html" class="st-cham text-indigo-600 font-medium">unless</a> · 📄 <a href="if-when.html" class="st-cham text-indigo-600 font-medium">if &amp; when</a> · 📄 <a href="purpose-clauses.html" class="st-cham text-indigo-600 font-medium">Clauses of purpose</a> · 📄 <a href="hau-to-danh-tu.html" class="st-cham text-indigo-600 font-medium">Noun suffixes</a> · 📄 <a href="hau-to-chi-nguoi.html" class="st-cham text-indigo-600 font-medium">Suffixes for people</a> · 📄 <a href="hau-to-tinh-tu.html" class="st-cham text-indigo-600 font-medium">Adjective suffixes</a> · 📄 <a href="hau-to-trang-tu.html" class="st-cham text-indigo-600 font-medium">Adverbs with -ly</a> · 📄 <a href="hau-to-dong-tu.html" class="st-cham text-indigo-600 font-medium">Verb suffixes &amp; en-</a> · 📄 <a href="ho-tu.html" class="st-cham text-indigo-600 font-medium">Word families</a> · 
-        🧩 <a href="cau-tao-tu-hau-to.html" class="st-cham text-indigo-600 font-medium">Hậu tố: đổi sang loại từ khác</a> · 🧩 <a href="dieu-kien-bay-gio-tuong-lai.html" class="st-cham text-indigo-600 font-medium">Điều kiện về bây giờ &amp; tương lai (loại 1, 2)</a> · 🧩 <a href="cau-tao-tu-tien-to.html" class="st-cham text-indigo-600 font-medium">Tiền tố: un-, dis-, im-, re-, mis-…</a> · 🧩 <a href="dieu-kien-co-that.html" class="st-cham text-indigo-600 font-medium">Điều kiện có thật (loại 0, 1)</a> · 🧩 <a href="dieu-kien-khong-co-that.html" class="st-cham text-indigo-600 font-medium">Điều kiện không có thật (loại 2, 3) &amp; câu ước</a>
+        🧩 <a href="cau-tao-tu-hau-to.html" class="st-cham text-indigo-600 font-medium">Hậu tố: đổi sang loại từ khác</a> · 🧩 <a href="dieu-kien-bay-gio-tuong-lai.html" class="st-cham text-indigo-600 font-medium">Điều kiện về bây giờ &amp; tương lai (loại 1, 2)</a> · 🧩 <a href="cau-tao-tu-tien-to.html" class="st-cham text-indigo-600 font-medium">Tiền tố: un-, dis-, im-, re-, mis-…</a> · 🧩 <a href="dieu-kien-co-that.html" class="st-cham text-indigo-600 font-medium">Điều kiện có thật (loại 0, 1)</a> · 🧩 <a href="dieu-kien-khong-co-that.html" class="st-cham text-indigo-600 font-medium">Điều kiện không có thật (loại 2, 3), câu ước &amp; lùi thì</a>
       </td></tr>
     
     <tr><td class="w-1/3 p-3 border-b border-slate-200 align-top"><b>7</b> Extreme Situations</td>
@@ -113,7 +130,7 @@
     <tr><td class="w-1/3 p-3 border-b border-slate-200 align-top"><b>11</b> Lessons to Learn</td>
       <td class="p-3 border-b border-slate-200">
         📄 <a href="colloc-make-do.html" class="st-cham text-indigo-600 font-medium">make &amp; do</a> · 📄 <a href="colloc-dong-tu.html" class="st-cham text-indigo-600 font-medium">Verb + noun collocations</a> · 📄 <a href="colloc-thanh-ngu.html" class="st-cham text-indigo-600 font-medium">Expressions</a> · 📄 <a href="purpose-clauses.html" class="st-cham text-indigo-600 font-medium">Clauses of purpose</a> · 📄 <a href="have-something-done.html" class="st-cham text-indigo-600 font-medium">have something done</a> · 📄 <a href="too-enough.html" class="st-cham text-indigo-600 font-medium">too &amp; enough</a> · 📄 <a href="tinh-tu-gioi-tu.html" class="st-cham text-indigo-600 font-medium">Adjective + preposition</a> · 📄 <a href="dong-tu-gioi-tu.html" class="st-cham text-indigo-600 font-medium">Verb + preposition</a> · 📄 <a href="danh-tu-gioi-tu.html" class="st-cham text-indigo-600 font-medium">Nouns &amp; phrases with prepositions</a> · 📄 <a href="gioi-tu-v-ing.html" class="st-cham text-indigo-600 font-medium">Preposition + V-ing</a> · 📄 <a href="to-v-sau-dong-tu.html" class="st-cham text-indigo-600 font-medium">Verb + to V</a> · 📄 <a href="v-ing-sau-dong-tu.html" class="st-cham text-indigo-600 font-medium">Verb + V-ing</a> · 📄 <a href="bare-infinitive.html" class="st-cham text-indigo-600 font-medium">Bare infinitive</a> · 📄 <a href="to-v-ing-cung-nghia.html" class="st-cham text-indigo-600 font-medium">like, start… + to V or V-ing</a> · 📄 <a href="to-v-ing-doi-nghia.html" class="st-cham text-indigo-600 font-medium">remember, stop, try… + to V or V-ing</a> · 📄 <a href="tinh-tu-to-v.html" class="st-cham text-indigo-600 font-medium">Adjective + to V</a> · 📄 <a href="v-ing-lam-chu-ngu.html" class="st-cham text-indigo-600 font-medium">V-ing as subject</a> · 📄 <a href="bang-to-v-ing.html" class="st-cham text-indigo-600 font-medium">Verbs: to V or V-ing?</a> · 
-        🧩 <a href="colloc-cac-loai.html" class="st-cham text-indigo-600 font-medium">Các loại collocation: động từ, tính từ, thành ngữ — và từ dễ nhầm</a> · 🧩 <a href="sau-dong-tu-to-v-ing.html" class="st-cham text-indigo-600 font-medium">Sau động từ: to V, V hay V-ing</a> · 🧩 <a href="bi-dong-chon-cach-noi.html" class="st-cham text-indigo-600 font-medium">Chủ động, bị động hay thể nhờ?</a> · 🧩 <a href="colloc-chon-dong-tu.html" class="st-cham text-indigo-600 font-medium">Collocations với make, do, have, take, get</a> · 🧩 <a href="noi-hai-ve.html" class="st-cham text-indigo-600 font-medium">Từ nối giữa hai vế câu</a> · 🧩 <a href="sau-dong-tu-nguoi.html" class="st-cham text-indigo-600 font-medium">Sau động từ + người: to V, V hay V-ing</a> · 🧩 <a href="chu-ngu-va-tinh-tu-to-v-ing.html" class="st-cham text-indigo-600 font-medium">Đầu câu &amp; sau tính từ: V-ing hay to V</a> · 🧩 <a href="gioi-tu-di-kem.html" class="st-cham text-indigo-600 font-medium">Giới từ đi kèm tính từ, động từ, danh từ</a>
+        🧩 <a href="colloc-cac-loai.html" class="st-cham text-indigo-600 font-medium">Các loại collocation: động từ, tính từ, thành ngữ — và từ dễ nhầm</a> · 🧩 <a href="sau-dong-tu-to-v-ing.html" class="st-cham text-indigo-600 font-medium">Sau động từ: to V, V hay V-ing</a> · 🧩 <a href="bi-dong-chon-cach-noi.html" class="st-cham text-indigo-600 font-medium">Chủ động, bị động hay thể nhờ?</a> · 🧩 <a href="colloc-chon-dong-tu.html" class="st-cham text-indigo-600 font-medium">Collocations với make, do, have, take, get</a> · 🧩 <a href="noi-hai-ve.html" class="st-cham text-indigo-600 font-medium">Từ nối giữa hai vế câu</a> · 🧩 <a href="sau-dong-tu-nguoi.html" class="st-cham text-indigo-600 font-medium">Sau động từ + người: to V, V hay V-ing</a> · 🧩 <a href="chu-ngu-va-tinh-tu-to-v-ing.html" class="st-cham text-indigo-600 font-medium">Đầu câu &amp; sau tính từ: V-ing hay to V</a> · 🧩 <a href="gioi-tu-di-kem.html" class="st-cham text-indigo-600 font-medium">Giới từ đi kèm tính từ, động từ, danh từ</a> · 🧩 <a href="nguyen-mau-to-v-va-v.html" class="st-cham text-indigo-600 font-medium">Nguyên mẫu: to V và V không to</a> · 🧩 <a href="cac-cho-dung-v-ing.html" class="st-cham text-indigo-600 font-medium">V-ing: những chỗ dùng</a>
       </td></tr>
     
     <tr><td class="w-1/3 p-3 border-b border-slate-200 align-top"><b>12</b> The Body Beautiful</td>
@@ -130,7 +147,7 @@
     <tr><td class="w-1/3 p-3 border-b border-slate-200 align-top"><b>1</b> </td>
       <td class="p-3 border-b border-slate-200">
         📄 <a href="present-perfect.html" class="st-cham text-indigo-600 font-medium">Present Perfect</a> · 📄 <a href="duoi-keo-trong-am.html" class="st-cham text-indigo-600 font-medium">Stress before the suffix</a> · 📄 <a href="at-on-in-noi-chon.html" class="st-cham text-indigo-600 font-medium">at, on &amp; in — place</a> · 📄 <a href="gioi-tu-dich-den.html" class="st-cham text-indigo-600 font-medium">to, into, onto, from &amp; out of</a> · 📄 <a href="dong-tu-nguoi-to-v.html" class="st-cham text-indigo-600 font-medium">Verb + object + to V</a> · 
-        🧩 <a href="gioi-tu-noi-chon.html" class="st-cham text-indigo-600 font-medium">Giới từ nơi chốn &amp; chuyển động</a> · 🧩 <a href="sau-dong-tu-nguoi.html" class="st-cham text-indigo-600 font-medium">Sau động từ + người: to V, V hay V-ing</a> · 🧩 <a href="trong-am-hau-to.html" class="st-cham text-indigo-600 font-medium">Trọng âm từ có đuôi &amp; tiền tố</a> · 🧩 <a href="at-on-in.html" class="st-cham text-indigo-600 font-medium">at, on &amp; in: thời gian, nơi chốn, hướng tới</a>
+        🧩 <a href="gioi-tu-noi-chon.html" class="st-cham text-indigo-600 font-medium">Giới từ nơi chốn &amp; chuyển động</a> · 🧩 <a href="sau-dong-tu-nguoi.html" class="st-cham text-indigo-600 font-medium">Sau động từ + người: to V, V hay V-ing</a> · 🧩 <a href="trong-am-hau-to.html" class="st-cham text-indigo-600 font-medium">Trọng âm từ có đuôi &amp; tiền tố</a> · 🧩 <a href="at-on-in.html" class="st-cham text-indigo-600 font-medium">at, on &amp; in: thời gian, nơi chốn, hướng tới</a> · 🧩 <a href="nguyen-mau-to-v-va-v.html" class="st-cham text-indigo-600 font-medium">Nguyên mẫu: to V và V không to</a>
       </td></tr>
     
     <tr><td class="w-1/3 p-3 border-b border-slate-200 align-top"><b>2</b> </td>
@@ -194,7 +211,7 @@
     
     <tr><td class="w-1/3 p-3 border-b border-slate-200 align-top"><b>2</b> Questions &amp; Question Words</td>
       <td class="p-3 border-b border-slate-200">
-        📄 <a href="wh-questions.html" class="st-cham text-indigo-600 font-medium">Wh- questions</a> · 📄 <a href="subject-questions.html" class="st-cham text-indigo-600 font-medium">Subject questions</a> · 📄 <a href="indirect-questions.html" class="st-cham text-indigo-600 font-medium">Indirect questions</a> · 📄 <a href="question-words.html" class="st-cham text-indigo-600 font-medium">Question words</a> · 
+        📄 <a href="wh-questions.html" class="st-cham text-indigo-600 font-medium">Wh- questions</a> · 📄 <a href="subject-questions.html" class="st-cham text-indigo-600 font-medium">Subject questions</a> · 📄 <a href="indirect-questions.html" class="st-cham text-indigo-600 font-medium">Indirect questions</a> · 📄 <a href="question-words.html" class="st-cham text-indigo-600 font-medium">Question words</a> · 📄 <a href="hai-tan-ngu-to-for.html" class="st-cham text-indigo-600 font-medium">Verbs with two objects</a> · 
         🧩 <a href="cau-hoi-co-khong.html" class="st-cham text-indigo-600 font-medium">Câu hỏi Có / Không: thường, phủ định &amp; câu hỏi đuôi</a> · 🧩 <a href="cau-hoi-tu-hoi.html" class="st-cham text-indigo-600 font-medium">Câu hỏi có từ hỏi (Wh-): hỏi chủ ngữ hay tân ngữ</a>
       </td></tr>
     
@@ -297,7 +314,7 @@
     <tr><td class="w-1/3 p-3 border-b border-slate-200 align-top"><b>19</b> Infinitives and -ing forms</td>
       <td class="p-3 border-b border-slate-200">
         📄 <a href="danh-tu-gioi-tu.html" class="st-cham text-indigo-600 font-medium">Nouns &amp; phrases with prepositions</a> · 📄 <a href="gioi-tu-v-ing.html" class="st-cham text-indigo-600 font-medium">Preposition + V-ing</a> · 📄 <a href="to-v-sau-dong-tu.html" class="st-cham text-indigo-600 font-medium">Verb + to V</a> · 📄 <a href="v-ing-sau-dong-tu.html" class="st-cham text-indigo-600 font-medium">Verb + V-ing</a> · 📄 <a href="bare-infinitive.html" class="st-cham text-indigo-600 font-medium">Bare infinitive</a> · 📄 <a href="to-v-ing-cung-nghia.html" class="st-cham text-indigo-600 font-medium">like, start… + to V or V-ing</a> · 📄 <a href="to-v-ing-doi-nghia.html" class="st-cham text-indigo-600 font-medium">remember, stop, try… + to V or V-ing</a> · 📄 <a href="dong-tu-nguoi-to-v.html" class="st-cham text-indigo-600 font-medium">Verb + object + to V</a> · 📄 <a href="see-hear-v-ing.html" class="st-cham text-indigo-600 font-medium">see, hear + object + V / V-ing</a> · 📄 <a href="tinh-tu-to-v.html" class="st-cham text-indigo-600 font-medium">Adjective + to V</a> · 📄 <a href="v-ing-lam-chu-ngu.html" class="st-cham text-indigo-600 font-medium">V-ing as subject</a> · 📄 <a href="bang-to-v-ing.html" class="st-cham text-indigo-600 font-medium">Verbs: to V or V-ing?</a> · 
-        🧩 <a href="sau-dong-tu-to-v-ing.html" class="st-cham text-indigo-600 font-medium">Sau động từ: to V, V hay V-ing</a> · 🧩 <a href="sau-dong-tu-nguoi.html" class="st-cham text-indigo-600 font-medium">Sau động từ + người: to V, V hay V-ing</a> · 🧩 <a href="chu-ngu-va-tinh-tu-to-v-ing.html" class="st-cham text-indigo-600 font-medium">Đầu câu &amp; sau tính từ: V-ing hay to V</a>
+        🧩 <a href="sau-dong-tu-to-v-ing.html" class="st-cham text-indigo-600 font-medium">Sau động từ: to V, V hay V-ing</a> · 🧩 <a href="sau-dong-tu-nguoi.html" class="st-cham text-indigo-600 font-medium">Sau động từ + người: to V, V hay V-ing</a> · 🧩 <a href="chu-ngu-va-tinh-tu-to-v-ing.html" class="st-cham text-indigo-600 font-medium">Đầu câu &amp; sau tính từ: V-ing hay to V</a> · 🧩 <a href="nguyen-mau-to-v-va-v.html" class="st-cham text-indigo-600 font-medium">Nguyên mẫu: to V và V không to</a> · 🧩 <a href="cac-cho-dung-v-ing.html" class="st-cham text-indigo-600 font-medium">V-ing: những chỗ dùng</a>
       </td></tr>
     
     <tr><td class="w-1/3 p-3 border-b border-slate-200 align-top"><b>20</b> Causative Form</td>
@@ -321,7 +338,7 @@
     <tr><td class="w-1/3 p-3 border-b border-slate-200 align-top"><b>23</b> Wishes &amp; Unreal Past</td>
       <td class="p-3 border-b border-slate-200">
         📄 <a href="wish.html" class="st-cham text-indigo-600 font-medium">wish &amp; if only</a> · 📄 <a href="tu-de-nham.html" class="st-cham text-indigo-600 font-medium">Words easily confused</a> · 
-        🧩 <a href="dieu-kien-khong-co-that.html" class="st-cham text-indigo-600 font-medium">Điều kiện không có thật (loại 2, 3) &amp; câu ước</a>
+        🧩 <a href="dieu-kien-khong-co-that.html" class="st-cham text-indigo-600 font-medium">Điều kiện không có thật (loại 2, 3), câu ước &amp; lùi thì</a>
       </td></tr>
     
     <tr><td class="w-1/3 p-3 border-b border-slate-200 align-top"><b>24</b> All, Both, Neither, None / Double Conjunctions</td>
@@ -408,6 +425,8 @@
       timMo: false,
       timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
       timDong() { this.q = ''; this.timMo = false; },
+      timXoa() { this.q = ''; this.$refs.timO && this.$refs.timO.focus(); },
+      timCuoi(el) { setTimeout(() => { const n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) { /* bỏ qua */ } }, 0); },
       get canMark() { return this.online && !!this.secret; },
       boDau,
       async init() {
@@ -457,7 +476,7 @@
       get ketQua() {
         const q = boDau(this.q.trim());
         if (!q || !this.du) return [];
-        return this.du.tim.filter(r => boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')).includes(q)).slice(0, 30);
+        return this.du.tim.filter(r => khopTu(boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')), q)).slice(0, 30);
       },
       // setTimeout: cú bấm mở thẻ còn đang nổi bọt lên document — gán ngay thì @click.outside đóng nó luôn.
       async moXem(el) {

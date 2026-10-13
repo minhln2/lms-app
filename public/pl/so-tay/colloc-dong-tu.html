@@ -9,11 +9,28 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+
+<style>input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }</style>
+<script>
+  // Nhớ regex của từ khoá cuối: trang lọc gọi hàng trăm lần cho cùng một từ khoá.
+  var _khop = { q: null, rx: null };
+  function khopRx(q, co) {
+    var e = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Từ khoá mở đầu bằng ký hiệu («+b», «(a)») thì chính nó đã là ranh giới.
+    var dau = /^[\p{L}\p{N}]/u.test(q) ? '(^|[^\\p{L}\\p{N}\\p{M}])' : '()';
+    return new RegExp(dau + '(' + e + ')', co || 'u');
+  }
+  function khopTu(t, q) {
+    if (!q) return true;
+    if (_khop.q !== q) _khop = { q: q, rx: khopRx(q) };
+    return _khop.rx.test(t || '');
+  }
+</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <title>Verb + noun collocations — Sổ tay tiếng Anh · PL</title>
-  <link rel="stylesheet" href="../../assets/tw.a04b2b97.css">
+  <link rel="stylesheet" href="../../assets/tw.fd2db1dd.css">
   <script defer src="../../assets/alpine.63d2636a.js"></script>
   <style>
     [x-cloak]{display:none!important}
@@ -81,326 +98,332 @@
   
   <h2 id="st-bang" class="text-lg font-bold mt-7 mb-2 flex items-center gap-2 scroll-mt-4">📋 Bảng tra</h2>
   <div x-data="{ loc: '' }" class="bg-white border border-slate-200 rounded-xl p-3">
-    <input type="search" x-model="loc" placeholder="Lọc bảng…" aria-label="Lọc bảng" class="w-full sm:max-w-xs h-9 px-2 text-sm rounded-lg border border-slate-300">
+    <div class="relative w-full sm:max-w-xs">
+      <input type="search" x-model="loc" x-ref="locO" @focus="timCuoi($el)" placeholder="Lọc bảng…" aria-label="Lọc bảng" class="w-full h-9 pl-2 pr-8 text-sm rounded-lg border border-slate-300">
+      <button x-show="loc" x-cloak @mousedown.prevent @click="loc = ''; $refs.locO.focus()" type="button" data-tim-xoa aria-label="Xoá chữ đã gõ" title="Xoá chữ đã gõ"
+              class="absolute right-0 top-0 w-8 h-9 grid place-items-center text-slate-400 hover:text-slate-700">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
     <div class="mt-2 overflow-x-auto"><table class="w-full text-sm border-collapse">
       <thead><tr><th class="bg-slate-100 border border-slate-200 px-3 py-1.5 text-left">Động từ</th><th class="bg-slate-100 border border-slate-200 px-3 py-1.5 text-left">Cụm từ</th><th class="bg-slate-100 border border-slate-200 px-3 py-1.5 text-left">Nghĩa</th><th class="bg-slate-100 border border-slate-200 px-3 py-1.5 text-left">Ví dụ</th></tr></thead>
-      <tbody><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      <tbody><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">break</td><td class="border border-slate-200 px-3 py-1.5">break the rules <button type="button" data-st-loa data-noi="break the rules" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">phạm luật, làm trái nội quy</td><td class="border border-slate-200 px-3 py-1.5">If you break the rules, you can&#39;t play. <button type="button" data-st-loa data-noi="If you break the rules, you can&#39;t play." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">break</td><td class="border border-slate-200 px-3 py-1.5">break a promise <button type="button" data-st-loa data-noi="break a promise" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">thất hứa</td><td class="border border-slate-200 px-3 py-1.5">Please don&#39;t break your promise. <button type="button" data-st-loa data-noi="Please don&#39;t break your promise." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">catch</td><td class="border border-slate-200 px-3 py-1.5">catch a cold <button type="button" data-st-loa data-noi="catch a cold" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">bị cảm lạnh</td><td class="border border-slate-200 px-3 py-1.5">I caught a cold after playing in the rain. <button type="button" data-st-loa data-noi="I caught a cold after playing in the rain." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">catch</td><td class="border border-slate-200 px-3 py-1.5">catch sight of <button type="button" data-st-loa data-noi="catch sight of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">chợt nhìn thấy, thoáng thấy</td><td class="border border-slate-200 px-3 py-1.5">I caught sight of a rainbow from the bus. <button type="button" data-st-loa data-noi="I caught sight of a rainbow from the bus." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">do</td><td class="border border-slate-200 px-3 py-1.5">do your homework <button type="button" data-st-loa data-noi="do your homework" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">làm bài tập</td><td class="border border-slate-200 px-3 py-1.5">I do my homework before dinner. <button type="button" data-st-loa data-noi="I do my homework before dinner." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">do</td><td class="border border-slate-200 px-3 py-1.5">do the dishes <button type="button" data-st-loa data-noi="do the dishes" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">rửa bát</td><td class="border border-slate-200 px-3 py-1.5">Dad does the dishes every night. <button type="button" data-st-loa data-noi="Dad does the dishes every night." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">do</td><td class="border border-slate-200 px-3 py-1.5">do the housework <button type="button" data-st-loa data-noi="do the housework" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">làm việc nhà</td><td class="border border-slate-200 px-3 py-1.5">We all do the housework on Sundays. <button type="button" data-st-loa data-noi="We all do the housework on Sundays." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">do</td><td class="border border-slate-200 px-3 py-1.5">do the laundry <button type="button" data-st-loa data-noi="do the laundry" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">giặt đồ</td><td class="border border-slate-200 px-3 py-1.5">Mom does the laundry on Saturdays. <button type="button" data-st-loa data-noi="Mom does the laundry on Saturdays." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">do</td><td class="border border-slate-200 px-3 py-1.5">do your best / the best you can <button type="button" data-st-loa data-noi="do your best / the best you can" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">cố hết sức</td><td class="border border-slate-200 px-3 py-1.5">Just do your best on the test. <button type="button" data-st-loa data-noi="Just do your best on the test." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">do</td><td class="border border-slate-200 px-3 py-1.5">do well / badly <button type="button" data-st-loa data-noi="do well / badly" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">làm tốt, học tốt / làm kém</td><td class="border border-slate-200 px-3 py-1.5">She did well in the spelling bee. <button type="button" data-st-loa data-noi="She did well in the spelling bee." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">do</td><td class="border border-slate-200 px-3 py-1.5">do someone a favor <button type="button" data-st-loa data-noi="do someone a favor" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">giúp ai một việc</td><td class="border border-slate-200 px-3 py-1.5">Could you do me a favor? <button type="button" data-st-loa data-noi="Could you do me a favor?" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">do</td><td class="border border-slate-200 px-3 py-1.5">do judo / karate / yoga <button type="button" data-st-loa data-noi="do judo / karate / yoga" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">tập judo / karate / yoga</td><td class="border border-slate-200 px-3 py-1.5">My brother does judo after school. <button type="button" data-st-loa data-noi="My brother does judo after school." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">do</td><td class="border border-slate-200 px-3 py-1.5">do research <button type="button" data-st-loa data-noi="do research" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">tìm hiểu, nghiên cứu</td><td class="border border-slate-200 px-3 py-1.5">We did research on frogs for our science project. <button type="button" data-st-loa data-noi="We did research on frogs for our science project." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">do</td><td class="border border-slate-200 px-3 py-1.5">do the cooking <button type="button" data-st-loa data-noi="do the cooking" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">nấu ăn (việc nhà)</td><td class="border border-slate-200 px-3 py-1.5">Grandma does the cooking on weekends. <button type="button" data-st-loa data-noi="Grandma does the cooking on weekends." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">do</td><td class="border border-slate-200 px-3 py-1.5">do someone good <button type="button" data-st-loa data-noi="do someone good" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">tốt cho ai, giúp ai khỏe hơn</td><td class="border border-slate-200 px-3 py-1.5">A walk in the park will do you good. <button type="button" data-st-loa data-noi="A walk in the park will do you good." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">fall</td><td class="border border-slate-200 px-3 py-1.5">fall in love (with) <button type="button" data-st-loa data-noi="fall in love (with)" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">phải lòng, yêu</td><td class="border border-slate-200 px-3 py-1.5">The prince fell in love with Cinderella. <button type="button" data-st-loa data-noi="The prince fell in love with Cinderella." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">fall</td><td class="border border-slate-200 px-3 py-1.5">fall asleep <button type="button" data-st-loa data-noi="fall asleep" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">ngủ thiếp đi</td><td class="border border-slate-200 px-3 py-1.5">I fell asleep during the movie. <button type="button" data-st-loa data-noi="I fell asleep during the movie." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">get</td><td class="border border-slate-200 px-3 py-1.5">get married <button type="button" data-st-loa data-noi="get married" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">cưới, lập gia đình</td><td class="border border-slate-200 px-3 py-1.5">My aunt got married last summer. <button type="button" data-st-loa data-noi="My aunt got married last summer." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">get</td><td class="border border-slate-200 px-3 py-1.5">get divorced <button type="button" data-st-loa data-noi="get divorced" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">ly hôn</td><td class="border border-slate-200 px-3 py-1.5">They got divorced, but they&#39;re still friends. <button type="button" data-st-loa data-noi="They got divorced, but they&#39;re still friends." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">get</td><td class="border border-slate-200 px-3 py-1.5">get lost <button type="button" data-st-loa data-noi="get lost" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">bị lạc</td><td class="border border-slate-200 px-3 py-1.5">We got lost in the big mall. <button type="button" data-st-loa data-noi="We got lost in the big mall." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">get</td><td class="border border-slate-200 px-3 py-1.5">get dressed <button type="button" data-st-loa data-noi="get dressed" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">mặc quần áo</td><td class="border border-slate-200 px-3 py-1.5">Hurry up and get dressed! <button type="button" data-st-loa data-noi="Hurry up and get dressed!" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">get</td><td class="border border-slate-200 px-3 py-1.5">get home <button type="button" data-st-loa data-noi="get home" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">về tới nhà</td><td class="border border-slate-200 px-3 py-1.5">What time do you get home? <button type="button" data-st-loa data-noi="What time do you get home?" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">get</td><td class="border border-slate-200 px-3 py-1.5">get tired / hungry / wet <button type="button" data-st-loa data-noi="get tired / hungry / wet" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">thấy mệt / đói, bị ướt</td><td class="border border-slate-200 px-3 py-1.5">I always get hungry after soccer practice. <button type="button" data-st-loa data-noi="I always get hungry after soccer practice." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">go</td><td class="border border-slate-200 px-3 py-1.5">go missing <button type="button" data-st-loa data-noi="go missing" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">mất tích, tự nhiên biến mất</td><td class="border border-slate-200 px-3 py-1.5">My cat went missing for two days. <button type="button" data-st-loa data-noi="My cat went missing for two days." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">go</td><td class="border border-slate-200 px-3 py-1.5">go on a trip / a journey <button type="button" data-st-loa data-noi="go on a trip / a journey" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">đi một chuyến</td><td class="border border-slate-200 px-3 py-1.5">We&#39;re going on a trip to Da Lat. <button type="button" data-st-loa data-noi="We&#39;re going on a trip to Da Lat." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">go</td><td class="border border-slate-200 px-3 py-1.5">go shopping / swimming <button type="button" data-st-loa data-noi="go shopping / swimming" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">đi mua sắm / đi bơi</td><td class="border border-slate-200 px-3 py-1.5">Let&#39;s go swimming this afternoon. <button type="button" data-st-loa data-noi="Let&#39;s go swimming this afternoon." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">go</td><td class="border border-slate-200 px-3 py-1.5">go bad <button type="button" data-st-loa data-noi="go bad" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">(đồ ăn) hỏng, ôi thiu</td><td class="border border-slate-200 px-3 py-1.5">The milk went bad, so don&#39;t drink it. <button type="button" data-st-loa data-noi="The milk went bad, so don&#39;t drink it." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">go</td><td class="border border-slate-200 px-3 py-1.5">go red <button type="button" data-st-loa data-noi="go red" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">đỏ mặt (vì ngượng, giận hay nóng)</td><td class="border border-slate-200 px-3 py-1.5">Tom went red when everyone sang to him. <button type="button" data-st-loa data-noi="Tom went red when everyone sang to him." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">go</td><td class="border border-slate-200 px-3 py-1.5">go wild <button type="button" data-st-loa data-noi="go wild" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">phấn khích tột độ, reo hò ầm ĩ</td><td class="border border-slate-200 px-3 py-1.5">The fans went wild when we scored. <button type="button" data-st-loa data-noi="The fans went wild when we scored." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">go</td><td class="border border-slate-200 px-3 py-1.5">go wrong <button type="button" data-st-loa data-noi="go wrong" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">hỏng, trục trặc, không như ý</td><td class="border border-slate-200 px-3 py-1.5">Our experiment went wrong, so we tried again. <button type="button" data-st-loa data-noi="Our experiment went wrong, so we tried again." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">have</td><td class="border border-slate-200 px-3 py-1.5">have breakfast / lunch / dinner <button type="button" data-st-loa data-noi="have breakfast / lunch / dinner" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">ăn sáng / trưa / tối</td><td class="border border-slate-200 px-3 py-1.5">We have breakfast at seven. <button type="button" data-st-loa data-noi="We have breakfast at seven." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">have</td><td class="border border-slate-200 px-3 py-1.5">have fun <button type="button" data-st-loa data-noi="have fun" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">vui chơi</td><td class="border border-slate-200 px-3 py-1.5">Have fun at camp! <button type="button" data-st-loa data-noi="Have fun at camp!" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">have</td><td class="border border-slate-200 px-3 py-1.5">have a good time <button type="button" data-st-loa data-noi="have a good time" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">chơi vui, trải qua thời gian vui</td><td class="border border-slate-200 px-3 py-1.5">We had a good time at the zoo. <button type="button" data-st-loa data-noi="We had a good time at the zoo." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">have</td><td class="border border-slate-200 px-3 py-1.5">have a party <button type="button" data-st-loa data-noi="have a party" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">làm tiệc</td><td class="border border-slate-200 px-3 py-1.5">Let&#39;s have a party on Saturday! <button type="button" data-st-loa data-noi="Let&#39;s have a party on Saturday!" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">have</td><td class="border border-slate-200 px-3 py-1.5">have a family <button type="button" data-st-loa data-noi="have a family" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">lập gia đình, có con</td><td class="border border-slate-200 px-3 py-1.5">She wants to have a big family one day. <button type="button" data-st-loa data-noi="She wants to have a big family one day." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">have</td><td class="border border-slate-200 px-3 py-1.5">have sympathy (for) <button type="button" data-st-loa data-noi="have sympathy (for)" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">thông cảm (với ai)</td><td class="border border-slate-200 px-3 py-1.5">I have sympathy for kids who feel lonely. <button type="button" data-st-loa data-noi="I have sympathy for kids who feel lonely." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">have</td><td class="border border-slate-200 px-3 py-1.5">have a look (at) <button type="button" data-st-loa data-noi="have a look (at)" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">xem qua, nhìn một chút</td><td class="border border-slate-200 px-3 py-1.5">Can I have a look at your drawing? <button type="button" data-st-loa data-noi="Can I have a look at your drawing?" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">have</td><td class="border border-slate-200 px-3 py-1.5">have an argument (with) <button type="button" data-st-loa data-noi="have an argument (with)" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">cãi nhau (với ai)</td><td class="border border-slate-200 px-3 py-1.5">I had an argument with my brother about the TV. <button type="button" data-st-loa data-noi="I had an argument with my brother about the TV." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">have</td><td class="border border-slate-200 px-3 py-1.5">have the chance to <button type="button" data-st-loa data-noi="have the chance to" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">có cơ hội (làm gì)</td><td class="border border-slate-200 px-3 py-1.5">I had the chance to meet a real astronaut! <button type="button" data-st-loa data-noi="I had the chance to meet a real astronaut!" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">have</td><td class="border border-slate-200 px-3 py-1.5">have a lot in common (with) <button type="button" data-st-loa data-noi="have a lot in common (with)" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">có nhiều điểm giống nhau</td><td class="border border-slate-200 px-3 py-1.5">Mai and I have a lot in common. We both love cats. <button type="button" data-st-loa data-noi="Mai and I have a lot in common. We both love cats." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">have</td><td class="border border-slate-200 px-3 py-1.5">have a good / bad effect on <button type="button" data-st-loa data-noi="have a good / bad effect on" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">ảnh hưởng tốt / xấu tới</td><td class="border border-slate-200 px-3 py-1.5">Too much screen time has a bad effect on your eyes. <button type="button" data-st-loa data-noi="Too much screen time has a bad effect on your eyes." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">have</td><td class="border border-slate-200 px-3 py-1.5">have no intention of <button type="button" data-st-loa data-noi="have no intention of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">hoàn toàn không định (làm gì)</td><td class="border border-slate-200 px-3 py-1.5">I have no intention of eating that spicy soup! <button type="button" data-st-loa data-noi="I have no intention of eating that spicy soup!" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">have</td><td class="border border-slate-200 px-3 py-1.5">not have the slightest idea <button type="button" data-st-loa data-noi="not have the slightest idea" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">chẳng biết chút gì</td><td class="border border-slate-200 px-3 py-1.5">I don&#39;t have the slightest idea where my socks are. <button type="button" data-st-loa data-noi="I don&#39;t have the slightest idea where my socks are." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">keep</td><td class="border border-slate-200 px-3 py-1.5">keep calm <button type="button" data-st-loa data-noi="keep calm" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">giữ bình tĩnh</td><td class="border border-slate-200 px-3 py-1.5">Keep calm and wait for the teacher. <button type="button" data-st-loa data-noi="Keep calm and wait for the teacher." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">keep</td><td class="border border-slate-200 px-3 py-1.5">keep a diary <button type="button" data-st-loa data-noi="keep a diary" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">viết nhật ký (đều đặn)</td><td class="border border-slate-200 px-3 py-1.5">My sister keeps a diary under her pillow. <button type="button" data-st-loa data-noi="My sister keeps a diary under her pillow." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">keep</td><td class="border border-slate-200 px-3 py-1.5">keep a secret <button type="button" data-st-loa data-noi="keep a secret" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">giữ bí mật</td><td class="border border-slate-200 px-3 py-1.5">Can you keep a secret? <button type="button" data-st-loa data-noi="Can you keep a secret?" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">keep</td><td class="border border-slate-200 px-3 py-1.5">keep a promise / your word <button type="button" data-st-loa data-noi="keep a promise / your word" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">giữ lời hứa</td><td class="border border-slate-200 px-3 py-1.5">Dad always keeps his promises. <button type="button" data-st-loa data-noi="Dad always keeps his promises." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">keep</td><td class="border border-slate-200 px-3 py-1.5">keep fit <button type="button" data-st-loa data-noi="keep fit" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">giữ sức khỏe, giữ dáng (nhờ tập luyện)</td><td class="border border-slate-200 px-3 py-1.5">My mom swims every morning to keep fit. <button type="button" data-st-loa data-noi="My mom swims every morning to keep fit." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">keep</td><td class="border border-slate-200 px-3 py-1.5">keep someone company <button type="button" data-st-loa data-noi="keep someone company" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">ở bên cho ai đỡ buồn</td><td class="border border-slate-200 px-3 py-1.5">I stayed home to keep Grandpa company. <button type="button" data-st-loa data-noi="I stayed home to keep Grandpa company." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">make</td><td class="border border-slate-200 px-3 py-1.5">make a mess <button type="button" data-st-loa data-noi="make a mess" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">bày bừa</td><td class="border border-slate-200 px-3 py-1.5">Don&#39;t make a mess in the kitchen! <button type="button" data-st-loa data-noi="Don&#39;t make a mess in the kitchen!" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">make</td><td class="border border-slate-200 px-3 py-1.5">make your bed <button type="button" data-st-loa data-noi="make your bed" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">dọn giường</td><td class="border border-slate-200 px-3 py-1.5">I make my bed every morning. <button type="button" data-st-loa data-noi="I make my bed every morning." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">make</td><td class="border border-slate-200 px-3 py-1.5">make a mistake <button type="button" data-st-loa data-noi="make a mistake" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">mắc lỗi, làm sai</td><td class="border border-slate-200 px-3 py-1.5">I made a mistake on the test. <button type="button" data-st-loa data-noi="I made a mistake on the test." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">make</td><td class="border border-slate-200 px-3 py-1.5">make friends <button type="button" data-st-loa data-noi="make friends" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">kết bạn</td><td class="border border-slate-200 px-3 py-1.5">I made two new friends at camp. <button type="button" data-st-loa data-noi="I made two new friends at camp." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">make</td><td class="border border-slate-200 px-3 py-1.5">make noise <button type="button" data-st-loa data-noi="make noise" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">làm ồn</td><td class="border border-slate-200 px-3 py-1.5">Please don&#39;t make noise in the library. <button type="button" data-st-loa data-noi="Please don&#39;t make noise in the library." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">make</td><td class="border border-slate-200 px-3 py-1.5">make a decision <button type="button" data-st-loa data-noi="make a decision" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">quyết định</td><td class="border border-slate-200 px-3 py-1.5">It&#39;s hard to make a decision sometimes. <button type="button" data-st-loa data-noi="It&#39;s hard to make a decision sometimes." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">make</td><td class="border border-slate-200 px-3 py-1.5">make progress <button type="button" data-st-loa data-noi="make progress" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">tiến bộ</td><td class="border border-slate-200 px-3 py-1.5">You&#39;re making progress in math! <button type="button" data-st-loa data-noi="You&#39;re making progress in math!" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">make</td><td class="border border-slate-200 px-3 py-1.5">make an effort <button type="button" data-st-loa data-noi="make an effort" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">cố gắng</td><td class="border border-slate-200 px-3 py-1.5">If you make an effort, you&#39;ll get better. <button type="button" data-st-loa data-noi="If you make an effort, you&#39;ll get better." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">make</td><td class="border border-slate-200 px-3 py-1.5">make a wish <button type="button" data-st-loa data-noi="make a wish" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">ước</td><td class="border border-slate-200 px-3 py-1.5">Close your eyes and make a wish! <button type="button" data-st-loa data-noi="Close your eyes and make a wish!" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">make</td><td class="border border-slate-200 px-3 py-1.5">make a journey <button type="button" data-st-loa data-noi="make a journey" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">đi một chuyến (xa)</td><td class="border border-slate-200 px-3 py-1.5">They made a long journey across the desert. <button type="button" data-st-loa data-noi="They made a long journey across the desert." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">make</td><td class="border border-slate-200 px-3 py-1.5">make the most of <button type="button" data-st-loa data-noi="make the most of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">tận dụng hết</td><td class="border border-slate-200 px-3 py-1.5">It&#39;s sunny today, so let&#39;s make the most of it! <button type="button" data-st-loa data-noi="It&#39;s sunny today, so let&#39;s make the most of it!" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">make</td><td class="border border-slate-200 px-3 py-1.5">make it difficult for someone to <button type="button" data-st-loa data-noi="make it difficult for someone to" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">khiến ai khó (làm gì)</td><td class="border border-slate-200 px-3 py-1.5">The noise made it difficult for me to sleep. <button type="button" data-st-loa data-noi="The noise made it difficult for me to sleep." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">make</td><td class="border border-slate-200 px-3 py-1.5">make haste <button type="button" data-st-loa data-noi="make haste" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">nhanh lên (lối nói cũ, trang trọng; hằng ngày nói hurry up)</td><td class="border border-slate-200 px-3 py-1.5">Make haste, or we&#39;ll miss the boat! <button type="button" data-st-loa data-noi="Make haste, or we&#39;ll miss the boat!" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">move</td><td class="border border-slate-200 px-3 py-1.5">move house <button type="button" data-st-loa data-noi="move house" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">chuyển nhà (Anh-Anh; người Mỹ chỉ nói move)</td><td class="border border-slate-200 px-3 py-1.5">We moved to a new apartment last year. <button type="button" data-st-loa data-noi="We moved to a new apartment last year." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">pay</td><td class="border border-slate-200 px-3 py-1.5">pay a compliment <button type="button" data-st-loa data-noi="pay a compliment" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">khen ai</td><td class="border border-slate-200 px-3 py-1.5">She paid me a compliment on my drawing. <button type="button" data-st-loa data-noi="She paid me a compliment on my drawing." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">pay</td><td class="border border-slate-200 px-3 py-1.5">pay a visit <button type="button" data-st-loa data-noi="pay a visit" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">ghé thăm</td><td class="border border-slate-200 px-3 py-1.5">Let&#39;s pay Grandma a visit this weekend. <button type="button" data-st-loa data-noi="Let&#39;s pay Grandma a visit this weekend." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">pay</td><td class="border border-slate-200 px-3 py-1.5">pay attention (to) <button type="button" data-st-loa data-noi="pay attention (to)" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">chú ý (tới)</td><td class="border border-slate-200 px-3 py-1.5">Please pay attention to the teacher. <button type="button" data-st-loa data-noi="Please pay attention to the teacher." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">put</td><td class="border border-slate-200 px-3 py-1.5">put an end to <button type="button" data-st-loa data-noi="put an end to" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">chấm dứt (việc gì)</td><td class="border border-slate-200 px-3 py-1.5">The teacher put an end to the noise. <button type="button" data-st-loa data-noi="The teacher put an end to the noise." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">save</td><td class="border border-slate-200 px-3 py-1.5">save someone&#39;s life <button type="button" data-st-loa data-noi="save someone&#39;s life" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">cứu mạng ai</td><td class="border border-slate-200 px-3 py-1.5">The lifeguard saved the boy&#39;s life. <button type="button" data-st-loa data-noi="The lifeguard saved the boy&#39;s life." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">save</td><td class="border border-slate-200 px-3 py-1.5">save money / time <button type="button" data-st-loa data-noi="save money / time" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">tiết kiệm tiền / thời gian</td><td class="border border-slate-200 px-3 py-1.5">I&#39;m saving money for a new game. <button type="button" data-st-loa data-noi="I&#39;m saving money for a new game." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">take</td><td class="border border-slate-200 px-3 py-1.5">take a bath / a shower <button type="button" data-st-loa data-noi="take a bath / a shower" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">tắm (bồn / vòi sen)</td><td class="border border-slate-200 px-3 py-1.5">I take a shower every night. <button type="button" data-st-loa data-noi="I take a shower every night." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">take</td><td class="border border-slate-200 px-3 py-1.5">take a break <button type="button" data-st-loa data-noi="take a break" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">nghỉ một lát</td><td class="border border-slate-200 px-3 py-1.5">Let&#39;s take a break and eat a snack. <button type="button" data-st-loa data-noi="Let&#39;s take a break and eat a snack." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">take</td><td class="border border-slate-200 px-3 py-1.5">take a nap <button type="button" data-st-loa data-noi="take a nap" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">ngủ trưa, chợp mắt</td><td class="border border-slate-200 px-3 py-1.5">My baby brother takes a nap after lunch. <button type="button" data-st-loa data-noi="My baby brother takes a nap after lunch." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">take</td><td class="border border-slate-200 px-3 py-1.5">take a photo <button type="button" data-st-loa data-noi="take a photo" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">chụp ảnh</td><td class="border border-slate-200 px-3 py-1.5">Can you take a photo of us? <button type="button" data-st-loa data-noi="Can you take a photo of us?" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">take</td><td class="border border-slate-200 px-3 py-1.5">take a test <button type="button" data-st-loa data-noi="take a test" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">làm bài kiểm tra</td><td class="border border-slate-200 px-3 py-1.5">We took a math test today. <button type="button" data-st-loa data-noi="We took a math test today." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">take</td><td class="border border-slate-200 px-3 py-1.5">take the bus <button type="button" data-st-loa data-noi="take the bus" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">đi xe buýt</td><td class="border border-slate-200 px-3 py-1.5">I take the bus to school. <button type="button" data-st-loa data-noi="I take the bus to school." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">take</td><td class="border border-slate-200 px-3 py-1.5">take part in <button type="button" data-st-loa data-noi="take part in" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">tham gia</td><td class="border border-slate-200 px-3 py-1.5">I took part in the school sports day. <button type="button" data-st-loa data-noi="I took part in the school sports day." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">take</td><td class="border border-slate-200 px-3 py-1.5">take place <button type="button" data-st-loa data-noi="take place" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">diễn ra, được tổ chức</td><td class="border border-slate-200 px-3 py-1.5">The concert takes place in the school hall. <button type="button" data-st-loa data-noi="The concert takes place in the school hall." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">take</td><td class="border border-slate-200 px-3 py-1.5">take your time <button type="button" data-st-loa data-noi="take your time" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">cứ từ từ, không cần vội</td><td class="border border-slate-200 px-3 py-1.5">Take your time and check your answers. <button type="button" data-st-loa data-noi="Take your time and check your answers." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">take</td><td class="border border-slate-200 px-3 py-1.5">take advantage of <button type="button" data-st-loa data-noi="take advantage of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">tận dụng (cơ hội, điều tốt); take advantage of someone = lợi dụng ai</td><td class="border border-slate-200 px-3 py-1.5">Let&#39;s take advantage of the sunny weather. <button type="button" data-st-loa data-noi="Let&#39;s take advantage of the sunny weather." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">take</td><td class="border border-slate-200 px-3 py-1.5">take no notice of <button type="button" data-st-loa data-noi="take no notice of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">chẳng để ý tới, mặc kệ</td><td class="border border-slate-200 px-3 py-1.5">Take no notice of him. He&#39;s just joking. <button type="button" data-st-loa data-noi="Take no notice of him. He&#39;s just joking." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td>
@@ -541,6 +564,8 @@
       timMo: false,
       timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
       timDong() { this.q = ''; this.timMo = false; },
+      timXoa() { this.q = ''; this.$refs.timO && this.$refs.timO.focus(); },
+      timCuoi(el) { setTimeout(() => { const n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) { /* bỏ qua */ } }, 0); },
       get canMark() { return this.online && !!this.secret; },
       boDau,
       async init() {
@@ -590,7 +615,7 @@
       get ketQua() {
         const q = boDau(this.q.trim());
         if (!q || !this.du) return [];
-        return this.du.tim.filter(r => boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')).includes(q)).slice(0, 30);
+        return this.du.tim.filter(r => khopTu(boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')), q)).slice(0, 30);
       },
       // setTimeout: cú bấm mở thẻ còn đang nổi bọt lên document — gán ngay thì @click.outside đóng nó luôn.
       async moXem(el) {

@@ -98,8 +98,13 @@ const SHAPE = {
     '{"tra_loi":"câu trả lời bằng tiếng Việt"}\n' +
     'Trả lời NGẮN (2–5 câu), đúng trình độ học sinh tiểu học, bám vào đoạn đang ' +
     'học ở trên. Được phép ví von cho dễ hiểu.\n' +
-    'Nếu câu hỏi nằm ngoài đoạn đang học nhưng vẫn thuộc môn này thì cứ trả lời; ' +
-    'nếu lạc hẳn đề tài thì nói thẳng là câu đó không liên quan tới bài.\n' +
+    // ⚠ Bản cũ dặn "lạc đề thì nói thẳng là không liên quan tới bài". Đo lại:
+    // hỏi nghĩa một từ ngoài bài (cheerful, bargain, ought…) thì 7/8 lượt mở đầu
+    // bằng "Câu hỏi của em không liên quan tới bài học" — trẻ tra từ gặp ở chỗ
+    // khác là chuyện thường, câu đó đọc ra như bị mắng. Bỏ hẳn; giữ phần bám bài.
+    'Câu hỏi ngoài đoạn đang học (nghĩa một từ bất kỳ, ngữ pháp, kiến thức chung) ' +
+    'là BÌNH THƯỜNG: cứ trả lời thẳng vào câu hỏi. TUYỆT ĐỐI không nhận xét câu ' +
+    'hỏi có liên quan tới bài hay không, không khuyên đi hỏi thầy cô.\n' +
     'KHÔNG bịa số liệu hay dữ kiện không có trong đoạn. Thiếu dữ kiện thì nói rõ ' +
     'còn thiếu gì.\n' +
     'Nếu là câu hỏi ý kiến riêng thì đừng trả lời thay, chỉ gợi cách nghĩ.',
@@ -238,7 +243,7 @@ export async function handleLookupHistory(request, env, url) {
  * xảy ra với `INSERT … SELECT … ON CONFLICT`, khi SQLite không phân biệt được
  * `ON` của JOIN với `ON` của CONFLICT.
  */
-async function tieuThu(env, day) {
+export async function tieuThu(env, day) {
   const r = await env.STUDY_DB.prepare(
     "INSERT INTO lookup_budget (day, n) VALUES (?1, 1) " +
     "ON CONFLICT(day) DO UPDATE SET n = n + 1 RETURNING n"

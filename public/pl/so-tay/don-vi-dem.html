@@ -9,11 +9,28 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+
+<style>input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }</style>
+<script>
+  // Nhớ regex của từ khoá cuối: trang lọc gọi hàng trăm lần cho cùng một từ khoá.
+  var _khop = { q: null, rx: null };
+  function khopRx(q, co) {
+    var e = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Từ khoá mở đầu bằng ký hiệu («+b», «(a)») thì chính nó đã là ranh giới.
+    var dau = /^[\p{L}\p{N}]/u.test(q) ? '(^|[^\\p{L}\\p{N}\\p{M}])' : '()';
+    return new RegExp(dau + '(' + e + ')', co || 'u');
+  }
+  function khopTu(t, q) {
+    if (!q) return true;
+    if (_khop.q !== q) _khop = { q: q, rx: khopRx(q) };
+    return _khop.rx.test(t || '');
+  }
+</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <title>Quantity phrases — Sổ tay tiếng Anh · PL</title>
-  <link rel="stylesheet" href="../../assets/tw.a04b2b97.css">
+  <link rel="stylesheet" href="../../assets/tw.fd2db1dd.css">
   <script defer src="../../assets/alpine.63d2636a.js"></script>
   <style>
     [x-cloak]{display:none!important}
@@ -81,98 +98,104 @@
   
   <h2 id="st-bang" class="text-lg font-bold mt-7 mb-2 flex items-center gap-2 scroll-mt-4">📋 Bảng tra</h2>
   <div x-data="{ loc: '' }" class="bg-white border border-slate-200 rounded-xl p-3">
-    <input type="search" x-model="loc" placeholder="Lọc bảng…" aria-label="Lọc bảng" class="w-full sm:max-w-xs h-9 px-2 text-sm rounded-lg border border-slate-300">
+    <div class="relative w-full sm:max-w-xs">
+      <input type="search" x-model="loc" x-ref="locO" @focus="timCuoi($el)" placeholder="Lọc bảng…" aria-label="Lọc bảng" class="w-full h-9 pl-2 pr-8 text-sm rounded-lg border border-slate-300">
+      <button x-show="loc" x-cloak @mousedown.prevent @click="loc = ''; $refs.locO.focus()" type="button" data-tim-xoa aria-label="Xoá chữ đã gõ" title="Xoá chữ đã gõ"
+              class="absolute right-0 top-0 w-8 h-9 grid place-items-center text-slate-400 hover:text-slate-700">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
     <div class="mt-2 overflow-x-auto"><table class="w-full text-sm border-collapse">
       <thead><tr><th class="bg-slate-100 border border-slate-200 px-3 py-1.5 text-left">Cụm từ</th><th class="bg-slate-100 border border-slate-200 px-3 py-1.5 text-left">Ví dụ</th><th class="bg-slate-100 border border-slate-200 px-3 py-1.5 text-left">Nghĩa</th></tr></thead>
-      <tbody><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      <tbody><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a piece of <button type="button" data-st-loa data-noi="a piece of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a piece of cake, a piece of paper, a piece of advice <button type="button" data-st-loa data-noi="a piece of cake, a piece of paper, a piece of advice" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một miếng, một tờ, một lời</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a slice of <button type="button" data-st-loa data-noi="a slice of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a slice of bread, a slice of pizza <button type="button" data-st-loa data-noi="a slice of bread, a slice of pizza" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một lát, một miếng (cắt ra)</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a loaf of <button type="button" data-st-loa data-noi="a loaf of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a loaf of bread <button type="button" data-st-loa data-noi="a loaf of bread" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một ổ (bánh mì)</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a glass of <button type="button" data-st-loa data-noi="a glass of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a glass of milk, a glass of water <button type="button" data-st-loa data-noi="a glass of milk, a glass of water" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một ly, một cốc</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a cup of <button type="button" data-st-loa data-noi="a cup of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a cup of tea, a cup of hot chocolate <button type="button" data-st-loa data-noi="a cup of tea, a cup of hot chocolate" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một tách</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a bottle of <button type="button" data-st-loa data-noi="a bottle of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a bottle of water <button type="button" data-st-loa data-noi="a bottle of water" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một chai</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a can of <button type="button" data-st-loa data-noi="a can of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a can of soda, a can of tuna <button type="button" data-st-loa data-noi="a can of soda, a can of tuna" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một lon, một hộp (kim loại)</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a carton of <button type="button" data-st-loa data-noi="a carton of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a carton of milk, a carton of juice <button type="button" data-st-loa data-noi="a carton of milk, a carton of juice" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một hộp (giấy)</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a box of <button type="button" data-st-loa data-noi="a box of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a box of cereal, a box of crayons <button type="button" data-st-loa data-noi="a box of cereal, a box of crayons" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một hộp</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a bag of <button type="button" data-st-loa data-noi="a bag of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a bag of rice, a bag of chips <button type="button" data-st-loa data-noi="a bag of rice, a bag of chips" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một túi, một bao</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a bowl of <button type="button" data-st-loa data-noi="a bowl of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a bowl of soup, a bowl of rice <button type="button" data-st-loa data-noi="a bowl of soup, a bowl of rice" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một bát, một tô</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a jar of <button type="button" data-st-loa data-noi="a jar of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a jar of honey, a jar of jam <button type="button" data-st-loa data-noi="a jar of honey, a jar of jam" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một hũ, một lọ</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a pack of <button type="button" data-st-loa data-noi="a pack of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a pack of gum, a pack of cards <button type="button" data-st-loa data-noi="a pack of gum, a pack of cards" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một gói, một bộ</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a bar of <button type="button" data-st-loa data-noi="a bar of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a bar of chocolate, a bar of soap <button type="button" data-st-loa data-noi="a bar of chocolate, a bar of soap" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một thanh, một bánh</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a tube of <button type="button" data-st-loa data-noi="a tube of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a tube of toothpaste <button type="button" data-st-loa data-noi="a tube of toothpaste" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một tuýp</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a spoonful of <button type="button" data-st-loa data-noi="a spoonful of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a spoonful of sugar <button type="button" data-st-loa data-noi="a spoonful of sugar" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một thìa đầy</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a scoop of <button type="button" data-st-loa data-noi="a scoop of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a scoop of ice cream <button type="button" data-st-loa data-noi="a scoop of ice cream" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một viên (kem)</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a sheet of <button type="button" data-st-loa data-noi="a sheet of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a sheet of paper <button type="button" data-st-loa data-noi="a sheet of paper" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một tờ</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a drop of <button type="button" data-st-loa data-noi="a drop of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a drop of rain <button type="button" data-st-loa data-noi="a drop of rain" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một giọt</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a pound of <button type="button" data-st-loa data-noi="a pound of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a pound of meat <button type="button" data-st-loa data-noi="a pound of meat" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một pao (khoảng nửa cân)</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a kilo of <button type="button" data-st-loa data-noi="a kilo of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a kilo of apples <button type="button" data-st-loa data-noi="a kilo of apples" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một cân</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a gallon of <button type="button" data-st-loa data-noi="a gallon of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a gallon of milk <button type="button" data-st-loa data-noi="a gallon of milk" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một ga-lông (khoảng 3,8 lít)</td>
-      </tr><tr x-show="!loc || boDau($el.textContent).includes(boDau(loc))">
+      </tr><tr x-show="!loc || khopTu(boDau($el.textContent), boDau(loc).trim())">
         <td class="border border-slate-200 px-3 py-1.5">a pair of <button type="button" data-st-loa data-noi="a pair of" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">a pair of shoes, a pair of jeans, a pair of glasses <button type="button" data-st-loa data-noi="a pair of shoes, a pair of jeans, a pair of glasses" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></td><td class="border border-slate-200 px-3 py-1.5">một đôi; một cái (đồ có hai ống, hai mắt)</td>
@@ -305,6 +328,8 @@
       timMo: false,
       timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
       timDong() { this.q = ''; this.timMo = false; },
+      timXoa() { this.q = ''; this.$refs.timO && this.$refs.timO.focus(); },
+      timCuoi(el) { setTimeout(() => { const n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) { /* bỏ qua */ } }, 0); },
       get canMark() { return this.online && !!this.secret; },
       boDau,
       async init() {
@@ -354,7 +379,7 @@
       get ketQua() {
         const q = boDau(this.q.trim());
         if (!q || !this.du) return [];
-        return this.du.tim.filter(r => boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')).includes(q)).slice(0, 30);
+        return this.du.tim.filter(r => khopTu(boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')), q)).slice(0, 30);
       },
       // setTimeout: cú bấm mở thẻ còn đang nổi bọt lên document — gán ngay thì @click.outside đóng nó luôn.
       async moXem(el) {

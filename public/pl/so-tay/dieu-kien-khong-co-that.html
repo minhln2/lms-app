@@ -9,11 +9,28 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+
+<style>input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }</style>
+<script>
+  // Nhớ regex của từ khoá cuối: trang lọc gọi hàng trăm lần cho cùng một từ khoá.
+  var _khop = { q: null, rx: null };
+  function khopRx(q, co) {
+    var e = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Từ khoá mở đầu bằng ký hiệu («+b», «(a)») thì chính nó đã là ranh giới.
+    var dau = /^[\p{L}\p{N}]/u.test(q) ? '(^|[^\\p{L}\\p{N}\\p{M}])' : '()';
+    return new RegExp(dau + '(' + e + ')', co || 'u');
+  }
+  function khopTu(t, q) {
+    if (!q) return true;
+    if (_khop.q !== q) _khop = { q: q, rx: khopRx(q) };
+    return _khop.rx.test(t || '');
+  }
+</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
-  <title>Điều kiện không có thật (loại 2, 3) &amp; câu ước — Sổ tay tiếng Anh · PL</title>
-  <link rel="stylesheet" href="../../assets/tw.a04b2b97.css">
+  <title>Điều kiện không có thật (loại 2, 3), câu ước &amp; lùi thì — Sổ tay tiếng Anh · PL</title>
+  <link rel="stylesheet" href="../../assets/tw.fd2db1dd.css">
   <script defer src="../../assets/alpine.63d2636a.js"></script>
   <style>
     [x-cloak]{display:none!important}
@@ -25,7 +42,7 @@
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen" x-data="soTay()">
-<script type="application/json" id="st-du">{"nhom": {"trang": ["st.dieu-kien-khong-co-that.chon", "st.dieu-kien-khong-co-that.cap-diem", "st.dieu-kien-khong-co-that.cap-cau-vong", "st.dieu-kien-khong-co-that.cap-uoc-con-cho", "st.dieu-kien-khong-co-that.cap-uoc-on-bai", "st.dieu-kien-khong-co-that.cap-uoc-hai-moc"]}, "user": "pl"}</script>
+<script type="application/json" id="st-du">{"nhom": {"trang": ["st.dieu-kien-khong-co-that.chon", "st.dieu-kien-khong-co-that.cap-diem", "st.dieu-kien-khong-co-that.cap-cau-vong", "st.dieu-kien-khong-co-that.cap-uoc-con-cho", "st.dieu-kien-khong-co-that.cap-uoc-on-bai", "st.dieu-kien-khong-co-that.cap-uoc-hai-moc", "st.dieu-kien-khong-co-that.cap-uoc-its-time", "st.dieu-kien-khong-co-that.cap-uoc-as-if", "st.dieu-kien-khong-co-that.cap-wh-tiec", "st.dieu-kien-khong-co-that.cap-wh-suyt", "st.dieu-kien-khong-co-that.cap-wh-doan"]}, "user": "pl"}</script>
 <header class="bg-white border-b border-slate-200">
   <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3 min-h-[3.5rem]">
     
@@ -33,8 +50,7 @@
   <a href="../../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
   <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">PL</a><span class="shrink-0 text-slate-300">›</span>
   <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">📒 Sổ tay</a><span class="shrink-0 text-slate-300">›</span>
-  <a href="cau-dieu-kien.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">Câu điều kiện</a><span class="shrink-0 text-slate-300">›</span>
-  <span aria-current="page"  class="truncate font-medium text-slate-700">Điều kiện không có thật (loại 2, 3) &amp; câu ước</span>
+  <span aria-current="page"  class="truncate font-medium text-slate-700">Điều kiện không có thật (loại 2, 3), câu ước &amp; lùi thì</span>
 </nav>
     
   </div>
@@ -55,9 +71,11 @@
     
     <a href="#cap-bay-gio-da-qua" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">👯 Bây giờ hay đã qua?</a>
     
-    <a href="#cap-uoc" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">👯 Câu ước lùi thì y như vế if</a>
+    <a href="#cap-uoc" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">👯 Câu ước, it&#39;s time, as if — lùi thì y như vế if</a>
     
-    <a href="#st-k7" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">⚠ Lỗi lẫn lộn</a>
+    <a href="#cap-would-have" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">👯 would have V3 (có vế if) hay could / should / must have V3 (đứng một mình)?</a>
+    
+    <a href="#st-k8" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">⚠ Lỗi lẫn lộn</a>
     
     
   
@@ -78,9 +96,11 @@
     
     <a href="#cap-bay-gio-da-qua" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">👯 Bây giờ hay đã qua?</a>
     
-    <a href="#cap-uoc" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">👯 Câu ước lùi thì y như vế if</a>
+    <a href="#cap-uoc" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">👯 Câu ước, it&#39;s time, as if — lùi thì y như vế if</a>
     
-    <a href="#st-k7" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">⚠ Lỗi lẫn lộn</a>
+    <a href="#cap-would-have" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">👯 would have V3 (có vế if) hay could / should / must have V3 (đứng một mình)?</a>
+    
+    <a href="#st-k8" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">⚠ Lỗi lẫn lộn</a>
     
     
   
@@ -89,15 +109,14 @@
     <p class="flex flex-wrap gap-2">
       <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-sky-100 text-sky-700">🧩 tổng quan</span>
       
-      <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-indigo-50 text-indigo-700">📘 Close Up B1 U6</span><span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-indigo-50 text-indigo-700">📘 Grammar &amp; Vocabulary Practice B1 U11·22·23</span>
+      <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-indigo-50 text-indigo-700">📘 Close Up B1 U6</span><span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-indigo-50 text-indigo-700">📘 Grammar &amp; Vocabulary Practice B1 U11·21·22·23</span>
       
     </p>
-    <h1 class="text-2xl font-bold mt-1.5">Điều kiện không có thật (loại 2, 3) &amp; câu ước</h1>
+    <h1 class="text-2xl font-bold mt-1.5">Điều kiện không có thật (loại 2, 3), câu ước &amp; lùi thì</h1>
     
-    <p class="mt-2 flex flex-wrap items-center gap-2 text-sm"><span class="text-slate-500">Gồm:</span>
-      <span class="rounded-lg border border-indigo-100 bg-white px-2 py-1"><a class="xr" href="second-conditional.html" data-xem="second-conditional" @click.prevent="moXem($el)">Second Conditional</a></span><span class="rounded-lg border border-indigo-100 bg-white px-2 py-1"><a class="xr" href="third-conditional.html" data-xem="third-conditional" @click.prevent="moXem($el)">Third Conditional</a></span><span class="rounded-lg border border-indigo-100 bg-white px-2 py-1"><a class="xr" href="wish.html" data-xem="wish" @click.prevent="moXem($el)">wish &amp; if only</a></span></p>
+    <p class="mt-2 flex flex-wrap items-center gap-2 text-sm"><span class="text-slate-500">Gồm:</span><span class="rounded-lg border border-indigo-100 bg-white px-2 py-1"><a class="xr" href="second-conditional.html" data-xem="second-conditional" @click.prevent="moXem($el)">Second Conditional</a></span><span class="rounded-lg border border-indigo-100 bg-white px-2 py-1"><a class="xr" href="third-conditional.html" data-xem="third-conditional" @click.prevent="moXem($el)">Third Conditional</a></span><span class="rounded-lg border border-indigo-100 bg-white px-2 py-1"><a class="xr" href="wish.html" data-xem="wish" @click.prevent="moXem($el)">wish &amp; if only</a></span><span class="rounded-lg border border-indigo-100 bg-white px-2 py-1"><a class="xr" href="its-time.html" data-xem="its-time" @click.prevent="moXem($el)">It&#39;s time</a> ➕</span><span class="rounded-lg border border-indigo-100 bg-white px-2 py-1"><a class="xr" href="as-if.html" data-xem="as-if" @click.prevent="moXem($el)">as if &amp; as though</a> ➕</span><span class="rounded-lg border border-indigo-100 bg-white px-2 py-1"><a class="xr" href="modal-have-v3.html" data-xem="modal-have-v3" @click.prevent="moXem($el)">Modal + have + V3</a></span></p>
     
-    <p class="mt-3 text-lg font-semibold bg-indigo-50 border-l-4 border-indigo-600 rounded-lg px-4 py-3">Chuyện chỉ TƯỞNG TƯỢNG: về bây giờ, sắp tới (loại 2), hay về chuyện ĐÃ QUA, không đổi được (loại 3)? Câu ước wish lùi thì y như vế if.</p>
+    <p class="mt-3 text-lg font-semibold bg-indigo-50 border-l-4 border-indigo-600 rounded-lg px-4 py-3">Chuyện chỉ TƯỞNG TƯỢNG: về bây giờ, sắp tới (loại 2), hay về chuyện ĐÃ QUA (loại 3)? wish, it&#39;s time, as if lùi thì y như vế if.</p>
 
     <section id="st-k1" data-st-khoi="the" class="scroll-mt-4">
   
@@ -127,6 +146,30 @@
       <p class="text-sm text-slate-700 mt-1">Ước điều KHÔNG có thật thì lùi thì: bây giờ → wish + V2 (were, could); chuyện đã qua → wish + had V3. if only = I wish, nghe tiếc hơn.</p>
       <code class="inline-block mt-2 font-mono text-sm bg-slate-100 rounded px-1.5 py-0.5">S + wish(es) + S + V2 / were</code>
       <p class="mt-1.5 text-sm font-medium">I <b>wish</b> I <b>had</b> a puppy. <button type="button" data-st-loa data-noi="I wish I had a puppy." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
+        class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p>
+    </div>
+    
+    <div class="bg-white border border-slate-200 rounded-xl border-t-4 border-t-rose-500 p-4">
+      <h3 class="font-semibold"><a class="xr" href="its-time.html" data-xem="its-time" @click.prevent="moXem($el)">It&#39;s time</a> <span class="text-xs rounded-full px-2 bg-amber-100 text-amber-700">➕</span></h3>
+      <p class="text-sm text-slate-700 mt-1">Đến giờ làm gì: It&#39;s time + to V. Lẽ ra làm rồi mà chưa: It&#39;s time + S + V2 — dạng quá khứ nhưng nói về BÂY GIỜ.</p>
+      <code class="inline-block mt-2 font-mono text-sm bg-slate-100 rounded px-1.5 py-0.5">It&#39;s time + to V / It&#39;s time + S + V2</code>
+      <p class="mt-1.5 text-sm font-medium">It&#39;s time <b>to go</b> home. / It&#39;s time we <b>went</b> home. <button type="button" data-st-loa data-noi="It&#39;s time to go home. / It&#39;s time we went home." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
+        class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p>
+    </div>
+    
+    <div class="bg-white border border-slate-200 rounded-xl border-t-4 border-t-indigo-500 p-4">
+      <h3 class="font-semibold"><a class="xr" href="as-if.html" data-xem="as-if" @click.prevent="moXem($el)">as if &amp; as though</a> <span class="text-xs rounded-full px-2 bg-amber-100 text-amber-700">➕</span></h3>
+      <p class="text-sm text-slate-700 mt-1">Trông như, như thể. Có thể đúng thật → giữ thì thường. Biết là KHÔNG thật → lùi thì: as if he were the teacher.</p>
+      <code class="inline-block mt-2 font-mono text-sm bg-slate-100 rounded px-1.5 py-0.5">S + V + as if / as though + S + V</code>
+      <p class="mt-1.5 text-sm font-medium">You look <b>as if</b> you<b>&#39;re</b> tired. <button type="button" data-st-loa data-noi="You look as if you&#39;re tired." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
+        class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p>
+    </div>
+    
+    <div class="bg-white border border-slate-200 rounded-xl border-t-4 border-t-emerald-500 p-4">
+      <h3 class="font-semibold"><a class="xr" href="modal-have-v3.html" data-xem="modal-have-v3" @click.prevent="moXem($el)">Modal + have + V3</a></h3>
+      <p class="text-sm text-slate-700 mt-1">Nhìn lại chuyện ĐÃ QUA: must have V3 = chắc hẳn đã; might have V3 = có lẽ đã; can&#39;t have V3 = chắc chắn không; should have V3 = lẽ ra nên.</p>
+      <code class="inline-block mt-2 font-mono text-sm bg-slate-100 rounded px-1.5 py-0.5">S + must / may / might / could / should + have + V3</code>
+      <p class="mt-1.5 text-sm font-medium">Max isn&#39;t here. He <b>must have gone</b> home. <button type="button" data-st-loa data-noi="Max isn&#39;t here. He must have gone home." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
         class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p>
     </div>
     
@@ -257,7 +300,7 @@
   
 </section><section id="cap-uoc" data-st-khoi="cap-cau" class="scroll-mt-4">
   
-  <h2 class="text-lg font-bold mt-7 mb-2 flex items-center gap-2 scroll-mt-4">👯 Câu ước lùi thì y như vế if</h2>
+  <h2 class="text-lg font-bold mt-7 mb-2 flex items-center gap-2 scroll-mt-4">👯 Câu ước, it&#39;s time, as if — lùi thì y như vế if</h2>
   
   
   <div class="space-y-3">
@@ -304,9 +347,88 @@
       </div>
     </div>
     
+    <div id="cap-uoc-its-time" class="flex gap-3 scroll-mt-4">
+      <label x-show="canMark" x-cloak class="inline-flex p-1.5 -m-1.5 shrink-0 cursor-pointer" title="Đã thuộc">
+  <input type="checkbox" data-st-tick="st.dieu-kien-khong-co-that.cap-uoc-its-time" :checked="da('st.dieu-kien-khong-co-that.cap-uoc-its-time')"
+         @change="dat(['st.dieu-kien-khong-co-that.cap-uoc-its-time'], $event.target.checked)" class="w-5 h-5 rounded border-slate-300 accent-emerald-600 cursor-pointer">
+</label>
+      <div class="grid flex-1 gap-2 sm:grid-cols-2">
+        <div class="rounded-lg border px-3 py-2 bg-indigo-50 border-indigo-100">
+          <p class="font-medium">If we <mark class="bg-amber-200 rounded px-0.5">left</mark> now, we&#39;d catch the bus. <button type="button" data-st-loa data-noi="If we left now, we&#39;d catch the bus." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
+        class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p><p class="text-sm text-slate-700">Tưởng tượng — thật ra mình chưa đi.</p></div><div class="rounded-lg border px-3 py-2 bg-emerald-50 border-emerald-100">
+          <p class="font-medium">It&#39;s time we <mark class="bg-amber-200 rounded px-0.5">left</mark>. <button type="button" data-st-loa data-noi="It&#39;s time we left." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
+        class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p><p class="text-sm text-slate-700">Cũng V2 mà nói về bây giờ: lẽ ra đi rồi, vẫn chưa đi → <a class="xr" href="its-time.html#v2" data-xem="its-time" @click.prevent="moXem($el)">It&#39;s time</a>.</p></div>
+      </div>
+    </div>
+    
+    <div id="cap-uoc-as-if" class="flex gap-3 scroll-mt-4">
+      <label x-show="canMark" x-cloak class="inline-flex p-1.5 -m-1.5 shrink-0 cursor-pointer" title="Đã thuộc">
+  <input type="checkbox" data-st-tick="st.dieu-kien-khong-co-that.cap-uoc-as-if" :checked="da('st.dieu-kien-khong-co-that.cap-uoc-as-if')"
+         @change="dat(['st.dieu-kien-khong-co-that.cap-uoc-as-if'], $event.target.checked)" class="w-5 h-5 rounded border-slate-300 accent-emerald-600 cursor-pointer">
+</label>
+      <div class="grid flex-1 gap-2 sm:grid-cols-2">
+        <div class="rounded-lg border px-3 py-2 bg-indigo-50 border-indigo-100">
+          <p class="font-medium">If he <mark class="bg-amber-200 rounded px-0.5">were</mark> the teacher, he&#39;d give us homework. <button type="button" data-st-loa data-noi="If he were the teacher, he&#39;d give us homework." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
+        class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p><p class="text-sm text-slate-700">Tưởng tượng — bạn ấy không phải cô giáo.</p></div><div class="rounded-lg border px-3 py-2 bg-emerald-50 border-emerald-100">
+          <p class="font-medium">He talks as if he <mark class="bg-amber-200 rounded px-0.5">were</mark> the teacher. <button type="button" data-st-loa data-noi="He talks as if he were the teacher." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
+        class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p><p class="text-sm text-slate-700">Cũng were, vì biết là không thật → <a class="xr" href="as-if.html#khong-that" data-xem="as-if" @click.prevent="moXem($el)">as if &amp; as though</a>.</p></div>
+      </div>
+    </div>
+    
   </div>
   
-</section><section id="st-k7" data-st-khoi="loi" class="scroll-mt-4">
+</section><section id="cap-would-have" data-st-khoi="cap-cau" class="scroll-mt-4">
+  
+  <h2 class="text-lg font-bold mt-7 mb-2 flex items-center gap-2 scroll-mt-4">👯 would have V3 (có vế if) hay could / should / must have V3 (đứng một mình)?</h2>
+  
+  
+  <div class="space-y-3">
+    
+    <div id="cap-wh-tiec" class="flex gap-3 scroll-mt-4">
+      <label x-show="canMark" x-cloak class="inline-flex p-1.5 -m-1.5 shrink-0 cursor-pointer" title="Đã thuộc">
+  <input type="checkbox" data-st-tick="st.dieu-kien-khong-co-that.cap-wh-tiec" :checked="da('st.dieu-kien-khong-co-that.cap-wh-tiec')"
+         @change="dat(['st.dieu-kien-khong-co-that.cap-wh-tiec'], $event.target.checked)" class="w-5 h-5 rounded border-slate-300 accent-emerald-600 cursor-pointer">
+</label>
+      <div class="grid flex-1 gap-2 sm:grid-cols-2">
+        <div class="rounded-lg border px-3 py-2 bg-indigo-50 border-indigo-100">
+          <p class="font-medium">If I <mark class="bg-amber-200 rounded px-0.5">had studied</mark>, I <mark class="bg-amber-200 rounded px-0.5">would have passed</mark>. <button type="button" data-st-loa data-noi="If I had studied, I would have passed." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
+        class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p><p class="text-sm text-slate-700">Loại 3: would have V3 đi kèm vế if — tưởng tượng kết quả nếu chuyện đã qua khác đi.</p></div><div class="rounded-lg border px-3 py-2 bg-emerald-50 border-emerald-100">
+          <p class="font-medium">I <mark class="bg-amber-200 rounded px-0.5">should have studied</mark>. <button type="button" data-st-loa data-noi="I should have studied." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
+        class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p><p class="text-sm text-slate-700">Đứng một mình: lẽ ra NÊN ôn mà đã không ôn → <a class="xr" href="modal-have-v3.html#tiec-trach" data-xem="modal-have-v3" @click.prevent="moXem($el)">Modal + have + V3</a>.</p></div>
+      </div>
+    </div>
+    
+    <div id="cap-wh-suyt" class="flex gap-3 scroll-mt-4">
+      <label x-show="canMark" x-cloak class="inline-flex p-1.5 -m-1.5 shrink-0 cursor-pointer" title="Đã thuộc">
+  <input type="checkbox" data-st-tick="st.dieu-kien-khong-co-that.cap-wh-suyt" :checked="da('st.dieu-kien-khong-co-that.cap-wh-suyt')"
+         @change="dat(['st.dieu-kien-khong-co-that.cap-wh-suyt'], $event.target.checked)" class="w-5 h-5 rounded border-slate-300 accent-emerald-600 cursor-pointer">
+</label>
+      <div class="grid flex-1 gap-2 sm:grid-cols-2">
+        <div class="rounded-lg border px-3 py-2 bg-indigo-50 border-indigo-100">
+          <p class="font-medium">If you <mark class="bg-amber-200 rounded px-0.5">hadn&#39;t held</mark> the rail, you <mark class="bg-amber-200 rounded px-0.5">would have fallen</mark>. <button type="button" data-st-loa data-noi="If you hadn&#39;t held the rail, you would have fallen." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
+        class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p><p class="text-sm text-slate-700">Có vế if — nói rõ nhờ đâu mà không ngã.</p></div><div class="rounded-lg border px-3 py-2 bg-emerald-50 border-emerald-100">
+          <p class="font-medium">Careful! You <mark class="bg-amber-200 rounded px-0.5">could have fallen</mark>! <button type="button" data-st-loa data-noi="Careful! You could have fallen!" @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
+        class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p><p class="text-sm text-slate-700">Không cần vế if: suýt nữa thì ngã → <a class="xr" href="modal-have-v3.html#suyt" data-xem="modal-have-v3" @click.prevent="moXem($el)">Modal + have + V3</a>.</p></div>
+      </div>
+    </div>
+    
+    <div id="cap-wh-doan" class="flex gap-3 scroll-mt-4">
+      <label x-show="canMark" x-cloak class="inline-flex p-1.5 -m-1.5 shrink-0 cursor-pointer" title="Đã thuộc">
+  <input type="checkbox" data-st-tick="st.dieu-kien-khong-co-that.cap-wh-doan" :checked="da('st.dieu-kien-khong-co-that.cap-wh-doan')"
+         @change="dat(['st.dieu-kien-khong-co-that.cap-wh-doan'], $event.target.checked)" class="w-5 h-5 rounded border-slate-300 accent-emerald-600 cursor-pointer">
+</label>
+      <div class="grid flex-1 gap-2 sm:grid-cols-2">
+        <div class="rounded-lg border px-3 py-2 bg-indigo-50 border-indigo-100">
+          <p class="font-medium">If Max <mark class="bg-amber-200 rounded px-0.5">had known</mark>, he <mark class="bg-amber-200 rounded px-0.5">would have come</mark>. <button type="button" data-st-loa data-noi="If Max had known, he would have come." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
+        class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p><p class="text-sm text-slate-700">Tưởng tượng — thật ra Max không biết nên không tới.</p></div><div class="rounded-lg border px-3 py-2 bg-emerald-50 border-emerald-100">
+          <p class="font-medium">Max isn&#39;t here. He <mark class="bg-amber-200 rounded px-0.5">must have forgotten</mark>. <button type="button" data-st-loa data-noi="Max isn&#39;t here. He must have forgotten." @click="speak($el.dataset.noi)" aria-label="Đọc to" title="Đọc to"
+        class="inline-grid place-items-center w-8 h-8 -my-1.5 align-middle rounded-full text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">🔊</button></p><p class="text-sm text-slate-700">Không tưởng tượng mà ĐOÁN chuyện đã xảy ra thật → <a class="xr" href="modal-have-v3.html#chac-da" data-xem="modal-have-v3" @click.prevent="moXem($el)">Modal + have + V3</a>.</p></div>
+      </div>
+    </div>
+    
+  </div>
+  
+</section><section id="st-k8" data-st-khoi="loi" class="scroll-mt-4">
   
   <h2 class="text-lg font-bold mt-7 mb-2 flex items-center gap-2 scroll-mt-4">⚠ Lỗi lẫn lộn</h2>
   
@@ -419,6 +541,8 @@
       timMo: false,
       timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
       timDong() { this.q = ''; this.timMo = false; },
+      timXoa() { this.q = ''; this.$refs.timO && this.$refs.timO.focus(); },
+      timCuoi(el) { setTimeout(() => { const n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) { /* bỏ qua */ } }, 0); },
       get canMark() { return this.online && !!this.secret; },
       boDau,
       async init() {
@@ -468,7 +592,7 @@
       get ketQua() {
         const q = boDau(this.q.trim());
         if (!q || !this.du) return [];
-        return this.du.tim.filter(r => boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')).includes(q)).slice(0, 30);
+        return this.du.tim.filter(r => khopTu(boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')), q)).slice(0, 30);
       },
       // setTimeout: cú bấm mở thẻ còn đang nổi bọt lên document — gán ngay thì @click.outside đóng nó luôn.
       async moXem(el) {

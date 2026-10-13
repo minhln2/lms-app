@@ -9,11 +9,28 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+
+<style>input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }</style>
+<script>
+  // Nhớ regex của từ khoá cuối: trang lọc gọi hàng trăm lần cho cùng một từ khoá.
+  var _khop = { q: null, rx: null };
+  function khopRx(q, co) {
+    var e = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Từ khoá mở đầu bằng ký hiệu («+b», «(a)») thì chính nó đã là ranh giới.
+    var dau = /^[\p{L}\p{N}]/u.test(q) ? '(^|[^\\p{L}\\p{N}\\p{M}])' : '()';
+    return new RegExp(dau + '(' + e + ')', co || 'u');
+  }
+  function khopTu(t, q) {
+    if (!q) return true;
+    if (_khop.q !== q) _khop = { q: q, rx: khopRx(q) };
+    return _khop.rx.test(t || '');
+  }
+</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <title>To-infinitive &amp; -ing — Sổ tay tiếng Anh · PL</title>
-  <link rel="stylesheet" href="../../assets/tw.a04b2b97.css">
+  <link rel="stylesheet" href="../../assets/tw.fd2db1dd.css">
   <script defer src="../../assets/alpine.63d2636a.js"></script>
   <style>
     [x-cloak]{display:none!important}
@@ -25,7 +42,7 @@
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen" x-data="soTay()">
-<script type="application/json" id="st-du">{"nhom": {"bang-to-v-ing": [], "bare-infinitive": ["st.bare-infinitive.sau-modal", "st.bare-infinitive.make-let", "st.bare-infinitive.help", "st.bare-infinitive.bi-dong-make"], "chu-ngu-va-tinh-tu-to-v-ing": ["st.chu-ngu-va-tinh-tu-to-v-ing.chon", "st.chu-ngu-va-tinh-tu-to-v-ing.boi-o-bien"], "dong-tu-nguoi-to-v": ["st.dong-tu-nguoi-to-v.muon", "st.dong-tu-nguoi-to-v.bao-nho", "st.dong-tu-nguoi-to-v.cho-phep"], "sau-dong-tu-nguoi": ["st.sau-dong-tu-nguoi.chon", "st.sau-dong-tu-nguoi.cap-make-ask", "st.sau-dong-tu-nguoi.cap-let-allow", "st.sau-dong-tu-nguoi.cap-see"], "sau-dong-tu-to-v-ing": ["st.sau-dong-tu-to-v-ing.chon", "st.sau-dong-tu-to-v-ing.cap-remember", "st.sau-dong-tu-to-v-ing.cap-forget", "st.sau-dong-tu-to-v-ing.cap-stop", "st.sau-dong-tu-to-v-ing.cap-try", "st.sau-dong-tu-to-v-ing.cap-regret"], "see-hear-v-ing": ["st.see-hear-v-ing.tron-viec", "st.see-hear-v-ing.dang-dien-ra", "st.see-hear-v-ing.khong-to"], "tinh-tu-to-v": ["st.tinh-tu-to-v.cam-xuc", "st.tinh-tu-to-v.san-sang", "st.tinh-tu-to-v.it-adj", "st.tinh-tu-to-v.kind-of", "st.tinh-tu-to-v.the-first"], "to-v-ing-cung-nghia": ["st.to-v-ing-cung-nghia.bat-dau", "st.to-v-ing-cung-nghia.thich-ghet", "st.to-v-ing-cung-nghia.would-like", "st.to-v-ing-cung-nghia.hai-ing"], "to-v-ing-doi-nghia": ["st.to-v-ing-doi-nghia.remember", "st.to-v-ing-doi-nghia.forget", "st.to-v-ing-doi-nghia.stop", "st.to-v-ing-doi-nghia.try", "st.to-v-ing-doi-nghia.regret", "st.to-v-ing-doi-nghia.go-on"], "to-v-sau-dong-tu": ["st.to-v-sau-dong-tu.muon-dinh", "st.to-v-sau-dong-tu.hua-tu-choi", "st.to-v-sau-dong-tu.lam-duoc", "st.to-v-sau-dong-tu.co-ve", "st.to-v-sau-dong-tu.phu-dinh", "st.to-v-sau-dong-tu.tu-hoi"], "trang": ["st.to-v-sau-dong-tu.muon-dinh", "st.to-v-sau-dong-tu.hua-tu-choi", "st.to-v-sau-dong-tu.lam-duoc", "st.to-v-sau-dong-tu.co-ve", "st.to-v-sau-dong-tu.phu-dinh", "st.to-v-sau-dong-tu.tu-hoi", "st.v-ing-sau-dong-tu.thich-ghet", "st.v-ing-sau-dong-tu.xong-mai", "st.v-ing-sau-dong-tu.tranh-nho", "st.v-ing-sau-dong-tu.goi-y-tuong-tuong", "st.v-ing-sau-dong-tu.go-ving", "st.v-ing-sau-dong-tu.spend-time", "st.v-ing-sau-dong-tu.cum-co-dinh", "st.bare-infinitive.sau-modal", "st.bare-infinitive.make-let", "st.bare-infinitive.help", "st.bare-infinitive.bi-dong-make", "st.to-v-ing-cung-nghia.bat-dau", "st.to-v-ing-cung-nghia.thich-ghet", "st.to-v-ing-cung-nghia.would-like", "st.to-v-ing-cung-nghia.hai-ing", "st.to-v-ing-doi-nghia.remember", "st.to-v-ing-doi-nghia.forget", "st.to-v-ing-doi-nghia.stop", "st.to-v-ing-doi-nghia.try", "st.to-v-ing-doi-nghia.regret", "st.to-v-ing-doi-nghia.go-on", "st.dong-tu-nguoi-to-v.muon", "st.dong-tu-nguoi-to-v.bao-nho", "st.dong-tu-nguoi-to-v.cho-phep", "st.see-hear-v-ing.tron-viec", "st.see-hear-v-ing.dang-dien-ra", "st.see-hear-v-ing.khong-to", "st.tinh-tu-to-v.cam-xuc", "st.tinh-tu-to-v.san-sang", "st.tinh-tu-to-v.it-adj", "st.tinh-tu-to-v.kind-of", "st.tinh-tu-to-v.the-first", "st.v-ing-lam-chu-ngu.chu-ngu", "st.v-ing-lam-chu-ngu.so-it", "st.v-ing-lam-chu-ngu.sau-be", "st.sau-dong-tu-to-v-ing.chon", "st.sau-dong-tu-to-v-ing.cap-remember", "st.sau-dong-tu-to-v-ing.cap-forget", "st.sau-dong-tu-to-v-ing.cap-stop", "st.sau-dong-tu-to-v-ing.cap-try", "st.sau-dong-tu-to-v-ing.cap-regret", "st.sau-dong-tu-nguoi.chon", "st.sau-dong-tu-nguoi.cap-make-ask", "st.sau-dong-tu-nguoi.cap-let-allow", "st.sau-dong-tu-nguoi.cap-see", "st.chu-ngu-va-tinh-tu-to-v-ing.chon", "st.chu-ngu-va-tinh-tu-to-v-ing.boi-o-bien"], "v-ing-lam-chu-ngu": ["st.v-ing-lam-chu-ngu.chu-ngu", "st.v-ing-lam-chu-ngu.so-it", "st.v-ing-lam-chu-ngu.sau-be"], "v-ing-sau-dong-tu": ["st.v-ing-sau-dong-tu.thich-ghet", "st.v-ing-sau-dong-tu.xong-mai", "st.v-ing-sau-dong-tu.tranh-nho", "st.v-ing-sau-dong-tu.goi-y-tuong-tuong", "st.v-ing-sau-dong-tu.go-ving", "st.v-ing-sau-dong-tu.spend-time", "st.v-ing-sau-dong-tu.cum-co-dinh"]}, "user": "pl"}</script>
+<script type="application/json" id="st-du">{"nhom": {"bang-to-v-ing": [], "bare-infinitive": ["st.bare-infinitive.sau-modal", "st.bare-infinitive.make-let", "st.bare-infinitive.help", "st.bare-infinitive.bi-dong-make"], "cac-cho-dung-v-ing": ["st.cac-cho-dung-v-ing.cap-to-gioi-tu", "st.cac-cho-dung-v-ing.cap-used-to", "st.cac-cho-dung-v-ing.cap-sau-be"], "chu-ngu-va-tinh-tu-to-v-ing": ["st.chu-ngu-va-tinh-tu-to-v-ing.chon", "st.chu-ngu-va-tinh-tu-to-v-ing.boi-o-bien"], "dong-tu-nguoi-to-v": ["st.dong-tu-nguoi-to-v.muon", "st.dong-tu-nguoi-to-v.bao-nho", "st.dong-tu-nguoi-to-v.cho-phep"], "nguyen-mau-to-v-va-v": ["st.nguyen-mau-to-v-va-v.chon", "st.nguyen-mau-to-v-va-v.cap-can-able", "st.nguyen-mau-to-v-va-v.cap-must-have", "st.nguyen-mau-to-v-va-v.cap-should-ought", "st.nguyen-mau-to-v-va-v.cap-rather-prefer"], "sau-dong-tu-nguoi": ["st.sau-dong-tu-nguoi.chon", "st.sau-dong-tu-nguoi.cap-make-ask", "st.sau-dong-tu-nguoi.cap-let-allow", "st.sau-dong-tu-nguoi.cap-see"], "sau-dong-tu-to-v-ing": ["st.sau-dong-tu-to-v-ing.chon", "st.sau-dong-tu-to-v-ing.cap-remember", "st.sau-dong-tu-to-v-ing.cap-forget", "st.sau-dong-tu-to-v-ing.cap-stop", "st.sau-dong-tu-to-v-ing.cap-try", "st.sau-dong-tu-to-v-ing.cap-regret"], "see-hear-v-ing": ["st.see-hear-v-ing.tron-viec", "st.see-hear-v-ing.dang-dien-ra", "st.see-hear-v-ing.khong-to"], "tinh-tu-to-v": ["st.tinh-tu-to-v.cam-xuc", "st.tinh-tu-to-v.san-sang", "st.tinh-tu-to-v.it-adj", "st.tinh-tu-to-v.kind-of", "st.tinh-tu-to-v.the-first"], "to-v-ing-cung-nghia": ["st.to-v-ing-cung-nghia.bat-dau", "st.to-v-ing-cung-nghia.thich-ghet", "st.to-v-ing-cung-nghia.would-like", "st.to-v-ing-cung-nghia.hai-ing"], "to-v-ing-doi-nghia": ["st.to-v-ing-doi-nghia.remember", "st.to-v-ing-doi-nghia.forget", "st.to-v-ing-doi-nghia.stop", "st.to-v-ing-doi-nghia.try", "st.to-v-ing-doi-nghia.regret", "st.to-v-ing-doi-nghia.go-on"], "to-v-sau-dong-tu": ["st.to-v-sau-dong-tu.muon-dinh", "st.to-v-sau-dong-tu.hua-tu-choi", "st.to-v-sau-dong-tu.lam-duoc", "st.to-v-sau-dong-tu.co-ve", "st.to-v-sau-dong-tu.phu-dinh", "st.to-v-sau-dong-tu.tu-hoi"], "trang": ["st.to-v-sau-dong-tu.muon-dinh", "st.to-v-sau-dong-tu.hua-tu-choi", "st.to-v-sau-dong-tu.lam-duoc", "st.to-v-sau-dong-tu.co-ve", "st.to-v-sau-dong-tu.phu-dinh", "st.to-v-sau-dong-tu.tu-hoi", "st.v-ing-sau-dong-tu.thich-ghet", "st.v-ing-sau-dong-tu.xong-mai", "st.v-ing-sau-dong-tu.tranh-nho", "st.v-ing-sau-dong-tu.goi-y-tuong-tuong", "st.v-ing-sau-dong-tu.go-ving", "st.v-ing-sau-dong-tu.spend-time", "st.v-ing-sau-dong-tu.cum-co-dinh", "st.bare-infinitive.sau-modal", "st.bare-infinitive.make-let", "st.bare-infinitive.help", "st.bare-infinitive.bi-dong-make", "st.to-v-ing-cung-nghia.bat-dau", "st.to-v-ing-cung-nghia.thich-ghet", "st.to-v-ing-cung-nghia.would-like", "st.to-v-ing-cung-nghia.hai-ing", "st.to-v-ing-doi-nghia.remember", "st.to-v-ing-doi-nghia.forget", "st.to-v-ing-doi-nghia.stop", "st.to-v-ing-doi-nghia.try", "st.to-v-ing-doi-nghia.regret", "st.to-v-ing-doi-nghia.go-on", "st.dong-tu-nguoi-to-v.muon", "st.dong-tu-nguoi-to-v.bao-nho", "st.dong-tu-nguoi-to-v.cho-phep", "st.see-hear-v-ing.tron-viec", "st.see-hear-v-ing.dang-dien-ra", "st.see-hear-v-ing.khong-to", "st.tinh-tu-to-v.cam-xuc", "st.tinh-tu-to-v.san-sang", "st.tinh-tu-to-v.it-adj", "st.tinh-tu-to-v.kind-of", "st.tinh-tu-to-v.the-first", "st.v-ing-lam-chu-ngu.chu-ngu", "st.v-ing-lam-chu-ngu.so-it", "st.v-ing-lam-chu-ngu.sau-be", "st.sau-dong-tu-to-v-ing.chon", "st.sau-dong-tu-to-v-ing.cap-remember", "st.sau-dong-tu-to-v-ing.cap-forget", "st.sau-dong-tu-to-v-ing.cap-stop", "st.sau-dong-tu-to-v-ing.cap-try", "st.sau-dong-tu-to-v-ing.cap-regret", "st.sau-dong-tu-nguoi.chon", "st.sau-dong-tu-nguoi.cap-make-ask", "st.sau-dong-tu-nguoi.cap-let-allow", "st.sau-dong-tu-nguoi.cap-see", "st.chu-ngu-va-tinh-tu-to-v-ing.chon", "st.chu-ngu-va-tinh-tu-to-v-ing.boi-o-bien", "st.nguyen-mau-to-v-va-v.chon", "st.nguyen-mau-to-v-va-v.cap-can-able", "st.nguyen-mau-to-v-va-v.cap-must-have", "st.nguyen-mau-to-v-va-v.cap-should-ought", "st.nguyen-mau-to-v-va-v.cap-rather-prefer", "st.cac-cho-dung-v-ing.cap-to-gioi-tu", "st.cac-cho-dung-v-ing.cap-used-to", "st.cac-cho-dung-v-ing.cap-sau-be"], "v-ing-lam-chu-ngu": ["st.v-ing-lam-chu-ngu.chu-ngu", "st.v-ing-lam-chu-ngu.so-it", "st.v-ing-lam-chu-ngu.sau-be"], "v-ing-sau-dong-tu": ["st.v-ing-sau-dong-tu.thich-ghet", "st.v-ing-sau-dong-tu.xong-mai", "st.v-ing-sau-dong-tu.tranh-nho", "st.v-ing-sau-dong-tu.goi-y-tuong-tuong", "st.v-ing-sau-dong-tu.go-ving", "st.v-ing-sau-dong-tu.spend-time", "st.v-ing-sau-dong-tu.cum-co-dinh"]}, "user": "pl"}</script>
 <header class="bg-white border-b border-slate-200">
   <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3 min-h-[3.5rem]">
     
@@ -50,7 +67,7 @@
     
     
       <p class="px-2 pt-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">🧩 Tổng hợp</p>
-      <a href="sau-dong-tu-to-v-ing.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Sau động từ: to V, V hay V-ing</a><a href="sau-dong-tu-nguoi.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Sau động từ + người: to V, V hay V-ing</a><a href="chu-ngu-va-tinh-tu-to-v-ing.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Đầu câu &amp; sau tính từ: V-ing hay to V</a>
+      <a href="sau-dong-tu-to-v-ing.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Sau động từ: to V, V hay V-ing</a><a href="sau-dong-tu-nguoi.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Sau động từ + người: to V, V hay V-ing</a><a href="chu-ngu-va-tinh-tu-to-v-ing.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Đầu câu &amp; sau tính từ: V-ing hay to V</a><a href="nguyen-mau-to-v-va-v.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Nguyên mẫu: to V và V không to</a><a href="cac-cho-dung-v-ing.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">V-ing: những chỗ dùng</a>
       <p class="px-2 pt-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">📄 Mục</p>
       <a href="to-v-sau-dong-tu.html" class="flex justify-between px-2 py-1.5 rounded-md hover:bg-indigo-50 text-slate-700">Verb + to V
         <small x-show="online" x-cloak class="text-slate-400" x-text="dem('to-v-sau-dong-tu')"></small></a><a href="v-ing-sau-dong-tu.html" class="flex justify-between px-2 py-1.5 rounded-md hover:bg-indigo-50 text-slate-700">Verb + V-ing
@@ -78,7 +95,7 @@
     
     
       <p class="px-2 pt-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">🧩 Tổng hợp</p>
-      <a href="sau-dong-tu-to-v-ing.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Sau động từ: to V, V hay V-ing</a><a href="sau-dong-tu-nguoi.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Sau động từ + người: to V, V hay V-ing</a><a href="chu-ngu-va-tinh-tu-to-v-ing.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Đầu câu &amp; sau tính từ: V-ing hay to V</a>
+      <a href="sau-dong-tu-to-v-ing.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Sau động từ: to V, V hay V-ing</a><a href="sau-dong-tu-nguoi.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Sau động từ + người: to V, V hay V-ing</a><a href="chu-ngu-va-tinh-tu-to-v-ing.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Đầu câu &amp; sau tính từ: V-ing hay to V</a><a href="nguyen-mau-to-v-va-v.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">Nguyên mẫu: to V và V không to</a><a href="cac-cho-dung-v-ing.html" class="block px-2 py-1.5 rounded-md text-slate-700 hover:bg-indigo-50">V-ing: những chỗ dùng</a>
       <p class="px-2 pt-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">📄 Mục</p>
       <a href="to-v-sau-dong-tu.html" class="flex justify-between px-2 py-1.5 rounded-md hover:bg-indigo-50 text-slate-700">Verb + to V
         <small x-show="online" x-cloak class="text-slate-400" x-text="dem('to-v-sau-dong-tu')"></small></a><a href="v-ing-sau-dong-tu.html" class="flex justify-between px-2 py-1.5 rounded-md hover:bg-indigo-50 text-slate-700">Verb + V-ing
@@ -112,15 +129,23 @@
   
   <div class="bg-white border border-slate-200 rounded-xl p-3 overflow-x-auto"><table class="w-full text-sm text-center border-collapse">
     
-    <tr><th class="border border-slate-200 bg-slate-100"></th>
-      <th class="border border-slate-200 bg-slate-100 px-2 py-1.5">to + V
+    
+    
+    <tr><th rowspan="2" class="border border-slate-200 bg-slate-100"></th>
+      
+      
+      <th colspan="2" scope="colgroup" class="border border-slate-200 bg-slate-100 px-2 py-1.5"><a href="nguyen-mau-to-v-va-v.html" class="st-cham text-indigo-600">🧩 Nguyên mẫu</a></th>
+      
+      
+      <th rowspan="2" class="border border-slate-200 bg-slate-100 px-2 py-1.5"><a href="cac-cho-dung-v-ing.html" class="st-cham text-indigo-600">🧩 V-ing</a>
+        <br><span class="text-[11px] font-normal text-slate-500">going</span></th>
+      </tr>
+    <tr><th class="border border-slate-200 bg-slate-100 px-2 py-1.5">to + V
         <br><span class="text-[11px] font-normal text-slate-500">to go</span></th><th class="border border-slate-200 bg-slate-100 px-2 py-1.5">V
-        <br><span class="text-[11px] font-normal text-slate-500">không to: go</span></th><th class="border border-slate-200 bg-slate-100 px-2 py-1.5">V-ing
-        <br><span class="text-[11px] font-normal text-slate-500">going</span></th></tr>
+        <br><span class="text-[11px] font-normal text-slate-500">không to: go</span></th></tr>
     
     <tr>
-      <th class="border border-slate-200 bg-slate-100 px-2"><a href="sau-dong-tu-to-v-ing.html" class="st-cham text-indigo-600">🧩 Sau động từ</a></th>
-      <td class="border border-slate-200 p-1.5 min-w-[7rem]">
+      <th class="border border-slate-200 bg-slate-100 px-2"><a href="sau-dong-tu-to-v-ing.html" class="st-cham text-indigo-600">🧩 Sau động từ</a></th><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="to-v-sau-dong-tu.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">Verb + to V
           <span class="block text-[11px] font-normal text-slate-500">want to go</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="bare-infinitive.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">Bare infinitive
@@ -128,36 +153,31 @@
         <a href="v-ing-sau-dong-tu.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">Verb + V-ing
           <span class="block text-[11px] font-normal text-slate-500">enjoy going</span></a></td>
     </tr><tr>
-      <th class="border border-slate-200 bg-slate-100 px-2"><a href="sau-dong-tu-to-v-ing.html" class="st-cham text-indigo-600">🧩 Sau like, start…</a></th>
-      <td class="border border-slate-200 p-1.5 min-w-[7rem]">
+      <th class="border border-slate-200 bg-slate-100 px-2"><a href="sau-dong-tu-to-v-ing.html" class="st-cham text-indigo-600">🧩 Sau like, start…</a></th><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="to-v-ing-cung-nghia.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">like, start… + to V or V-ing
           <span class="block text-[11px] font-normal text-slate-500">like to swim</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="to-v-ing-cung-nghia.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">like, start… + to V or V-ing
           <span class="block text-[11px] font-normal text-slate-500">like swimming (cùng nghĩa)</span></a></td>
     </tr><tr>
-      <th class="border border-slate-200 bg-slate-100 px-2"><a href="sau-dong-tu-to-v-ing.html" class="st-cham text-indigo-600">🧩 Sau remember, stop…</a></th>
-      <td class="border border-slate-200 p-1.5 min-w-[7rem]">
+      <th class="border border-slate-200 bg-slate-100 px-2"><a href="sau-dong-tu-to-v-ing.html" class="st-cham text-indigo-600">🧩 Sau remember, stop…</a></th><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="to-v-ing-doi-nghia.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">remember, stop, try… + to V or V-ing
           <span class="block text-[11px] font-normal text-slate-500">remember to call (sẽ làm)</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="to-v-ing-doi-nghia.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">remember, stop, try… + to V or V-ing
           <span class="block text-[11px] font-normal text-slate-500">remember calling (đã làm)</span></a></td>
     </tr><tr>
-      <th class="border border-slate-200 bg-slate-100 px-2"><a href="sau-dong-tu-nguoi.html" class="st-cham text-indigo-600">🧩 Sau động từ + người</a></th>
-      <td class="border border-slate-200 p-1.5 min-w-[7rem]">
+      <th class="border border-slate-200 bg-slate-100 px-2"><a href="sau-dong-tu-nguoi.html" class="st-cham text-indigo-600">🧩 Sau động từ + người</a></th><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="dong-tu-nguoi-to-v.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">Verb + object + to V
           <span class="block text-[11px] font-normal text-slate-500">ask him to go</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="bare-infinitive.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">Bare infinitive
           <span class="block text-[11px] font-normal text-slate-500">make / let him go</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td>
     </tr><tr>
-      <th class="border border-slate-200 bg-slate-100 px-2"><a href="sau-dong-tu-nguoi.html" class="st-cham text-indigo-600">🧩 Sau see, hear + người</a></th>
-      <td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
+      <th class="border border-slate-200 bg-slate-100 px-2"><a href="sau-dong-tu-nguoi.html" class="st-cham text-indigo-600">🧩 Sau see, hear + người</a></th><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="see-hear-v-ing.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">see, hear + object + V / V-ing
           <span class="block text-[11px] font-normal text-slate-500">saw him fall (trọn việc)</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="see-hear-v-ing.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">see, hear + object + V / V-ing
           <span class="block text-[11px] font-normal text-slate-500">saw him falling (đang)</span></a></td>
     </tr><tr>
-      <th class="border border-slate-200 bg-slate-100 px-2"><a href="chu-ngu-va-tinh-tu-to-v-ing.html" class="st-cham text-indigo-600">🧩 Đầu câu, sau tính từ</a></th>
-      <td class="border border-slate-200 p-1.5 min-w-[7rem]">
+      <th class="border border-slate-200 bg-slate-100 px-2"><a href="chu-ngu-va-tinh-tu-to-v-ing.html" class="st-cham text-indigo-600">🧩 Đầu câu, sau tính từ</a></th><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="tinh-tu-to-v.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">Adjective + to V
           <span class="block text-[11px] font-normal text-slate-500">happy to help, It&#39;s fun to swim</span></a></td><td class="border border-slate-200 p-1.5 min-w-[7rem]"></td><td class="border border-slate-200 p-1.5 min-w-[7rem]">
         <a href="v-ing-lam-chu-ngu.html" class="block rounded-lg px-2 py-2 font-semibold bg-emerald-50 text-emerald-700">V-ing as subject
@@ -208,7 +228,11 @@
         <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-rose-100 text-rose-700">phân biệt</span>
         <h3 class="font-semibold mt-1.5">Sau động từ + người: to V, V hay V-ing</h3><p class="text-sm text-slate-600 mt-1">Bảo, cho, bắt, thấy AI ĐÓ làm gì: tell him to go, let him go hay see him going? Dạng nào là do động từ đứng trước quyết định.</p></a><a href="chu-ngu-va-tinh-tu-to-v-ing.html" class="block bg-white rounded-xl border border-slate-200 p-4 hover:border-indigo-400">
         <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-emerald-100 text-emerald-700">cách diễn đạt</span>
-        <h3 class="font-semibold mt-1.5">Đầu câu &amp; sau tính từ: V-ing hay to V</h3><p class="text-sm text-slate-600 mt-1">Nói &#34;làm việc gì thì vui, khó…&#34;: Swimming is fun hay It&#39;s fun to swim? Và sau tính từ như happy, ready thì dùng dạng nào?</p></a>
+        <h3 class="font-semibold mt-1.5">Đầu câu &amp; sau tính từ: V-ing hay to V</h3><p class="text-sm text-slate-600 mt-1">Nói &#34;làm việc gì thì vui, khó…&#34;: Swimming is fun hay It&#39;s fun to swim? Và sau tính từ như happy, ready thì dùng dạng nào?</p></a><a href="nguyen-mau-to-v-va-v.html" class="block bg-white rounded-xl border border-slate-200 p-4 hover:border-indigo-400">
+        <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-rose-100 text-rose-700">phân biệt</span>
+        <h3 class="font-semibold mt-1.5">Nguyên mẫu: to V và V không to</h3><p class="text-sm text-slate-600 mt-1">Động từ nguyên mẫu gặp ở những chỗ nào — chỗ nào có to (want to go, happy to help), chỗ nào bỏ to (can go, let me go)?</p></a><a href="cac-cho-dung-v-ing.html" class="block bg-white rounded-xl border border-slate-200 p-4 hover:border-indigo-400">
+        <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-sky-100 text-sky-700">tổng quan</span>
+        <h3 class="font-semibold mt-1.5">V-ing: những chỗ dùng</h3><p class="text-sm text-slate-600 mt-1">Động từ thêm -ing ở những chỗ nào: sau enjoy, sau giới từ, đầu câu, sau see + người…? Và V-ing nào dễ nhầm với việc đang làm?</p></a>
     </div>
     
 
@@ -295,6 +319,8 @@
       timMo: false,
       timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
       timDong() { this.q = ''; this.timMo = false; },
+      timXoa() { this.q = ''; this.$refs.timO && this.$refs.timO.focus(); },
+      timCuoi(el) { setTimeout(() => { const n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) { /* bỏ qua */ } }, 0); },
       get canMark() { return this.online && !!this.secret; },
       boDau,
       async init() {
@@ -344,7 +370,7 @@
       get ketQua() {
         const q = boDau(this.q.trim());
         if (!q || !this.du) return [];
-        return this.du.tim.filter(r => boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')).includes(q)).slice(0, 30);
+        return this.du.tim.filter(r => khopTu(boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')), q)).slice(0, 30);
       },
       // setTimeout: cú bấm mở thẻ còn đang nổi bọt lên document — gán ngay thì @click.outside đóng nó luôn.
       async moXem(el) {

@@ -9,11 +9,28 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+
+<style>input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }</style>
+<script>
+  // Nhớ regex của từ khoá cuối: trang lọc gọi hàng trăm lần cho cùng một từ khoá.
+  var _khop = { q: null, rx: null };
+  function khopRx(q, co) {
+    var e = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Từ khoá mở đầu bằng ký hiệu («+b», «(a)») thì chính nó đã là ranh giới.
+    var dau = /^[\p{L}\p{N}]/u.test(q) ? '(^|[^\\p{L}\\p{N}\\p{M}])' : '()';
+    return new RegExp(dau + '(' + e + ')', co || 'u');
+  }
+  function khopTu(t, q) {
+    if (!q) return true;
+    if (_khop.q !== q) _khop = { q: q, rx: khopRx(q) };
+    return _khop.rx.test(t || '');
+  }
+</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <title>Past Simple — Sổ tay tiếng Anh · PL</title>
-  <link rel="stylesheet" href="../../assets/tw.a04b2b97.css">
+  <link rel="stylesheet" href="../../assets/tw.fd2db1dd.css">
   <script defer src="../../assets/alpine.63d2636a.js"></script>
   <style>
     [x-cloak]{display:none!important}
@@ -292,7 +309,7 @@
         <span data-st-cau class="block text-sm text-slate-500 mt-0.5">“Past Simple”</span><span data-st-cau class="block text-sm text-slate-500 mt-0.5">“Chuông reo là việc ngắn xen vào → Past Simple.”</span><span data-st-cau class="block text-sm text-slate-500 mt-0.5">“Thói quen ngày xưa → Past Simple hoặc used to &amp; would, không dùng Past Continuous.”</span><span data-st-cau class="block text-sm text-slate-500 mt-0.5">“Chỉ một việc, có mốc rõ → Past Simple.”</span><span data-st-cau class="block text-sm text-slate-500 mt-0.5">“Xem TV là việc SAU → không dùng had. after đã nói rõ thứ tự nên cả hai việc dùng Past Simple là đủ.”</span></a><a href="dieu-kien-bay-gio-tuong-lai.html" class="block bg-white border border-slate-200 rounded-xl px-4 py-2.5 hover:border-indigo-400">
         <b>Điều kiện về bây giờ &amp; tương lai (loại 1, 2)</b>
         <span data-st-cau class="block text-sm text-slate-500 mt-0.5">“if + V2 / were — dạng Past Simple”</span></a><a href="dieu-kien-khong-co-that.html" class="block bg-white border border-slate-200 rounded-xl px-4 py-2.5 hover:border-indigo-400">
-        <b>Điều kiện không có thật (loại 2, 3) &amp; câu ước</b>
+        <b>Điều kiện không có thật (loại 2, 3), câu ước &amp; lùi thì</b>
         <span data-st-cau class="block text-sm text-slate-500 mt-0.5">“if + V2 / were — dạng Past Simple”</span></a><a href="past-simple-hay-present-perfect.html" class="block bg-white border border-slate-200 rounded-xl px-4 py-2.5 hover:border-indigo-400">
         <b>Past Simple hay Present Perfect?</b>
         <span data-st-cau class="block text-sm text-slate-500 mt-0.5">“Hỏi When…? là hỏi một lúc cụ thể → Past Simple.”</span><span data-st-cau class="block text-sm text-slate-500 mt-0.5">“ago chỉ một mốc rõ trong quá khứ → Past Simple.”</span></a>
@@ -369,6 +386,8 @@
       timMo: false,
       timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
       timDong() { this.q = ''; this.timMo = false; },
+      timXoa() { this.q = ''; this.$refs.timO && this.$refs.timO.focus(); },
+      timCuoi(el) { setTimeout(() => { const n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) { /* bỏ qua */ } }, 0); },
       get canMark() { return this.online && !!this.secret; },
       boDau,
       async init() {
@@ -418,7 +437,7 @@
       get ketQua() {
         const q = boDau(this.q.trim());
         if (!q || !this.du) return [];
-        return this.du.tim.filter(r => boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')).includes(q)).slice(0, 30);
+        return this.du.tim.filter(r => khopTu(boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')), q)).slice(0, 30);
       },
       // setTimeout: cú bấm mở thẻ còn đang nổi bọt lên document — gán ngay thì @click.outside đóng nó luôn.
       async moXem(el) {

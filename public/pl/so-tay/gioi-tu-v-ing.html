@@ -9,11 +9,28 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+
+<style>input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }</style>
+<script>
+  // Nhớ regex của từ khoá cuối: trang lọc gọi hàng trăm lần cho cùng một từ khoá.
+  var _khop = { q: null, rx: null };
+  function khopRx(q, co) {
+    var e = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Từ khoá mở đầu bằng ký hiệu («+b», «(a)») thì chính nó đã là ranh giới.
+    var dau = /^[\p{L}\p{N}]/u.test(q) ? '(^|[^\\p{L}\\p{N}\\p{M}])' : '()';
+    return new RegExp(dau + '(' + e + ')', co || 'u');
+  }
+  function khopTu(t, q) {
+    if (!q) return true;
+    if (_khop.q !== q) _khop = { q: q, rx: khopRx(q) };
+    return _khop.rx.test(t || '');
+  }
+</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <title>Preposition + V-ing — Sổ tay tiếng Anh · PL</title>
-  <link rel="stylesheet" href="../../assets/tw.a04b2b97.css">
+  <link rel="stylesheet" href="../../assets/tw.fd2db1dd.css">
   <script defer src="../../assets/alpine.63d2636a.js"></script>
   <style>
     [x-cloak]{display:none!important}
@@ -209,7 +226,9 @@
         <b>Verb + to V</b> <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-slate-100 text-slate-700">To-infinitive &amp; -ing</span>
         <span data-st-cau class="block text-sm text-slate-500 mt-0.5">“hope + to V. (I look forward to seeing you thì khác: to ở đó là giới từ → Preposition + V-ing.)”</span></a><a href="v-ing-sau-dong-tu.html" class="block bg-white border border-slate-200 rounded-xl px-4 py-2.5 hover:border-indigo-400">
         <b>Verb + V-ing</b> <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-slate-100 text-slate-700">To-infinitive &amp; -ing</span>
-        <span data-st-cau class="block text-sm text-slate-500 mt-0.5">“How about…? / What about…? và there&#39;s no point in… có giới từ → sau giới từ là V-ing (Preposition + V-ing). be used to, look forward to cũng vậy → Preposition + V-ing.”</span></a>
+        <span data-st-cau class="block text-sm text-slate-500 mt-0.5">“How about…? / What about…? và there&#39;s no point in… có giới từ → sau giới từ là V-ing (Preposition + V-ing). be used to, look forward to cũng vậy → Preposition + V-ing.”</span></a><a href="cac-cho-dung-v-ing.html" class="block bg-white border border-slate-200 rounded-xl px-4 py-2.5 hover:border-indigo-400">
+        <b>V-ing: những chỗ dùng</b>
+        <span data-st-cau class="block text-sm text-slate-500 mt-0.5">“Preposition + V-ing”</span><span data-st-cau class="block text-sm text-slate-500 mt-0.5">“Preposition + V-ing”</span><span data-st-cau class="block text-sm text-slate-500 mt-0.5">“to ở đây là GIỚI TỪ → V-ing → Preposition + V-ing.”</span><span data-st-cau class="block text-sm text-slate-500 mt-0.5">“Sau giới từ là V-ing → Preposition + V-ing.”</span><span data-st-cau class="block text-sm text-slate-500 mt-0.5">“after, before, without + V-ing → Preposition + V-ing.”</span><span data-st-cau class="block text-sm text-slate-500 mt-0.5">“to trong look forward to là giới từ → V-ing → Preposition + V-ing.”</span></a>
     </div>
     </section>
     
@@ -283,6 +302,8 @@
       timMo: false,
       timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
       timDong() { this.q = ''; this.timMo = false; },
+      timXoa() { this.q = ''; this.$refs.timO && this.$refs.timO.focus(); },
+      timCuoi(el) { setTimeout(() => { const n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) { /* bỏ qua */ } }, 0); },
       get canMark() { return this.online && !!this.secret; },
       boDau,
       async init() {
@@ -332,7 +353,7 @@
       get ketQua() {
         const q = boDau(this.q.trim());
         if (!q || !this.du) return [];
-        return this.du.tim.filter(r => boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')).includes(q)).slice(0, 30);
+        return this.du.tim.filter(r => khopTu(boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')), q)).slice(0, 30);
       },
       // setTimeout: cú bấm mở thẻ còn đang nổi bọt lên document — gán ngay thì @click.outside đóng nó luôn.
       async moXem(el) {

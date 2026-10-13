@@ -6,13 +6,30 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+
+<style>input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }</style>
+<script>
+  // Nhớ regex của từ khoá cuối: trang lọc gọi hàng trăm lần cho cùng một từ khoá.
+  var _khop = { q: null, rx: null };
+  function khopRx(q, co) {
+    var e = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Từ khoá mở đầu bằng ký hiệu («+b», «(a)») thì chính nó đã là ranh giới.
+    var dau = /^[\p{L}\p{N}]/u.test(q) ? '(^|[^\\p{L}\\p{N}\\p{M}])' : '()';
+    return new RegExp(dau + '(' + e + ')', co || 'u');
+  }
+  function khopTu(t, q) {
+    if (!q) return true;
+    if (_khop.q !== q) _khop = { q: q, rx: khopRx(q) };
+    return _khop.rx.test(t || '');
+  }
+</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <title>CIE ICT 5 — PL</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.a04b2b97.css">
+  <link rel="stylesheet" href="../assets/tw.fd2db1dd.css">
   <script defer src="../assets/collapse.d0a27f2d.js"></script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <style>
@@ -69,7 +86,7 @@
       return !f.types.length || f.types.includes(el.dataset.type);
     }
     function itemMatches(el, f) {
-      return typeOk(el, f) && (!f.q || vnorm(el.dataset.title).includes(vnorm(f.q)));
+      return typeOk(el, f) && (!f.q || khopTu(vnorm(el.dataset.title), vnorm(f.q).trim()));
     }
     // Đề mục (SubHeader) chỉ hiện khi còn ít nhất 1 mục thuộc nó đang hiển thị
     function headingMatches(el, f) {
@@ -84,8 +101,9 @@
       const pass = items.filter(c => typeOk(c, f));
       if (!pass.length) return false;
       if (!f.q) return true;
-      if (vnorm(el.dataset.title).includes(vnorm(f.q))) return true;
-      return pass.some(c => vnorm(c.dataset.title).includes(vnorm(f.q)));
+      const q = vnorm(f.q).trim();
+      if (khopTu(vnorm(el.dataset.title), q)) return true;
+      return pass.some(c => khopTu(vnorm(c.dataset.title), q));
     }
     // ---- Menu bên trái -------------------------------------------------------
     /** Mục menu có hiện không. Dùng CHÍNH `moduleMatches` mà thân trang dùng —
@@ -345,6 +363,8 @@
 timMo: false,
       timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
       timDong() { this.q = ''; this.timMo = false; },
+      timXoa() { this.q = ''; this.$refs.timO && this.$refs.timO.focus(); },
+      timCuoi(el) { setTimeout(() => { const n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) { /* bỏ qua */ } }, 0); },
         toggle(t) { this.types.includes(t) ? this.types.splice(this.types.indexOf(t), 1) : this.types.push(t); },
         get filtering() { return this.types.length > 0 || this.hw || this.todo || this.recent7; },
         get f() { return { q: this.q, types: this.types, hw: this.hw, todo: this.todo, recent7: this.recent7, done: this.p.done }; },
@@ -436,11 +456,18 @@ timMo: false,
          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
   </button>
+  <div :class="timMo ? 'block' : 'hidden sm:block'" class="relative flex-1 min-w-0 sm:max-w-56 lg:max-w-md">
   <input type="search" x-model="q" x-ref="timO"
-         @keydown.escape.prevent="timDong()"
+         @keydown.escape.prevent="timDong()" @focus="timCuoi($el)"
          placeholder="Tìm bài học…" aria-label="Tìm bài học…"
-         :class="timMo ? 'block' : 'hidden sm:block'"
-         class="flex-1 min-w-0 sm:max-w-56 lg:max-w-md h-9 px-2 text-xs rounded-lg border border-slate-300 bg-white">
+         class="w-full h-9 pl-2 pr-8 text-xs rounded-lg border border-slate-300 bg-white">
+  <button x-show="q" x-cloak @mousedown.prevent @click="timXoa()" type="button" data-tim-xoa
+          aria-label="Xoá chữ đã gõ" title="Xoá chữ đã gõ"
+          class="absolute right-0 top-0 w-8 h-9 grid place-items-center text-slate-400 hover:text-slate-700">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+      <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+  </div>
   <button x-show="timMo" x-cloak @click="timDong()" type="button" data-tim-dong
           aria-label="Đóng ô tìm" title="Đóng ô tìm"
           class="sm:hidden w-9 h-9 shrink-0 rounded-lg border border-slate-300 text-slate-700">✕</button>

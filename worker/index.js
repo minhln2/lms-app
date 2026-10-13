@@ -9,6 +9,7 @@
  *   /api/tapdoc/*  → tập đọc: tiến độ + quiz (D1), bản thu âm (R2) — mọi đường đòi mã
  *   /api/lookup    → tra nghĩa 1 từ / dịch 1 đoạn bằng Gemini (cần mã bí mật)
  *   /api/lookup/history → từ đã tra, gộp theo từ + số lần (cần mã bí mật)
+ *   /api/stt-token → mã tạm cho 🎤 (Gemini Transcribe Live, worker/stt.js; cần mã bí mật)
  *   /api/diem      → điểm thưởng: số dư + lịch sử (mã bí mật); /api/diem/doi: bố mẹ trừ (phiên quản trị)
  *   /api/quantri/phien → đổi PARENT_SECRET lấy phiên quản trị 24 giờ (worker/diem.js, ADR 0061)
  *   /api/quantri/*  → bố mẹ gỡ đánh dấu: cả truyện, một ngày ôn, thẻ đã thuộc (worker/quantri.js, ADR 0063; header x-quantri)
@@ -39,6 +40,7 @@ import { readSheet, writeCell } from "./sheet.js";
 import { readCards, writeSession, writeKnown, readStats } from "./study.js";
 import { handleTts } from "./tts.js";
 import { handleLookup, handleLookupHistory } from "./lookup.js";
+import { handleSttToken } from "./stt.js";
 import { handleTapdoc } from "./tapdoc.js";
 import { handleDiem, doiChieuTick, an } from "./diem.js";
 import { handleQuantri } from "./quantri.js";
@@ -217,6 +219,7 @@ export default {
 
     if (pathname === "/api/lookup/history") return handleLookupHistory(request, env, url);
     if (pathname === "/api/lookup") return handleLookup(request, env);
+    if (pathname === "/api/stt-token") return handleSttToken(request, env);
 
     if (pathname === "/api/study/stats") {
       if (!env.STUDY_DB) return json({ error: "Chưa cấu hình STUDY_DB" }, 503);

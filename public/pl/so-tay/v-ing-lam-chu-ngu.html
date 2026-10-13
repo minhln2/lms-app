@@ -9,11 +9,28 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+
+<style>input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }</style>
+<script>
+  // Nhớ regex của từ khoá cuối: trang lọc gọi hàng trăm lần cho cùng một từ khoá.
+  var _khop = { q: null, rx: null };
+  function khopRx(q, co) {
+    var e = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Từ khoá mở đầu bằng ký hiệu («+b», «(a)») thì chính nó đã là ranh giới.
+    var dau = /^[\p{L}\p{N}]/u.test(q) ? '(^|[^\\p{L}\\p{N}\\p{M}])' : '()';
+    return new RegExp(dau + '(' + e + ')', co || 'u');
+  }
+  function khopTu(t, q) {
+    if (!q) return true;
+    if (_khop.q !== q) _khop = { q: q, rx: khopRx(q) };
+    return _khop.rx.test(t || '');
+  }
+</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <title>V-ing as subject — Sổ tay tiếng Anh · PL</title>
-  <link rel="stylesheet" href="../../assets/tw.a04b2b97.css">
+  <link rel="stylesheet" href="../../assets/tw.fd2db1dd.css">
   <script defer src="../../assets/alpine.63d2636a.js"></script>
   <style>
     [x-cloak]{display:none!important}
@@ -181,7 +198,8 @@
     <h2 class="text-lg font-bold mt-7 mb-2">🧩 Có trong các trang tổng hợp</h2>
     <div class="flex flex-wrap gap-2">
       <a href="chu-ngu-va-tinh-tu-to-v-ing.html" class="inline-flex items-center gap-2 bg-white border border-indigo-100 rounded-xl px-3 py-2 font-semibold text-indigo-700">
-        <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-emerald-100 text-emerald-700">cách diễn đạt</span>Đầu câu &amp; sau tính từ: V-ing hay to V</a>
+        <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-emerald-100 text-emerald-700">cách diễn đạt</span>Đầu câu &amp; sau tính từ: V-ing hay to V</a><a href="cac-cho-dung-v-ing.html" class="inline-flex items-center gap-2 bg-white border border-indigo-100 rounded-xl px-3 py-2 font-semibold text-indigo-700">
+        <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-sky-100 text-sky-700">tổng quan</span>V-ing: những chỗ dùng</a>
     </div>
     </section>
     
@@ -192,7 +210,9 @@
       
       <a href="tinh-tu-to-v.html" class="block bg-white border border-slate-200 rounded-xl px-4 py-2.5 hover:border-indigo-400">
         <b>Adjective + to V</b> <span class="inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-slate-100 text-slate-700">To-infinitive &amp; -ing</span>
-        <span data-st-cau class="block text-sm text-slate-500 mt-0.5">“Cùng ý còn nói được bằng V-ing đứng đầu: Making pancakes is easy. → V-ing as subject.”</span></a><a href="chu-ngu-va-tinh-tu-to-v-ing.html" class="block bg-white border border-slate-200 rounded-xl px-4 py-2.5 hover:border-indigo-400">
+        <span data-st-cau class="block text-sm text-slate-500 mt-0.5">“Cùng ý còn nói được bằng V-ing đứng đầu: Making pancakes is easy. → V-ing as subject.”</span></a><a href="cac-cho-dung-v-ing.html" class="block bg-white border border-slate-200 rounded-xl px-4 py-2.5 hover:border-indigo-400">
+        <b>V-ing: những chỗ dùng</b>
+        <span data-st-cau class="block text-sm text-slate-500 mt-0.5">“V-ing as subject”</span><span data-st-cau class="block text-sm text-slate-500 mt-0.5">“V-ing as subject”</span><span data-st-cau class="block text-sm text-slate-500 mt-0.5">“Sở thích là GÌ — V-ing như một danh từ → V-ing as subject.”</span></a><a href="chu-ngu-va-tinh-tu-to-v-ing.html" class="block bg-white border border-slate-200 rounded-xl px-4 py-2.5 hover:border-indigo-400">
         <b>Đầu câu &amp; sau tính từ: V-ing hay to V</b>
         <span data-st-cau class="block text-sm text-slate-500 mt-0.5">“Việc đứng đầu câu làm chủ ngữ → V-ing → V-ing as subject.”</span></a>
     </div>
@@ -268,6 +288,8 @@
       timMo: false,
       timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
       timDong() { this.q = ''; this.timMo = false; },
+      timXoa() { this.q = ''; this.$refs.timO && this.$refs.timO.focus(); },
+      timCuoi(el) { setTimeout(() => { const n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) { /* bỏ qua */ } }, 0); },
       get canMark() { return this.online && !!this.secret; },
       boDau,
       async init() {
@@ -317,7 +339,7 @@
       get ketQua() {
         const q = boDau(this.q.trim());
         if (!q || !this.du) return [];
-        return this.du.tim.filter(r => boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')).includes(q)).slice(0, 30);
+        return this.du.tim.filter(r => khopTu(boDau([r.ten, r.ten_vi, r.cot_loi, ...(r.dau_hieu || [])].join(' ')), q)).slice(0, 30);
       },
       // setTimeout: cú bấm mở thẻ còn đang nổi bọt lên document — gán ngay thì @click.outside đóng nó luôn.
       async moXem(el) {

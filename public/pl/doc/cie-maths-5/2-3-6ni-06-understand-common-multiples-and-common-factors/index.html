@@ -9,11 +9,28 @@
 <!doctype html>
 <html lang="vi">
 <head>
+
+<style>input[type=search]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }</style>
+<script>
+  // Nhớ regex của từ khoá cuối: trang lọc gọi hàng trăm lần cho cùng một từ khoá.
+  var _khop = { q: null, rx: null };
+  function khopRx(q, co) {
+    var e = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Từ khoá mở đầu bằng ký hiệu («+b», «(a)») thì chính nó đã là ranh giới.
+    var dau = /^[\p{L}\p{N}]/u.test(q) ? '(^|[^\\p{L}\\p{N}\\p{M}])' : '()';
+    return new RegExp(dau + '(' + e + ')', co || 'u');
+  }
+  function khopTu(t, q) {
+    if (!q) return true;
+    if (_khop.q !== q) _khop = { q: q, rx: khopRx(q) };
+    return _khop.rx.test(t || '');
+  }
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>2-3. 6Ni.06 – Understand common multiples and common factors..pptx · CIE Maths 5</title>
-<link rel="stylesheet" href="../../../../assets/tw.a04b2b97.css">
+<link rel="stylesheet" href="../../../../assets/tw.fd2db1dd.css">
 <style>
   [x-cloak] { display: none !important; }
   #pdf { width:100%; height:calc(100vh - 8.5rem); border:0; }
@@ -227,11 +244,18 @@
          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
   </button>
+  <div :class="timMo ? 'block' : 'hidden sm:block'" class="relative flex-1 min-w-0 sm:max-w-56 lg:max-w-md">
   <input type="search" x-model="tim" x-ref="timO" @input.debounce.250ms="timKiem()" @keydown.enter.prevent="toiKetQua(1)"
-         @keydown.escape.prevent="timDong()"
+         @keydown.escape.prevent="timDong()" @focus="timCuoi($el)"
          placeholder="Tìm trong tài liệu…" aria-label="Tìm trong tài liệu…"
-         :class="timMo ? 'block' : 'hidden sm:block'"
-         class="flex-1 min-w-0 sm:max-w-56 lg:max-w-md h-9 px-2 text-xs rounded-lg border border-slate-300 bg-white">
+         class="w-full h-9 pl-2 pr-8 text-xs rounded-lg border border-slate-300 bg-white">
+  <button x-show="tim" x-cloak @mousedown.prevent @click="timXoa()" type="button" data-tim-xoa
+          aria-label="Xoá chữ đã gõ" title="Xoá chữ đã gõ"
+          class="absolute right-0 top-0 w-8 h-9 grid place-items-center text-slate-400 hover:text-slate-700">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+      <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+  </div>
   <span x-show="tim" x-cloak :class="timMo ? '' : 'max-sm:hidden'"
         class="text-xs text-slate-500 tabular-nums w-14 shrink-0 text-center" x-text="soKq ? (viTri + 1) + &#39;/&#39; + soKq : &#39;không có&#39;"></span>
   <button x-show="soKq" x-cloak @click="toiKetQua(-1)" type="button" title="Kết quả trước"
@@ -788,6 +812,17 @@
   </template>
   
 
+  <!-- 💬 Hỏi bất kỳ (ADR 0066): nút NỔI góc dưới phải, không chen vào thanh công cụ —
+       thanh đã chốt MỘT hàng ở 390px (ADR 0054). Chỉ hiện khi có mã bí mật (không có thì
+       không gọi được API) và khi không có gì khác đang chiếm chỗ: popup, nút 🔎 của vùng
+       chọn, chế độ bút dạ quang. -->
+  <template x-if="traKhoa() && !tra.show && !tra.btn && !chonHoat && !(typeof coChon !== 'undefined' && coChon)">
+    <button type="button" data-hoi-nut @mousedown.prevent @click="traHoiTuDo()"
+            aria-label="Hỏi bất kỳ từ hay câu nào" title="Hỏi bất kỳ từ hay câu nào"
+            style="bottom: calc(1rem + env(safe-area-inset-bottom))"
+            class="no-print fixed right-4 z-30 w-12 h-12 rounded-full bg-indigo-600 text-white text-xl shadow-lg hover:bg-indigo-700 grid place-items-center">💬</button>
+  </template>
+
   <!-- Tấm trượt từ dưới lên trên điện thoại, hộp giữa màn hình trên máy tính.
        Không neo popup vào vùng chọn: chữ nằm sát đáy màn hình thì popup neo theo
        sẽ tràn ra ngoài, mà đó lại là chỗ trẻ hay bôi đen nhất. -->
@@ -812,7 +847,7 @@
             <p @click="moGoc = !moGoc"
                class="font-semibold text-slate-900 break-words whitespace-pre-line cursor-pointer"
                :class="moGoc ? '' : 'line-clamp-2'"
-               x-text="tra.goc || tra.text"></p>
+               x-text="tra.tuDo && !tra.text ? '💬 Hỏi bất kỳ từ hay câu nào' : (tra.goc || tra.text)"></p>
             <p x-show="moGoc && sentThem" x-cloak
                class="mt-1 text-xs text-slate-400" x-text="tra.sent"></p>
 
@@ -855,12 +890,45 @@
           <!-- Trần 200 ký tự là của /api/tts. Ẩn nút khi vượt, thay vì để bấm rồi
                lặng lẽ rơi về giọng hệ điều hành — im lặng kiểu đó nhìn y hệt như
                đang chạy bình thường, chỉ khác giọng. -->
-          <button x-show="canSpeak && tra.text.length <= 200" x-cloak
+          <button x-show="canSpeak && tra.text && tra.text.length <= 200" x-cloak
                   @click="speak(tra.text, true)" type="button" title="Đọc to"
                   class="shrink-0 w-8 h-8 rounded-full text-indigo-500 hover:bg-indigo-50">🔊</button>
           <button @click="traDong()" type="button" title="Đóng"
                   class="shrink-0 w-8 h-8 rounded-full text-slate-400 hover:bg-slate-100 text-lg leading-none">✕</button>
         </div>
+
+        <!-- Ô hỏi bất kỳ: gõ hoặc 🎤 nói. Chữ nói KHÔNG tự gửi — sửa được chỗ nghe nhầm. -->
+        <!-- `x-if` chứ không `x-show`: ô này chỉ có trong DOM khi đang hỏi tự do — để
+             `[data-tra-popup] input[type=text]` vẫn trỏ DUY NHẤT ô "Hỏi thêm" (test_tra_popup). -->
+        <template x-if="tra.tuDo && !tra.text"><div class="px-4 pt-4 pb-2">
+          <form @submit.prevent="traGuiTuDo()" class="flex gap-2">
+            <input x-model="tra.cau" data-mic-o="cau" type="text" maxlength="300" enterkeyhint="send"
+                   placeholder="Gõ hoặc nói một từ, một câu hỏi…"
+                   class="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg border border-slate-300">
+            <button type="button" data-mic="cau" @mousedown.prevent @click="micBat('cau')"
+        x-show="micCo()" x-cloak
+        :aria-pressed="String(micTT !== 'tat' && micDich === 'cau')"
+        :aria-label="micTT !== 'tat' && micDich === 'cau' ? 'Dừng nghe' : 'Nói thay vì gõ'"
+        :title="micTT !== 'tat' && micDich === 'cau' ? 'Dừng nghe' : 'Nói thay vì gõ'"
+        :class="micTT !== 'tat' && micDich === 'cau'
+                ? 'bg-rose-600 border-rose-600 text-white' + (micTT === 'noi' ? ' ring-4 ring-rose-200' : '')
+                : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'"
+        class="shrink-0 w-10 h-10 rounded-lg border grid place-items-center transition-shadow">
+  <svg x-show="!(micTT !== 'tat' && micDich === 'cau')" aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"
+       fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>
+  <svg x-show="micTT !== 'tat' && micDich === 'cau'" x-cloak aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+    <rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+</button>
+            <button type="submit" :disabled="!tra.cau.trim()"
+                    class="shrink-0 px-3 py-2 text-sm rounded-lg bg-indigo-600 text-white
+                           disabled:bg-slate-200 disabled:text-slate-400">Hỏi</button>
+          </form>
+          <p x-show="micNhan('cau') || (micLoi && micTT === 'tat' && micDich === 'cau')" x-cloak data-mic-tt="cau"
+   class="mt-1 text-xs" :class="micLoi && micTT === 'tat' ? 'text-amber-700' : 'text-rose-600'"
+   x-text="micNhan('cau') || micLoi"></p>
+          <p class="mt-2 text-xs text-slate-400">Ví dụ: <i>ought</i> · <i>present perfect dùng khi nào?</i> · <i>vì sao lá cây màu xanh?</i></p>
+        </div></template>
 
         <!-- Khung xương chờ ~1,6s. Đo được: p50 1,56s cho từ, 1,85s cho đoạn. -->
         <div x-show="tra.loading" class="px-4 py-5 space-y-2.5">
@@ -939,7 +1007,7 @@
            class="px-4 pb-3 text-xs text-slate-400"
            x-text="'Nghĩa lấy từ học liệu của bài' + (tra.ly_do ? ' — ' + tra.ly_do : '.')"></p>
 
-        <p x-show="!tra.loading && traRong()" x-cloak class="px-4 py-5 text-sm text-slate-500"
+        <p x-show="!tra.loading && tra.text && traRong()" x-cloak class="px-4 py-5 text-sm text-slate-500"
            x-text="tra.err || 'Không tìm thấy nghĩa của mục này.'"></p>
 
         <!-- ── Hỏi tiếp về chính đoạn này ────────────────────────────────
@@ -947,7 +1015,7 @@
              này"): đổi chế độ chỉ là hỏi lại cùng một câu theo kiểu khác, còn
              hỏi tiếp thì trả lời được thứ mà không schema cố định nào phủ hết.
              Mỗi lượt hỏi tính vào ĐÚNG trần 300/ngày như một lượt tra. -->
-        <div x-show="!tra.loading && traKhoa()" x-cloak class="px-4 pb-4 pt-1">
+        <div x-show="!tra.loading && traKhoa() && tra.text" x-cloak class="px-4 pb-4 pt-1">
           <template x-for="(m, i) in tra.chat" :key="i">
             <p class="mb-2 text-sm leading-relaxed"
                :class="m.ai === 'em' ? 'text-right' : ''">
@@ -959,13 +1027,33 @@
           </template>
           <p x-show="tra.dangHoi" x-cloak class="mb-2 text-sm text-slate-400">Đang nghĩ…</p>
           <form @submit.prevent="traHoi()" class="flex gap-2">
-            <input x-model="tra.hoi" type="text" maxlength="300"
+            <input x-model="tra.hoi" data-mic-o="hoi" type="text" maxlength="300" enterkeyhint="send"
                    placeholder="Hỏi thêm về phần này…"
                    class="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg border border-slate-300">
+            <button type="button" data-mic="hoi" @mousedown.prevent @click="micBat('hoi')"
+        x-show="micCo()" x-cloak
+        :aria-pressed="String(micTT !== 'tat' && micDich === 'hoi')"
+        :aria-label="micTT !== 'tat' && micDich === 'hoi' ? 'Dừng nghe' : 'Nói thay vì gõ'"
+        :title="micTT !== 'tat' && micDich === 'hoi' ? 'Dừng nghe' : 'Nói thay vì gõ'"
+        :class="micTT !== 'tat' && micDich === 'hoi'
+                ? 'bg-rose-600 border-rose-600 text-white' + (micTT === 'noi' ? ' ring-4 ring-rose-200' : '')
+                : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'"
+        class="shrink-0 w-10 h-10 rounded-lg border grid place-items-center transition-shadow">
+  <svg x-show="!(micTT !== 'tat' && micDich === 'hoi')" aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"
+       fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>
+  <svg x-show="micTT !== 'tat' && micDich === 'hoi'" x-cloak aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+    <rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+</button>
             <button type="submit" :disabled="tra.dangHoi || !tra.hoi.trim()"
                     class="shrink-0 px-3 py-2 text-sm rounded-lg bg-indigo-600 text-white
                            disabled:bg-slate-200 disabled:text-slate-400">Hỏi</button>
           </form>
+          <p x-show="micNhan('hoi') || (micLoi && micTT === 'tat' && micDich === 'hoi')" x-cloak data-mic-tt="hoi"
+   class="mt-1 text-xs" :class="micLoi && micTT === 'tat' ? 'text-amber-700' : 'text-rose-600'"
+   x-text="micNhan('hoi') || micLoi"></p>
+          <button x-show="tra.tuDo" x-cloak type="button" data-cau-khac @click="traCauKhac()"
+                  class="mt-2 text-xs text-indigo-600 hover:underline py-1.5 -my-1.5">↺ Hỏi câu khác</button>
         </div>
       </div>
     </div>
@@ -1132,7 +1220,7 @@
         if (q.length < 2) { this.soKq = 0; _neo = null; return; }  // 1 ký tự thì vô nghĩa
         if (_neo === null) _neo = this.trangDang || 1;
         for (const [e, t] of _sp) {
-          if (t.includes(q)) {
+          if (khopTu(t, q)) {
             _kq.push(e);
             if (_kq.length >= 300) break;              // trần
           }
@@ -2144,6 +2232,8 @@
 timMo: false,
       timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
       timDong() { this.tim = ''; this.timKiem(); this.timMo = false; },
+      timXoa() { this.tim = ''; this.timKiem(); this.$refs.timO && this.$refs.timO.focus(); },
+      timCuoi(el) { setTimeout(() => { const n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) { /* bỏ qua */ } }, 0); },
 
         // ── Bôi đen qua khoảng trắng ──────────────────────────────────────────
         _trangs() { return [...document.querySelectorAll('main[data-tra] .khung')]; },
@@ -2736,7 +2826,240 @@ timMo: false,
         nnTra: '',             // ngôn ngữ giải thích: 'vi' | 'en'
         tra: { btn: null, show: false, mode: 'word', text: '', goc: '', sent: '',
                chat: [], hoi: '', dangHoi: false,
+               // Hỏi bất kỳ (nút 💬 nổi, ADR 0066): popup mở TRỐNG, `cau` là ô gõ/nói.
+               tuDo: false, cau: '',
                loading: false, err: '', ly_do: '', data: null },
+
+        // ── 🎤 (`_mic.html`) ──────────────────────────────────────────────
+        micTT: 'tat',          // tat | mo (đang kết nối) | nghe | noi | chot (đang chờ chữ chốt)
+        micDich: '',           // khoá trong `tra` đang nhận chữ: 'cau' | 'hoi'
+        micLoi: '',
+        _micR: (() => { const r = { phien: 0, t: {} }; return () => r; })(),
+
+        micCo() {
+          return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia
+                    && window.WebSocket && window.AudioWorkletNode);
+        },
+        micNhan(dich) {
+          return this.micTT === 'tat' || this.micDich !== dich ? ''
+            : ({ mo: 'Đang mở micro…', nghe: 'Đang nghe… cứ nói nhé', noi: 'Đang nghe…',
+                 chot: 'Đang chép…' })[this.micTT] || '';
+        },
+        /** Thuật ngữ của phạm vi đang mở → `customVocabulary` (Worker kẹp ≤ 100). */
+        _micTuVung() {
+          const ds = [];
+          try {
+            for (const s of this.traMucCtx() || []) {
+              for (const g of s.glossary || []) ds.push(g.term);
+              for (const w of s.words || []) for (const it of w.items || []) ds.push(it.word);
+            }
+          } catch (e) { /* trang không có học liệu */ }
+          return ds.filter((x) => typeof x === 'string' && x.trim()).slice(0, 150);
+        },
+        _micViet(t) {
+          const r = this._micR();
+          this.tra[this.micDich] = ((r.goc ? r.goc + ' ' : '') + (t || '').trim()).slice(0, 300);
+        },
+        _micDungAm() {
+          const r = this._micR();
+          try { r.stream && r.stream.getTracks().forEach((k) => k.stop()); } catch (e) {}
+          try { r.node && r.node.disconnect(); } catch (e) {}
+          try { r.ctx && r.ctx.close(); } catch (e) {}
+          r.stream = r.node = r.ctx = null;
+        },
+        _micXoaHen() {
+          const r = this._micR();
+          for (const k of Object.keys(r.t)) clearTimeout(r.t[k]);
+          r.t = {};
+        },
+        _micHen(ten, ms, f) {
+          const r = this._micR();
+          clearTimeout(r.t[ten]);
+          r.t[ten] = setTimeout(f, ms);
+        },
+        _micGui(buf) {
+          const r = this._micR();
+          if (r.ws && r.san && r.ws.readyState === 1) {
+            let s = ''; const u = new Uint8Array(buf);
+            for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+            r.ws.send(JSON.stringify({ realtimeInput: { audio: { data: btoa(s), mimeType: 'audio/pcm;rate=16000' } } }));
+          } else if (r.hang.length < 60) {
+            r.hang.push(buf);              // ≤ 6 s nói trước lúc WebSocket sẵn sàng — không mất chữ đầu
+          }
+        },
+        /** Hết câu từ phía mình: báo máy chủ chốt ngay, tắt micro, chờ chữ chốt tối đa 1,5 s. */
+        _micChot(lyDo) {
+          const r = this._micR();
+          try { r.ws && r.ws.readyState === 1 && r.ws.send(JSON.stringify({ realtimeInput: { audioStreamEnd: true } })); } catch (e) {}
+          this._micDungAm();
+          this.micTT = 'chot';
+          this._micHen('dung', 1500, () => this.micTat(lyDo));
+        },
+        async _micNhan(raw) {
+          const r = this._micR();
+          let m;
+          try { m = JSON.parse(typeof raw === 'string' ? raw : await raw.text()); } catch (e) { return; }
+          if (m.setupComplete) {
+            r.san = true;
+            for (const b of r.hang.splice(0)) this._micGui(b);
+            if (this.micTT === 'mo') this.micTT = 'nghe';
+            clearTimeout(r.t.ketNoi);
+            this._micHen('im', 6000, () => this.micTat('im'));
+            this._micHen('tran', 20000, () => { if (this.micTT !== 'chot') this._micChot('tran'); });
+            return;
+          }
+          const va = m.voiceActivity && m.voiceActivity.type;
+          if (va === 'ACTIVITY_START') {
+            clearTimeout(r.t.im); clearTimeout(r.t.dung);
+            if (this.micTT !== 'chot') this.micTT = 'noi';
+          }
+          const sc = m.serverContent || {};
+          if (sc.interimInputTranscription && sc.interimInputTranscription.text) {
+            this._micViet((r.chot ? r.chot + ' ' : '') + sc.interimInputTranscription.text);
+          }
+          if (sc.inputTranscription && sc.inputTranscription.text) {
+            r.chot = ((r.chot ? r.chot + ' ' : '') + sc.inputTranscription.text.trim()).trim();
+            this._micViet(r.chot);
+            if (this.micTT === 'chot') { this.micTat('xong'); return; }
+            this.micTT = 'nghe';
+            this._micHen('dung', 1500, () => this.micTat('xong'));
+          } else if (va === 'ACTIVITY_END' && !r.t.dung) {
+            this._micHen('dung', 2000, () => this.micTat('xong'));
+          }
+        },
+
+        async micBat(dich) {
+          if (this.micTT !== 'tat') return this.micTat('tay');
+          this.micLoi = ''; this.micDich = dich;
+          if (!this.micCo()) { this.micLoi = 'Trình duyệt này chưa ghi âm được.'; return; }
+          const khoa = this.traKhoa();
+          if (!khoa) { this.micLoi = 'Cần mã bí mật để dùng micro.'; return; }
+          const r = this._micR();
+          const phien = ++r.phien;
+          this.micTT = 'mo';
+          r.goc = (this.tra[dich] || '').trim(); r.chot = ''; r.hang = []; r.san = false;
+          // AudioContext tạo + resume NGAY trong cú bấm: tạo sau mấy lượt `await` là đã ra
+          // ngoài cử chỉ người dùng → Chrome/Safari để nó `suspended`, worklet không chạy,
+          // không khúc âm thanh nào đi (bài test bắt được: 0 khúc).
+          try { r.ctx = new AudioContext(); r.ctx.resume && r.ctx.resume(); } catch (e) { r.ctx = null; }
+          if (!r.gan) {
+            r.gan = true;
+            document.addEventListener('visibilitychange', () => { if (document.hidden) this.micTat('an'); });
+          }
+          const [am, ma] = await Promise.allSettled([
+            navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true,
+                                                           noiseSuppression: true, autoGainControl: true } }),
+            fetch('/api/stt-token', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', 'x-progress-key': khoa },
+              body: JSON.stringify({ tu_vung: this._micTuVung() }),
+            }).then(async (x) => {
+              const b = await x.json().catch(() => ({}));
+              if (!x.ok || !b.token) throw new Error(b.error || ('HTTP ' + x.status));
+              return b;
+            }),
+          ]);
+          if (am.status === 'fulfilled') r.stream = am.value;
+          if (phien !== r.phien) { this._micDungAm(); return; }        // đã bị tắt giữa chừng
+          // Đếm giờ SAU khi xin quyền xong: lần đầu bé có thể đọc hộp thoại xin quyền rất lâu.
+          // Kết nối treo (mạng chập chờn) thì đừng để micro mở mãi.
+          this._micHen('ketNoi', 10000, () => this.micTat('loi'));
+          if (am.status !== 'fulfilled' || ma.status !== 'fulfilled') {
+            const e = am.status !== 'fulfilled' ? am.reason : ma.reason;
+            console.warn('🎤 hỏng:', String((e && (e.name + ': ' + e.message)) || e));
+            this.micLoi = am.status !== 'fulfilled'
+              ? (e && e.name === 'NotAllowedError' ? 'Chưa được phép dùng micro — bật quyền micro cho trang này.'
+                                                   : 'Không mở được micro.')
+              : (/nhiều/.test(String(e && e.message)) ? e.message : 'Chưa ghi âm được lúc này, thử lại sau nhé.');
+            return this.micTat('loi');
+          }
+          try {
+            const ctx = r.ctx || (r.ctx = new AudioContext());
+            if (ctx.state === 'suspended') await ctx.resume();
+            // Hạ mẫu về 16 kHz trong AudioWorklet: KHÔNG tạo AudioContext 16 kHz — Firefox
+            // không nối được nguồn micro (48 kHz) vào context khác tần số.
+            const ma_xu_ly = `class T extends AudioWorkletProcessor{constructor(){super();this.b=sampleRate/16000;this.p=0;this.a=0;this.c=0;this.o=new Int16Array(1600);this.n=0}
+process(i){const x=i[0]&&i[0][0];if(!x)return true;for(let k=0;k<x.length;k++){this.a+=x[k];this.c++;this.p++;if(this.p>=this.b){this.p-=this.b;
+let v=this.a/this.c;v=v<-1?-1:v>1?1:v;this.o[this.n++]=v<0?v*32768:v*32767;this.a=0;this.c=0;if(this.n===1600){this.port.postMessage(this.o.buffer,[this.o.buffer]);this.o=new Int16Array(1600);this.n=0}}}return true}}
+registerProcessor('thu-16k',T);`;
+            const url = URL.createObjectURL(new Blob([ma_xu_ly], { type: 'application/javascript' }));
+            await ctx.audioWorklet.addModule(url);
+            URL.revokeObjectURL(url);
+            if (phien !== r.phien) { this._micDungAm(); return; }
+            const src = ctx.createMediaStreamSource(r.stream);
+            const node = new AudioWorkletNode(ctx, 'thu-16k');
+            node.port.onmessage = (e) => { if (phien === r.phien) this._micGui(e.data); };
+            // Nối ra loa qua gain 0: có trình duyệt không chạy node không ai kéo.
+            const cam = ctx.createGain(); cam.gain.value = 0;
+            src.connect(node); node.connect(cam); cam.connect(ctx.destination);
+            r.node = node;
+            const ws = new WebSocket(ma.value.ws + '?access_token=' + encodeURIComponent(ma.value.token));
+            r.ws = ws;
+            ws.onopen = () => ws.send(JSON.stringify({ setup: ma.value.setup }));
+            ws.onmessage = (e) => { if (phien === r.phien) this._micNhan(e.data); };
+            ws.onclose = (e) => {
+              if (phien !== r.phien || this.micTT === 'tat') return;
+              if (this.micTT !== 'chot') console.warn('🎤 WebSocket đóng:', e.code, e.reason);
+              this.micTat(this.micTT === 'chot' ? 'xong' : 'loi');
+            };
+          } catch (e) {
+            console.warn('🎤 hỏng:', String(e && e.message || e));
+            this.micLoi = 'Chưa ghi âm được lúc này, thử lại sau nhé.';
+            this.micTat('loi');
+          }
+        },
+
+        /** Tắt hẳn. `lyDo`: tay | xong | im | tran | dong | an | loi. */
+        micTat(lyDo) {
+          if (this.micTT === 'tat') return;
+          const r = this._micR();
+          // Bấm 🎤 khi bé ĐANG nói: chốt cho tử tế, đừng vứt mấy chữ cuối.
+          if (lyDo === 'tay' && this.micTT === 'noi' && r.san) return this._micChot('xong');
+          const dich = this.micDich;
+          r.phien++;                                   // vô hiệu mọi callback của lượt này
+          this._micXoaHen();
+          this._micDungAm();
+          try { r.ws && r.ws.close(1000, 'xong'); } catch (e) {}   // mã 1000 rõ ràng: đóng bình thường
+          r.ws = null; r.hang = [];
+          this.micTT = 'tat';
+          if (lyDo === 'im' && !r.chot) this.micLoi = 'Không nghe thấy gì — bấm 🎤 rồi nói nhé.';
+          if (lyDo === 'loi' && !this.micLoi) this.micLoi = 'Mất kết nối ghi âm, thử lại nhé.';
+          if (lyDo === 'dong' || lyDo === 'an') return;
+          this.$nextTick(() => {
+            const o = document.querySelector('[data-mic-o="' + dich + '"]');
+            if (o) { o.focus(); const n = o.value.length; try { o.setSelectionRange(n, n); } catch (e) {} }
+          });
+        },
+
+
+        /** 💬 Hỏi bất kỳ: mở popup trống, không cần bôi đen gì. */
+        traHoiTuDo() {
+          this.tra.btn = null;
+          this.tra.tuDo = true; this.tra.cau = '';
+          this.tra.text = ''; this.tra.goc = ''; this.tra.sent = '';
+          this.tra.data = null; this.tra.err = ''; this.tra.ly_do = ''; this.tra.loading = false;
+          this.tra.chat = []; this.tra.hoi = ''; this.moGoc = false;
+          this._traRg = null; this._traVung = null;
+          this.tra.show = true;
+          this.$nextTick(() => { const o = document.querySelector('[data-mic-o="cau"]'); if (o) o.focus(); });
+        },
+        /** Gửi câu hỏi tự do. ≤ 3 chữ, không dấu hỏi → tra như MỘT TỪ (thẻ nghĩa, IPA, ví
+            dụ); còn lại → chế độ đoạn, mà prompt đoạn đã biết nhận CÂU HỎI và trả
+            'Trả lời' + 'Vì sao' (ADR 0021). Cùng đường, cùng trần, cùng lịch sử với bôi đen. */
+        traGuiTuDo() {
+          if (this.micTT !== 'tat') this.micTat('dong');
+          const t = (this.tra.cau || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+          if (!t) return;
+          this.tra.text = t; this.tra.goc = t; this.tra.sent = '';
+          this.traMo(t.split(' ').length <= 3 && !/[?？]/.test(t) ? 'word' : 'text');
+        },
+        /** Hỏi câu khác — về lại ô trống, giữ popup mở. */
+        traCauKhac() {
+          const cu = this.tra.text;
+          this.traHoiTuDo();
+          this.tra.cau = cu;
+          this.$nextTick(() => { const o = document.querySelector('[data-mic-o="cau"]'); if (o) { o.focus(); o.select(); } });
+        },
 
         /** Nới vùng chọn ra nguyên từ: kéo lệch nửa chữ vẫn tra đúng từ. */
         _noRong(r) {
@@ -3040,6 +3363,7 @@ timMo: false,
         },
 
         async traHoi() {
+          if (this.micTT !== 'tat') this.micTat('dong');
           const q = (this.tra.hoi || '').trim();
           if (!q || this.tra.dangHoi || !this.traKhoa()) return;
           this.tra.chat.push({ ai: 'em', noi: q });
@@ -3179,6 +3503,8 @@ timMo: false,
             chỉ gọi `chonDoi()` thôi thì không đủ — phải ĐẶT LẠI vùng chọn đã
             nhớ ở `chonDoi()` rồi mới tính lại vị trí nút. */
         traDong() {
+          this.micTat('dong'); this.micLoi = '';
+          this.tra.tuDo = false; this.tra.cau = '';
           this.tra.show = false; this.tra.btn = null; this.tra.data = null;
           this.tra.err = ''; this.tra.ly_do = '';
           this.tra.chat = []; this.tra.hoi = ''; this.moGoc = false;
