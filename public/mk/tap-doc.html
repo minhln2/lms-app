@@ -705,7 +705,7 @@ function tdAnhLat(lat, trang) {
         this.nhanXY = e ? { x: e.clientX, y: e.clientY } : null;
         clearTimeout(this.henGiu);
         // Giữ đủ lâu = mở bong bóng; xoá cả cửa "chạm lại" (cuoiI) để cú chạm kế tiếp là đọc, không mở lần nữa.
-        this.henGiu = setTimeout(() => { this.daGiu = true; this.nhanI = -1; this.cuoiI = -1; this.moBong(i); }, 450);
+        this.henGiu = setTimeout(() => { this.daGiu = true; this.nhanI = -1; this.cuoiI = -1; this.moBong(i, true); }, 450);
       },
       // Ngón tay trượt (vuốt lật trang bắt đầu trên một từ): với cảm ứng, từ đó GIỮ con trỏ
       // nên `pointerleave` không tới — phải tự đo quãng trượt, quá 12 px thì không còn là chạm.
@@ -812,16 +812,21 @@ function tdAnhLat(lat, trang) {
       // Kiểu đánh vần nhớ theo TRUYỆN trên thiết bị này (khoá riêng như td_toc, không nằm trong
       // mục trạng thái — chuan() của tapdoc.html không cần biết).
       cheDV() { return localStorage.getItem('td_che_' + this.id) || (this.tr.cap === 'C' || this.tr.cap === 'D' ? 'nhanh' : 'daydu'); },
-      moBong(i) {
+      // `cho` (mở bằng GIỮ): bong bóng hiện 1 s rồi mới đọc — bé kịp nhìn chữ phóng to (chủ dự án 2026-10-13).
+      // Chạm lại thì đọc ngay (cú chạm thứ hai đã là "muốn nghe"). Hẹn bị huỷ khi đóng / mở bong bóng khác / bấm 🔊 🧩.
+      moBong(i, cho) {
         const g = this.tieng(i);
         if (!g) return this.docTu(i);
+        clearTimeout(this.henBong);
         this.tam(); this.dungDoan();
         this.tuSang = i;
         // Chữ phóng to là KHOÁ `k` (viết thường, bỏ dấu câu) chứ không phải chữ trong truyện: các
         // khoảng chữ cái của từng bước (`buoc`) tính trên đúng chuỗi này.
         this.bong = { i, chu: this.tg().tu[i].k, g, bs: -1, che: this.cheDV(), viTri: 'visibility:hidden' };
-        // Mở là ĐÁNH VẦN ngay (chủ dự án 2026-10-13); từ chỉ-đọc thì đọc. Phát NGAY (còn trong cử chỉ nếu mở bằng chạm lại).
-        if (g.buoc) this.bongVan(); else this.bongDoc();
+        // Mở là ĐÁNH VẦN (chủ dự án 2026-10-13); từ chỉ-đọc thì đọc. Chạm lại: phát NGAY, còn trong cử chỉ. Giữ: hẹn 1 s
+        // — phát ngoài cử chỉ được vì moKhoa() đã mở khoá au2 lúc ngón tay đặt xuống (cùng lý do giữ vốn phát từ hẹn giờ).
+        const doc = () => { if (g.buoc) this.bongVan(); else this.bongDoc(); };
+        if (cho) { const b = this.bong; this.henBong = setTimeout(() => { if (this.bong === b) doc(); }, 1000); } else doc();
         this.$nextTick(() => {
           this.datBong(i);                       // đặt chỗ cần kích thước thật của bong bóng
           // Phông đậm của chữ phóng to nạp LƯỜI, lúc bong bóng đầu tiên hiện: lần đo trên đây còn dùng phông dự phòng (hàng "Kiểu đánh vần" xuống dòng → cao hơn
@@ -838,6 +843,7 @@ function tdAnhLat(lat, trang) {
         this.dongBong();
       },
       dongBong() {
+        clearTimeout(this.henBong);
         if (!this.bong) return;
         this.dungDoan();
         this.bong = null;
@@ -861,11 +867,13 @@ function tdAnhLat(lat, trang) {
         return j >= s[1] && j < s[2];
       },
       bongDoc() {
+        clearTimeout(this.henBong);
         const b = this.bong, g = b.g;
         b.bs = -2;
         this.phatDoan(g, g.buoc ? g.t[g.t.length - 1] : 0, g.dai, () => { if (this.bong === b) b.bs = -1; });
       },
       bongVan() {
+        clearTimeout(this.henBong);
         const b = this.bong, g = b.g, n0 = this.buocDau();
         this.phatDoan(g, g.t[n0], g.dai, () => { if (this.bong === b) b.bs = -1; }, (giay) => {
           let k = n0;
