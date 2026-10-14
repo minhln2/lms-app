@@ -340,6 +340,27 @@ function tdAnhLat(lat, trang) {
     .td-dk .td-thu-dang{flex-wrap:nowrap;gap:.3rem}
   }
 
+  /* Trang bảng luyện âm/vần (spec 2026-10-14): lưới giữ cột như tờ in, chữ to, ô đang đọc sáng lên.
+     `.td-bang` thay ô chữ ở trang này; đơn vị cq tính theo .td-trang (container-type:size). */
+  .td-bang{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:safe center;
+    gap:.45rem;padding:2% 4%;overflow:auto;color:#1f1a33;text-align:center}
+  .td-bang-luoi{display:grid;grid-template-columns:repeat(var(--cot),minmax(0,1fr));align-items:center;justify-items:center;
+    gap:.3rem 1.7rem;width:min(94%,1000px)}
+  .td-bang-luoi-chu{font-weight:700;letter-spacing:.03em;gap:.2rem 1.2rem}
+  .td-bang-luoi-chu .td-bang-o{font-size:clamp(18px,min(4.2cqw,6.2cqh),46px)}
+  .td-bang-luoi-tu .td-bang-o{font-size:clamp(13px,min(2.9cqw,4.1cqh),29px);line-height:1.45}
+  .td-bang-o{display:inline-block;padding:0 .14em;border-radius:.5rem;font-style:normal;white-space:nowrap}
+  .td-bang-o i{font-style:normal}
+  .td-bang-trong{visibility:hidden}
+  .td-bang-dang{background:rgba(253,224,71,.35)}
+  .td-bang-o i.td-sang{background:#fde047}
+  @media (max-width:640px){
+    .td-bang{gap:.3rem;padding:2% 3%}
+    .td-bang-luoi{gap:.25rem 1rem}
+    .td-bang-luoi-chu .td-bang-o{font-size:clamp(15px,min(5.6cqw,6cqh),28px)}
+    .td-bang-luoi-tu .td-bang-o{font-size:clamp(12px,min(4cqw,4cqh),22px)}
+  }
+
 </style>
 <script>
   function tdDoc() {
@@ -376,6 +397,12 @@ function tdAnhLat(lat, trang) {
       // Lệnh dàn trang (src/tapdoc_dantrang.py) đo bằng CHÍNH hàm này.
       dungTrang(t, i, tr) {
         tr = tr || this.tr;
+        if (t.bang) {   // trang bảng âm/vần (spec 2026-10-14): MỘT file audio cả bảng; "từ" để tô sáng là từng BƯỚC
+          const av = tr.am_van || {};
+          return { so: i + 1, bang: true, c0: null, c1: null, buoc: av.buoc || [],
+                   tu: (av.buoc || []).map((b) => ({ c: b.doc, t: b.t })),
+                   am: av.am, anh: null, dac: 1, nhoe: 0, dat: 'phu', w: 0, h: 0, bd: 0, kt: av.dai || 0 };
+        }
         const g = tr.canh[t.canh], tu = [];
         for (let k = t.tu; k <= t.den; k++) for (const w of tr.cau[k].tu) tu.push(tu.length ? w : { ...w, nl: false });
         return { so: i + 1, canh: t.canh, c0: t.tu, c1: t.den, tu, am: g.am, anh: g.anh, dac: g.dac, nhoe: g.nhoe,
@@ -384,14 +411,14 @@ function tdAnhLat(lat, trang) {
       },
       // Trang (1-based) chứa mã câu `ma` theo bố cục đang dùng; không có (truyện đã sửa chữ) → 1.
       trangCua(ma) {
-        const i = this.trs.findIndex((p) => p.c0 <= ma && ma <= p.c1);
+        const i = this.trs.findIndex((p) => !p.bang && p.c0 <= ma && ma <= p.c1);
         return i >= 0 ? i + 1 : 1;
       },
       // Chỉ số chương (từ 0) của trang n — theo MÃ CÂU đầu trang và cau_dau, không theo trang_dau (bố cục đổi thì mã câu vẫn đúng).
       // Truyện không chương → −1.
       chuongCua(n) {
         const ch = this.tr && this.tr.chuong, t = this.trs[n - 1];
-        if (!Array.isArray(ch) || !ch.length || !t) return -1;
+        if (!Array.isArray(ch) || !ch.length || !t || t.bang) return -1;
         let k = 0;
         for (let i = 0; i < ch.length; i++) if (ch[i].cau_dau <= t.c0) k = i;
         return k;
@@ -423,9 +450,30 @@ function tdAnhLat(lat, trang) {
         this.datTrang(this.trangCua(vt));
       },
       tg() { return this.trs[this.trang - 1]; },
+      // Trang bảng âm/vần: bước đang đọc (để tô sáng ô + chữ) — null khi không phải trang bảng.
+      buocNay() { const t = this.tg(); return t && t.bang && this.tuSang >= 0 ? t.buoc[this.tuSang] : null; },
+      chuSangO(h, j, ci) { const b = this.buocNay(); return !!b && b.h === h && b.o === j && ci >= b.a && ci < b.b; },
+      // Lưới bảng: mỗi khối (chữ / từ) một lưới, số cột = hàng dài nhất của khối → cột thẳng như tờ in.
+      // Ô trống chèn cuối hàng ngắn; `hi` là chỉ số hàng GỘP (khớp `buoc[].h` của kế hoạch).
+      bangCot(kieu) {
+        const h = (this.tr && this.tr.am_van ? this.tr.am_van.hang || [] : []).filter((x) => x.kieu === kieu);
+        return Math.max(1, ...h.map((x) => x.o.length));
+      },
+      bangO(kieu) {
+        const t = this.tg(), av = this.tr && this.tr.am_van;
+        if (!t || !t.bang || !av) return [];
+        const cot = this.bangCot(kieu), ra = [];
+        (av.hang || []).forEach((h, hi) => {
+          if (h.kieu !== kieu) return;
+          h.o.forEach((o, j) => ra.push({ hi, j, o }));
+          for (let j = h.o.length; j < cot; j++) ra.push({ hi, j, o: null });
+        });
+        return ra;
+      },
       // Chấm của ô số trang: trang đang mở · trang đọc gần nhất (vi_tri, giữ lớp td-ch-thay của CSS) · còn lại.
       loaiCham(p) {
         if (p.so === this.trang) return 'td-ch-nay';
+        if (p.bang) return '';     // trang bảng không phải "trang đọc gần nhất" theo mã câu
         const c = this.s(this.id);
         if (!c.bat_dau && !c.doc_xong) return '';      // truyện chưa đọc mở từ trang 1 — vi_tri cũ không phải "trang đọc gần nhất"
         const v = c.vi_tri;
@@ -531,7 +579,7 @@ function tdAnhLat(lat, trang) {
           im.src = u;
         }
         this.taiTruoc();
-        if (this.thu && this.thu.dang) this.thuLat(g.c0);
+        if (this.thu && this.thu.dang && !g.bang) this.thuLat(g.c0);
         this.batDem();
       },
       // Tải trước ảnh + audio trang kế để lật không phải chờ (cùng cảnh thì file đã có sẵn).
@@ -2176,6 +2224,19 @@ function tdAnhLat(lat, trang) {
             </div>
           </div>
         </template>
+        <template x-if="tg().bang">
+        <div class="td-bang" data-td-bang>
+          <template x-for="kieu in ['chu', 'tu']" :key="'bl' + kieu">
+            <div class="td-bang-luoi" :class="'td-bang-luoi-' + kieu" :style="'--cot:' + bangCot(kieu)">
+              <template x-for="(c, k) in bangO(kieu)" :key="kieu + '-' + k">
+                <span class="td-bang-o" :data-td-bang-o="k" :class="{ 'td-bang-trong': !c.o, 'td-bang-dang': !!buocNay() && buocNay().h === c.hi && buocNay().o === c.j }"
+                      ><template x-if="c.o"><span><template x-for="(ch, ci) in [...c.o]" :key="ci"><i :class="{ 'td-sang': chuSangO(c.hi, c.j, ci) }" x-text="ch"></i></template></span></template></span>
+              </template>
+            </div>
+          </template>
+        </div>
+        </template>
+        <template x-if="!tg().bang">
         <div class="td-o" data-td-o x-ref="o" :style="kinh()">
           <template x-for="(w, i) in tg().tu" :key="trang + '-' + i">
             <span><template x-if="w.nl"><br></template><span class="td-tu" :data-td-tu="i"
@@ -2184,6 +2245,7 @@ function tdAnhLat(lat, trang) {
                   @contextmenu.prevent x-text="w.c"></span> </span>
           </template>
         </div>
+        </template>
       </div>
 
       <div class="td-duoi" x-show="view === 'doc'">
