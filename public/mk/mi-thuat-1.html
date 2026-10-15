@@ -351,7 +351,7 @@
     // Nhãn loại mục để dòng "Đang lọc" gọi tên chip đang bật. (tojson trong <script> — được.)
     var LOAI = { "page": "\ud83d\udcc4 v\u0103n b\u1ea3n", };
     var TIEN_DO_KEY = "mk/80354/";
-    var TONG_MUC = 1;
+    var TONG_MUC = 4;
     var CO_HW = false;
     /** State của TRANG MÔN. Trước đây nằm thẳng trong `x-data` của <body>; nay phải là hàm vì
         ô tìm dùng chung (`_timkiem.html`) chèn thêm thành viên — nhét vào thuộc tính HTML là
@@ -577,7 +577,7 @@ timMo: false,
             <span class="min-w-0 flex-1">Unit 1: Mỹ thuật cơ bản (13/8 - 16/10)</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/1'"></span>
+                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/4'"></span>
             </template>
           </button>
         </li>
@@ -623,14 +623,278 @@ timMo: false,
         <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">Unit 1: Mỹ thuật cơ bản (13/8 - 16/10)</span>
         <template x-if="p.online">
           <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
-                :class="moduleDone($el.closest('[data-module]'), p.done) === 1
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 4
                         ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
-                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/1'"></span>
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/4'"></span>
         </template>
-        <span class="text-xs text-slate-400 shrink-0">1 mục</span>
+        <span class="text-xs text-slate-400 shrink-0">4 mục</span>
       </button>
 
       <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-item data-title="Lesson 1.2: Các loại nét cơ bản (3/9 - 18/9)" data-type="page" data-sec="0"
+             data-pkey="mk/80354/8326372" data-hash="1c35537ad0ec7145029d5964c6689e345b0134d5" data-ts="1791975854000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80354/8326372'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80354/8326372'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80354/8326372']; $el.indeterminate = !!p.redo['mk/80354/8326372']"
+                     @change="await p.toggle('mk/80354/8326372', '1c35537ad0ec7145029d5964c6689e345b0134d5'); $el.checked = !!p.done['mk/80354/8326372']; $el.indeterminate = !!p.redo['mk/80354/8326372']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Lesson 1.2: Các loại nét cơ bản (3/9 - 18/9)</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80354/8326372', '1c35537ad0ec7145029d5964c6689e345b0134d5')">
+                  <button @click.stop="p.seen('mk/80354/8326372', '1c35537ad0ec7145029d5964c6689e345b0134d5')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 14/10</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80354/pages/lesson-1-dot-2-cac-loai-net-co-ban-3-slash-9-18-slash-9" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><span>Chào các con, tiết Mỹ thuật tuần 3+4 thầy Quang và các con sẽ tìm hiểu về các loại nét nhé!</span></p>
+<p><span><strong><img alt="mục tiêu-1.png" height="36" loading="lazy" src="https://lms.vinschool.edu.vn/users/39113/files/2762092/preview?verifier=6MucrVgwsrdGQlqW1vmVphVQP85U5Zgq0dSf6M3t" width="36"/> Mục tiêu bài học:</strong></span></p>
+<p><span>1/ Học sinh kể được tên các loại nét cơ bản.</span></p>
+<p><span>2/ Học sinh vẽ được các nét cơ bản và ứng dụng sáng tạo các nét để tạo hình.</span></p>
+<p><span><img alt="online-education-concept-with-computer-free-vector.jpg" height="47" loading="lazy" src="https://lms.vinschool.edu.vn/users/39113/files/2762646/preview?verifier=iFewzYpAmvgaDKccZNSzy2wIP36SKlXcVWBIdDe3" width="47"/> <strong>Con cần chuẩn bị:</strong></span></p>
+<p><span>- Vở vẽ A4/A3, bút chì, tẩy, màu vẽ.</span></p>
+<p><span>Chúng ta cùng bắt đầu bài học nhé !</span></p>
+<p style="text-align: center;"><span style="font-size: 14pt;"><strong><span style="color: #e03e2d;">CÁC NÉT CƠ BẢN</span></strong></span></p>
+<p><strong>Bài học "Các nét cơ bản" giúp học sinh lớp 1 tiếp cận với thế giới của nghệ thuật và khám phá khả năng vẽ của bản thân. Bằng cách thực hành các loại nét vẽ cơ bản, học sinh sẽ phát triển khả năng nghệ thuật và tạo ra các tác phẩm đơn giản. Trong bài học này, học sinh sẽ được giới thiệu với các loại nét vẽ cơ bản, học cách điều chỉnh chuyển động của bút để tạo ra những đường nét khác nhau và tạo hiệu ứng khác nhau trên bề mặt vẽ.</strong></p>
+<p><span><strong>1. Chúng ta cùng tìm hiểu về các nét cơ bản qua hình ảnh sau nhé:</strong></span><strong></strong></p>
+<p><img alt="Screenshot 2023-09-04 224520.png" loading="lazy" src="materials/mi-thuat-1/unit-1-my-thuat-co-ban-13-8-16-10/Screenshot 2023-09-04 224520.png"/></p>
+<p><span><strong>2. Các bước vẽ tranh nét cơ bản: </strong></span></p>
+<p><iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" height="720" loading="lazy" src="https://www.youtube.com/embed/uir_fGpYUBs" title="HOW TO DRAW A HOUSE EASY STEP BY STEP" width="1280"></iframe></p>
+<p><span><strong>3. Bài tập mở rộng:</strong></span></p>
+<p><span><strong>- Ngoài việc sử dụng các nét cơ bản để vẽ hình chúng ta cũng có thể sử dụng các nét cơ bản để tô màu hình ảnh mà chúng ta yêu thích.</strong></span></p>
+<p><iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" height="720" loading="lazy" src="https://www.youtube.com/embed/Hrx72kG3ImA" title="Dạy bé vẽ Khinh khí cầu Sáng tạo và Ấn tượng với Bút Dạ" width="1280"></iframe></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Lesson 1.3: Các hình cơ bản (21/9 - 2/10)" data-type="page" data-sec="0"
+             data-pkey="mk/80354/8326373" data-hash="0720cd810b18b9f60a0e615e164d65a23f4355ad" data-ts="1791975869000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80354/8326373'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80354/8326373'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80354/8326373']; $el.indeterminate = !!p.redo['mk/80354/8326373']"
+                     @change="await p.toggle('mk/80354/8326373', '0720cd810b18b9f60a0e615e164d65a23f4355ad'); $el.checked = !!p.done['mk/80354/8326373']; $el.indeterminate = !!p.redo['mk/80354/8326373']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Lesson 1.3: Các hình cơ bản (21/9 - 2/10)</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80354/8326373', '0720cd810b18b9f60a0e615e164d65a23f4355ad')">
+                  <button @click.stop="p.seen('mk/80354/8326373', '0720cd810b18b9f60a0e615e164d65a23f4355ad')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 14/10</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80354/pages/lesson-1-dot-3-cac-hinh-co-ban-21-slash-9-2-slash-10" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><span>Chào các con, tiết Mỹ thuật tuần 5+6 thầy Quang và các con sẽ tìm hiểu về các hình cơ bảnnhé!</span></p>
+<p><span><strong><img alt="mục tiêu-1.png" height="36" loading="lazy" src="https://lms.vinschool.edu.vn/users/39113/files/2762092/preview?verifier=6MucrVgwsrdGQlqW1vmVphVQP85U5Zgq0dSf6M3t" width="36"/> Mục tiêu bài học:</strong></span></p>
+<p><span>1/ Học sinh trình bày được tên và mô tả được đặc điểm của các hình cơ bản.</span></p>
+<p><span>2/ Học sinh vẽ được các vật hoặc con vật có hình dáng tương đồng với hình cơ bản.</span></p>
+<p><span><img alt="online-education-concept-with-computer-free-vector.jpg" height="47" loading="lazy" src="https://lms.vinschool.edu.vn/users/39113/files/2762646/preview?verifier=iFewzYpAmvgaDKccZNSzy2wIP36SKlXcVWBIdDe3" width="47"/> <strong>Con cần chuẩn bị:</strong></span></p>
+<p><span>- Vở vẽ A4/A3, bút chì, tẩy, màu vẽ.</span></p>
+<p><span>Chúng ta cùng bắt đầu bài học nhé !</span></p>
+<p style="text-align: center;"><span style="font-size: 14pt;"><strong><span style="color: #e03e2d;">CÁC NÉT CƠ BẢN</span></strong></span></p>
+<p><strong>Bài học "Các hình cơ bản" giúp học sinh xây dựng nền tảng vững chắc về các hình dạng cơ bản và kỹ thuật vẽ. Bằng cách nắm vững các hình cơ bản, học sinh có thể sử dụng chúng để tạo ra những tác phẩm mĩ thuật phong phú và sáng tạo hơn.</strong></p>
+<p><span><strong>1. Chúng ta cùng tìm hiểu về các hình cơ bản qua video sau nhé:</strong></span><strong></strong></p>
+<p><iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" height="720" loading="lazy" src="https://www.youtube.com/embed/lcl8uB2AWM0" title="Shapes Are All Around | Shape Songs | PINKFONG Songs" width="1280"></iframe></p>
+<p><span><strong>2. Các bước vẽ tranh hình cơ bản: </strong></span></p>
+<p><iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" height="720" loading="lazy" src="https://www.youtube.com/embed/D6bGoJnxDS0" title="How to Draw Animals Using Shapes square | Drawing Animals from Square" width="1280"></iframe></p>
+<p><span><strong>3. Bài tập mở rộng:</strong></span></p>
+<p><span><strong>- Ngoài việc sử dụng các hình cơ bản để vẽ hình chúng ta cũng có thể sử dụng giấy màu tạo thành các hình cơ bản để cắt dán hình ảnh mà chúng ta yêu thích.</strong></span></p>
+<p><iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" height="720" loading="lazy" src="https://www.youtube.com/embed/dd7bQgCew7A" title="DIY Craft-Paper Animals Crafts||5 Minute Circle Crafts With Paper Animals|||5 Types of Water Animal" width="1280"></iframe></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Lesson 1.4: Màu sắc trong tranh (5/10 - 16/10)" data-type="page" data-sec="0"
+             data-pkey="mk/80354/8326374" data-hash="36b4b850e71bad1f8f3bfa48ed8cdddd5928c244" data-ts="1791975889000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80354/8326374'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80354/8326374'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80354/8326374']; $el.indeterminate = !!p.redo['mk/80354/8326374']"
+                     @change="await p.toggle('mk/80354/8326374', '36b4b850e71bad1f8f3bfa48ed8cdddd5928c244'); $el.checked = !!p.done['mk/80354/8326374']; $el.indeterminate = !!p.redo['mk/80354/8326374']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Lesson 1.4: Màu sắc trong tranh (5/10 - 16/10)</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80354/8326374', '36b4b850e71bad1f8f3bfa48ed8cdddd5928c244')">
+                  <button @click.stop="p.seen('mk/80354/8326374', '36b4b850e71bad1f8f3bfa48ed8cdddd5928c244')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 14/10</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80354/pages/lesson-1-dot-4-mau-sac-trong-tranh-5-slash-10-16-slash-10" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><span>Chào các con, tiết Mỹ thuật tuần 7+8 thầy Quang và các con sẽ tìm hiểu về màu sắc trong tranh nhé!</span></p>
+<p><span><strong>Mục tiêu bài học:</strong></span></p>
+<p><span>1/ Học sinh khám phá màu sắc mới được tạo thành từ những màu cơ bản.</span></p>
+<p><span>2/ <strong> </strong>Học sinh xác định được gam màu nóng, màu lạnh để vận dụng phù hợp trong các tác phẩm.</span></p>
+<p><span>3/ Học sinh vẽ và tô được màu sắc cho một bức tranh.</span></p>
+<p><span><strong>Con cần chuẩn bị:</strong></span></p>
+<p><span>- Vở vẽ A4/A3, bút chì, tẩy, màu vẽ.</span></p>
+<p><span>Chúng ta cùng bắt đầu bài học nhé !</span></p>
+<p><span><strong>MÀU SẮC TRONG TRANH</strong></span></p>
+<p><strong>Bài học "Các hình cơ bản" <span>tạo cơ hội cho học sinh hiểu về cách sử dụng màu sắc trong nghệ thuật. Bài học khuyến khích sự sáng tạo, khám phá trong việc sử dụng màu sắc để truyền đạt ý nghĩa và cảm xúc trong tác phẩm nghệ thuật của học sinh.</span></strong></p>
+<p><span><strong>1. Chúng ta cùng tìm hiểu về màu sắc qua video sau nhé:</strong></span><strong></strong></p>
+<p><iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" height="785" loading="lazy" src="https://www.youtube.com/embed/XpNwm_uAZuE" title="Màu cơ bản" width="1047"></iframe></p>
+<p><span><strong>2. Các bước vẽ tranh màu sắc trong tranh bố cục màu: </strong></span></p>
+<p><iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" height="785" loading="lazy" src="https://www.youtube.com/embed/Mmaol2B1-8c" title="cách làm 1 bài bốc cục màu đơn giản của khối H#art #drawing #hocvecoban" width="1280"></iframe></p>
+<p><span><strong>3. Bài tập thực hành:</strong></span></p>
+<p><span><strong>- Lựa chọn 1: Tạo bố cục từ các hình khối cơ bản xếp chồng lên nhau. Sử dụng các màu cơ bản để tô vào phần diện tích riêng (không xếp chồng), và tô màu kết hợp (màu pha) từ các màu cơ bản tương ứng vào phần diện tích giao nhau (xếp chồng).</strong></span></p>
+<p><span><strong> + Hình cơ bản có kích thước lớn hơn 3 ngón tay.<br/> + Sử dụng đúng màu cơ bản và các màu kết hợp để tô.<br/> + Bài vẽ sử dụng ít nhất 7 màu.</strong></span></p>
+<p><span><strong>- Lựa chọn 2: Tạo hình một con vật bằng cách ghép kết hợp các hình khối cơ bản. Lựa chọn một trong hai gam màu nóng (đỏ, vàng, cam,...) hoặc gam màu lạnh (xanh dương, xanh lá, xanh ngọc...) để hoàn thiện phần tô màu cho bức tranh.</strong></span></p>
+<p><span><strong> + Con vật được tạo thành từ các hình cơ bản.</strong></span></p>
+<p><span><strong> + Con vật lớn hơn bàn tay.</strong></span></p>
+<p><span><strong> + Sử dụng đúng màu trong gam màu đã chọn.</strong></span></p>
+<p><span><strong> + Bài vẽ sử dụng  ít nhất 7 màu.</strong></span></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
         
         
         <div data-item data-title="Lesson 1.1: Các chấm màu (13/8 - 28/8)" data-type="page" data-sec="0"
