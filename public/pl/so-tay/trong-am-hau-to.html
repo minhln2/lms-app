@@ -6,6 +6,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -25,6 +26,77 @@
     if (_khop.q !== q) _khop = { q: q, rx: khopRx(q) };
     return _khop.rx.test(t || '');
   }
+</script>
+<script>
+window.LS = (function () {
+  var ve = null, goc = '', dang = 0, henCuon = null, cho = null;
+  function token() {
+    try { return decodeURI((location.hash || '').replace(/^#/, '')); } catch (e) { return ''; }
+  }
+  function url(tk) { return tk ? '#' + encodeURI(tk) : location.pathname + location.search; }
+  function luuCuon() {
+    var st = history.state;
+    if (!st || !st.ls || st.cuon === window.scrollY) return;
+    st.cuon = window.scrollY;
+    history.replaceState(st, '', location.href);
+  }
+  function henLuu() {
+    if (henCuon) return;
+    henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
+  }
+  function cuonLai(st) {
+    if (!st || typeof st.cuon !== 'number') return;
+    var y = st.cuon;
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { window.scrollTo(0, y); });
+    });
+  }
+  function chayVe(req) {
+    dang++;
+    Promise.resolve().then(function () { return ve(req.tk, req.st || {}); }).then(
+      function () { dang--; cuonLai(req.st); tiep(); },
+      function () { dang--; tiep(); });
+  }
+  function tiep() { if (cho) { var r = cho; cho = null; chayVe(r); } }
+  function veLai(tk, st) {
+    if (!ve) { cuonLai(st); return; }
+    if (dang) { cho = { tk: tk, st: st }; return; }
+    chayVe({ tk: tk, st: st });
+  }
+  function di(tk, day) {
+    if (dang) return;
+    if (tk === token()) return;
+    var truoc = history.state || {};
+    var sau = (truoc.ls ? (truoc.sau || 0) : 0) + (day ? 1 : 0);
+    var st = { ls: 1, cuon: window.scrollY, token: tk, sau: sau };
+    (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
+  }
+  addEventListener('popstate', function (e) { veLai(token(), e.state); });
+  addEventListener('scroll', henLuu, { passive: true });
+  addEventListener('load', function () { if (!ve) cuonLai(history.state); });
+  return {
+    ham: function () {
+      try { history.scrollRestoration = 'manual'; } catch (e) {}
+      try {
+        var st = history.state;
+        if (!st || !st.ls) {
+          history.replaceState({ ls: 1, cuon: window.scrollY, token: token(), sau: 0 }, '', location.href);
+        }
+      } catch (e) {}
+    },
+    di: function (tk) { di(tk, true); },
+    thay: function (tk) { di(tk, false); },
+    mo: function (tk) { di(tk, true); },
+    dong: function (tk) {
+      var st = history.state || {};
+      if (st.ls && (st.sau || 0) > 0) history.back();
+      else di(tk === undefined ? goc : tk, false);
+    },
+    nghe: function (fn, g0) { ve = fn; goc = g0 || ''; veLai(token(), history.state); },
+    dang: function () { return dang > 0; },
+  };
+})();
+window.LS.ham();
 </script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -426,6 +498,21 @@
       user: du0.user, nhom: du0.nhom, ready: false, online: false, cards: {},
       secret: localStorage.getItem('lms_key') || '',
       xem: null, du: null, q: '', loiLuu: '',
+      dangVe: false,
+      tokenCua() { return this.xem ? 'xem/' + (this.xem.slug || '') : ''; },
+      laLopPhu(t) { return t.indexOf('xem/') === 0; },
+      async ve(tk) {
+        this.dangVe = true;
+        try {
+          if (tk.indexOf('xem/') !== 0) { this.xem = null; return; }
+          const slug = tk.slice(4);
+          const d = await this.napDu();
+          const x = d && d.xem && d.xem[slug];
+          this.xem = x ? { ...x, slug, href: (x.id || slug) + '.html' } : null;
+        } finally {
+          this.$nextTick(() => { this.dangVe = false; });
+        }
+      },
       timMo: false,
       timMoRa() { this.timMo = true; this.$nextTick(() => this.$refs.timO && this.$refs.timO.focus()); },
       timDong() { this.q = ''; this.timMo = false; },
@@ -444,6 +531,13 @@
           }
         } catch (e) { /* chỉ đọc */ }
         
+        // Back/hash (ADR 0067): khung xem trước là một lớp phủ.
+        this.$watch(() => this.tokenCua(), (moi) => {
+          if (this.dangVe) return;
+          if (this.laLopPhu(moi)) LS.mo(moi);
+          else LS.dong(moi);
+        });
+        LS.nghe((tk) => this.ve(tk), '');
         this.ready = true;
       },
       da(k) { return this.cards[k] === 1; },
@@ -487,7 +581,7 @@
         const d = await this.napDu();
         const x = d && d.xem[el.dataset.xem];
         if (!x) { location.href = el.href; return; }
-        setTimeout(() => { this.xem = { ...x, href: el.getAttribute('href') }; }, 0);
+        setTimeout(() => { this.xem = { ...x, slug: el.dataset.xem, href: el.getAttribute('href') }; }, 0);
       },
       // Đọc to: như study.html — /api/tts (danh sách trắng = `noi` của so-tay.json), lỗi thì giọng máy.
       _player: null, _blobs: {},

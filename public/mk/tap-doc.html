@@ -14,6 +14,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -24,6 +25,77 @@
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
   <link rel="stylesheet" href="../assets/tw.fd2db1dd.css">
+<script>
+window.LS = (function () {
+  var ve = null, goc = '', dang = 0, henCuon = null, cho = null;
+  function token() {
+    try { return decodeURI((location.hash || '').replace(/^#/, '')); } catch (e) { return ''; }
+  }
+  function url(tk) { return tk ? '#' + encodeURI(tk) : location.pathname + location.search; }
+  function luuCuon() {
+    var st = history.state;
+    if (!st || !st.ls || st.cuon === window.scrollY) return;
+    st.cuon = window.scrollY;
+    history.replaceState(st, '', location.href);
+  }
+  function henLuu() {
+    if (henCuon) return;
+    henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
+  }
+  function cuonLai(st) {
+    if (!st || typeof st.cuon !== 'number') return;
+    var y = st.cuon;
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { window.scrollTo(0, y); });
+    });
+  }
+  function chayVe(req) {
+    dang++;
+    Promise.resolve().then(function () { return ve(req.tk, req.st || {}); }).then(
+      function () { dang--; cuonLai(req.st); tiep(); },
+      function () { dang--; tiep(); });
+  }
+  function tiep() { if (cho) { var r = cho; cho = null; chayVe(r); } }
+  function veLai(tk, st) {
+    if (!ve) { cuonLai(st); return; }
+    if (dang) { cho = { tk: tk, st: st }; return; }
+    chayVe({ tk: tk, st: st });
+  }
+  function di(tk, day) {
+    if (dang) return;
+    if (tk === token()) return;
+    var truoc = history.state || {};
+    var sau = (truoc.ls ? (truoc.sau || 0) : 0) + (day ? 1 : 0);
+    var st = { ls: 1, cuon: window.scrollY, token: tk, sau: sau };
+    (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
+  }
+  addEventListener('popstate', function (e) { veLai(token(), e.state); });
+  addEventListener('scroll', henLuu, { passive: true });
+  addEventListener('load', function () { if (!ve) cuonLai(history.state); });
+  return {
+    ham: function () {
+      try { history.scrollRestoration = 'manual'; } catch (e) {}
+      try {
+        var st = history.state;
+        if (!st || !st.ls) {
+          history.replaceState({ ls: 1, cuon: window.scrollY, token: token(), sau: 0 }, '', location.href);
+        }
+      } catch (e) {}
+    },
+    di: function (tk) { di(tk, true); },
+    thay: function (tk) { di(tk, false); },
+    mo: function (tk) { di(tk, true); },
+    dong: function (tk) {
+      var st = history.state || {};
+      if (st.ls && (st.sau || 0) > 0) history.back();
+      else di(tk === undefined ? goc : tk, false);
+    },
+    nghe: function (fn, g0) { ve = fn; goc = g0 || ''; veLai(token(), history.state); },
+    dang: function () { return dang > 0; },
+  };
+})();
+window.LS.ham();
+</script>
   <script defer src="../assets/alpine.63d2636a.js"></script>
   
   <link rel="stylesheet" href="../tap-doc/phong/be-vietnam-pro/font-face.css">
@@ -1537,6 +1609,35 @@ function tdAnhLat(lat, trang) {
           return ['all', 'dang', 'chua', 'da'].includes(v) ? v : (localStorage.getItem('td_an') === '1' ? 'chua' : 'all');
         })(),
         tr: null, id: '', trs: [],   // trs: trang để vẽ (dungTrang) của truyện đang mở
+        dangVe: false,            // đang dựng màn hình từ hash (Back/F5) → không đẩy token
+        // Token cho hash: màn hình ⇄ chuỗi. Truyện chưa mở hoặc view 'tv' → 'tv'.
+        tokenCua() {
+          if (this.mucLuc && this.id) return 'truyen/' + this.id + '/muc-luc';
+          if (!this.id || this.view === 'tv') return 'tv';
+          return this.view === 'doc' ? 'truyen/' + this.id : 'truyen/' + this.id + '/' + this.view;
+        },
+        laLopPhu(t) { return t.slice(-8) === '/muc-luc'; },
+        // Dựng lại màn hình từ token. Dùng LẠI các hàm chuyển màn hình hiện có
+        // nên vẫn lưu tiến độ khi rời trang. dangVe chặn $watch đẩy token lồng nhau.
+        async ve(tk) {
+          this.dangVe = true;
+          try {
+            const phan = (tk || '').split('/');
+            if (phan[0] !== 'truyen' || !phan[1]) { this.veThuVien(); return; }
+            const id = phan[1], phu = phan[2] || '';
+            if (this.id !== id) { this.veThuVien(); await this.mo(id); }
+            if (phu === 'muc-luc') { this.moMucLuc(); return; }
+            if (phu === 'quiz') { if (this.view !== 'quiz') this.vaoQuiz(false); return; }
+            if (phu === 'xong') {
+              if (this.view !== 'xong') { this.trang = this.trangCua(this.s(id).vi_tri); this.view = 'xong'; }
+              return;
+            }
+            if (this.s(id).doc_xong) return;                 // màn xong là mặc định của nó
+            if (this.view !== 'doc') this.vaoDoc(this.trangCua(this.s(id).vi_tri));
+          } finally {
+            this.$nextTick(() => { this.dangVe = false; });
+          }
+        },
 
         async init() {
           this.st = this.docCucBo();
@@ -1607,6 +1708,16 @@ function tdAnhLat(lat, trang) {
               if (Object.keys(traLoi).length) this.nopLai(id, traLoi);
             }
           }
+          // Back/hash (ADR 0067): màn hình đổi → đẩy token. Lớp phủ: mở = push,
+          // đóng = back. Bỏ qua khi đang vẽ do popstate/F5.
+          this.$watch(() => this.tokenCua(), (moi, cu) => {
+            if (this.dangVe) return;
+            const moMoi = this.laLopPhu(moi), moCu = this.laLopPhu(cu);
+            if (moMoi && !moCu) LS.mo(moi);
+            else if (!moMoi && moCu) LS.dong(moi);
+            else LS.di(moi);
+          });
+          LS.nghe((tk) => this.ve(tk), 'tv');
           addEventListener('pagehide', () => this.xaCho());
           document.addEventListener('visibilitychange', () => {
             if (document.hidden) { this.nghiDem(); this.xaCho(); this.thuAn(); } else this.henDem();
