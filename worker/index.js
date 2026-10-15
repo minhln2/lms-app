@@ -42,7 +42,7 @@ import { handleTts } from "./tts.js";
 import { handleLookup, handleLookupHistory } from "./lookup.js";
 import { handleSttToken } from "./stt.js";
 import { handleTapdoc } from "./tapdoc.js";
-import { handleDiem, doiChieuTick, an } from "./diem.js";
+import { handleDiem, doiChieuTick, doiChieuSheet, doiTrangThai, soDu, an } from "./diem.js";
 import { handleQuantri } from "./quantri.js";
 import { laAm, phucVuAm } from "./range.js";
 import { laTaiLieu, phucVuTaiLieu } from "./tai_lieu.js";
@@ -54,6 +54,8 @@ const KEY = "progress";
 const HEARTBEAT_KEY = "heartbeat";
 const MAX_ITEMS = 5000; // chặn ghi phình vô hạn
 const KEY_RE = /^[\w-]+\/\d+\/[\w-]+$/;
+const USER2_RE = /^[\w-]{1,32}$/;
+const TRACKER_RE = /^[\w-]{1,64}$/;
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -178,9 +180,20 @@ export default {
           // cũng sửa hoặc xoá được bảng chung của cả lớp. Nội dung ĐỌC thì vốn đã
           // công khai qua chính endpoint này — thứ thêm ở đây đúng là quyền GHI.
           const secret = env.LMS_SECRET || "";
-          if (secret && (request.headers.get("x-progress-key") || "") === secret && env.SHEET_ID) {
+          const coMa = !!secret && (request.headers.get("x-progress-key") || "") === secret;
+          if (coMa && env.SHEET_ID) {
             d.source_url = `https://docs.google.com/spreadsheets/d/${env.SHEET_ID}/edit` +
               (env.SHEET_GID ? `#gid=${env.SHEET_GID}` : "");
+          }
+          // Điểm thưởng bảng lớp (ADR 0068): đối chiếu bài đã tick — cộng phần thiếu, gỡ phần bỏ tick. Số dư chỉ trả
+          // khi có mã bí mật (dữ liệu riêng của trẻ, như /api/diem).
+          const user = url.searchParams.get("user") || "";
+          const tracker = url.searchParams.get("tracker") || "";
+          if (env.STUDY_DB && USER2_RE.test(user) && TRACKER_RE.test(tracker)) {
+            const kq = await an("sheet", () => doiChieuSheet(env, url, user, tracker, d.sessions), { cong: 0, tru: 0 });
+            d.cong = kq.cong;
+            d.tru = kq.tru;
+            if (coMa) d.du = await an("du", () => soDu(env, user), null);
           }
           return json(d);
         } catch (e) {
@@ -200,9 +213,34 @@ export default {
         if (!Number.isInteger(row) || row < 1 || row > 100000) {
           return json({ error: "Thiếu hoặc sai 'row'" }, 400);
         }
+        const user = typeof body?.user === "string" ? body.user : "";
+        const tracker = typeof body?.tracker === "string" ? body.tracker : "";
+        const coDinhDanh = !!user || !!tracker;
+        if (coDinhDanh && !(USER2_RE.test(user) && TRACKER_RE.test(tracker))) {
+          return json({ error: "Thiếu hoặc sai 'user'/'tracker'" }, 400);
+        }
+        const done = !!body.done;
+        // Điểm thưởng (ADR 0068): đọc bảng TRƯỚC khi ghi để chốt cổng lazy + suy trạng thái sau khi ghi (khỏi tốn thêm
+        // lượt đọc Google) — mục vừa tick không nằm trong mốc "trước hệ điểm" nên vẫn được cộng.
+        let truoc = null;
+        let kq0 = { cong: 0, tru: 0 };
+        if (coDinhDanh && env.STUDY_DB) {
+          try {
+            const d0 = await readSheet(env);
+            if (!d0.error) {
+              truoc = d0.sessions;
+              kq0 = await an("sheet", () => doiChieuSheet(env, url, user, tracker, truoc), { cong: 0, tru: 0 });
+            }
+          } catch { /* bỏ đối chiếu, vẫn ghi ô để không chặn tick */ }
+        }
         try {
-          const d = await writeCell(env, row, !!body.done);
-          return d.error ? json({ error: d.error }, d.status || 500) : json(d);
+          const d = await writeCell(env, row, done);
+          if (d.error) return json({ error: d.error }, d.status || 500);
+          if (!truoc) return json(d);
+          const kq = await an("sheet", () => doiChieuSheet(env, url, user, tracker, doiTrangThai(truoc, row, done)),
+                              { cong: 0, tru: 0 });
+          return json({ ...d, cong: kq0.cong + kq.cong, tru: kq0.tru + kq.tru,
+                        du: await an("du", () => soDu(env, user), null) });
         } catch (e) {
           return json({ error: String(e.message || e) }, 502);
         }

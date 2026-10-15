@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -96,6 +97,9 @@ window.LS.ham();
         open: {},                       // buổi nào đang mở rộng
         secret: localStorage.getItem('lms_key') || '',
         sourceUrl: '',                  // link sheet gốc — chỉ có khi gửi đúng mã bí mật
+        diemUser: 'mk',      // điểm thưởng (ADR 0068): định danh gửi kèm API
+        diemTracker: 'lop-ms-dung',
+        du: null,                       // số dư ⭐ — null thì ẩn ô
 
         async init() { await this.load(); },
 
@@ -106,13 +110,15 @@ window.LS.ham();
             // mã. Không có mã thì vẫn đọc được bảng như cũ, chỉ không thấy link.
             const h = { accept: 'application/json' };
             if (this.secret) h['x-progress-key'] = this.secret;
-            const r = await fetch('/api/sheet', { headers: h });
+            const qs = '?user=' + encodeURIComponent(this.diemUser) + '&tracker=' + encodeURIComponent(this.diemTracker);
+            const r = await fetch('/api/sheet' + qs, { headers: h });
             const d = await r.json();
             if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
             this.sourceUrl = d.source_url || '';
             this.sessions = d.sessions || [];
             this.total = d.total || 0;
             this.done = d.done || 0;
+            this.nhanDiem(d);
             // Mở sẵn 3 buổi gần nhất; các buổi cũ để thu gọn cho đỡ rối
             this.open = {};
             this.sessions.slice(0, 3).forEach((s, i) => (this.open[i] = true));
@@ -121,6 +127,14 @@ window.LS.ham();
           } finally {
             this.loading = false;
           }
+        },
+
+        // Số dư + báo "+N ⭐" / "−N ⭐" từ phản hồi API. Đối chiếu lúc MỞ TRANG cũng báo (chủ yếu bé tick thẳng trong
+        // Google Sheet, không qua web — ADR 0068 §8); cong/tru chỉ > 0 khi CÓ điểm mới nên không báo lặp.
+        nhanDiem(d) {
+          if (typeof d.du === 'number') this.du = d.du;
+          if (d.cong > 0) window.baoDiem(d.cong, d.tru > 0 ? ('· −' + d.tru + ' ⭐') : '');
+          else if (d.tru > 0) window.baoTru(d.tru);
         },
 
         items(g) { return this.todoOnly ? g.items.filter(i => !i.done) : g.items; },
@@ -173,7 +187,7 @@ window.LS.ham();
             const r = await fetch('/api/sheet', {
               method: 'POST',
               headers: { 'content-type': 'application/json', 'x-progress-key': this.secret },
-              body: JSON.stringify({ row: item.row, done: next }),
+              body: JSON.stringify({ row: item.row, done: next, user: this.diemUser, tracker: this.diemTracker }),
             });
             const d = await r.json().catch(() => ({}));
             if (r.status === 401) {
@@ -181,6 +195,7 @@ window.LS.ham();
               throw new Error('Mã bí mật không đúng');
             }
             if (!r.ok) throw new Error(d.error || ('Không lưu được (HTTP ' + r.status + ')'));
+            this.nhanDiem(d);
           } catch (e) {
             item.done = !next; this.done += next ? -1 : 1;   // hoàn tác
             this.err = e.message;
@@ -209,6 +224,41 @@ window.LS.ham();
   </script>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen" x-data="sheetApp()" x-init="init()">
+  <div data-diem-bao role="status" aria-live="polite"
+     class="hidden pointer-events-none fixed left-1/2 top-16 z-[70] -translate-x-1/2 max-w-[90vw] truncate rounded-full bg-amber-300 px-5 py-2 text-lg font-bold text-amber-950 shadow-lg"></div>
+<script>
+  (function () {
+    var hen = 0;
+    function hien(chu) {
+      var el = document.querySelector('[data-diem-bao]');
+      if (!el) return;
+      el.textContent = chu;
+      el.classList.remove('hidden');
+      clearTimeout(hen);
+      hen = setTimeout(function () { el.classList.add('hidden'); }, 2000);
+    }
+    window.baoDiem = function (n, chu) {
+      n = Number(n);
+      if (!(n > 0)) return;
+      hien('+' + n + ' ⭐' + (chu ? ' ' + chu : ''));
+    };
+    window.baoTru = function (n, chu) {
+      n = Number(n);
+      if (!(n > 0)) return;
+      hien('−' + n + ' ⭐' + (chu ? ' ' + chu : ''));
+    };
+    window.docSoDu = async function (user) {
+      var k = localStorage.getItem('lms_key');
+      if (!k) return null;
+      try {
+        var r = await fetch('/api/diem?gon=1&user=' + encodeURIComponent(user), { headers: { 'x-progress-key': k } });
+        if (!r.ok) return null;
+        var d = await r.json();
+        return Number.isInteger(d.du) ? d.du : null;
+      } catch (e) { return null; }
+    };
+  })();
+</script>
 
   <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
     <div class="max-w-4xl mx-auto px-4 py-3">
@@ -221,6 +271,8 @@ window.LS.ham();
         <div class="min-w-0 flex-1">
           <div class="flex flex-wrap items-baseline gap-x-2 min-w-0">
             <h1 class="text-lg font-bold text-slate-900 truncate">Lớp Ms Dung</h1>
+            <span x-show="du !== null" x-cloak data-diem-so-du
+                  class="shrink-0 text-sm font-semibold text-amber-600 whitespace-nowrap">⭐ <span x-text="du"></span></span>
             <!-- Chỉ hiện khi máy chủ trả link, tức khi trình duyệt này có mã bí mật. -->
             <a x-show="sourceUrl" x-cloak :href="sourceUrl" target="_blank" rel="noopener noreferrer"
                title="Mở bảng gốc của lớp trên Google Sheets"

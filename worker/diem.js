@@ -23,6 +23,7 @@ export const DIEM = {
   THUAM: { A: 30, B: 40, C: 50 },        // thu âm hoàn thành = điểm đọc cùng cấp; cấp D không thu âm (ADR 0059)
   QUIZ: 10,                              // mỗi câu quiz tập đọc đúng LẦN ĐẦU
   TICK: 20,                              // tick một mục ở trang môn (tay hoặc tự tick)
+  SHEET: 20,                             // tick một đầu mục bài tập ở bảng lớp (Lớp Ms Dung) — ADR 0068
   NHOM: 20,                              // thưởng khi đủ mọi mục của một section
   ON: 1,                                 // mỗi lượt ôn tập, trong ON_LUOT lượt đầu mỗi ngày của mỗi thẻ
   ON_NHO: 2,                             // thưởng lượt nhớ / đúng đầu tiên trong ON_LUOT lượt đó
@@ -552,3 +553,94 @@ export async function doiChieuTick(env, url, user, items, boTick = []) {
   return { cong: g.cong, nhom: moi.filter((r) => r.nhom !== undefined && vua.has(r.khoa)).map((r) => r.nhom), tru };
 }
 // ══ Hết Task 6 ═══════════════════════════════════════════════════════════════
+
+// ══ Điểm bảng lớp (Lớp Ms Dung) — ADR 0068 ═══════════════════════════════════
+// Bảng được tick CẢ trong Google Sheet lẫn trên web → đối chiếu (không theo lượt POST) như tick trang môn. Khoá theo
+// NỘI DUNG (buổi·môn·nhóm·nhãn) chứ không theo số dòng: bảng lớn dần, chèn/xoá dòng làm số dòng dịch.
+export const KHOA_MOC_SHEET = "moc:sheet:";   // cổng "trước hệ điểm" theo bảng — PHẢI khớp bản trong test/route
+
+/** Hàm thuần: mọi đầu mục của mọi buổi → [{dinh, nhan, done, row}]. `dinh` = định danh nội dung (4 trường, ngăn \u0001). */
+export function mucSheet(sessions) {
+  const ra = [];
+  for (const s of Array.isArray(sessions) ? sessions : []) {
+    const buoi = String(s?.title || "").trim();
+    for (const g of s?.groups || []) {
+      const nhom = String(g?.name || "").trim();
+      for (const it of g?.items || []) {
+        const mon = String(it?.subject || "").trim();
+        const ten = String(it?.label || "").trim();
+        ra.push({
+          dinh: [buoi, mon, nhom, ten].join("\u0001"),
+          nhan: (mon ? mon + " · " : "") + (ten || "(không tên)"),
+          done: !!it?.done,
+          row: it?.row,
+        });
+      }
+    }
+  }
+  return ra;
+}
+
+/** Khoá NGUỒN của một đầu mục: sheet:<slug>:<12 hex đầu SHA-256 của định danh nội dung>. */
+export async function khoaSheet(slug, dinh) {
+  const h = new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(dinh))).subarray(0, 6);
+  return `sheet:${slug}:` + [...h].map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+
+/** Hàm thuần: bản sao `sessions` với đúng mục có `row` đổi `done` (để POST suy trạng thái sau khi ghi ô, khỏi đọc lại Sheet). */
+export function doiTrangThai(sessions, row, done) {
+  return (sessions || []).map((s) => ({ ...s, groups: (s.groups || []).map((g) => ({
+    ...g, items: (g.items || []).map((it) => (it.row === row ? { ...it, done } : it)) })) }));
+}
+
+/** Hàm thuần: mục (đã có `khoa`) + tập khoá sổ → phần CẦN CỘNG và nguồn CẦN GỠ (như `chonTick` + `chonGo`). */
+export function chonSheet(muc, daCo) {
+  const done = new Set(muc.filter((x) => x.done).map((x) => x.khoa));
+  const go = [], thay = new Set();
+  for (const k of daCo) {
+    if (k.startsWith("huy:") || k.startsWith("moc:")) continue;
+    const s = goc(k);
+    if (done.has(s) || thay.has(s)) continue;
+    if (dangHieuLuc(daCo, s)) { go.push(s); thay.add(s); }
+  }
+  const cong = [];
+  for (const x of muc) if (x.done && luotKe(daCo, x.khoa)) cong.push({ khoa: x.khoa, diem: DIEM.SHEET, nhan: x.nhan });
+  return { go, cong };
+}
+
+/**
+ * Đối chiếu bảng lớp `sessions` với sổ: cổng lazy, gỡ phần bỏ tick, cộng phần thiếu. Chỉ chạy khi manifest của `user`
+ * có `slug` trong `sheet`. → {cong, tru, moc?}. Nơi gọi bọc `an()`.
+ */
+export async function doiChieuSheet(env, url, user, slug, sessions, now = giay()) {
+  if (!USER_RE.test(user || "") || !/^[\w-]{1,64}$/.test(slug || "")) return { cong: 0, tru: 0 };
+  const mf = await docManifest(env, url, user);
+  if (!mf || !Array.isArray(mf.sheet) || !mf.sheet.includes(slug)) return { cong: 0, tru: 0 };
+  const muc = await Promise.all(mucSheet(sessions).map(async (x) => ({ ...x, khoa: await khoaSheet(slug, x.dinh) })));
+  const co = await env.STUDY_DB.prepare(
+    `SELECT khoa FROM diem WHERE user_id = ?1
+        AND ((khoa >= ?2 AND khoa < ?3) OR (khoa >= ?4 AND khoa < ?5) OR khoa = ?6)`
+  ).bind(user, ...khoang(`sheet:${slug}:`), ...khoang(`huy:sheet:${slug}:`), KHOA_MOC_SHEET + slug).all();
+  const daCo = new Set((co.results || []).map((r) => r.khoa));
+  const gate = KHOA_MOC_SHEET + slug;
+  if (!daCo.has(gate)) {
+    // Cổng lazy: chốt "trước hệ điểm" cho mọi mục đang xong + cổng, MỘT lô, cổng SAU CÙNG.
+    const base = muc.filter((x) => x.done).map((x) => ({ khoa: x.khoa, diem: 0, nhan: "trước hệ điểm" }));
+    base.push({ khoa: gate, diem: 0, nhan: "trước hệ điểm" });
+    await ghiDiem(env, user, base, now);
+    return { cong: 0, tru: 0, moc: true };
+  }
+  const { go, cong: moi } = chonSheet(muc, daCo);
+  let tru = 0;
+  // `muc.length` = 0 nghĩa là BẢNG ĐỌC RA TRỐNG (parse hỏng / buổi đổi tên / cột trạng thái lệch), không phải "bé bỏ hết
+  // tick" — gỡ theo đối chiếu lúc đó là xoá sạch sao (đúng lý do `POST /api/progress` KHÔNG gỡ theo KV rỗng). Không gỡ.
+  if (go.length && muc.length) {
+    const h = await an("huy", () => huyDiem(env, user, go, now), { tru: 0, khoa: [] });
+    tru = h.tru || 0;
+    for (const k of h.khoa) daCo.add(k);
+  }
+  let cong = 0;
+  if (moi.length) cong = (await ghiDiem(env, user, moi, now)).cong;
+  return { cong, tru };
+}
+
