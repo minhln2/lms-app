@@ -1,0 +1,496 @@
+
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+  <title>Điểm — Quản trị — PL</title>
+  <link rel="stylesheet" href="../../assets/tw.50c2de0d.css">
+<script>
+window.LS = (function () {
+  var ve = null, goc = '', dang = 0, henCuon = null, cho = null;
+  function token() {
+    try { return decodeURI((location.hash || '').replace(/^#/, '')); } catch (e) { return ''; }
+  }
+  function url(tk) { return tk ? '#' + encodeURI(tk) : location.pathname + location.search; }
+  function luuCuon() {
+    var st = history.state;
+    if (!st || !st.ls || st.cuon === window.scrollY) return;
+    st.cuon = window.scrollY;
+    history.replaceState(st, '', location.href);
+  }
+  function henLuu() {
+    if (henCuon) return;
+    henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
+  }
+  function cuonLai(st) {
+    if (!st || typeof st.cuon !== 'number') return;
+    var y = st.cuon;
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { window.scrollTo(0, y); });
+    });
+  }
+  function chayVe(req) {
+    dang++;
+    Promise.resolve().then(function () { return ve(req.tk, req.st || {}); }).then(
+      function () { dang--; cuonLai(req.st); tiep(); },
+      function () { dang--; tiep(); });
+  }
+  function tiep() { if (cho) { var r = cho; cho = null; chayVe(r); } }
+  function veLai(tk, st) {
+    if (!ve) { cuonLai(st); return; }
+    if (dang) { cho = { tk: tk, st: st }; return; }
+    chayVe({ tk: tk, st: st });
+  }
+  function di(tk, day) {
+    if (dang) return;
+    if (tk === token()) return;
+    var truoc = history.state || {};
+    var sau = (truoc.ls ? (truoc.sau || 0) : 0) + (day ? 1 : 0);
+    var st = { ls: 1, cuon: window.scrollY, token: tk, sau: sau };
+    (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
+  }
+  addEventListener('popstate', function (e) { veLai(token(), e.state); });
+  addEventListener('scroll', henLuu, { passive: true });
+  addEventListener('load', function () { if (!ve) cuonLai(history.state); });
+  return {
+    ham: function () {
+      try { history.scrollRestoration = 'manual'; } catch (e) {}
+      try {
+        var st = history.state;
+        if (!st || !st.ls) {
+          history.replaceState({ ls: 1, cuon: window.scrollY, token: token(), sau: 0 }, '', location.href);
+        }
+      } catch (e) {}
+    },
+    di: function (tk) { di(tk, true); },
+    thay: function (tk) { di(tk, false); },
+    mo: function (tk) { di(tk, true); },
+    dong: function (tk) {
+      var st = history.state || {};
+      if (st.ls && (st.sau || 0) > 0) history.back();
+      else di(tk === undefined ? goc : tk, false);
+    },
+    nghe: function (fn, g0) { ve = fn; goc = g0 || ''; veLai(token(), history.state); },
+    dang: function () { return dang > 0; },
+  };
+})();
+window.LS.ham();
+</script>
+<script>
+  window.QT_KHOA = 'quantri_qt';
+  // Nhóm lọc — thứ tự = thứ tự chip (spec §4.7; `lop` = bảng lớp học thêm, quyết định 2026-10-16).
+  window.QT_LOAI = { lms: 'Nội dung LMS', lop: 'Lớp học thêm', doc: 'Đọc sách', on: 'Ôn tập', bo_me: 'Bố mẹ', tra: 'Tra từ' };
+  function qtChipLoai(ds) {
+    const co = new Set(ds.map((x) => x.loai));
+    return Object.keys(QT_LOAI).filter((k) => co.has(k)).map((k) => ({ k, ten: QT_LOAI[k] }));
+  }
+  function qtChipMon(ds, ten) {
+    return [...new Set(ds.map((x) => x.mon).filter(Boolean))].map((k) => ({ k, ten: ten[k] || k }))
+      .sort((p, q) => p.ten.localeCompare(q.ten, 'vi'));
+  }
+  function qtLoc(ds, loai, mon) { return ds.filter((x) => (!loai || x.loai === loai) && (!mon || x.mon === mon)); }
+  // Tiến độ theo môn: mục xong = có khoá KV và KHÔNG redo; phần xong = mọi mục xong (như syncSecBox / chonTick).
+  function qtTienDo(tienDo, items, user) {
+    const xong = (cid, iid) => { const v = items[user + '/' + cid + '/' + iid]; return !!v && !v.redo; };
+    return tienDo.map((m) => ({ slug: m.slug, ten: m.ten, muc_tong: m.muc.length,
+      muc_xong: m.muc.filter((i) => xong(m.cid, i)).length, nhom_tong: m.nhom.length,
+      nhom_xong: m.nhom.filter((g) => g.length && g.every((i) => xong(m.cid, i))).length }));
+  }
+  function phienQT() {
+    return {
+      qt: null, ma: '', loiQt: '', dangMo: false,
+      docPhien() {
+        try {
+          const o = JSON.parse(localStorage.getItem(QT_KHOA) || 'null');
+          if (o && typeof o.token === 'string' && Number.isInteger(o.het) && o.het > Date.now() / 1000) return o;
+        } catch (e) { /* hỏng → coi như chưa có */ }
+        localStorage.removeItem(QT_KHOA);
+        return null;
+      },
+      async moPhien() {
+        const v = this.ma.trim();
+        if (!v || this.dangMo) return;
+        this.dangMo = true; this.loiQt = '';
+        try {
+          const r = await fetch('/api/quantri/phien', { method: 'POST', headers: { 'content-type': 'application/json' },
+                                                       body: JSON.stringify({ ma: v }) });
+          if (r.status === 401) { this.loiQt = 'Mã bố mẹ không đúng.'; return; }
+          if (!r.ok) { this.loiQt = 'Chưa mở được phiên (HTTP ' + r.status + ').'; return; }
+          const d = await r.json();
+          this.qt = { token: d.token, het: d.het };
+          localStorage.setItem(QT_KHOA, JSON.stringify(this.qt));
+          this.ma = '';
+          await this.taiTrang();
+        } catch (e) { this.loiQt = 'Không kết nối được máy chủ.'; }
+        finally { this.dangMo = false; }
+      },
+      thoat() { localStorage.removeItem(QT_KHOA); this.qt = null; },
+      hetPhien() { this.thoat(); this.loiQt = 'Phiên bố mẹ đã hết hạn — mở lại.'; },
+      hetLuc() {
+        return this.qt ? this.gio(this.qt.het) + ' ' + new Date(this.qt.het * 1000).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '';
+      },
+      // GET (body undefined) hoặc POST JSON, kèm x-quantri. 401 → hết phiên + Error{het}; lỗi khác → Error(lời của máy chủ).
+      async api(path, body) {
+        const init = { headers: { 'x-quantri': this.qt ? this.qt.token : '' } };
+        if (body !== undefined) { init.method = 'POST'; init.headers['content-type'] = 'application/json'; init.body = JSON.stringify(body); }
+        let r;
+        try { r = await fetch(path, init); } catch (e) { throw new Error('Không kết nối được máy chủ.'); }
+        const d = await r.json().catch(() => ({}));
+        if (r.status === 401) {
+          this.hetPhien();
+          const e = new Error('Phiên bố mẹ đã hết hạn — mở lại phiên (ô mã ở đầu trang) rồi làm lại.');
+          e.het = true;
+          throw e;
+        }
+        if (!r.ok) throw new Error(d.error || ('Lỗi máy chủ (HTTP ' + r.status + ').'));
+        return d;
+      },
+      ngay(ts) {
+        return new Date(ts * 1000).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+      },
+      gio(ts) {
+        return new Date(ts * 1000).toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit' });
+      },
+    };
+  }
+</script>
+  <script defer src="../../assets/alpine.63d2636a.js"></script>
+  <style>[x-cloak]{display:none!important}</style>
+  <script>
+    // Trang Điểm của khu quản trị (spec §4, §7; ADR 0069) — /{id}/quantri/diem.
+    //   • GET /api/quantri/diem (500 dòng, loai/mon/huy) + GET …/bieu-do?muc= (cột = điểm CỘNG theo kỳ, thanh CSS, cao bằng style).
+    //   • Nút trên dòng (spec §4.4): go.loai 'tick' → "Về chưa học" (tick/go); huy → "Gỡ điểm" (diem/huy); go.loai 'truyen' →
+    //     "Gỡ cả truyện" (truyen/go). nhom / on (gộp) / doi / sheet / huy: không nút.
+    //   • Trừ (đổi quà) = POST /api/diem/doi (x-quantri); tự cộng = POST /api/quantri/diem/cong.
+    //   • Lọc Loại + Môn ở trình duyệt (qtLoc); chip đang chọn không còn trong dữ liệu sau khi nạp lại → về "Tất cả".
+    //   • Hộp xác nhận = lớp phủ token 'hoi' (ADR 0067: Back đóng); 401 → hộp GIỮ, báo hết hạn (spec §9).
+    const TEN_MON = {"am-nhac-5": "\u00c2m Nh\u1ea1c 5", "cie-esl-5": "CIE ESL 5", "cie-ict-5": "CIE ICT 5", "cie-maths-5": "CIE Maths 5", "cie-science-5": "CIE Science 5", "giao-duc-ky-nang-pham-chat-5": "Gi\u00e1o D\u1ee5c K\u1ef9 N\u0103ng Ph\u1ea9m Ch\u1ea5t 5", "global-perspectives-5": "Global Perspectives 5", "lich-su-va-dia-ly-5": "L\u1ecbch S\u1eed v\u00e0 \u0110\u1ecba L\u00fd 5", "mi-thuat-5": "M\u0129 Thu\u1eadt 5", "so-tay": "\ud83d\udcd2 S\u1ed5 tay ti\u1ebfng Anh", "tap-doc": "\ud83d\udcd6 T\u1eadp \u0111\u1ecdc", "tieng-viet-5": "Ti\u1ebfng Vi\u1ec7t 5", "viet-nam-hoc-5": "Vi\u1ec7t Nam H\u1ecdc 5"};
+    function trangQtDiem() {
+      return {
+        ...phienQT(),
+        user: "pl",
+        ready: false, loi: '', bao: '', du: 0, lichSu: [],
+        muc: 'ngay', cot: [], cotLoi: '',
+        soTru: '', ghiTru: '', soCong: '', ghiCong: '', dang: false,
+        locLoai: '', locMon: '', moLoc: '',   // moLoc: hàng lọc đang bung (kiểu B)
+        hoi: null,        // {viec: 'tick'|'huy'|'truyen', x, chu, loi, het}
+        dangVe: false,
+        async init() {
+          this.qt = this.docPhien();
+          if (this.qt) await this.taiTrang();
+          this.$watch(() => (this.hoi ? 'hoi' : ''), (moi) => {
+            if (this.dangVe) return;
+            if (moi) { LS.mo(moi); return; }
+            // Back lúc đang gửi đã lấy mất mục `hoi` mà hộp vẫn giữ (ve): hash không còn `hoi` thì KHÔNG LS.dong — nó history.back()
+            // khi sâu > 0 và đẩy lùi người dùng một mục. Mục lớp phủ còn thì mới đóng bằng Back.
+            let h = '';
+            try { h = decodeURI((location.hash || '').replace(/^#/, '')); } catch (e) { /* hash hỏng → coi như không còn */ }
+            if (h.endsWith('hoi')) LS.dong('');
+          });
+          LS.nghe((tk) => this.ve(tk), '');
+          this.ready = true;
+        },
+        ve(tk) {
+          this.dangVe = true;
+          // Đang gửi (dang) thì GIỮ hộp: Back giữa chừng mà xoá hộp thì lỗi trả về sau đó ghi vào hộp đã tách khỏi trang, mất.
+          try { if (tk !== 'hoi' && !this.dang) this.hoi = null; } finally { this.$nextTick(() => { this.dangVe = false; }); }
+        },
+        async taiTrang() { await Promise.all([this.tai(), this.taiCot()]); },
+        async tai() {
+          try {
+            const d = await this.api('/api/quantri/diem?user=' + encodeURIComponent(this.user));
+            this.du = Number.isInteger(d.du) ? d.du : 0;
+            this.lichSu = Array.isArray(d.lich_su) ? d.lich_su : [];
+            this.loi = '';
+            if (this.locLoai && !this.chipLoai().some((c) => c.k === this.locLoai)) this.locLoai = '';
+            if (this.locMon && !this.chipMon().some((c) => c.k === this.locMon)) this.locMon = '';
+          } catch (e) { if (!e.het) this.loi = e.message; }
+        },
+        async taiCot() {
+          try {
+            const d = await this.api('/api/quantri/diem/bieu-do?muc=' + this.muc + '&user=' + encodeURIComponent(this.user));
+            this.cot = Array.isArray(d.cot) ? d.cot : []; this.cotLoi = '';
+          } catch (e) { if (!e.het) this.cotLoi = e.message; }
+        },
+        async doiMuc(m) { if (m === this.muc) return; this.muc = m; await this.taiCot(); },
+        // Cao cột: % của cột lớn nhất; cột 0 điểm = 0 (chỉ còn nhãn), cột có điểm tối thiểu 4% để còn thấy.
+        cao(c) { const max = Math.max(1, ...this.cot.map((x) => x.tong)); return c.tong ? Math.max(4, Math.round((c.tong / max) * 100)) : 0; },
+        tongKy() { return this.cot.reduce((s, c) => s + c.tong, 0); },
+        chipLoai() { return qtChipLoai(this.lichSu); },
+        chipMon() { return qtChipMon(this.lichSu, TEN_MON); },
+        theoNgay() {
+          const ra = [];
+          for (const x of qtLoc(this.lichSu, this.locLoai, this.locMon)) {
+            const n = this.ngay(x.ts);
+            if (!ra.length || ra[ra.length - 1].ngay !== n) ra.push({ ngay: n, ds: [] });
+            ra[ra.length - 1].ds.push(x);
+          }
+          return ra;
+        },
+        bieuTuong(k) {
+          const p = String(k).split(':');
+          if (p[0] === 'td') return { doc: '📖', quiz: '❓', thuam: '🎙' }[p[1]] || '📖';
+          return { tick: '✅', nhom: '🏁', on: '🧠', doi: '🎁', them: '📝', sheet: '📋', huy: '↩' }[p[0]] || '⭐';
+        },
+        soDiem(d) { return (d > 0 ? '+' : '') + d; },
+        nut(x) {
+          const ra = [];
+          if (x.go && x.go.loai === 'tick') ra.push({ viec: 'tick', ten: 'Về chưa học' });
+          if (x.huy) ra.push({ viec: 'huy', ten: 'Gỡ điểm' });
+          if (x.go && x.go.loai === 'truyen') ra.push({ viec: 'truyen', ten: 'Gỡ cả truyện' });
+          return ra;
+        },
+        tenTruyen(x) { const p = String(x.nhan || '').split(' · '); return p.length > 1 ? p[1] : x.go.truyen; },
+        // Sao của cả truyện trong 500 dòng đã tải (số thật: `tru` máy chủ trả).
+        saoTruyen(id) {
+          return this.lichSu.filter((y) => y.huy && y.go && y.go.loai === 'truyen' && y.go.truyen === id).reduce((s, y) => s + y.diem, 0);
+        },
+        hoiNut(x, viec) {
+          let chu;
+          if (viec === 'tick') chu = 'Về chưa học "' + (x.nhan || x.go.key) + '": bỏ dấu đã học ở trang môn, trừ ' + x.diem + ' ⭐ (kèm thưởng hoàn thành phần, nếu đang có).';
+          else if (viec === 'huy') chu = 'Gỡ điểm dòng "' + (x.nhan || x.khoa) + '": trừ ' + x.diem + ' ⭐. Giữ nguyên tiến độ / bản thu / quiz — không tự cộng lại.';
+          else chu = 'Gỡ cả truyện "' + this.tenTruyen(x) + '": xoá tiến độ đọc, quiz, bản thu (con đọc lại từ đầu); trừ khoảng ' + this.saoTruyen(x.go.truyen) + ' ⭐.';
+          this.bao = '';
+          this.hoi = { viec, x, chu, loi: '', het: false };
+        },
+        dongHoi() { if (!this.dang) this.hoi = null; },
+        async xacNhan() {
+          const h = this.hoi;
+          if (!h || this.dang) return;
+          this.dang = true; h.loi = '';
+          try {
+            let d;
+            if (h.viec === 'tick') d = await this.api('/api/quantri/tick/go', { user: this.user, key: h.x.go.key });
+            else if (h.viec === 'huy') d = await this.api('/api/quantri/diem/huy', { user: this.user, khoa: h.x.khoa });
+            else d = await this.api('/api/quantri/truyen/go', { user: this.user, truyen: h.x.go.truyen });
+            this.hoi = null;
+            const n = Number(d.tru) || 0;
+            this.bao = n > 0 ? 'Đã gỡ — −' + n + ' ⭐' : 'Đã gỡ (không còn ⭐ nào để trừ).';
+            await this.taiTrang();
+          } catch (e) {
+            h.loi = e.message;
+            if (e.het) h.het = true;
+            else { try { await this.tai(); } catch (e2) { /* giữ số cũ */ } }   // máy chủ có thể ĐÃ gỡ mà câu trả lời không về
+          } finally { this.dang = false; }
+        },
+        async truDiem() {
+          if (this.dang) return;
+          const n = Number(this.soTru), g = this.ghiTru.trim();
+          if (!Number.isInteger(n) || n < 1) { this.bao = ''; this.loi = 'Số điểm phải là số nguyên dương.'; return; }
+          if (n > this.du) { this.bao = ''; this.loi = 'Không đủ điểm (còn ' + this.du + ').'; return; }
+          if (!g) { this.bao = ''; this.loi = 'Cần ghi chú (đổi quà gì).'; return; }
+          this.dang = true; this.loi = ''; this.bao = '';
+          try {
+            await this.api('/api/diem/doi', { user: this.user, diem: n, ghi_chu: g });
+            this.soTru = ''; this.ghiTru = '';
+            this.bao = 'Đã trừ ' + n + ' ⭐';
+            await this.taiTrang();
+          } catch (e) { if (!e.het) this.loi = e.message; }
+          finally { this.dang = false; }
+        },
+        async congDiem() {
+          if (this.dang) return;
+          const n = Number(this.soCong), g = this.ghiCong.trim();
+          if (!Number.isInteger(n) || n < 1) { this.bao = ''; this.loi = 'Số điểm phải là số nguyên dương.'; return; }
+          if (!g) { this.bao = ''; this.loi = 'Cần ghi chú (vì sao thưởng).'; return; }
+          this.dang = true; this.loi = ''; this.bao = '';
+          try {
+            await this.api('/api/quantri/diem/cong', { user: this.user, diem: n, ghi_chu: g });
+            this.soCong = ''; this.ghiCong = '';
+            this.bao = 'Đã cộng ' + n + ' ⭐';
+            await this.taiTrang();
+          } catch (e) { if (!e.het) this.loi = e.message; }
+          finally { this.dang = false; }
+        },
+      };
+    }
+  </script>
+</head>
+<!-- KHÔNG thêm x-init="init()": Alpine 3 TỰ gọi init() của object x-data. -->
+<body class="bg-slate-100 text-slate-800 min-h-screen" x-data="trangQtDiem()" @keydown.escape.window="dongHoi()">
+  <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+  <div class="max-w-2xl mx-auto px-4 py-3">
+    <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-slate-500">
+  <a href="../../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
+  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">PL</a><span class="shrink-0 text-slate-300">›</span>
+  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">Quản trị</a><span class="shrink-0 text-slate-300">›</span>
+  <span aria-current="page"  class="truncate font-medium text-slate-700">⭐ Điểm</span>
+</nav>
+    <h1 class="mt-1 text-lg font-bold">⭐ Điểm</h1>
+    <nav data-qt-nav aria-label="Khu quản trị" class="mt-2 flex flex-wrap gap-1.5 text-sm">
+      <a href="index.html" class="inline-flex items-center h-8 px-3 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200">Tổng quan</a>
+      <span aria-current="page" class="inline-flex items-center h-8 px-3 rounded-full bg-indigo-600 text-white font-semibold">Điểm</span>
+      <a href="hoc-tap.html" class="inline-flex items-center h-8 px-3 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200">Lịch sử học tập</a>
+    </nav>
+  </div>
+</header>
+  <main class="max-w-2xl mx-auto px-4 py-4">
+    <template x-if="!ready"><p class="text-slate-500">Đang tải…</p></template>
+    <template x-if="ready">
+      <div>
+        <template x-if="!qt">
+  <section data-qt-mo class="bg-white rounded-2xl shadow px-4 py-4">
+    <p class="text-sm text-slate-700">Cần <b>mã bố mẹ</b> để xem và sửa.</p>
+    <form @submit.prevent="moPhien()" class="mt-3 flex flex-wrap items-center gap-2">
+      <input data-qt-ma type="password" autocomplete="off" autocapitalize="off" spellcheck="false" x-model="ma" placeholder="Mã bố mẹ"
+             aria-label="Mã bố mẹ" class="h-10 flex-1 min-w-[10rem] px-3 rounded-lg border border-slate-300 text-sm">
+      <button type="submit" data-qt-ma-gui :disabled="dangMo" class="h-10 px-4 rounded-lg bg-indigo-600 text-white text-sm font-semibold">Mở</button>
+    </form>
+    <p data-qt-loi x-show="loiQt" x-text="loiQt" class="mt-2 text-sm text-rose-700"></p>
+  </section>
+</template>
+<template x-if="qt">
+  <p data-qt-phien class="mb-3 flex flex-wrap items-center justify-end gap-2 text-xs text-slate-500">
+    <span x-text="'Phiên hết hạn lúc ' + hetLuc()"></span>
+    <button type="button" data-qt-thoat @click="thoat()" class="px-3 py-2 rounded-full border border-slate-300 bg-white text-xs font-medium">Thoát</button>
+  </p>
+</template>
+        <template x-if="qt">
+          <div>
+            <p data-qt-loi-trang x-show="loi" x-text="loi" role="alert" class="mb-3 text-sm text-rose-700"></p>
+            <p data-qt-bao x-show="bao" x-text="bao" class="mb-3 text-sm text-emerald-700"></p>
+            <section class="bg-white rounded-2xl shadow px-4 py-5">
+              <div class="text-center">
+                <p class="text-sm text-slate-500">Số điểm của PL</p>
+                <p class="text-4xl font-extrabold text-amber-600">⭐ <span data-qt-du x-text="du"></span></p>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-200">
+                <div class="flex items-center justify-between gap-2">
+                  <h2 class="text-sm font-bold">Điểm cộng theo kỳ</h2>
+                  <div class="flex gap-1 text-xs">
+                    <button type="button" data-qt-muc="ngay" @click="doiMuc('ngay')"
+                            :class="muc === 'ngay' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'" class="h-8 px-3 rounded-lg">Ngày</button>
+                    <button type="button" data-qt-muc="tuan" @click="doiMuc('tuan')"
+                            :class="muc === 'tuan' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'" class="h-8 px-3 rounded-lg">Tuần</button>
+                    <button type="button" data-qt-muc="thang" @click="doiMuc('thang')"
+                            :class="muc === 'thang' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'" class="h-8 px-3 rounded-lg">Tháng</button>
+                  </div>
+                </div>
+                <p x-show="cotLoi" x-text="cotLoi" class="mt-2 text-sm text-rose-700"></p>
+                
+                <div class="mt-5 flex items-end gap-2" style="height:10rem;border-bottom:1px solid #e2e8f0">
+                  <template x-for="c in cot" :key="c.tu_ts">
+                    <div data-qt-cot :data-tong="c.tong" class="flex-1 h-full flex items-end" :title="c.nhan + ': +' + c.tong + ' ⭐'">
+                      <div data-qt-thanh class="w-full bg-emerald-500 rounded-t relative" :style="'height:' + cao(c) + '%'">
+                        <span class="absolute text-slate-500" style="left:50%;transform:translateX(-50%);bottom:100%;margin-bottom:2px;font-size:10px"
+                              x-show="c.tong" x-text="'+' + c.tong"></span>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+                <div class="flex gap-2 mt-1">
+                  <template x-for="c in cot" :key="c.tu_ts">
+                    <span class="flex-1 text-center text-slate-400" style="font-size:10px" x-text="c.nhan"></span>
+                  </template>
+                </div>
+                <p class="mt-2 text-xs text-slate-500">Tổng cộng trong kỳ: <b class="text-emerald-700">+<span x-text="tongKy()"></span> ⭐</b></p>
+              </div>
+              <form data-qt-tru @submit.prevent="truDiem()" class="mt-4 pt-3 border-t border-slate-200 flex flex-wrap items-center gap-2">
+                <span class="text-xs font-semibold text-slate-500 w-full">Trừ điểm (đổi quà ngoài đời)</span>
+                <input data-qt-tru-so type="number" min="1" step="1" inputmode="numeric" x-model="soTru" placeholder="Số điểm" aria-label="Số điểm trừ"
+                       class="h-10 w-28 px-3 rounded-lg border border-slate-300 text-sm">
+                <input data-qt-tru-ghi type="text" maxlength="200" x-model="ghiTru" placeholder="Ghi chú (đổi quà gì)" aria-label="Ghi chú trừ"
+                       class="h-10 flex-1 min-w-[10rem] px-3 rounded-lg border border-slate-300 text-sm">
+                <button type="submit" data-qt-tru-gui :disabled="dang" class="h-10 px-4 rounded-lg bg-rose-600 text-white text-sm font-semibold">Trừ điểm</button>
+              </form>
+              <form data-qt-cong @submit.prevent="congDiem()" class="mt-3 flex flex-wrap items-center gap-2">
+                <span class="text-xs font-semibold text-slate-500 w-full">Bố mẹ tự cộng</span>
+                <input data-qt-cong-so type="number" min="1" step="1" inputmode="numeric" x-model="soCong" placeholder="Số điểm" aria-label="Số điểm cộng"
+                       class="h-10 w-28 px-3 rounded-lg border border-slate-300 text-sm">
+                <input data-qt-cong-ghi type="text" maxlength="200" x-model="ghiCong" placeholder="Ghi chú (vì sao thưởng)" aria-label="Ghi chú cộng"
+                       class="h-10 flex-1 min-w-[10rem] px-3 rounded-lg border border-slate-300 text-sm">
+                <button type="submit" data-qt-cong-gui :disabled="dang" class="h-10 px-4 rounded-lg bg-emerald-600 text-white text-sm font-semibold">Cộng điểm</button>
+              </form>
+            </section>
+
+            <section class="mt-4">
+              <h2 class="text-base font-bold mb-2">Lịch sử</h2>
+              <div class="mb-3 bg-white rounded-2xl shadow divide-y divide-slate-100">
+                <div data-qt-chip="loai">
+  <button type="button" data-qt-mo-loc="loai" @click="moLoc = moLoc === 'loai' ? '' : 'loai'"
+          :aria-expanded="String(moLoc === 'loai')" class="w-full h-10 px-4 flex items-center gap-2 text-sm">
+    <span class="text-slate-500">Loại:</span>
+    <b data-qt-loc-chon class="flex-1 text-left truncate"
+       x-text="locLoai ? (((chipLoai()).find((o) => o.k === locLoai) || {}).ten || locLoai) : 'Tất cả'"></b>
+    <span class="text-slate-400" x-text="moLoc === 'loai' ? '▴' : '▾'"></span>
+  </button>
+  <div x-show="moLoc === 'loai'" class="px-4 pb-3 flex flex-wrap gap-1.5">
+    <button type="button" data-k="" @click="locLoai = ''; moLoc = ''"
+            :class="locLoai === '' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="h-8 px-3 rounded-full text-xs">Tất cả</button>
+    <template x-for="o in chipLoai()" :key="o.k">
+      <button type="button" :data-k="o.k" @click="locLoai = o.k; moLoc = ''"
+              :class="locLoai === o.k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="h-8 px-3 rounded-full text-xs" x-text="o.ten"></button>
+    </template>
+  </div>
+</div>
+                <div data-qt-chip="mon">
+  <button type="button" data-qt-mo-loc="mon" @click="moLoc = moLoc === 'mon' ? '' : 'mon'"
+          :aria-expanded="String(moLoc === 'mon')" class="w-full h-10 px-4 flex items-center gap-2 text-sm">
+    <span class="text-slate-500">Môn:</span>
+    <b data-qt-loc-chon class="flex-1 text-left truncate"
+       x-text="locMon ? (((chipMon()).find((o) => o.k === locMon) || {}).ten || locMon) : 'Tất cả môn'"></b>
+    <span class="text-slate-400" x-text="moLoc === 'mon' ? '▴' : '▾'"></span>
+  </button>
+  <div x-show="moLoc === 'mon'" class="px-4 pb-3 flex flex-wrap gap-1.5">
+    <button type="button" data-k="" @click="locMon = ''; moLoc = ''"
+            :class="locMon === '' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="h-8 px-3 rounded-full text-xs">Tất cả môn</button>
+    <template x-for="o in chipMon()" :key="o.k">
+      <button type="button" :data-k="o.k" @click="locMon = o.k; moLoc = ''"
+              :class="locMon === o.k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="h-8 px-3 rounded-full text-xs" x-text="o.ten"></button>
+    </template>
+  </div>
+</div>
+              </div>
+              <p x-show="!theoNgay().length" class="text-sm text-slate-500">Không có dòng nào khớp bộ lọc.</p>
+              <template x-for="g in theoNgay()" :key="g.ngay">
+                <div class="mb-3">
+                  <p class="text-xs font-bold uppercase tracking-wide text-slate-400 mb-1" x-text="g.ngay"></p>
+                  <ul class="bg-white rounded-2xl shadow divide-y divide-slate-100">
+                    <template x-for="x in g.ds" :key="x.khoa">
+                      <li data-qt-dong :data-khoa="x.khoa" class="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-2.5">
+                        <span class="text-xl" x-text="bieuTuong(x.khoa)"></span>
+                        <span class="flex-1 min-w-0 break-words" x-text="x.nhan || x.khoa"></span>
+                        <span class="text-xs text-slate-400" x-text="gio(x.ts)"></span>
+                        <span class="w-14 text-right font-bold" :class="x.diem > 0 ? 'text-emerald-700' : 'text-rose-700'" x-text="soDiem(x.diem)"></span>
+                        <template x-if="nut(x).length">
+                          <div class="basis-full flex flex-wrap justify-end gap-2">
+                            <template x-for="b in nut(x)" :key="b.viec">
+                              <button type="button" :data-qt-nut="b.viec" @click="hoiNut(x, b.viec)" :disabled="dang"
+                                      class="shrink-0 px-3 py-2 -my-1 rounded-full border border-rose-300 bg-white text-xs font-semibold text-rose-700"
+                                      x-text="b.ten"></button>
+                            </template>
+                          </div>
+                        </template>
+                      </li>
+                    </template>
+                  </ul>
+                </div>
+              </template>
+            </section>
+          </div>
+        </template>
+
+        
+        <template x-if="hoi">
+          <div data-qt-hoi role="dialog" aria-modal="true" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4">
+            <div class="w-full max-w-md bg-white rounded-2xl shadow-xl px-5 py-4">
+              <p class="font-bold text-slate-800" x-text="{ tick: 'Về chưa học?', huy: 'Gỡ điểm?', truyen: 'Gỡ cả truyện?' }[hoi.viec]"></p>
+              <p data-qt-hoi-chu class="mt-2 text-sm text-slate-700" x-text="hoi.chu"></p>
+              <p data-qt-hoi-loi x-show="hoi.loi" x-text="hoi.loi" role="alert" class="mt-2 text-sm font-semibold text-rose-700"></p>
+              <div class="mt-4 flex justify-end gap-2">
+                <button type="button" data-qt-hoi-thoi @click="dongHoi()" :disabled="dang" class="h-10 px-4 rounded-lg border border-slate-300 bg-white text-sm"
+                        x-text="hoi.het ? 'Đóng' : 'Thôi'"></button>
+                <button type="button" data-qt-hoi-go x-show="!hoi.het" @click="xacNhan()" :disabled="dang"
+                        class="h-10 px-4 rounded-lg bg-rose-600 text-white text-sm font-semibold">Xác nhận</button>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </template>
+  </main>
+</body>
+</html>

@@ -1,0 +1,474 @@
+
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+  <title>Lịch sử học tập — Quản trị — MK</title>
+  <link rel="stylesheet" href="../../assets/tw.50c2de0d.css">
+<script>
+window.LS = (function () {
+  var ve = null, goc = '', dang = 0, henCuon = null, cho = null;
+  function token() {
+    try { return decodeURI((location.hash || '').replace(/^#/, '')); } catch (e) { return ''; }
+  }
+  function url(tk) { return tk ? '#' + encodeURI(tk) : location.pathname + location.search; }
+  function luuCuon() {
+    var st = history.state;
+    if (!st || !st.ls || st.cuon === window.scrollY) return;
+    st.cuon = window.scrollY;
+    history.replaceState(st, '', location.href);
+  }
+  function henLuu() {
+    if (henCuon) return;
+    henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
+  }
+  function cuonLai(st) {
+    if (!st || typeof st.cuon !== 'number') return;
+    var y = st.cuon;
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { window.scrollTo(0, y); });
+    });
+  }
+  function chayVe(req) {
+    dang++;
+    Promise.resolve().then(function () { return ve(req.tk, req.st || {}); }).then(
+      function () { dang--; cuonLai(req.st); tiep(); },
+      function () { dang--; tiep(); });
+  }
+  function tiep() { if (cho) { var r = cho; cho = null; chayVe(r); } }
+  function veLai(tk, st) {
+    if (!ve) { cuonLai(st); return; }
+    if (dang) { cho = { tk: tk, st: st }; return; }
+    chayVe({ tk: tk, st: st });
+  }
+  function di(tk, day) {
+    if (dang) return;
+    if (tk === token()) return;
+    var truoc = history.state || {};
+    var sau = (truoc.ls ? (truoc.sau || 0) : 0) + (day ? 1 : 0);
+    var st = { ls: 1, cuon: window.scrollY, token: tk, sau: sau };
+    (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
+  }
+  addEventListener('popstate', function (e) { veLai(token(), e.state); });
+  addEventListener('scroll', henLuu, { passive: true });
+  addEventListener('load', function () { if (!ve) cuonLai(history.state); });
+  return {
+    ham: function () {
+      try { history.scrollRestoration = 'manual'; } catch (e) {}
+      try {
+        var st = history.state;
+        if (!st || !st.ls) {
+          history.replaceState({ ls: 1, cuon: window.scrollY, token: token(), sau: 0 }, '', location.href);
+        }
+      } catch (e) {}
+    },
+    di: function (tk) { di(tk, true); },
+    thay: function (tk) { di(tk, false); },
+    mo: function (tk) { di(tk, true); },
+    dong: function (tk) {
+      var st = history.state || {};
+      if (st.ls && (st.sau || 0) > 0) history.back();
+      else di(tk === undefined ? goc : tk, false);
+    },
+    nghe: function (fn, g0) { ve = fn; goc = g0 || ''; veLai(token(), history.state); },
+    dang: function () { return dang > 0; },
+  };
+})();
+window.LS.ham();
+</script>
+<script>
+  window.QT_KHOA = 'quantri_qt';
+  // Nhóm lọc — thứ tự = thứ tự chip (spec §4.7; `lop` = bảng lớp học thêm, quyết định 2026-10-16).
+  window.QT_LOAI = { lms: 'Nội dung LMS', lop: 'Lớp học thêm', doc: 'Đọc sách', on: 'Ôn tập', bo_me: 'Bố mẹ', tra: 'Tra từ' };
+  function qtChipLoai(ds) {
+    const co = new Set(ds.map((x) => x.loai));
+    return Object.keys(QT_LOAI).filter((k) => co.has(k)).map((k) => ({ k, ten: QT_LOAI[k] }));
+  }
+  function qtChipMon(ds, ten) {
+    return [...new Set(ds.map((x) => x.mon).filter(Boolean))].map((k) => ({ k, ten: ten[k] || k }))
+      .sort((p, q) => p.ten.localeCompare(q.ten, 'vi'));
+  }
+  function qtLoc(ds, loai, mon) { return ds.filter((x) => (!loai || x.loai === loai) && (!mon || x.mon === mon)); }
+  // Tiến độ theo môn: mục xong = có khoá KV và KHÔNG redo; phần xong = mọi mục xong (như syncSecBox / chonTick).
+  function qtTienDo(tienDo, items, user) {
+    const xong = (cid, iid) => { const v = items[user + '/' + cid + '/' + iid]; return !!v && !v.redo; };
+    return tienDo.map((m) => ({ slug: m.slug, ten: m.ten, muc_tong: m.muc.length,
+      muc_xong: m.muc.filter((i) => xong(m.cid, i)).length, nhom_tong: m.nhom.length,
+      nhom_xong: m.nhom.filter((g) => g.length && g.every((i) => xong(m.cid, i))).length }));
+  }
+  function phienQT() {
+    return {
+      qt: null, ma: '', loiQt: '', dangMo: false,
+      docPhien() {
+        try {
+          const o = JSON.parse(localStorage.getItem(QT_KHOA) || 'null');
+          if (o && typeof o.token === 'string' && Number.isInteger(o.het) && o.het > Date.now() / 1000) return o;
+        } catch (e) { /* hỏng → coi như chưa có */ }
+        localStorage.removeItem(QT_KHOA);
+        return null;
+      },
+      async moPhien() {
+        const v = this.ma.trim();
+        if (!v || this.dangMo) return;
+        this.dangMo = true; this.loiQt = '';
+        try {
+          const r = await fetch('/api/quantri/phien', { method: 'POST', headers: { 'content-type': 'application/json' },
+                                                       body: JSON.stringify({ ma: v }) });
+          if (r.status === 401) { this.loiQt = 'Mã bố mẹ không đúng.'; return; }
+          if (!r.ok) { this.loiQt = 'Chưa mở được phiên (HTTP ' + r.status + ').'; return; }
+          const d = await r.json();
+          this.qt = { token: d.token, het: d.het };
+          localStorage.setItem(QT_KHOA, JSON.stringify(this.qt));
+          this.ma = '';
+          await this.taiTrang();
+        } catch (e) { this.loiQt = 'Không kết nối được máy chủ.'; }
+        finally { this.dangMo = false; }
+      },
+      thoat() { localStorage.removeItem(QT_KHOA); this.qt = null; },
+      hetPhien() { this.thoat(); this.loiQt = 'Phiên bố mẹ đã hết hạn — mở lại.'; },
+      hetLuc() {
+        return this.qt ? this.gio(this.qt.het) + ' ' + new Date(this.qt.het * 1000).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '';
+      },
+      // GET (body undefined) hoặc POST JSON, kèm x-quantri. 401 → hết phiên + Error{het}; lỗi khác → Error(lời của máy chủ).
+      async api(path, body) {
+        const init = { headers: { 'x-quantri': this.qt ? this.qt.token : '' } };
+        if (body !== undefined) { init.method = 'POST'; init.headers['content-type'] = 'application/json'; init.body = JSON.stringify(body); }
+        let r;
+        try { r = await fetch(path, init); } catch (e) { throw new Error('Không kết nối được máy chủ.'); }
+        const d = await r.json().catch(() => ({}));
+        if (r.status === 401) {
+          this.hetPhien();
+          const e = new Error('Phiên bố mẹ đã hết hạn — mở lại phiên (ô mã ở đầu trang) rồi làm lại.');
+          e.het = true;
+          throw e;
+        }
+        if (!r.ok) throw new Error(d.error || ('Lỗi máy chủ (HTTP ' + r.status + ').'));
+        return d;
+      },
+      ngay(ts) {
+        return new Date(ts * 1000).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+      },
+      gio(ts) {
+        return new Date(ts * 1000).toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit' });
+      },
+    };
+  }
+</script>
+  <script defer src="../../assets/alpine.63d2636a.js"></script>
+  <style>[x-cloak]{display:none!important}</style>
+  <script>
+    // Lịch sử học tập (spec §5, §6; ADR 0069) — /{id}/quantri/hoc-tap. Năm tab = năm màn hình ở hash (ADR 0067), nạp LƯỜI:
+    //   dong   GET hoc-tap?phan=dong   — chip Loại + Môn
+    //   mon    TIEN_DO nhúng + GET /api/progress (công khai) — MỌI môn (quyết định 2026-10-16), không lọc
+    //   tapdoc GET hoc-tap?phan=tapdoc — không lọc
+    //   on     GET hoc-tap?phan=on     — chip Môn; thẻ known = 1 → "Bỏ đã thuộc" (POST thuoc/go, không dính ⭐)
+    //   tu     GET hoc-tap?phan=tu     — chip Môn
+    // Chữ thẻ: ../study/<môn>.json (cùng file trang ôn tập), như khối "Thẻ đã thuộc" cũ của diem.html; id không còn → hiện id.
+    const TIEN_DO = [{"cid": "80231", "muc": ["7943790", "7943789", "7943791", "7943784", "7943786", "8935528", "7943807", "7943802", "7943804", "7943799", "7943800", "7943794", "7943796", "7943809", "7943811", "7943814", "8863217", "7943816", "7943819", "7943822", "8807007", "7943825", "7943828", "7943831", "7943833", "8752117", "7943838", "7943836", "7943850", "8613081", "7943842", "7943844", "7943846", "7943843", "8451396", "7943859", "7943857", "7943854", "7943855"], "nhom": [["7943790", "7943789", "7943791"], ["7943784", "7943786"], ["8935528", "7943807"], ["7943802", "7943804"], ["7943799", "7943800"], ["7943794", "7943796"], ["7943809", "7943811"], ["7943814"], ["8863217", "7943816"], ["7943819", "7943822"], ["8807007", "7943825"], ["7943828", "7943831", "7943833"], ["8752117"], ["7943838"], ["7943836"], ["7943850", "8613081"], ["7943842", "7943844", "7943846", "7943843"], ["8451396", "7943859"], ["7943857"], ["7943854", "7943855"]], "slug": "tieng-viet-1", "ten": "Ti\u1ebfng Vi\u1ec7t 1"}, {"cid": "80353", "muc": ["9036221", "9055161", "9003490", "9003785", "9003788", "9003790", "9003793", "9030509", "8965359", "8965495", "8471762", "8263761", "8623877", "8550202", "8623896", "8623894", "8710579", "8710581", "8852056", "8869382", "8852048"], "nhom": [["9036221", "9055161"], ["9003490", "9003785", "9003788", "9003790", "9003793"], ["9030509"], ["8965359", "8965495"], ["8471762"], ["8263761"], ["8623877"], ["8550202"], ["8623896"], ["8623894"], ["8710579"], ["8710581"], ["8852056"], ["8869382"], ["8852048"]], "slug": "cie-maths-1", "ten": "CIE Maths 1"}, {"cid": "80352", "muc": ["9051768", "8471754", "8471756", "8471757", "8471758", "8633751", "8633754", "8633755", "8633753", "8710444", "8710445", "8710446", "8710448", "8710449", "8710450", "8772803", "8772805", "8772806", "8772807", "8772808", "8821943", "8821945", "8821946", "8884847", "8884848", "8884851", "8884852", "8884853", "8884854", "8884850", "8959018", "8959019", "8959021", "9030512", "9030514", "9030516"], "nhom": [["9051768"], ["8471754"], ["8471756", "8471757", "8471758"], ["8633751"], ["8633754", "8633755", "8633753"], ["8710444", "8710445", "8710446"], ["8710448", "8710449", "8710450"], ["8772803"], ["8772805", "8772806", "8772807", "8772808"], ["8821943"], ["8821945", "8821946"], ["8884847", "8884848"], ["8884851", "8884852", "8884853", "8884854", "8884850"], ["8959018", "8959019"], ["8959021"], ["9030512"], ["9030514", "9030516"]], "slug": "cie-esl-1", "ten": "CIE ESL 1"}, {"cid": "145788", "muc": ["8921943", "8921876", "8921878", "8921880", "8921863", "8799107", "8799106", "8799178", "8799110", "8799136", "8868897", "8868857", "8868858", "8868867", "8868892", "8868895", "8921761", "8921854", "9038437", "9038430", "9038431", "9038505", "9038506"], "nhom": [["8921943", "8921876", "8921878", "8921880"], ["8921863"], ["8799107"], ["8799106"], ["8799178", "8799110", "8799136"], ["8868897"], ["8868857", "8868858"], ["8868867", "8868892", "8868895"], ["8921761"], ["8921854"], ["9038437", "9038430", "9038431", "9038505", "9038506"]], "slug": "cie-science-1", "ten": "CIE Science 1"}, {"cid": "79967", "muc": ["8312121", "8312125", "8312120", "8312122", "8312124", "8312113", "8312116", "8312117", "8312118"], "nhom": [["8312121", "8312125", "8312120", "8312122", "8312124"], ["8312113"], ["8312116", "8312117", "8312118"]], "slug": "cong-nghe-thong-tin-1", "ten": "C\u00f4ng Ngh\u1ec7 Th\u00f4ng Tin 1"}, {"cid": "80232", "muc": ["7945317", "7945318", "7945311", "7945312", "7945327", "7945328", "7945330", "7945329", "7945325", "7945323", "7945320", "7945275"], "nhom": [["7945317", "7945318"], ["7945311", "7945312"], ["7945327", "7945328", "7945330", "7945329"], ["7945325"], ["7945323"], ["7945320"]], "slug": "viet-nam-hoc-1", "ten": "Vi\u1ec7t Nam H\u1ecdc 1"}, {"cid": "80230", "muc": ["7943373", "7943374", "7943380", "7943381", "7943382", "7943378", "7943379", "7943386", "7943387"], "nhom": [["7943373", "7943374"], ["7943380", "7943381", "7943382", "7943378", "7943379"], ["7943386", "7943387"]], "slug": "giao-duc-ky-nang-pham-chat-1", "ten": "Gi\u00e1o D\u1ee5c K\u1ef9 N\u0103ng Ph\u1ea9m Ch\u1ea5t 1"}, {"cid": "80354", "muc": ["8326372", "8326373", "8326374", "8326371"], "nhom": [], "slug": "mi-thuat-1", "ten": "M\u0129 Thu\u1eadt 1"}, {"cid": "80235", "muc": ["8862105", "8862102", "8862115", "8751938", "8593578", "8594989", "8595171", "8593508", "8749998", "8940998", "8941004"], "nhom": [["8862105", "8862102"], ["8862115"], ["8751938"], ["8593578", "8594989", "8595171"], ["8593508"], ["8749998"], ["8940998", "8941004"]], "slug": "global-perspectives-1", "ten": "Global Perspectives 1"}, {"cid": "80065", "muc": ["8875823", "8875827", "8875831", "8875903", "8875906", "8875908", "8875912", "8875916", "8875918", "8875889", "8875890", "8875895", "8875896", "8875862", "8875865", "8875867", "8875874", "8875878", "8875882", "8875839", "8875843", "8875846", "8875848", "8875852"], "nhom": [["8875839", "8875843", "8875846", "8875848", "8875852"]], "slug": "am-nhac-1", "ten": "\u00c2m Nh\u1ea1c 1"}, {"cid": "80554", "muc": ["8618786", "8618787", "8618788", "8618789", "8618790", "8618791"], "nhom": [], "slug": "giao-duc-the-chat-1", "ten": "Gi\u00e1o D\u1ee5c Th\u1ec3 Ch\u1ea5t 1"}];
+    const TEN_MON = {"am-nhac-1": "\u00c2m Nh\u1ea1c 1", "cie-esl-1": "CIE ESL 1", "cie-maths-1": "CIE Maths 1", "cie-science-1": "CIE Science 1", "cong-nghe-thong-tin-1": "C\u00f4ng Ngh\u1ec7 Th\u00f4ng Tin 1", "giao-duc-ky-nang-pham-chat-1": "Gi\u00e1o D\u1ee5c K\u1ef9 N\u0103ng Ph\u1ea9m Ch\u1ea5t 1", "giao-duc-the-chat-1": "Gi\u00e1o D\u1ee5c Th\u1ec3 Ch\u1ea5t 1", "global-perspectives-1": "Global Perspectives 1", "lop-ms-dung": "L\u1edbp Ms Dung", "mi-thuat-1": "M\u0129 Thu\u1eadt 1", "so-tay": "\ud83d\udcd2 S\u1ed5 tay ti\u1ebfng Anh", "tap-doc": "\ud83d\udcd6 T\u1eadp \u0111\u1ecdc", "tieng-viet-1": "Ti\u1ebfng Vi\u1ec7t 1", "viet-nam-hoc-1": "Vi\u1ec7t Nam H\u1ecdc 1"};
+    const MARK_KEYS = {"checklists": ["title"], "compares": ["title"], "experiments": ["title"], "grammar": ["title"], "phrases": ["title"], "points": ["t"], "readings": ["title"], "sounds": ["title"], "topics": ["title", "def"], "watch_out": ["wrong"], "worked": ["title", "problem"]};
+    const TAB = ['dong', 'mon', 'tapdoc', 'on', 'tu'];
+    function trangQtHoc() {
+      return {
+        ...phienQT(),
+        user: "mk",
+        ready: false, tab: 'dong', loi: '', bao: '', dang: false,
+        du: { dong: null, tapdoc: null, on: null, tu: null, mon: null },   // null = chưa nạp
+        chu: {},                // môn → {id: chữ thẻ}
+        locLoai: '', locMon: '', moLoc: '',   // moLoc: hàng lọc đang bung (kiểu B)
+        hoi: null, dangVe: false,
+        async init() {
+          this.qt = this.docPhien();
+          this.$watch(() => this.tokenCua(), (moi, cu) => {
+            if (this.dangVe) return;
+            const moMoi = moi.endsWith('~hoi'), moCu = String(cu).endsWith('~hoi');
+            if (moMoi && !moCu) LS.mo(moi);
+            else if (!moMoi && moCu) {
+              // Back lúc đang gửi đã lấy mất mục `~hoi` mà hộp vẫn giữ (ve): hash không còn `~hoi` thì KHÔNG LS.dong —
+              // nó history.back() khi sâu > 0 và văng người dùng về tab trước. Mục lớp phủ còn thì mới đóng bằng Back.
+              let h = '';
+              try { h = decodeURI((location.hash || '').replace(/^#/, '')); } catch (e) { /* hash hỏng → coi như không còn */ }
+              if (h.endsWith('~hoi')) LS.dong(moi);
+            } else LS.di(moi);
+          });
+          LS.nghe((tk) => this.ve(tk), 'dong');
+          this.ready = true;
+        },
+        tokenCua() { return this.tab + (this.hoi ? '~hoi' : ''); },
+        async ve(tk) {
+          this.dangVe = true;
+          try {
+            const [t, lop] = String(tk || 'dong').split('~');
+            // Đang gửi (dang) thì GIỮ hộp: Back giữa chừng mà xoá hộp thì lỗi trả về sau đó ghi vào hộp đã tách khỏi trang, mất.
+            if (lop !== 'hoi' && !this.dang) this.hoi = null;
+            if (TAB.includes(t) && t !== this.tab) { this.tab = t; this.locLoai = ''; this.locMon = ''; this.moLoc = ''; this.bao = ''; this.loi = ''; }
+            if (this.qt) await this.nap(this.tab);
+          } finally { this.$nextTick(() => { this.dangVe = false; }); }
+        },
+        // Đổi tab xoá báo / lỗi của tab trước (không để "Đã bỏ cờ…" hay lỗi nạp tab Ôn tập treo ở tab khác).
+        doiTab(t) { if (t === this.tab) return; this.tab = t; this.locLoai = ''; this.locMon = ''; this.moLoc = ''; this.bao = ''; this.loi = ''; this.nap(t); },
+        async taiTrang() { this.du = { dong: null, tapdoc: null, on: null, tu: null, mon: null }; await this.nap(this.tab); },
+        async nap(t, lai = false) {
+          if (this.du[t] !== null && !lai) return;
+          try {
+            if (t === 'mon') {
+              const p = await fetch('/api/progress').then((r) => (r.ok ? r.json() : { items: {} })).catch(() => ({ items: {} }));
+              this.du.mon = qtTienDo(TIEN_DO, p.items || {}, this.user);
+            } else {
+              const d = await this.api('/api/quantri/hoc-tap?phan=' + t + '&user=' + encodeURIComponent(this.user));
+              const ds = Array.isArray(d) ? d : [];
+              if (t === 'on') await Promise.all([...new Set(ds.map((x) => x.mon))].map((m) => this.napChu(m)));
+              this.du[t] = ds;
+            }
+            this.loi = '';
+          } catch (e) { if (!e.het) this.loi = e.message; }
+        },
+        async napChu(mon) {
+          if (this.chu[mon]) return;
+          const m = {};
+          try {
+            const r = await fetch('../study/' + encodeURIComponent(mon) + '.json', { headers: { accept: 'application/json' } });
+            if (r.ok) {
+              const d = await r.json();
+              if (mon === 'so-tay') for (const [k, v] of Object.entries(d.nhan || {})) if (typeof v === 'string' && v) m[k] = v;
+              for (const q of [...(d.flashcards || []), ...(d.quiz || [])]) if (q && q.id) m[q.id] = q.front_en || q.stem_en || q.id;
+              for (const sec of d.summary || []) {
+                for (const [khoi, truong] of Object.entries(MARK_KEYS)) {
+                  for (const x of (sec && sec[khoi]) || []) {
+                    if (!x || !x.mark) continue;
+                    const c = truong.map((k) => x[k]).find((v) => typeof v === 'string' && v.trim());
+                    if (c) m[x.mark] = c.trim();
+                  }
+                }
+              }
+            }
+          } catch (e) { /* không có học liệu → hiện id */ }
+          this.chu[mon] = m;
+        },
+        chuThe(x) { return (this.chu[x.mon] || {})[x.i] || (x.mon === 'so-tay' ? String(x.i).replace(/^st\./, '').replace('.', ' · ') : x.i); },
+        ds() { return this.du[this.tab] || []; },
+        loc() { return qtLoc(this.ds(), this.tab === 'dong' ? this.locLoai : '', this.locMon); },
+        chipLoai() { return this.tab === 'dong' ? qtChipLoai(this.ds()) : []; },
+        chipMon() { return ['dong', 'on', 'tu'].includes(this.tab) ? qtChipMon(this.ds(), TEN_MON) : []; },
+        tenMon(s) { return TEN_MON[s] || s || ''; },
+        bieuTuong(l) { return { lms: '✅', lop: '📋', doc: '📖', on: '🧠', bo_me: '📝', tra: '🔎' }[l] || '⭐'; },
+        hoiThuoc(x) {
+          this.bao = '';
+          this.hoi = { x, loi: '', het: false,
+            chu: x.mon === 'so-tay'
+              ? 'Bỏ đánh dấu "đã thuộc" của "' + this.chuThe(x) + '" (' + this.tenMon(x.mon) + '): không trừ ⭐.'
+              : 'Bỏ cờ "đã thuộc" của thẻ "' + this.chuThe(x) + '" (' + this.tenMon(x.mon) + '): thẻ quay lại lịch ôn; không trừ ⭐.' };
+        },
+        dongHoi() { if (!this.dang) this.hoi = null; },
+        async xacNhan() {
+          const h = this.hoi;
+          if (!h || this.dang) return;
+          this.dang = true; h.loi = '';
+          try {
+            await this.api('/api/quantri/thuoc/go', { user: this.user, mon: h.x.mon, i: h.x.i, c: h.x.c });
+            this.hoi = null;
+            this.bao = 'Đã bỏ cờ "đã thuộc".';
+            await this.nap('on', true);
+          } catch (e) { h.loi = e.message; if (e.het) h.het = true; }
+          finally { this.dang = false; }
+        },
+      };
+    }
+  </script>
+</head>
+<!-- KHÔNG thêm x-init="init()": Alpine 3 TỰ gọi init() của object x-data. -->
+<body class="bg-slate-100 text-slate-800 min-h-screen" x-data="trangQtHoc()" @keydown.escape.window="dongHoi()">
+  <header class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+  <div class="max-w-2xl mx-auto px-4 py-3">
+    <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-slate-500">
+  <a href="../../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">🏠 Home</a><span class="shrink-0 text-slate-300">›</span>
+  <a href="../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">MK</a><span class="shrink-0 text-slate-300">›</span>
+  <a href="index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-indigo-600">Quản trị</a><span class="shrink-0 text-slate-300">›</span>
+  <span aria-current="page"  class="truncate font-medium text-slate-700">📚 Lịch sử học tập</span>
+</nav>
+    <h1 class="mt-1 text-lg font-bold">📚 Lịch sử học tập</h1>
+    <nav data-qt-nav aria-label="Khu quản trị" class="mt-2 flex flex-wrap gap-1.5 text-sm">
+      <a href="index.html" class="inline-flex items-center h-8 px-3 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200">Tổng quan</a>
+      <a href="diem.html" class="inline-flex items-center h-8 px-3 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200">Điểm</a>
+      <span aria-current="page" class="inline-flex items-center h-8 px-3 rounded-full bg-indigo-600 text-white font-semibold">Lịch sử học tập</span>
+    </nav>
+  </div>
+</header>
+  <main class="max-w-2xl mx-auto px-4 py-4">
+    <template x-if="!ready"><p class="text-slate-500">Đang tải…</p></template>
+    <template x-if="ready">
+      <div>
+        <template x-if="!qt">
+  <section data-qt-mo class="bg-white rounded-2xl shadow px-4 py-4">
+    <p class="text-sm text-slate-700">Cần <b>mã bố mẹ</b> để xem và sửa.</p>
+    <form @submit.prevent="moPhien()" class="mt-3 flex flex-wrap items-center gap-2">
+      <input data-qt-ma type="password" autocomplete="off" autocapitalize="off" spellcheck="false" x-model="ma" placeholder="Mã bố mẹ"
+             aria-label="Mã bố mẹ" class="h-10 flex-1 min-w-[10rem] px-3 rounded-lg border border-slate-300 text-sm">
+      <button type="submit" data-qt-ma-gui :disabled="dangMo" class="h-10 px-4 rounded-lg bg-indigo-600 text-white text-sm font-semibold">Mở</button>
+    </form>
+    <p data-qt-loi x-show="loiQt" x-text="loiQt" class="mt-2 text-sm text-rose-700"></p>
+  </section>
+</template>
+<template x-if="qt">
+  <p data-qt-phien class="mb-3 flex flex-wrap items-center justify-end gap-2 text-xs text-slate-500">
+    <span x-text="'Phiên hết hạn lúc ' + hetLuc()"></span>
+    <button type="button" data-qt-thoat @click="thoat()" class="px-3 py-2 rounded-full border border-slate-300 bg-white text-xs font-medium">Thoát</button>
+  </p>
+</template>
+        <template x-if="qt">
+          <div>
+            <div class="flex flex-wrap gap-1.5 mb-3 text-sm">
+              <button type="button" data-qt-tab="dong" @click="doiTab('dong')"
+                      :class="tab === 'dong' ? 'bg-slate-800 text-white' : 'bg-white text-slate-700'" class="h-8 px-3 rounded-lg shadow-sm">Dòng thời gian</button>
+              <button type="button" data-qt-tab="mon" @click="doiTab('mon')"
+                      :class="tab === 'mon' ? 'bg-slate-800 text-white' : 'bg-white text-slate-700'" class="h-8 px-3 rounded-lg shadow-sm">Theo môn</button>
+              <button type="button" data-qt-tab="tapdoc" @click="doiTab('tapdoc')"
+                      :class="tab === 'tapdoc' ? 'bg-slate-800 text-white' : 'bg-white text-slate-700'" class="h-8 px-3 rounded-lg shadow-sm">Tập đọc</button>
+              <button type="button" data-qt-tab="on" @click="doiTab('on')"
+                      :class="tab === 'on' ? 'bg-slate-800 text-white' : 'bg-white text-slate-700'" class="h-8 px-3 rounded-lg shadow-sm">Ôn tập</button>
+              <button type="button" data-qt-tab="tu" @click="doiTab('tu')"
+                      :class="tab === 'tu' ? 'bg-slate-800 text-white' : 'bg-white text-slate-700'" class="h-8 px-3 rounded-lg shadow-sm">Từ đã tra</button>
+            </div>
+            <p data-qt-loi-trang x-show="loi" x-text="loi" role="alert" class="mb-3 text-sm text-rose-700"></p>
+            <p data-qt-bao x-show="bao" x-text="bao" class="mb-3 text-sm text-emerald-700"></p>
+            <section :data-qt-phan="tab" :data-xong="du[tab] !== null ? '' : null">
+              <template x-if="['dong', 'on', 'tu'].includes(tab)">
+                <div class="mb-3 bg-white rounded-2xl shadow divide-y divide-slate-100">
+                  <template x-if="tab === 'dong'"><div><div data-qt-chip="loai">
+  <button type="button" data-qt-mo-loc="loai" @click="moLoc = moLoc === 'loai' ? '' : 'loai'"
+          :aria-expanded="String(moLoc === 'loai')" class="w-full h-10 px-4 flex items-center gap-2 text-sm">
+    <span class="text-slate-500">Loại:</span>
+    <b data-qt-loc-chon class="flex-1 text-left truncate"
+       x-text="locLoai ? (((chipLoai()).find((o) => o.k === locLoai) || {}).ten || locLoai) : 'Tất cả'"></b>
+    <span class="text-slate-400" x-text="moLoc === 'loai' ? '▴' : '▾'"></span>
+  </button>
+  <div x-show="moLoc === 'loai'" class="px-4 pb-3 flex flex-wrap gap-1.5">
+    <button type="button" data-k="" @click="locLoai = ''; moLoc = ''"
+            :class="locLoai === '' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="h-8 px-3 rounded-full text-xs">Tất cả</button>
+    <template x-for="o in chipLoai()" :key="o.k">
+      <button type="button" :data-k="o.k" @click="locLoai = o.k; moLoc = ''"
+              :class="locLoai === o.k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="h-8 px-3 rounded-full text-xs" x-text="o.ten"></button>
+    </template>
+  </div>
+</div></div></template>
+                  <div data-qt-chip="mon">
+  <button type="button" data-qt-mo-loc="mon" @click="moLoc = moLoc === 'mon' ? '' : 'mon'"
+          :aria-expanded="String(moLoc === 'mon')" class="w-full h-10 px-4 flex items-center gap-2 text-sm">
+    <span class="text-slate-500">Môn:</span>
+    <b data-qt-loc-chon class="flex-1 text-left truncate"
+       x-text="locMon ? (((chipMon()).find((o) => o.k === locMon) || {}).ten || locMon) : 'Tất cả môn'"></b>
+    <span class="text-slate-400" x-text="moLoc === 'mon' ? '▴' : '▾'"></span>
+  </button>
+  <div x-show="moLoc === 'mon'" class="px-4 pb-3 flex flex-wrap gap-1.5">
+    <button type="button" data-k="" @click="locMon = ''; moLoc = ''"
+            :class="locMon === '' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="h-8 px-3 rounded-full text-xs">Tất cả môn</button>
+    <template x-for="o in chipMon()" :key="o.k">
+      <button type="button" :data-k="o.k" @click="locMon = o.k; moLoc = ''"
+              :class="locMon === o.k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700'" class="h-8 px-3 rounded-full text-xs" x-text="o.ten"></button>
+    </template>
+  </div>
+</div>
+                </div>
+              </template>
+              <template x-if="du[tab] === null"><p class="text-sm text-slate-500">Đang tải…</p></template>
+              <template x-if="du[tab] !== null && !loc().length"><p class="text-sm text-slate-500">Chưa có gì ở đây.</p></template>
+
+              <template x-if="tab === 'dong'">
+                <ul class="bg-white rounded-2xl shadow divide-y divide-slate-100">
+                  <template x-for="(x, k) in loc()" :key="k">
+                    <li data-qt-tg :data-loai="x.loai" :data-mon="x.mon" class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5">
+                      <span class="text-xl" x-text="bieuTuong(x.loai)"></span>
+                      <span class="flex-1 min-w-0 break-words" x-text="x.chu"></span>
+                      <span class="text-xs text-slate-400" x-text="ngay(x.ts).split(', ').pop() + ' ' + gio(x.ts)"></span>
+                      <span x-show="x.diem" class="w-14 text-right font-bold" :class="x.diem > 0 ? 'text-emerald-700' : 'text-rose-700'"
+                            x-text="(x.diem > 0 ? '+' : '') + x.diem"></span>
+                      <span x-show="x.mon" class="basis-full text-xs text-slate-400" x-text="tenMon(x.mon)"></span>
+                    </li>
+                  </template>
+                </ul>
+              </template>
+
+              <template x-if="tab === 'mon'">
+                <ul class="bg-white rounded-2xl shadow divide-y divide-slate-100">
+                  <template x-for="m in loc()" :key="m.slug">
+                    <li data-qt-mon-hang class="px-4 py-3">
+                      <p class="font-semibold" x-text="m.ten"></p>
+                      <div class="mt-1 h-2 rounded bg-slate-100 overflow-hidden">
+                        <div class="h-2 bg-emerald-500" :style="'width:' + (m.muc_tong ? Math.round(m.muc_xong / m.muc_tong * 100) : 0) + '%'"></div>
+                      </div>
+                      <p class="mt-1 text-xs text-slate-500" x-text="m.muc_xong + '/' + m.muc_tong + ' mục · ' + m.nhom_xong + '/' + m.nhom_tong + ' phần'"></p>
+                    </li>
+                  </template>
+                </ul>
+              </template>
+
+              <template x-if="tab === 'tapdoc'">
+                <ul class="bg-white rounded-2xl shadow divide-y divide-slate-100">
+                  <template x-for="t in loc()" :key="t.truyen">
+                    <li data-qt-td class="px-4 py-3">
+                      <p class="font-semibold"><span x-text="t.ten"></span> <span class="text-xs text-slate-400" x-text="'· cấp ' + t.cap"></span></p>
+                      <p class="mt-1 text-xs text-slate-600"
+                         x-text="(t.doc_xong ? '✅ Đọc xong' : (t.bat_dau ? '📖 Đang đọc · trang ' + t.trang + '/' + t.so_trang : 'Chưa bắt đầu'))
+                                 + ' · quiz ' + t.quiz_dung + '/' + t.quiz_tong + (t.thuam ? ' · 🎙 đã thu âm' : '')"></p>
+                    </li>
+                  </template>
+                </ul>
+              </template>
+
+              <template x-if="tab === 'on'">
+                <ul class="bg-white rounded-2xl shadow divide-y divide-slate-100">
+                  <template x-for="x in loc()" :key="x.i">
+                    <li data-qt-the :data-i="x.i" class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5">
+                      <span class="flex-1 min-w-0 break-words text-sm" x-text="chuThe(x)"></span>
+                      <span x-show="x.known" class="text-xs font-semibold text-amber-600">⭐ đã thuộc</span>
+                      <span class="basis-full text-xs text-slate-400"
+                            x-text="tenMon(x.mon) + ' · ' + x.n + ' lượt · sai ' + x.wrong + ' · hộp ' + x.box + (x.last_ts ? ' · ' + gio(x.last_ts) + ' ' + ngay(x.last_ts).split(', ').pop() : '')"></span>
+                      <template x-if="x.known">
+                        <div class="basis-full flex justify-end">
+                          <button type="button" data-qt-bo-thuoc @click="hoiThuoc(x)" :disabled="dang"
+                                  class="shrink-0 px-3 py-2 -my-1 rounded-full border border-rose-300 bg-white text-xs font-semibold text-rose-700">Bỏ đã thuộc</button>
+                        </div>
+                      </template>
+                    </li>
+                  </template>
+                </ul>
+              </template>
+
+              <template x-if="tab === 'tu'">
+                <ul class="bg-white rounded-2xl shadow divide-y divide-slate-100">
+                  <template x-for="x in loc()" :key="x.mon + '/' + x.term">
+                    <li data-qt-tu class="px-4 py-2.5">
+                      <p><b x-text="x.tu || x.term"></b> <span class="text-slate-600" x-text="x.nghia ? '— ' + x.nghia : ''"></span></p>
+                      <p class="text-xs text-slate-400" x-text="tenMon(x.mon) + ' · tra ' + x.n + ' lần · lần cuối ' + gio(x.last_ts) + ' ' + ngay(x.last_ts).split(', ').pop()"></p>
+                    </li>
+                  </template>
+                </ul>
+              </template>
+            </section>
+          </div>
+        </template>
+
+        
+        <template x-if="hoi">
+          <div data-qt-hoi role="dialog" aria-modal="true" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4">
+            <div class="w-full max-w-md bg-white rounded-2xl shadow-xl px-5 py-4">
+              <p class="font-bold text-slate-800">Bỏ đã thuộc?</p>
+              <p data-qt-hoi-chu class="mt-2 text-sm text-slate-700" x-text="hoi.chu"></p>
+              <p data-qt-hoi-loi x-show="hoi.loi" x-text="hoi.loi" role="alert" class="mt-2 text-sm font-semibold text-rose-700"></p>
+              <div class="mt-4 flex justify-end gap-2">
+                <button type="button" data-qt-hoi-thoi @click="dongHoi()" :disabled="dang" class="h-10 px-4 rounded-lg border border-slate-300 bg-white text-sm"
+                        x-text="hoi.het ? 'Đóng' : 'Thôi'"></button>
+                <button type="button" data-qt-hoi-go x-show="!hoi.het" @click="xacNhan()" :disabled="dang"
+                        class="h-10 px-4 rounded-lg bg-rose-600 text-white text-sm font-semibold">Xác nhận</button>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </template>
+  </main>
+</body>
+</html>

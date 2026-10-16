@@ -328,8 +328,8 @@ export default {
     //   1. "/" không còn tự tìm index.html  → trang chủ 404
     //   2. "/pl/x" (không đuôi) không còn tìm ra x.html → hỏng link đã lưu của
     //      người dùng từ trước khi đổi
-    //   3. "/pl" (thư mục, không đuôi) không còn tìm ra pl/index.html → hỏng
-    //      trang riêng của học sinh
+    //   3. "/pl" (thư mục, không đuôi) không còn tìm ra pl/index.html → 308 sang
+    //      "/pl/" (link tương đối của trang, ADR 0069)
     // Audio tập đọc: tệp tĩnh của Workers bỏ qua Range → tự cắt (worker/range.js).
     // Tài liệu tải về: R2 `tai-lieu/`, truyền luồng + Range (worker/tai_lieu.js, ADR 0062).
     // wrangler.toml cho Worker chạy trước CHỈ ở /tap-doc/am/* và /*/materials/*.
@@ -348,7 +348,12 @@ export default {
       // file cụ thể phải thắng thư mục.
       for (const alt of [pathname + ".html", pathname + "/index.html"]) {
         const r = await asset(alt);
-        if (r.status !== 404) return r;
+        if (r.status === 404) continue;
+        // Thư mục không '/' cuối (bố mẹ gõ /pl/quantri): trả thẳng index.html thì link TƯƠNG ĐỐI của trang tính từ thư mục
+        // cha (diem.html → /pl/diem.html — trang của con). Chuyển hướng như python http.server / Cloudflare mặc định (ADR 0069).
+        // Đích dựng từ url.origin + chuỗi, KHÔNG new URL(đường dẫn, url): "//evil.com/pl" sẽ thành host evil.com (chuyển hướng mở).
+        if (alt.endsWith("/index.html")) return Response.redirect(url.origin + pathname + "/" + url.search, 308);
+        return r;
       }
     }
     return res;

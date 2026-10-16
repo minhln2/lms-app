@@ -33,6 +33,8 @@ export const LICH_SU = 100;      // số dòng lịch sử GET /api/diem trả
 export const GHI_CHU_MAX = 200;  // ghi chú khi bố mẹ trừ
 export const TRU_MAX = 100000;   // một lần trừ tối đa (chặn số gõ nhầm)
 export const PHIEN_S = 86400;    // phiên quản trị 24 giờ
+export const LICH_SU_QT = 500;   // số dòng lịch sử trang quản trị bố mẹ (GET /api/quantri/diem) — ADR 0069
+export const BIEU_DO = { ngay: 7, tuan: 8, thang: 6 };   // số kỳ của biểu đồ điểm cộng — ADR 0069
 
 const USER_RE = /^[\w-]{1,32}$/;
 const VN = 7 * 3600;
@@ -187,8 +189,11 @@ export function cachGo(user, khoa, daGo) {
  * khác) vào ĐÚNG nhóm của dòng gốc, bỏ tiền tố nhãn NHAN_GO để cùng nhãn — nhóm gỡ hết có tổng 0 và ẩn như dòng 0.
  * Dòng gỡ của nguồn khác (`huy:tick:…`, `huy:td:…`) hiện riêng, điểm âm. Mỗi dòng gỡ được kèm `go` (cachGo; nhóm ôn tập có
  * `mon` thì {loai: "on", mon, ngay}).
+ * Mỗi dòng còn có `loai` + `mon` (phanLoai — lọc ở khu quản trị, ADR 0069; dòng ôn gộp lấy `mon` từ attempt như trên) và
+ * `huy: true` khi dòng gỡ riêng được bằng POST /api/quantri/diem/huy (huyDuoc) mà chưa bị gỡ. `mf` = manifest (docManifest)
+ * hoặc null (dòng tick:/nhom: khi đó `mon` null).
  */
-export async function lichSu(env, user, n = LICH_SU) {
+export async function lichSu(env, user, n = LICH_SU, mf = null) {
   const [on0, on1] = khoang("on:");
   const [ho0, ho1] = khoang("huy:on:");
   const r = await env.STUDY_DB.prepare(
@@ -221,13 +226,14 @@ export async function lichSu(env, user, n = LICH_SU) {
        FROM u ORDER BY u.ts DESC, u.id DESC`
   ).bind(user, n, on0, on1, ho0, ho1, NHAN_GO).all();
   return (r.results || []).map((x) => {
-    const d = { khoa: x.khoa, diem: x.diem, nhan: x.nhan, ts: x.ts };
+    const d = { khoa: x.khoa, diem: x.diem, nhan: x.nhan, ts: x.ts, ...phanLoai(x.khoa, mf) };
     if (x.ngay != null) {
       d.mon = x.mon ?? null;
       if (x.mon) d.go = { loai: "on", mon: x.mon, ngay: x.ngay };
     } else {
       const go = cachGo(user, x.khoa, !!x.da_go);
       if (go) d.go = go;
+      if (!x.da_go && huyDuoc(x.khoa)) d.huy = true;
     }
     return d;
   });
@@ -328,13 +334,11 @@ async function xemDiem(request, env, url) {
   const user = url.searchParams.get("user") || "";
   if (!USER_RE.test(user)) return json({ error: "Thiếu hoặc sai 'user'" }, 400);
   // Mở trang điểm là một lượt ĐỐI CHIẾU tick (spec §4.1): bài tự tick (src/main.py ghi thẳng KV) được cộng ở đây.
-  if (env.PROGRESS_KV) {
-    await an("tick", async () => doiChieuTick(env, url, user,
-      (await env.PROGRESS_KV.get(KHOA_TIEN_DO, { type: "json" })) || {}), { cong: 0, nhom: [] });
-  }
+  await an("tick", () => doiChieuKV(env, url, user), { cong: 0, nhom: [], tru: 0 });
   const du = await soDu(env, user);
   if (url.searchParams.get("gon")) return json({ du });
-  return json({ du, lich_su: await lichSu(env, user) });
+  const mf = await an("mf", () => docManifest(env, url, user), null);
+  return json({ du, lich_su: await lichSu(env, user, LICH_SU, mf) });
 }
 
 /** Ba đường của điểm thưởng: /api/quantri/phien · /api/diem/doi · /api/diem. Lỗi máy chủ: chi tiết chỉ vào log. */
@@ -450,7 +454,7 @@ export async function congOn(env, url, user, course, rows, now = giay()) {
 // ── Tick (trang môn) ───────────────────────────────────────────────────────
 // Tự tick ghi THẲNG vào KV từ src/main.py (ADR 0006), không qua Worker — nên điểm tick không theo từng lượt POST mà bằng
 // ĐỐI CHIẾU tài liệu KV `progress` với manifest: tick tay và tự tick đi chung một đường, luật thưởng nhóm ở một chỗ.
-const KHOA_TIEN_DO = "progress";   // khoá KV của tiến độ — cùng hằng KEY trong worker/index.js
+export const KHOA_TIEN_DO = "progress";   // khoá KV của tiến độ — cùng hằng KEY trong worker/index.js
 
 /**
  * Hàm thuần — MỘT bản luật cho Worker (doiChieuTick) và lệnh ghi mốc (scripts/ghi_moc_diem.py gọi bằng node):
@@ -642,5 +646,80 @@ export async function doiChieuSheet(env, url, user, slug, sessions, now = giay()
   let cong = 0;
   if (moi.length) cong = (await ghiDiem(env, user, moi, now)).cong;
   return { cong, tru };
+}
+
+// ══ Khu quản trị bố mẹ — ADR 0069 ════════════════════════════════════════════
+/** Đối chiếu tick theo tài liệu KV `progress` hiện tại (lượt mở trang điểm / trang quản trị). Không có KV → số 0. */
+export async function doiChieuKV(env, url, user) {
+  if (!env.PROGRESS_KV) return { cong: 0, nhom: [], tru: 0 };
+  return doiChieuTick(env, url, user, (await env.PROGRESS_KV.get(KHOA_TIEN_DO, { type: "json" })) || {});
+}
+
+/**
+ * Hàm thuần: khoá một dòng sổ → nhóm lọc `loai` + slug môn `mon` (spec §4.7). Dòng gỡ `huy:K` mang nhóm của `K`.
+ *   tick:<cid>/… · nhom:<cid>/… → lms, slug của mf.mon[cid] (không có → null)
+ *   sheet:<slug>:…             → lop, <slug>            (bảng lớp, ADR 0068)
+ *   td:…                       → doc, "tap-doc"
+ *   on:…                       → on, null               (lichSu điền mon của dòng ôn gộp từ attempt)
+ *   them:… · doi:…             → bo_me, null
+ *   moc:… / lạ                 → null, null
+ */
+export function phanLoai(khoa, mf) {
+  const k = String(khoa).replace(/^huy:/, "");
+  let m = /^(?:tick|nhom):(\d+)\//.exec(k);
+  if (m) {
+    const mon = mf && mf.mon && mf.mon[m[1]];
+    return { loai: "lms", mon: mon && typeof mon.slug === "string" ? mon.slug : null };
+  }
+  m = /^sheet:([\w-]+):/.exec(k);
+  if (m) return { loai: "lop", mon: m[1] };
+  if (k.startsWith("td:")) return { loai: "doc", mon: "tap-doc" };
+  if (k.startsWith("on:")) return { loai: "on", mon: null };
+  if (k.startsWith("them:") || k.startsWith("doi:")) return { loai: "bo_me", mon: null };
+  return { loai: null, mon: null };
+}
+
+/**
+ * Hàm thuần: dòng `khoa` gỡ riêng được (POST /api/quantri/diem/huy)? CHỈ nguồn mà gỡ suông là BỀN: tập đọc (mốc "lần đầu"
+ * đã ghi — không tự sinh lại) và bố mẹ tự cộng. tick: / sheet: KHÔNG (lượt đối chiếu kế tiếp cộng lại ngay — phải bỏ tick);
+ * nhom: (suy từ section) · on: (lịch sử gộp theo ngày) · doi: · moc: · huy: KHÔNG. Một hàm cho route lẫn cờ `huy` của lichSu.
+ */
+export function huyDuoc(khoa) {
+  return /^td:(?:doc|thuam):[a-z0-9-]+(?:#\d+)?$/.test(khoa)
+    || /^td:quiz:[a-z0-9-]+:\d+(?:#\d+)?$/.test(khoa)
+    || /^them:\d+:[0-9a-f]{8}$/.test(khoa);
+}
+
+/** Khoá dòng bố mẹ tự cộng: them:<ms>:<8 hex> — phần ngẫu nhiên để hai lượt cùng mili-giây không đụng khoá UNIQUE. */
+export const khoaThem = (ms = Date.now()) => `them:${ms}:${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`;
+
+const hai = (x) => String(x).padStart(2, "0");
+
+/**
+ * Hàm thuần: các kỳ của biểu đồ (giờ VN), cũ → mới, kỳ cuối chứa `now`. → [{nhan, tu_ts, den_ts}] (epoch giây, den_ts loại
+ * trừ). ngay: 7 ngày, nhãn "dd/mm" · tuan: 8 tuần bắt đầu Thứ Hai, nhãn = ngày Thứ Hai · thang: 6 tháng lịch, nhãn "T<m>".
+ * Date.UTC tự tràn ngày/tháng âm sang tháng/năm trước.
+ */
+export function kyBieuDo(muc, now) {
+  const [y, m, d] = ngayVN(now).split("-").map(Number);
+  const dau = (y2, m2, d2) => Date.UTC(y2, m2 - 1, d2) / 1000 - VN;   // 00:00 giờ VN
+  const nhanNgay = (s) => { const t = new Date((s + VN) * 1000); return hai(t.getUTCDate()) + "/" + hai(t.getUTCMonth() + 1); };
+  const ra = [];
+  const so = BIEU_DO[muc];
+  const thu = (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;   // 0 = Thứ Hai … 6 = Chủ Nhật
+  for (let i = so - 1; i >= 0; i--) {
+    let a, b, nhan;
+    if (muc === "ngay") { a = dau(y, m, d - i); b = a + 86400; nhan = nhanNgay(a); }
+    else if (muc === "tuan") { a = dau(y, m, d - thu - 7 * i); b = a + 7 * 86400; nhan = nhanNgay(a); }
+    else { a = dau(y, m - i, 1); b = dau(y, m - i + 1, 1); nhan = "T" + (new Date((a + VN) * 1000).getUTCMonth() + 1); }
+    ra.push({ nhan, tu_ts: a, den_ts: b });
+  }
+  return ra;
+}
+
+/** Hàm thuần: tổng điểm cộng theo ngày VN ([{ngay, tong}], từ câu GROUP BY) → cột của các kỳ `ky`; kỳ trống = 0. */
+export function cotBieuDo(ky, theoNgay) {
+  const ts = (theoNgay || []).map((r) => ({ t: Date.parse(r.ngay + "T00:00:00Z") / 1000 - VN, tong: Number(r.tong) || 0 }));
+  return ky.map((k) => ({ ...k, tong: ts.filter((r) => r.t >= k.tu_ts && r.t < k.den_ts).reduce((s, r) => s + r.tong, 0) }));
 }
 
