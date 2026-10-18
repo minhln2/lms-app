@@ -28,6 +28,12 @@
 <script>
 window.LS = (function () {
   var ve = null, goc = '', dang = 0, henCuon = null, cho = null;
+  // `popstate` kế tiếp do CHÍNH LS.dong() gây ra (code đóng lớp phủ) → KHÔNG khôi phục `cuon`.
+  // Lớp phủ là `fixed`, trang dưới đứng yên; `cuon` của mục nền chỉ là ảnh cũ. Đóng xong trang
+  // thường tự cuộn (bấm mục lục: `toiMuc(i); menuMo = false`) — popstate tới SAU, khôi phục là
+  // kéo trang về chỗ cũ, đè lên cú cuộn đó (máy chậm: luôn thua; 2026-10-16). Back của người dùng
+  // không qua đây ⇒ vẫn khôi phục như ADR 0067.
+  var boCuon = 0;
   function token() {
     try { return decodeURI((location.hash || '').replace(/^#/, '')); } catch (e) { return ''; }
   }
@@ -69,7 +75,11 @@ window.LS = (function () {
     var st = { ls: 1, cuon: window.scrollY, token: tk, sau: sau };
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
-  addEventListener('popstate', function (e) { veLai(token(), e.state); });
+  addEventListener('popstate', function (e) {
+    var st = e.state;
+    if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
+    veLai(token(), st);
+  });
   addEventListener('scroll', henLuu, { passive: true });
   addEventListener('load', function () { if (!ve) cuonLai(history.state); });
   return {
@@ -87,7 +97,7 @@ window.LS = (function () {
     mo: function (tk) { di(tk, true); },
     dong: function (tk) {
       var st = history.state || {};
-      if (st.ls && (st.sau || 0) > 0) history.back();
+      if (st.ls && (st.sau || 0) > 0) { boCuon = 1; history.back(); }
       else di(tk === undefined ? goc : tk, false);
     },
     nghe: function (fn, g0) { ve = fn; goc = g0 || ''; veLai(token(), history.state); },
@@ -444,6 +454,7 @@ function tdAnhLat(lat, trang) {
       // Tốc độ là thiết lập của MÁY, không của truyện: khoá riêng, không nằm trong mục trạng thái.
       tocDo: +(localStorage.getItem('td_toc') || 1) || 1,
       amLoi: false,            // audio của trang này không phát được
+      docTiep: false,          // lượt phát hiện tại là ĐỌC TIẾP từ trang trước (tự lật / lật lúc đang đọc), không phải bé tự bấm
       thongBao: '',
       nhanI: -1,               // từ đang bị nhấn (chưa thả)
       henGiu: 0, daGiu: false, // hẹn "giữ 0,45 s"; daGiu = lần nhấn này đã mở bong bóng bằng giữ
@@ -639,7 +650,7 @@ function tdAnhLat(lat, trang) {
         // định: trình duyệt tua tới đó khi nạp xong.
         if (au.dataset.url !== url || au.error) { au.dataset.url = url; au.src = url; }   // lỗi tải → nạp lại (thử lại khi lật / mở lại)
         else if (au.error) {
-          if (dangTruoc) { this.dangDoc = true; this.loiAm(); }
+          if (dangTruoc) { this.dangDoc = true; this.docTiep = true; this.loiAm(); }
           else this.amLoi = true;
         }
         au.currentTime = g.bd;
@@ -669,7 +680,7 @@ function tdAnhLat(lat, trang) {
         if (n > this.trs.length) return this.hetTruyen();
         const dang = this.dangDoc;
         this.datTrang(n);
-        if (dang) this.phat();           // đang nghe đọc mà lật → đọc trang mới từ đầu
+        if (dang) this.phat(true);       // đang nghe đọc mà lật → đọc trang mới từ đầu
       },
       // Ghi "đọc xong" nếu đủ luật (ADR 0060): đang ở trang cuối + đã có bat_dau. Dùng chung cho ▶ / hết audio (hetTruyen)
       // và nút ✅ Xong khi đang thu ở trang cuối (thuXong, _td_thuam.html) — nút đó gọi thẳng thuXong, không qua hetTruyen.
@@ -692,8 +703,11 @@ function tdAnhLat(lat, trang) {
       },
 
       // ── máy đọc ─────────────────────────────────────────────────────────────
-      phat() {
+      // `tiep`: đọc TIẾP từ trang trước (tự lật, lật lúc đang đọc) — chỉ khi đó trang mất tiếng mới được BỎ QUA
+      // (loiAm). Bé tự bấm ▶ / thả thanh kéo / "đọc từ đây" ở trang hỏng thì thôi đọc, như khi lỗi đã biết trước.
+      phat(tiep = false) {
         if (this.amLoi || this.dangThu()) return;
+        this.docTiep = tiep;
         this.dongBong(); this.dungDoan();      // một nguồn tiếng một lúc: tắt tiếng từ đang đọc dở
         const au = this.$refs.au, g = this.tg();
         // Ngoài đoạn của trang (vừa hết đoạn, hay chưa tua tới bd) → đọc lại từ đầu trang.
@@ -751,7 +765,7 @@ function tdAnhLat(lat, trang) {
         this.henLat = setTimeout(() => {
           if (!this.dangDoc) return;
           this.datTrang(this.trang + 1);
-          this.phat();
+          this.phat(true);
         }, 1000);
       },
       // Audio trang lỗi (404, mất mạng): trang vẫn đọc được bằng mắt; đang nghe đọc thì bỏ qua trang này.
@@ -762,12 +776,16 @@ function tdAnhLat(lat, trang) {
         this.amLoi = true;
         this.tuSang = -1;
         if (!this.dangDoc) return;
+        // Bé TỰ bấm ▶ ở trang này (không phải đọc tiếp từ trang trước): thôi đọc, KHÔNG tự lật. Trước đây ca này
+        // tuỳ thứ tự sự kiện: `error` của thẻ audio tới trước ⇒ amLoi, phat() thoát; bé bấm trước ⇒ hẹn lật sang
+        // trang sau, và bấm lùi trong 1 s đó thì lat() tự phát trang trước (test_tapdoc_doc mục 6 đỏ 5/10, 2026-10-17).
+        if (!this.docTiep) { this.$refs.au.pause(); this.dangDoc = false; return; }
         if (this.trang >= this.trs.length) { this.dangDoc = false; return; }
         clearTimeout(this.henLat);
         this.henLat = setTimeout(() => {
           if (!this.dangDoc) return;
           this.datTrang(this.trang + 1);
-          this.phat();
+          this.phat(true);
         }, 1000);
       },
 

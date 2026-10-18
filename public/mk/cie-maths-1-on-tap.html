@@ -29,6 +29,12 @@
 <script>
 window.LS = (function () {
   var ve = null, goc = '', dang = 0, henCuon = null, cho = null;
+  // `popstate` kế tiếp do CHÍNH LS.dong() gây ra (code đóng lớp phủ) → KHÔNG khôi phục `cuon`.
+  // Lớp phủ là `fixed`, trang dưới đứng yên; `cuon` của mục nền chỉ là ảnh cũ. Đóng xong trang
+  // thường tự cuộn (bấm mục lục: `toiMuc(i); menuMo = false`) — popstate tới SAU, khôi phục là
+  // kéo trang về chỗ cũ, đè lên cú cuộn đó (máy chậm: luôn thua; 2026-10-16). Back của người dùng
+  // không qua đây ⇒ vẫn khôi phục như ADR 0067.
+  var boCuon = 0;
   function token() {
     try { return decodeURI((location.hash || '').replace(/^#/, '')); } catch (e) { return ''; }
   }
@@ -70,7 +76,11 @@ window.LS = (function () {
     var st = { ls: 1, cuon: window.scrollY, token: tk, sau: sau };
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
-  addEventListener('popstate', function (e) { veLai(token(), e.state); });
+  addEventListener('popstate', function (e) {
+    var st = e.state;
+    if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
+    veLai(token(), st);
+  });
   addEventListener('scroll', henLuu, { passive: true });
   addEventListener('load', function () { if (!ve) cuonLai(history.state); });
   return {
@@ -88,7 +98,7 @@ window.LS = (function () {
     mo: function (tk) { di(tk, true); },
     dong: function (tk) {
       var st = history.state || {};
-      if (st.ls && (st.sau || 0) > 0) history.back();
+      if (st.ls && (st.sau || 0) > 0) { boCuon = 1; history.back(); }
       else di(tk === undefined ? goc : tk, false);
     },
     nghe: function (fn, g0) { ve = fn; goc = g0 || ''; veLai(token(), history.state); },
