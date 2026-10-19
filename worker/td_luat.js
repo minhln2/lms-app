@@ -15,6 +15,7 @@ export const TD = {
   O_LAI_MIN: 2000,               // ở lại ít nhất chừng này mới tính "đã đi qua" trang
   TI_LE: 0.6,                    // bản thu phải dài ≥ 60% thời lượng máy đọc
   DAI_MAX: 30 * 60 * 1000,       // 30 phút
+  MA_BANG: -1,                   // "mã câu" của TRANG BẢNG âm/vần trong nhật ký lật (trang đó không có câu)
   BYTE_MAX: 20 * 1024 * 1024,    // 20 MB cho cả bản thu
 };
 
@@ -71,14 +72,16 @@ export function tdNhayToi(ghe, trang) {
 /**
  * Nhật ký `[[ms, mã câu]]` → `[[ms, số trang 1-based]]` theo bố cục `trang` = `[{canh, tu, den}]`
  * (bố cục HIỆN HÀNH — đổi bố cục thì bản thu cũ vẫn tính và vẫn nghe lại đúng chỗ). Mục hỏng, hay
- * mã câu không nằm trong trang nào (truyện đã sửa chữ), bị BỎ — không ném lỗi.
+ * mã câu không nằm trong trang nào (truyện đã sửa chữ), bị BỎ — không ném lỗi. `TD.MA_BANG` = trang bảng
+ * âm/vần (`{bang: true}`, không có câu) — bản thu cũ không ghi trang đó thì vẫn "chưa đọc trang 1".
  */
 export function tdAnhLat(lat, trang) {
   const ds = Array.isArray(trang) ? trang : [];
   const out = [];
   for (const x of Array.isArray(lat) ? lat : []) {
-    if (!Array.isArray(x) || !Number.isFinite(x[0]) || !Number.isInteger(x[1]) || x[1] < 0) continue;
-    const p = ds.findIndex((t) => t && Number.isInteger(t.tu) && Number.isInteger(t.den) && t.tu <= x[1] && x[1] <= t.den);
+    if (!Array.isArray(x) || !Number.isFinite(x[0]) || !Number.isInteger(x[1]) || x[1] < TD.MA_BANG) continue;
+    const p = x[1] === TD.MA_BANG ? ds.findIndex((t) => t && t.bang === true)
+      : ds.findIndex((t) => t && Number.isInteger(t.tu) && Number.isInteger(t.den) && t.tu <= x[1] && x[1] <= t.den);
     if (p >= 0) out.push([x[0], p + 1]);
   }
   return out;

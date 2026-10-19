@@ -231,9 +231,9 @@ async function chotBanThu(env, url, user, t, body) {
   if (dai > TD.DAI_MAX + 5000) throw sai("Bản thu vượt 30 phút", 413);
   const tr = await tinh(env, url, `/tap-doc/truyen/${t.id}.json`);
   if (!tr || !Array.isArray(tr.trang) || !tr.trang.length) throw sai("Không đọc được truyện", 500);
-  // Nhật ký theo MÃ CÂU: giữ mục đúng hình (cả mã câu lạ — bố cục sau còn ánh xạ lại được).
+  // Nhật ký theo MÃ CÂU (trang bảng: TD.MA_BANG): giữ mục đúng hình (cả mã câu lạ — bố cục sau còn ánh xạ lại được).
   const lat = (Array.isArray(body.lat) ? body.lat : [])
-    .filter((x) => Array.isArray(x) && Number.isFinite(x[0]) && Number.isInteger(x[1]) && x[1] >= 0)
+    .filter((x) => Array.isArray(x) && Number.isFinite(x[0]) && Number.isInteger(x[1]) && x[1] >= TD.MA_BANG)
     .slice(0, 2000)
     .map((x) => [Math.round(x[0]), x[1]]);
   // Tự tính "hoàn thành" — KHÔNG đọc body.xong. Ánh xạ câu → trang của bố cục HIỆN HÀNH rồi áp luật cũ.

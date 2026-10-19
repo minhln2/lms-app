@@ -149,6 +149,7 @@ const TD = {
   O_LAI_MIN: 2000,               // ở lại ít nhất chừng này mới tính "đã đi qua" trang
   TI_LE: 0.6,                    // bản thu phải dài ≥ 60% thời lượng máy đọc
   DAI_MAX: 30 * 60 * 1000,       // 30 phút
+  MA_BANG: -1,                   // "mã câu" của TRANG BẢNG âm/vần trong nhật ký lật (trang đó không có câu)
   BYTE_MAX: 20 * 1024 * 1024,    // 20 MB cho cả bản thu
 };
 
@@ -205,14 +206,16 @@ function tdNhayToi(ghe, trang) {
 /**
  * Nhật ký `[[ms, mã câu]]` → `[[ms, số trang 1-based]]` theo bố cục `trang` = `[{canh, tu, den}]`
  * (bố cục HIỆN HÀNH — đổi bố cục thì bản thu cũ vẫn tính và vẫn nghe lại đúng chỗ). Mục hỏng, hay
- * mã câu không nằm trong trang nào (truyện đã sửa chữ), bị BỎ — không ném lỗi.
+ * mã câu không nằm trong trang nào (truyện đã sửa chữ), bị BỎ — không ném lỗi. `TD.MA_BANG` = trang bảng
+ * âm/vần (`{bang: true}`, không có câu) — bản thu cũ không ghi trang đó thì vẫn "chưa đọc trang 1".
  */
 function tdAnhLat(lat, trang) {
   const ds = Array.isArray(trang) ? trang : [];
   const out = [];
   for (const x of Array.isArray(lat) ? lat : []) {
-    if (!Array.isArray(x) || !Number.isFinite(x[0]) || !Number.isInteger(x[1]) || x[1] < 0) continue;
-    const p = ds.findIndex((t) => t && Number.isInteger(t.tu) && Number.isInteger(t.den) && t.tu <= x[1] && x[1] <= t.den);
+    if (!Array.isArray(x) || !Number.isFinite(x[0]) || !Number.isInteger(x[1]) || x[1] < TD.MA_BANG) continue;
+    const p = x[1] === TD.MA_BANG ? ds.findIndex((t) => t && t.bang === true)
+      : ds.findIndex((t) => t && Number.isInteger(t.tu) && Number.isInteger(t.den) && t.tu <= x[1] && x[1] <= t.den);
     if (p >= 0) out.push([x[0], p + 1]);
   }
   return out;
@@ -240,8 +243,8 @@ function tdAnhLat(lat, trang) {
      Căn đều hai lề cho cả bốn cấp (chủ dự án chọn 2026-10-05 sau khi so ảnh chụp; ô chữ co theo
      nội dung nên khoảng giãn nhỏ). */
   .td-o{left:3%;bottom:3%;width:fit-content;max-width:55%;max-height:94%;padding:.9rem 1.5rem;line-height:1.62;text-align:justify}
-  .td-A .td-o{font-size:clamp(18px,3.32cqw,34px);line-height:1.75}
-  .td-B .td-o{font-size:clamp(18px,2.73cqw,28px)}
+  .td-A .td-o{font-size:clamp(26px,4.3cqw,44px);line-height:1.75}   /* chữ to cho bé tập đọc (2026-10-18): iPad 44 · điện thoại 26 px */
+  .td-B .td-o{font-size:clamp(22px,3.32cqw,34px)}   /* iPad 34 · điện thoại 22 px */
   .td-C .td-o{font-size:clamp(18px,2.2cqw,22.5px);padding:.8rem 1.4rem}
   .td-D .td-o{font-size:clamp(16px,2cqw,20px);padding:.8rem 1.4rem}
   /* Khổ hẹp: rộng hết ngang (3% mỗi bên), bám ĐÁY, cao theo nội dung tới 64% trang. Đáy cách mép trang ≥ 16 px (max(3%, 16px)): trang thấp
@@ -436,6 +439,10 @@ function tdAnhLat(lat, trang) {
   .td-bang-trong{visibility:hidden}
   .td-bang-dang{background:rgba(253,224,71,.35)}
   .td-bang-o i.td-sang{background:#fde047}
+  /* Chỗ bấm trên bảng (như .td-tu): hàng chữ cả ô, hàng từ từng tiếng. Ô chữ nới vùng chạm bằng padding + margin âm (ADR 0016). */
+  .td-bang-tu{display:inline-block;border-radius:.4rem;cursor:pointer;transition:transform .4s}
+  .td-bang-luoi-chu .td-bang-tu{padding:.15em .3em;margin:-.15em -.3em}
+  .td-bang-tu.td-nhan{background:#ddd6fe;transform:scale(1.12)}
   @media (max-width:640px){
     .td-bang{gap:.3rem;padding:2% 3%}
     .td-bang-luoi{gap:.25rem 1rem}
@@ -483,7 +490,7 @@ function tdAnhLat(lat, trang) {
         if (t.bang) {   // trang bảng âm/vần (spec 2026-10-14): MỘT file audio cả bảng; "từ" để tô sáng là từng BƯỚC
           const av = tr.am_van || {};
           return { so: i + 1, bang: true, c0: null, c1: null, buoc: av.buoc || [],
-                   tu: (av.buoc || []).map((b) => ({ c: b.doc, t: b.t })),
+                   tu: this.tuBang(av),
                    am: av.am, anh: null, dac: 1, nhoe: 0, dat: 'phu', w: 0, h: 0, bd: 0, kt: av.dai || 0 };
         }
         const g = tr.canh[t.canh], tu = [];
@@ -491,6 +498,17 @@ function tdAnhLat(lat, trang) {
         return { so: i + 1, canh: t.canh, c0: t.tu, c1: t.den, tu, am: g.am, anh: g.anh, dac: g.dac, nhoe: g.nhoe,
                  dat: g.dat || 'phu', w: g.w || 0, h: g.h || 0,
                  bd: tr.cau[t.tu].bd, kt: tr.cau[t.den].kt };
+      },
+      // "Từ" của trang bảng = từng BƯỚC của audio bảng (thanh kéo, tô sáng lúc đọc). `u` = bước đầu của chỗ BẤM chứa
+      // bước đó: hàng chữ bấm cả Ô, hàng từ bấm từng TIẾNG; `k` = khoá tiếng (chỉ hàng từ). Bản Python: tapdoc.tu_bang().
+      tuBang(av) {
+        const hang = av.hang || [], buoc = av.buoc || [], ra = [];
+        buoc.forEach((b, j) => {
+          const p = j ? buoc[j - 1] : null;
+          const moi = !p || p.h !== b.h || p.o !== b.o || hang[b.h].kieu === 'tu';
+          ra.push({ c: b.doc, t: b.t, k: b.k || null, h: b.h, o: b.o, a: b.a, b: b.b, u: moi ? j : ra[j - 1].u });
+        });
+        return ra;
       },
       // Trang (1-based) chứa mã câu `ma` theo bố cục đang dùng; không có (truyện đã sửa chữ) → 1.
       trangCua(ma) {
@@ -533,6 +551,8 @@ function tdAnhLat(lat, trang) {
         this.datTrang(this.trangCua(vt));
       },
       tg() { return this.trs[this.trang - 1]; },
+      // Mã của trang đang mở trong nhật ký lật của bản thu: mã câu đầu trang; trang bảng (không có câu) = TD.MA_BANG.
+      maLat() { const g = this.tg(); return g.bang ? TD.MA_BANG : g.c0; },
       // Trang bảng âm/vần: bước đang đọc (để tô sáng ô + chữ) — null khi không phải trang bảng.
       buocNay() { const t = this.tg(); return t && t.bang && this.tuSang >= 0 ? t.buoc[this.tuSang] : null; },
       chuSangO(h, j, ci) { const b = this.buocNay(); return !!b && b.h === h && b.o === j && ci >= b.a && ci < b.b; },
@@ -548,9 +568,24 @@ function tdAnhLat(lat, trang) {
         const cot = this.bangCot(kieu), ra = [];
         (av.hang || []).forEach((h, hi) => {
           if (h.kieu !== kieu) return;
-          h.o.forEach((o, j) => ra.push({ hi, j, o }));
+          h.o.forEach((o, j) => ra.push({ hi, j, o, manh: this.manhO(t, kieu, hi, j, o) }));
           for (let j = h.o.length; j < cot; j++) ra.push({ hi, j, o: null });
         });
+        return ra;
+      },
+      // Chỗ BẤM trong một ô bảng (như từ của trang truyện): hàng chữ = cả ô, hàng từ = từng tiếng; khoảng trắng giữa
+      // hai tiếng là mảnh không bấm (i = −1). `i` = bước đầu của chỗ bấm (khớp `u` của tuBang), `a` = vị trí chữ đầu trong ô.
+      manhO(t, kieu, hi, j, o) {
+        const ch = [...o], ra = [];
+        let x = 0;
+        t.tu.forEach((w, k) => {
+          if (w.h !== hi || w.o !== j || w.u !== k) return;
+          const a = kieu === 'tu' ? w.a : 0, b = kieu === 'tu' ? w.b : ch.length;
+          if (a > x) ra.push({ i: -1, a: x, s: ch.slice(x, a) });
+          ra.push({ i: k, a, s: ch.slice(a, b) });
+          x = b;
+        });
+        if (x < ch.length) ra.push({ i: -1, a: x, s: ch.slice(x) });
         return ra;
       },
       // Chấm của ô số trang: trang đang mở · trang đọc gần nhất (vi_tri, giữ lớp td-ch-thay của CSS) · còn lại.
@@ -662,7 +697,7 @@ function tdAnhLat(lat, trang) {
           im.src = u;
         }
         this.taiTruoc();
-        if (this.thu && this.thu.dang && !g.bang) this.thuLat(g.c0);
+        if (this.thu && this.thu.dang) this.thuLat(this.maLat());
         this.batDem();
       },
       // Tải trước ảnh + audio trang kế để lật không phải chờ (cùng cảnh thì file đã có sẵn).
@@ -867,7 +902,31 @@ function tdAnhLat(lat, trang) {
       // cuộn nhẹ, hay Safari giành cử chỉ): bỏ hẹn giữ, không tính là chạm, không kẹt trạng thái.
       huyNhan() { clearTimeout(this.henGiu); this.nhanI = -1; this.nhanXY = null; },
 
-      tieng(i) { const k = this.tg().tu[i].k; return (k && this.tr.tieng[k]) || null; },
+      tieng(i) { const k = this.tg().tu[i].k; return (k && this.tr.tieng[k]) || this.tiengBang(i); },
+      // Chỗ bấm trên trang bảng không có audio từng tiếng (ô hàng chữ; tiếng hàng từ thiếu audio): dựng "tiếng" từ CHÍNH
+      // đoạn audio bảng [bd, dai) — ô nhiều bước (vần) có `buoc` để 🧩 đánh vần, bước cuối là cả vần. Không phải trang bảng → null.
+      tiengBang(i) {
+        const g = this.tg();
+        if (!g.bang) return null;
+        const ds = g.tu.filter((w) => w.u === i), w0 = ds[0], o = [...this.tr.am_van.hang[w0.h].o[w0.o]];
+        const r = { am: g.am, bd: w0.t, dai: this.denTu(i), chu: (w0.k ? o.slice(w0.a, w0.b) : o).join('') };
+        if (ds.length > 1) Object.assign(r, { t: ds.map((w) => w.t), buoc: ds.map((w) => [w.c, w.a, w.b]), n: 0 });
+        return r;
+      },
+      // Hết đoạn của chỗ bấm i trong audio trang: mốc của "từ" kế tiếp KHÔNG thuộc chỗ bấm đó (ô bảng nhiều bước), hết → kt.
+      denTu(i) {
+        const g = this.tg(), tu = g.tu;
+        let j = i + 1;
+        while (j < tu.length && tu[j].u === i) j++;
+        return j < tu.length ? tu[j].t : g.kt;
+      },
+      // "Từ" để tô sáng khi đọc chỗ bấm i: bước CUỐI của nó (ô vần đọc cả vần = bước cuối); trang truyện: chính i.
+      sangBam(i) {
+        const tu = this.tg().tu;
+        let j = i;
+        while (j + 1 < tu.length && tu[j + 1].u === i) j++;
+        return j;
+      },
 
       // Phát đoạn [tu, den) giây của file `g.am` trên thẻ audio PHỤ (không đụng audio trang).
       // `moiKhung(giây)` chạy mỗi khung hình; `xong()` khi hết đoạn (kể cả khi file lỗi).
@@ -928,13 +987,13 @@ function tdAnhLat(lat, trang) {
       // "Đọc từ" = đoạn CUỐI của file đánh vần (bước cuối luôn là cả tiếng); từ chỉ-đọc thì cả file.
       docTu(i) {
         this.tam(); this.dongBong(); this.dungDoan();
-        this.tuSang = i;
+        const s = this.tuSang = this.sangBam(i);
         const g = this.tieng(i);
-        const het = () => { if (!this.dangDoc && !this.bong && this.tuSang === i) this.tuSang = -1; };
-        if (g) { this.phatDoan(g, g.buoc ? g.t[g.t.length - 1] : 0, g.dai, het); return; }
+        const het = () => { if (!this.dangDoc && !this.bong && this.tuSang === s) this.tuSang = -1; };
+        if (g) { this.phatDoan(g, g.buoc ? g.t[g.t.length - 1] : g.bd || 0, g.dai, het); return; }
         // Thiếu audio của tiếng này: đọc bằng đúng đoạn của từ đó trong audio trang (spec §9).
         if (this.amLoi) return het();
-        const a = this.$refs.au, tu = this.tg().tu, den = i + 1 < tu.length ? tu[i + 1].t : this.tg().kt;
+        const a = this.$refs.au, tu = this.tg().tu, den = this.denTu(i);
         a.currentTime = tu[i].t; a.playbackRate = this.tocDo;
         a.play().catch(() => {});
         const v = () => {
@@ -957,10 +1016,10 @@ function tdAnhLat(lat, trang) {
         if (!g) return this.docTu(i);
         clearTimeout(this.henBong);
         this.tam(); this.dungDoan();
-        this.tuSang = i;
+        this.tuSang = this.sangBam(i);
         // Chữ phóng to là KHOÁ `k` (viết thường, bỏ dấu câu) chứ không phải chữ trong truyện: các
-        // khoảng chữ cái của từng bước (`buoc`) tính trên đúng chuỗi này.
-        this.bong = { i, chu: this.tg().tu[i].k, g, bs: -1, che: this.cheDV(), viTri: 'visibility:hidden' };
+        // khoảng chữ cái của từng bước (`buoc`) tính trên đúng chuỗi này. "Tiếng" dựng từ audio bảng mang sẵn `chu`.
+        this.bong = { i, chu: g.chu || this.tg().tu[i].k, g, bs: -1, che: this.cheDV(), viTri: 'visibility:hidden' };
         // Mở là ĐÁNH VẦN (chủ dự án 2026-10-13); từ chỉ-đọc thì đọc. Chạm lại: phát NGAY, còn trong cử chỉ. Giữ: hẹn 1 s
         // — phát ngoài cử chỉ được vì moKhoa() đã mở khoá au2 lúc ngón tay đặt xuống (cùng lý do giữ vốn phát từ hẹn giờ).
         const doc = () => { if (g.buoc) this.bongVan(); else this.bongDoc(); };
@@ -977,7 +1036,7 @@ function tdAnhLat(lat, trang) {
       // giữ = mở bong bóng của từ đó — đóng ở đây sẽ làm lần giữ / chạm lại mở bong bóng xong bị đóng ngay.
       ngoaiBong(e) {
         if (!this.bong || !e.target || !e.target.closest) return;
-        if (e.target.closest('[data-td-bong], .td-tu')) return;
+        if (e.target.closest('[data-td-bong], [data-td-tu]')) return;
         this.dongBong();
       },
       dongBong() {
@@ -1008,7 +1067,7 @@ function tdAnhLat(lat, trang) {
         clearTimeout(this.henBong);
         const b = this.bong, g = b.g;
         b.bs = -2;
-        this.phatDoan(g, g.buoc ? g.t[g.t.length - 1] : 0, g.dai, () => { if (this.bong === b) b.bs = -1; });
+        this.phatDoan(g, g.buoc ? g.t[g.t.length - 1] : g.bd || 0, g.dai, () => { if (this.bong === b) b.bs = -1; });
       },
       bongVan() {
         clearTimeout(this.henBong);
@@ -1261,7 +1320,7 @@ function tdAnhLat(lat, trang) {
         const t = this.thu;
         return t.goc + (t.dang && !t.tam ? performance.now() - t.t0 : 0);
       },
-      // Trang đọc gọi mỗi lần lật (datTrang) với MÃ CÂU đầu trang mới. Đang tạm dừng thì không ghi.
+      // Trang đọc gọi mỗi lần lật (datTrang) với MÃ CÂU đầu trang mới (trang bảng: TD.MA_BANG — maLat). Đang tạm dừng thì không ghi.
       thuLat(ma) {
         const t = this.thu;
         if (!t || !t.dang || t.tam) return;
@@ -1297,7 +1356,7 @@ function tdAnhLat(lat, trang) {
         may.luong.getAudioTracks().forEach((x) => { x.onended = () => this.thuTam(); });   // micro bị hệ thống ngắt
         rec.start();
         t.t0 = t0; t.dang = true; t.tam = false;
-        this.thuLat(this.tg().c0);
+        this.thuLat(this.maLat());
         clearInterval(may.hen);
         may.hen = setInterval(() => { if (this.thu === t && t.dang && !t.tam && this.thuMs() >= TD.DAI_MAX) this.thuXong(); }, 1000);
       },
@@ -1782,7 +1841,7 @@ function tdAnhLat(lat, trang) {
             thu: thuDung && moi ? {
               ts: u.ts, dai: u.dai, xong: u.xong === true,
               doan: u.doan.map((d) => ({ n: d.n, dai: d.dai, loai: typeof d.loai === 'string' ? d.loai : 'audio/webm' })),
-              lat: u.lat.filter((x) => Array.isArray(x) && Number.isFinite(x[0]) && Number.isInteger(x[1]) && x[1] >= 0),
+              lat: u.lat.filter((x) => Array.isArray(x) && Number.isFinite(x[0]) && Number.isInteger(x[1]) && x[1] >= TD.MA_BANG),   // −1 = trang bảng âm/vần
             } : null,
           };
           if (Number.isInteger(o.ts_vt) && o.ts_vt > 0) m.ts_vt = o.ts_vt;
@@ -2354,12 +2413,16 @@ function tdAnhLat(lat, trang) {
           </div>
         </template>
         <template x-if="tg().bang">
-        <div class="td-bang" data-td-bang>
+        <div class="td-bang" data-td-bang x-ref="o">
           <template x-for="kieu in ['chu', 'tu']" :key="'bl' + kieu">
             <div class="td-bang-luoi" :class="'td-bang-luoi-' + kieu" :style="'--cot:' + bangCot(kieu)">
               <template x-for="(c, k) in bangO(kieu)" :key="kieu + '-' + k">
                 <span class="td-bang-o" :data-td-bang-o="k" :class="{ 'td-bang-trong': !c.o, 'td-bang-dang': !!buocNay() && buocNay().h === c.hi && buocNay().o === c.j }"
-                      ><template x-if="c.o"><span><template x-for="(ch, ci) in [...c.o]" :key="ci"><i :class="{ 'td-sang': chuSangO(c.hi, c.j, ci) }" x-text="ch"></i></template></span></template></span>
+                      ><template x-if="c.o"><span><template x-for="(m, mi) in c.manh" :key="mi"><span
+                        :class="m.i < 0 ? '' : 'td-bang-tu' + (nhanI === m.i ? ' td-nhan' : '')" :data-td-tu="m.i < 0 ? null : m.i"
+                        @pointerdown="m.i >= 0 && nhan(m.i, $event)" @pointermove="diNhan($event)" @pointerup="m.i >= 0 && nha(m.i)"
+                        @pointerleave="huyNhan()" @pointercancel="huyNhan()" @contextmenu.prevent
+                        ><template x-for="(ch, ci) in m.s" :key="ci"><i :class="{ 'td-sang': chuSangO(c.hi, c.j, m.a + ci) }" x-text="ch"></i></template></span></template></span></template></span>
               </template>
             </div>
           </template>
