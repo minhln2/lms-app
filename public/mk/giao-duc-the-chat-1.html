@@ -431,9 +431,9 @@ window.LS.ham();
     }
 
     // Nhãn loại mục để dòng "Đang lọc" gọi tên chip đang bật. (tojson trong <script> — được.)
-    var LOAI = { "page": "\ud83d\udcc4 v\u0103n b\u1ea3n", };
+    var LOAI = { "page": "\ud83d\udcc4 v\u0103n b\u1ea3n","discussion": "\ud83d\udcac th\u1ea3o lu\u1eadn", };
     var TIEN_DO_KEY = "mk/80554/";
-    var TONG_MUC = 6;
+    var TONG_MUC = 19;
     var CO_HW = false;
     /** State của TRANG MÔN. Trước đây nằm thẳng trong `x-data` của <body>; nay phải là hàm vì
         ô tìm dùng chung (`_timkiem.html`) chèn thêm thành viên — nhét vào thuộc tính HTML là
@@ -612,6 +612,10 @@ timMo: false,
                 :class="types.includes('page') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
                 class="px-3 py-2 text-xs rounded-full border">📄 văn bản</button>
         
+        <button type="button" @click="toggle('discussion')"
+                :class="types.includes('discussion') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
+                class="px-3 py-2 text-xs rounded-full border">💬 thảo luận</button>
+        
       </div>
       <div data-ma-bi-mat class="text-sm" @lms-key.window="co = !!localStorage.getItem('lms_key')" x-data="{
        co: !!localStorage.getItem('lms_key'), mo: false, ma: '', loi: '', dang: false,
@@ -679,10 +683,21 @@ timMo: false,
         <li x-show="mucHien(1, f)">
           <button type="button" @click="toiMuc(1); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
+            <span class="min-w-0 flex-1">Unit 2: (Từ ngày 15/9 -&gt; 3/10)</span>
+            <template x-if="p.online">
+              <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
+                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/13'"></span>
+            </template>
+          </button>
+        </li>
+        
+        <li x-show="mucHien(2, f)">
+          <button type="button" @click="toiMuc(2); menuMo = false"
+                  class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
             <span class="min-w-0 flex-1">Unit 1: Khám phá các kiểu vận động ( Từ ngày 15/8 - 12/9)</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/6'"></span>
+                    x-text="moduleDone(document.getElementById('mod-2'), p.done) + '/6'"></span>
             </template>
           </button>
         </li>
@@ -715,7 +730,1155 @@ timMo: false,
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: true }"
              x-effect="if (q || filtering) open = true"
-             id="mod-1" data-module data-title="Unit 1: Khám phá các kiểu vận động ( Từ ngày 15/8 - 12/9)"
+             id="mod-1" data-module data-title="Unit 2: (Từ ngày 15/9 -&gt; 3/10)"
+             x-show="moduleMatches($el, f)"
+             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <button @click="open = !open"
+              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
+        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
+             :class="open ? 'rotate-90' : ''"
+             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">Unit 2: (Từ ngày 15/9 -&gt; 3/10)</span>
+        <template x-if="p.online">
+          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 13
+                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/13'"></span>
+        </template>
+        <span class="text-xs text-slate-400 shrink-0">13 mục</span>
+      </button>
+
+      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-item data-title="Lesson 2.1: Các kiểu bật nhảy và tiếp đất" data-type="page" data-sec="0"
+             data-pkey="mk/80554/8618792" data-hash="2e4665be019c3e8589f1555f8b0a13226629364c" data-ts="1792372284000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80554/8618792'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80554/8618792'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80554/8618792']; $el.indeterminate = !!p.redo['mk/80554/8618792']"
+                     @change="await p.toggle('mk/80554/8618792', '2e4665be019c3e8589f1555f8b0a13226629364c'); $el.checked = !!p.done['mk/80554/8618792']; $el.indeterminate = !!p.redo['mk/80554/8618792']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Lesson 2.1: Các kiểu bật nhảy và tiếp đất</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80554/8618792', '2e4665be019c3e8589f1555f8b0a13226629364c')">
+                  <button @click.stop="p.seen('mk/80554/8618792', '2e4665be019c3e8589f1555f8b0a13226629364c')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/10</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80554/pages/lesson-2-dot-1-cac-kieu-bat-nhay-va-tiep-dat-2" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Thầy Trình gửi các con nội dung học của Tuần 5:</p>
+<p><strong>Các kiểu bật nhảy và tiếp đất</strong></p>
+<p><strong>1. Page giảng dạy trên lớp</strong></p>
+<ul>
+<li><strong>Mục tiêu 1: </strong>
+<p><span>- Học sinh tích cực tham gia, thực hiện được khả năng di chuyển và dừng lại một cách an toàn và kiểm soát khi thực hiện bật nhảy và tiếp đất.</span></p>
+<strong></strong><strong></strong></li>
+<li><strong>Mục  tiêu 2: </strong><strong><span> Học sinh thực hiện đúng kỹ thuật bật xa và tiếp đất an toàn trong 10 phút tập luyện.</span></strong></li>
+</ul>
+<p>Các con xem link video vài tập dưới đây nhé:</p>
+<ul>
+<li><strong>Link bài tập:<span> <a class="inline_disabled" href="https://youtu.be/Ij9f8IwjYq4?si=YZzIY3kmTVrkIkjq" rel="noopener" target="_blank">https://youtu.be/Ij9f8IwjYq4?si=YZzIY3kmTVrkIkjq</a></span></strong></li>
+<li><strong>Câu hỏi: Khi bật nhảy tiếp đất tại sao con cần chùng gối?</strong><strong></strong></li>
+</ul>
+<p><strong>2. Kiến thức mở rộng</strong></p>
+<p>Sau khi thực hiện thành thục các bài tập cơ bản đã học trên lớp, các con thực hiện bài tập nâng cao dưới đây:</p>
+<p>Yêu cầu: Thực hiện đúng kỹ thuật, đúng, đủ khối lượng tập luyện và những tiêu chí đánh giá đã được học.</p>
+<ul>
+<li><a class="external youtubed" href="https://www.youtube.com/watch?v=rCg-MkVkxyU" rel="noopener" target="_blank"></a>Chúc các con học tập vui vẻ và hiệu quả !</li>
+</ul>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Lesson 2.2: Bật nhảy cùng băng ghế" data-type="page" data-sec="0"
+             data-pkey="mk/80554/8618793" data-hash="cf4c2dc432a07492b2500bc1eab1017f63151fe3" data-ts="1792372286000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80554/8618793'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80554/8618793'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80554/8618793']; $el.indeterminate = !!p.redo['mk/80554/8618793']"
+                     @change="await p.toggle('mk/80554/8618793', 'cf4c2dc432a07492b2500bc1eab1017f63151fe3'); $el.checked = !!p.done['mk/80554/8618793']; $el.indeterminate = !!p.redo['mk/80554/8618793']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Lesson 2.2: Bật nhảy cùng băng ghế</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80554/8618793', 'cf4c2dc432a07492b2500bc1eab1017f63151fe3')">
+                  <button @click.stop="p.seen('mk/80554/8618793', 'cf4c2dc432a07492b2500bc1eab1017f63151fe3')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/10</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80554/pages/lesson-2-dot-2-bat-nhay-cung-bang-ghe-2" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Thầy Trình gửi các con nội dung học của Tuần 5:</p>
+<p><strong>Bật nhảy cùng băng ghế</strong></p>
+<p><strong>1. Page giảng dạy trên lớp</strong></p>
+<ul>
+<li><strong>Mục tiêu 1: </strong>
+<p><span>- Học sinh tích cực tham gia, thực hiện được khả năng di chuyển và dừng lại một cách an toàn và kiểm soát khi thực hiện bật nhảy cùng băng ghế.</span></p>
+<strong></strong><strong></strong></li>
+<li><strong>Mục  tiêu 2: </strong><strong><span> Học sinh thực hiện đúng kỹ thuậtbật nhảy cùng băng ghế an toàn trong 10 phút tập luyện.</span></strong></li>
+</ul>
+<p>Các con xem link video vài tập dưới đây nhé:</p>
+<ul>
+<li><strong>Link bài tập: <a class="inline_disabled" href="https://youtu.be/aGTBijWnK68?si=IWoI66nyE71OoagB" rel="noopener" target="_blank">https://youtu.be/aGTBijWnK68?si=IWoI66nyE71OoagB</a></strong></li>
+<li><strong>Câu hỏi: Khi bật nhảy cùng băng ghế con cần chú ý điều gì?</strong><strong></strong></li>
+</ul>
+<p><strong>2. Kiến thức mở rộng</strong></p>
+<p>Sau khi thực hiện thành thục các bài tập cơ bản đã học trên lớp, các con thực hiện bài tập nâng cao dưới đây:</p>
+<p><strong>Link bài tập: <a class="inline_disabled" href="https://youtu.be/stMvftHMdUQ?si=hVIeQkJ8QK3IFg49" rel="noopener" target="_blank">https://youtu.be/stMvftHMdUQ?si=hVIeQkJ8QK3IFg49</a></strong></p>
+<p>Yêu cầu: Thực hiện đúng kỹ thuật, đúng, đủ khối lượng tập luyện và những tiêu chí đánh giá đã được học.</p>
+<ul>
+<li><a class="external youtubed" href="https://www.youtube.com/watch?v=rCg-MkVkxyU" rel="noopener" target="_blank"></a>Chúc các con học tập vui vẻ và hiệu quả !</li>
+</ul>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Lesson 2.3: Kết hợp bật nhảy, tiếp đất, lăn người" data-type="page" data-sec="0"
+             data-pkey="mk/80554/8618794" data-hash="ae33109693d2c96a54fcc69a104617058c3398fb" data-ts="1792372286000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80554/8618794'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80554/8618794'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80554/8618794']; $el.indeterminate = !!p.redo['mk/80554/8618794']"
+                     @change="await p.toggle('mk/80554/8618794', 'ae33109693d2c96a54fcc69a104617058c3398fb'); $el.checked = !!p.done['mk/80554/8618794']; $el.indeterminate = !!p.redo['mk/80554/8618794']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Lesson 2.3: Kết hợp bật nhảy, tiếp đất, lăn người</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80554/8618794', 'ae33109693d2c96a54fcc69a104617058c3398fb')">
+                  <button @click.stop="p.seen('mk/80554/8618794', 'ae33109693d2c96a54fcc69a104617058c3398fb')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/10</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80554/pages/lesson-2-dot-3-ket-hop-bat-nhay-tiep-dat-lan-nguoi-2" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Thầy Trình gửi các con nội dung học của Tuần 6:</p>
+<p><strong>Kết hợp bật nhảy, tiếp đất, lăn người</strong></p>
+<p><strong>1. Page giảng dạy trên lớp</strong></p>
+<ul>
+<li><strong>Mục tiêu 1: </strong>
+<p><span>- Học sinh tích cực tham gia, thực hiện được khả năng di chuyển và dừng lại một cách an toàn và kiểm soát khi thực hiện Kết hợp bật nhảy, tiếp đất, lăn người.</span></p>
+<strong></strong><strong></strong></li>
+<li><strong>Mục  tiêu 2:<span> </span></strong><strong> </strong>Học sinh thực hiện đúng kỹ thuật Kết hợp bật nhảy, tiếp đất, lăn người an toàn trong 10 phút tập luyện.</li>
+</ul>
+<p>Các con xem link video vài tập dưới đây nhé:</p>
+<ul>
+<li><strong>Link bài tập:<span> <a class="inline_disabled" href="https://youtu.be/bIjzkeGa5cM?si=DI5c0nMaqBxQVUcG" rel="noopener" target="_blank">https://youtu.be/bIjzkeGa5cM?si=DI5c0nMaqBxQVUcG</a></span></strong></li>
+<li><strong>Câu hỏi: Khi lăn người con cần chú ý điều gì?</strong><strong></strong></li>
+</ul>
+<p><strong>2. Kiến thức mở rộng</strong></p>
+<p>Sau khi thực hiện thành thục các bài tập cơ bản đã học trên lớp, các con thực hiện bài tập nâng cao dưới đây:</p>
+<p><strong>Link bài tập:<span> <a class="inline_disabled" href="https://youtu.be/Gpq928mjB74?si=5BqlZKWb9dNLaD5v" rel="noopener" target="_blank">https://youtu.be/Gpq928mjB74?si=5BqlZKWb9dNLaD5v</a></span></strong></p>
+<p>Yêu cầu: Thực hiện đúng kỹ thuật, đúng, đủ khối lượng tập luyện và những tiêu chí đánh giá đã được học.</p>
+<ul>
+<li><a class="external youtubed" href="https://www.youtube.com/watch?v=rCg-MkVkxyU" rel="noopener" target="_blank"></a>Chúc các con học tập vui vẻ và hiệu quả !</li>
+</ul>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Lesson 2.4: Lăn người theo các hướng khác nhau" data-type="page" data-sec="0"
+             data-pkey="mk/80554/8618795" data-hash="acacba3ca06f7014b3622ee661d2d175c2cac8e8" data-ts="1792372287000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80554/8618795'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80554/8618795'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80554/8618795']; $el.indeterminate = !!p.redo['mk/80554/8618795']"
+                     @change="await p.toggle('mk/80554/8618795', 'acacba3ca06f7014b3622ee661d2d175c2cac8e8'); $el.checked = !!p.done['mk/80554/8618795']; $el.indeterminate = !!p.redo['mk/80554/8618795']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Lesson 2.4: Lăn người theo các hướng khác nhau</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80554/8618795', 'acacba3ca06f7014b3622ee661d2d175c2cac8e8')">
+                  <button @click.stop="p.seen('mk/80554/8618795', 'acacba3ca06f7014b3622ee661d2d175c2cac8e8')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/10</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80554/pages/lesson-2-dot-4-lan-nguoi-theo-cac-huong-khac-nhau-2" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Thầy Trình gửi các con nội dung học của Tuần 6:</p>
+<p><strong>Lăn người theo các hướng khác nhau</strong></p>
+<p><strong>1. Page giảng dạy trên lớp</strong></p>
+<ul>
+<li><strong>Mục tiêu 1: </strong>
+<p><span>- Học sinh tích cực tham gia, thực hiện được khả năng di chuyển và dừng lại một cách an toàn và kiểm soát khi thực hiện lăn người theo các hướng khác nhau</span></p>
+<strong></strong><strong></strong></li>
+<li><strong>Mục  tiêu 2:<span> </span></strong><strong><span> </span></strong>Học sinh thực hiện đúng kỹ thuật lăn người theo các hướng khác nhau an toàn trong 10 phút tập luyện.</li>
+</ul>
+<p>Các con xem link video vài tập dưới đây nhé:</p>
+<ul>
+<li><strong>Link bài tập:<span> <a class="inline_disabled external" href="https://youtu.be/bIjzkeGa5cM?si=DI5c0nMaqBxQVUcG" rel="noopener" target="_blank">https://youtu.be/bIjzkeGa5cM?si=DI5c0nMaqBxQVUcG<span class="screenreader-only"> (Links to an external site.)</span></a></span></strong></li>
+<li><strong>Câu hỏi: Khi lăn người con cần chú ý điều gì?</strong><strong></strong></li>
+</ul>
+<p><strong>2. Kiến thức mở rộng</strong></p>
+<p>Sau khi thực hiện thành thục các bài tập cơ bản đã học trên lớp, các con thực hiện bài tập nâng cao dưới đây:</p>
+<p><strong>Link bài tập:<span> <a class="inline_disabled external" href="https://youtu.be/Gpq928mjB74?si=5BqlZKWb9dNLaD5v" rel="noopener" target="_blank">https://youtu.be/Gpq928mjB74?si=5BqlZKWb9dNLaD5v<span class="screenreader-only"> (Links to an external site.)</span></a></span></strong></p>
+<p>Yêu cầu: Thực hiện đúng kỹ thuật, đúng, đủ khối lượng tập luyện và những tiêu chí đánh giá đã được học.</p>
+<ul>
+<li><a class="external youtubed" href="https://www.youtube.com/watch?v=rCg-MkVkxyU" rel="noopener" target="_blank"></a>Chúc các con học tập vui vẻ và hiệu quả !</li>
+</ul>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Lesson 2.5: Lăn tròn và lộn người về phía trước" data-type="page" data-sec="0"
+             data-pkey="mk/80554/8618796" data-hash="8d15b6378e8dfceb8662de543bba9225f249c8ed" data-ts="1792372288000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80554/8618796'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80554/8618796'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80554/8618796']; $el.indeterminate = !!p.redo['mk/80554/8618796']"
+                     @change="await p.toggle('mk/80554/8618796', '8d15b6378e8dfceb8662de543bba9225f249c8ed'); $el.checked = !!p.done['mk/80554/8618796']; $el.indeterminate = !!p.redo['mk/80554/8618796']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Lesson 2.5: Lăn tròn và lộn người về phía trước</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80554/8618796', '8d15b6378e8dfceb8662de543bba9225f249c8ed')">
+                  <button @click.stop="p.seen('mk/80554/8618796', '8d15b6378e8dfceb8662de543bba9225f249c8ed')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/10</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80554/pages/lesson-2-dot-5-lan-tron-va-lon-nguoi-ve-phia-truoc-2" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Thầy Trình gửi các con nội dung học của Tuần 7:</p>
+<p><strong>Lăn tròn và lộn người về phía trước</strong></p>
+<p><strong>1. Page giảng dạy trên lớp</strong></p>
+<ul>
+<li><strong>Mục tiêu 1: </strong>
+<p><span>- Học sinh tích cực tham gia, thực hiện được khả năng di chuyển và dừng lại một cách an toàn và kiểm soát khi thực hiện lăn tròn và lộn người về phía trước.</span></p>
+<strong></strong><strong></strong></li>
+<li><strong>Mục  tiêu 2:<span> </span></strong><strong><span> </span></strong>Học sinh thực hiện đúng kỹ thuật lăn tròn và lộn người về phía trước an toàn trong 10 phút tập luyện.</li>
+</ul>
+<p>Các con xem link video vài tập dưới đây nhé:</p>
+<ul>
+<li><strong>Link bài tập:<span> <a class="inline_disabled external" href="https://youtu.be/bIjzkeGa5cM?si=DI5c0nMaqBxQVUcG" rel="noopener" target="_blank">https://youtu.be/bIjzkeGa5cM?si=DI5c0nMaqBxQVUcG<span class="screenreader-only"> (Links to an external site.)</span></a></span></strong></li>
+<li><strong>Câu hỏi: Khi lăn người con thả lỏng cơ bụng thì điều gì xảy ra?</strong><strong></strong></li>
+</ul>
+<p><strong>2. Kiến thức mở rộng</strong></p>
+<p>Sau khi thực hiện thành thục các bài tập cơ bản đã học trên lớp, các con thực hiện bài tập nâng cao dưới đây:</p>
+<p><strong>Link bài tập:<span> <a class="inline_disabled external" href="https://youtu.be/Gpq928mjB74?si=5BqlZKWb9dNLaD5v" rel="noopener" target="_blank">https://youtu.be/Gpq928mjB74?si=5BqlZKWb9dNLaD5v<span class="screenreader-only"> (Links to an external site.)</span></a></span></strong></p>
+<p>Yêu cầu: Thực hiện đúng kỹ thuật, đúng, đủ khối lượng tập luyện và những tiêu chí đánh giá đã được học.</p>
+<ul>
+<li><a class="external youtubed" href="https://www.youtube.com/watch?v=rCg-MkVkxyU" rel="noopener" target="_blank"></a>Chúc các con học tập vui vẻ và hiệu quả !</li>
+</ul>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Lesson 2.6: Sơ đồ kỹ năng bật nhảy, tiếp đất, lăn tròn và lộn người" data-type="page" data-sec="0"
+             data-pkey="mk/80554/8618797" data-hash="29af92f6b1e6a0a0583460b31e4d9cd69d10fb91" data-ts="1792372290000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80554/8618797'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80554/8618797'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80554/8618797']; $el.indeterminate = !!p.redo['mk/80554/8618797']"
+                     @change="await p.toggle('mk/80554/8618797', '29af92f6b1e6a0a0583460b31e4d9cd69d10fb91'); $el.checked = !!p.done['mk/80554/8618797']; $el.indeterminate = !!p.redo['mk/80554/8618797']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Lesson 2.6: Sơ đồ kỹ năng bật nhảy, tiếp đất, lăn tròn và lộn người</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80554/8618797', '29af92f6b1e6a0a0583460b31e4d9cd69d10fb91')">
+                  <button @click.stop="p.seen('mk/80554/8618797', '29af92f6b1e6a0a0583460b31e4d9cd69d10fb91')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/10</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80554/pages/lesson-2-dot-6-so-do-ky-nang-bat-nhay-tiep-dat-lan-tron-va-lon-nguoi-2" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Thầy Trình gửi các con nội dung học của Tuần 7:</p>
+<p><strong>Sơ đồ kỹ năng bật nhảy, tiếp đất, lăn tròn và lộn người</strong></p>
+<p><strong>1. Page giảng dạy trên lớp</strong></p>
+<ul>
+<li><strong>Mục tiêu 1: </strong>
+<p><span>- Học sinh tích cực tham gia, thực hiện được khả năng di chuyển và dừng lại một cách an toàn và kiểm soát khi thực hiện sơ đồ kỹ năng bật nhảy, tiếp đất, lăn tròn và lộn người.</span></p>
+<strong></strong><strong></strong></li>
+<li><strong>Mục  tiêu 2:<span> </span></strong><strong><span> </span></strong>Học sinh thực hiện đúng kỹ thuật sơ đồ kỹ năng bật nhảy, tiếp đất, lăn tròn và lộn người an toàn trong 10 phút tập luyện.</li>
+</ul>
+<p>Các con xem link video vài tập dưới đây nhé:</p>
+<ul>
+<li><strong>Link bài tập:<span> <a class="inline_disabled external" href="https://youtu.be/bIjzkeGa5cM?si=DI5c0nMaqBxQVUcG" rel="noopener" target="_blank">https://youtu.be/bIjzkeGa5cM?si=DI5c0nMaqBxQVUcG<span class="screenreader-only"> (Links to an external site.)</span></a></span></strong></li>
+<li><strong>Câu hỏi: Động tác lăn người giúp ích gì cho các con?</strong><strong></strong></li>
+</ul>
+<p><strong>2. Kiến thức mở rộng</strong></p>
+<p>Sau khi thực hiện thành thục các bài tập cơ bản đã học trên lớp, các con thực hiện bài tập nâng cao dưới đây:</p>
+<p><strong>Link bài tập:<span> <a class="inline_disabled external" href="https://youtu.be/Gpq928mjB74?si=5BqlZKWb9dNLaD5v" rel="noopener" target="_blank">https://youtu.be/Gpq928mjB74?si=5BqlZKWb9dNLaD5v<span class="screenreader-only"> (Links to an external site.)</span></a></span></strong></p>
+<p>Yêu cầu: Thực hiện đúng kỹ thuật, đúng, đủ khối lượng tập luyện và những tiêu chí đánh giá đã được học.</p>
+<ul>
+<li><a class="external youtubed" href="https://www.youtube.com/watch?v=rCg-MkVkxyU" rel="noopener" target="_blank"></a>Chúc các con học tập vui vẻ và hiệu quả !</li>
+</ul>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Lesson 2.7: Làm quen với nhảy dây" data-type="page" data-sec="0"
+             data-pkey="mk/80554/8618798" data-hash="8e74ecba599feb455d3501843a5d0a80b56a5b6b" data-ts="1792372291000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80554/8618798'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80554/8618798'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80554/8618798']; $el.indeterminate = !!p.redo['mk/80554/8618798']"
+                     @change="await p.toggle('mk/80554/8618798', '8e74ecba599feb455d3501843a5d0a80b56a5b6b'); $el.checked = !!p.done['mk/80554/8618798']; $el.indeterminate = !!p.redo['mk/80554/8618798']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Lesson 2.7: Làm quen với nhảy dây</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80554/8618798', '8e74ecba599feb455d3501843a5d0a80b56a5b6b')">
+                  <button @click.stop="p.seen('mk/80554/8618798', '8e74ecba599feb455d3501843a5d0a80b56a5b6b')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/10</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80554/pages/lesson-2-dot-7-lam-quen-voi-nhay-day-2" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Thầy Trình gửi các con nội dung học của Tuần 7:</p>
+<p><strong>Làm quen với nhảy dây</strong></p>
+<p><strong>1. Page giảng dạy trên lớp</strong></p>
+<ul>
+<li><strong>Mục tiêu 1: </strong>
+<p><span>- Học sinh tích cực tham gia, thực hiện được khả năng di chuyển và dừng lại một cách an toàn và kiểm soát khi thực hiện làm quen với nhảy dây.</span></p>
+<strong></strong><strong></strong></li>
+<li><strong>Mục  tiêu 2:<span> </span></strong><strong><span> </span></strong>Học sinh thực hiện đúng kỹ thuật nhảy qua dây an toàn trong 10 phút tập luyện.</li>
+</ul>
+<p>Các con xem link video vài tập dưới đây nhé:</p>
+<ul>
+<li><strong>Link bài tập:<span> <a class="inline_disabled" href="https://youtu.be/xPeBTrh2rDg?si=byo9jXT25JKwWlwb" rel="noopener" target="_blank">https://youtu.be/xPeBTrh2rDg?si=byo9jXT25JKwWlwb</a></span></strong></li>
+<li><strong>Câu hỏi: Con cần chú ý điều gì để không bị dẫm dây khi nhảy?</strong><strong></strong></li>
+</ul>
+<p><strong>2. Kiến thức mở rộng</strong></p>
+<p>Sau khi thực hiện thành thục các bài tập cơ bản đã học trên lớp, các con thực hiện bài tập nâng cao dưới đây:</p>
+<p><strong>Link bài tập:<span> <a class="inline_disabled" href="https://youtu.be/TWaBHtMv3EU?si=0kvJ0ag7GELFgahf" rel="noopener" target="_blank">https://youtu.be/TWaBHtMv3EU?si=0kvJ0ag7GELFgahf</a></span></strong></p>
+<p>Yêu cầu: Thực hiện đúng kỹ thuật, đúng, đủ khối lượng tập luyện và những tiêu chí đánh giá đã được học.</p>
+<ul>
+<li><a class="external youtubed" href="https://www.youtube.com/watch?v=rCg-MkVkxyU" rel="noopener" target="_blank"></a>Chúc các con học tập vui vẻ và hiệu quả !</li>
+</ul>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Lesson 2.8: Nhảy dây cao su" data-type="page" data-sec="0"
+             data-pkey="mk/80554/8618799" data-hash="b9600c6041a3fb12b7c954b67d8eabe2aabc764f" data-ts="1792372292000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80554/8618799'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80554/8618799'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80554/8618799']; $el.indeterminate = !!p.redo['mk/80554/8618799']"
+                     @change="await p.toggle('mk/80554/8618799', 'b9600c6041a3fb12b7c954b67d8eabe2aabc764f'); $el.checked = !!p.done['mk/80554/8618799']; $el.indeterminate = !!p.redo['mk/80554/8618799']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Lesson 2.8: Nhảy dây cao su</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80554/8618799', 'b9600c6041a3fb12b7c954b67d8eabe2aabc764f')">
+                  <button @click.stop="p.seen('mk/80554/8618799', 'b9600c6041a3fb12b7c954b67d8eabe2aabc764f')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/10</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80554/pages/lesson-2-dot-8-nhay-day-cao-su-2" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Thầy Trình gửi các con nội dung học của Tuần 8:</p>
+<p><strong>Nhảy dây cao su</strong></p>
+<p><strong>1. Page giảng dạy trên lớp</strong></p>
+<p><strong>Mục tiêu 1: </strong></p>
+<p><span>Học sinh tích cực tham gia, thực hiện được khả năng di chuyển và dừng lại một cách an toàn và kiểm soát khi thực hiện nhảy dây cao su.</span></p>
+<p><strong>Mục  tiêu 2:<span> </span></strong><strong><span> </span></strong>Học sinh thực hiện đúng kỹ thuật nhảy qua dây an toàn trong 10 phút tập luyện.</p>
+<p>Các con xem link video vài tập dưới đây nhé:</p>
+<ul>
+<li><strong>Link bài tập:<span> <a class="inline_disabled external" href="https://youtu.be/xPeBTrh2rDg?si=byo9jXT25JKwWlwb" rel="noopener" target="_blank">https://youtu.be/xPeBTrh2rDg?si=byo9jXT25JKwWlwb<span class="screenreader-only"> (Links to an external site.)</span></a></span></strong></li>
+<li><strong>Câu hỏi: Nhảy dây giúp ích gì cho con?</strong><strong></strong></li>
+</ul>
+<p><strong>2. Kiến thức mở rộng</strong></p>
+<p>Sau khi thực hiện thành thục các bài tập cơ bản đã học trên lớp, các con thực hiện bài tập nâng cao dưới đây:</p>
+<p><strong>Link bài tập:<span> <a class="inline_disabled external" href="https://youtu.be/TWaBHtMv3EU?si=0kvJ0ag7GELFgahf" rel="noopener" target="_blank">https://youtu.be/TWaBHtMv3EU?si=0kvJ0ag7GELFgahf<span class="screenreader-only"> (Links to an external site.)</span></a></span></strong></p>
+<p>Yêu cầu: Thực hiện đúng kỹ thuật, đúng, đủ khối lượng tập luyện và những tiêu chí đánh giá đã được học.</p>
+<ul>
+<li><a class="external youtubed" href="https://www.youtube.com/watch?v=rCg-MkVkxyU" rel="noopener" target="_blank"></a>Chúc các con học tập vui vẻ và hiệu quả !</li>
+</ul>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Lesson 2.9: Thử thách nhảy dây" data-type="page" data-sec="0"
+             data-pkey="mk/80554/8618800" data-hash="0a033bce3b03b11b8d343ab6e15857a5707db952" data-ts="1792372298000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80554/8618800'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80554/8618800'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80554/8618800']; $el.indeterminate = !!p.redo['mk/80554/8618800']"
+                     @change="await p.toggle('mk/80554/8618800', '0a033bce3b03b11b8d343ab6e15857a5707db952'); $el.checked = !!p.done['mk/80554/8618800']; $el.indeterminate = !!p.redo['mk/80554/8618800']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Lesson 2.9: Thử thách nhảy dây</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80554/8618800', '0a033bce3b03b11b8d343ab6e15857a5707db952')">
+                  <button @click.stop="p.seen('mk/80554/8618800', '0a033bce3b03b11b8d343ab6e15857a5707db952')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/10</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80554/pages/lesson-2-dot-9-thu-thach-nhay-day-2" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Thầy Trình gửi các con nội dung học của Tuần 8:</p>
+<p><strong>Thử thách nhảy dây</strong></p>
+<p><strong>1. Page giảng dạy trên lớp</strong></p>
+<p><strong>Mục tiêu 1: </strong></p>
+<p><span>Học sinh tích cực tham gia, thực hiện được khả năng di chuyển và dừng lại một cách an toàn và kiểm soát khi thực hiện thử thách nhảy dây.</span></p>
+<p><strong>Mục  tiêu 2:<span> </span></strong><strong><span> </span></strong>Học sinh thực hiện đúng kỹ thuật nhảy qua dây an toàn trong 10 phút tập luyện.</p>
+<p>Các con xem link video vài tập dưới đây nhé:</p>
+<ul>
+<li><strong>Link bài tập:<span> <a class="inline_disabled external" href="https://youtu.be/xPeBTrh2rDg?si=byo9jXT25JKwWlwb" rel="noopener" target="_blank">https://youtu.be/xPeBTrh2rDg?si=byo9jXT25JKwWlwb<span class="screenreader-only"> (Links to an external site.)</span></a></span></strong></li>
+<li><strong>Câu hỏi: Nhảy đây là bài tập bổ trợ cho môn thể thao nào mà con biết?</strong><strong></strong></li>
+</ul>
+<p><strong>2. Kiến thức mở rộng</strong></p>
+<p>Sau khi thực hiện thành thục các bài tập cơ bản đã học trên lớp, các con thực hiện bài tập nâng cao dưới đây:</p>
+<p><strong>Link bài tập:<span> <a class="inline_disabled external" href="https://youtu.be/TWaBHtMv3EU?si=0kvJ0ag7GELFgahf" rel="noopener" target="_blank">https://youtu.be/TWaBHtMv3EU?si=0kvJ0ag7GELFgahf<span class="screenreader-only"> (Links to an external site.)</span></a></span></strong></p>
+<p>Yêu cầu: Thực hiện đúng kỹ thuật, đúng, đủ khối lượng tập luyện và những tiêu chí đánh giá đã được học.</p>
+<ul>
+<li><a class="external youtubed" href="https://www.youtube.com/watch?v=rCg-MkVkxyU" rel="noopener" target="_blank"></a>Chúc các con học tập vui vẻ và hiệu quả !</li>
+</ul>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Lesson 2.10: Nhảy dây cá nhân và nhảy dây theo nhóm" data-type="page" data-sec="0"
+             data-pkey="mk/80554/8618801" data-hash="b2f6799e3ebdf4e7e3346d41e461b65c92e53665" data-ts="1792372299000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80554/8618801'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80554/8618801'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80554/8618801']; $el.indeterminate = !!p.redo['mk/80554/8618801']"
+                     @change="await p.toggle('mk/80554/8618801', 'b2f6799e3ebdf4e7e3346d41e461b65c92e53665'); $el.checked = !!p.done['mk/80554/8618801']; $el.indeterminate = !!p.redo['mk/80554/8618801']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Lesson 2.10: Nhảy dây cá nhân và nhảy dây theo nhóm</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80554/8618801', 'b2f6799e3ebdf4e7e3346d41e461b65c92e53665')">
+                  <button @click.stop="p.seen('mk/80554/8618801', 'b2f6799e3ebdf4e7e3346d41e461b65c92e53665')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/10</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80554/pages/lesson-2-dot-10-nhay-day-ca-nhan-va-nhay-day-theo-nhom-2" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Thầy Trình gửi các con nội dung học của Tuần 8:</p>
+<p><strong>Nhảy dây cá nhân và nhảy dây theo nhóm</strong></p>
+<p><strong>1. Page giảng dạy trên lớp</strong></p>
+<p><strong>Mục tiêu 1: </strong></p>
+<p><span>Học sinh tích cực tham gia, thực hiện được khả năng di chuyển và dừng lại một cách an toàn và kiểm soát khi thực hiện nhảy dây cá nhân và nhảy dây theo nhóm.</span></p>
+<p><strong>Mục  tiêu 2:<span> </span></strong><strong><span> </span></strong>Học sinh thực hiện đúng kỹ thuật nhảy qua dây an toàn trong 10 phút tập luyện.</p>
+<p>Các con xem link video vài tập dưới đây nhé:</p>
+<ul>
+<li><strong>Link bài tập:<span> <a class="inline_disabled external" href="https://youtu.be/xPeBTrh2rDg?si=byo9jXT25JKwWlwb" rel="noopener" target="_blank">https://youtu.be/xPeBTrh2rDg?si=byo9jXT25JKwWlwb<span class="screenreader-only"> (Links to an external site.)</span></a></span></strong></li>
+<li><strong>Câu hỏi: Khi nhảy dây theo nhóm con cần chú ý điều gì?</strong><strong></strong></li>
+</ul>
+<p><strong>2. Kiến thức mở rộng</strong></p>
+<p>Sau khi thực hiện thành thục các bài tập cơ bản đã học trên lớp, các con thực hiện bài tập nâng cao dưới đây:</p>
+<p><strong>Link bài tập:<span> <a class="inline_disabled external" href="https://youtu.be/TWaBHtMv3EU?si=0kvJ0ag7GELFgahf" rel="noopener" target="_blank">https://youtu.be/TWaBHtMv3EU?si=0kvJ0ag7GELFgahf<span class="screenreader-only"> (Links to an external site.)</span></a></span></strong></p>
+<p>Yêu cầu: Thực hiện đúng kỹ thuật, đúng, đủ khối lượng tập luyện và những tiêu chí đánh giá đã được học.</p>
+<ul>
+<li><a class="external youtubed" href="https://www.youtube.com/watch?v=rCg-MkVkxyU" rel="noopener" target="_blank"></a>Chúc các con học tập vui vẻ và hiệu quả !</li>
+</ul>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="BÀI TẬP THỰC HÀNH UNIT 2" data-type="page" data-sec="0"
+             data-pkey="mk/80554/8618802" data-hash="3758e8423a804668bd6584ba05453384ad397a37" data-ts="1792378046000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80554/8618802'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80554/8618802'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80554/8618802']; $el.indeterminate = !!p.redo['mk/80554/8618802']"
+                     @change="await p.toggle('mk/80554/8618802', '3758e8423a804668bd6584ba05453384ad397a37'); $el.checked = !!p.done['mk/80554/8618802']; $el.indeterminate = !!p.redo['mk/80554/8618802']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">BÀI TẬP THỰC HÀNH UNIT 2</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80554/8618802', '3758e8423a804668bd6584ba05453384ad397a37')">
+                  <button @click.stop="p.seen('mk/80554/8618802', '3758e8423a804668bd6584ba05453384ad397a37')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/10</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80554/pages/bai-tap-thuc-hanh-unit-2-2" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><strong>Chào các con ! </strong></p>
+<p><strong>Sau 4 tuần học, các con đã kết thúc Unit 2, thầy  sẽ có một số các bài tập để các con thực hành luyện tập tại nhà. Các con xem video bài tập mẫu và quay video các con luyện tập up lên link padlet nhé !</strong></p>
+<p><strong>Video bài tập mẫu: <a class="inline_disabled" href="https://youtu.be/OfLXb9JqHns?si=m1-4Sz04rFHrqsph" rel="noopener" target="_blank" title="Liên Kết">https://youtu.be/OfLXb9JqHns?si=m1-4Sz04rFHrqsph</a></strong></p>
+<p><strong> </strong><strong><span>Các con quan sát thật kỹ video bài tập mẫu, sau đó thực hành luyện tập và quay lại video theo hướng dẫn trong link trên nhé</span></strong><strong></strong></p>
+<p> </p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="BÀI TẬP LÝ THUYẾT UNIT 2" data-type="page" data-sec="0"
+             data-pkey="mk/80554/8618803" data-hash="0d9e86287104c31797cd5f4cb70917ff41e6b740" data-ts="1792372302000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80554/8618803'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80554/8618803'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80554/8618803']; $el.indeterminate = !!p.redo['mk/80554/8618803']"
+                     @change="await p.toggle('mk/80554/8618803', '0d9e86287104c31797cd5f4cb70917ff41e6b740'); $el.checked = !!p.done['mk/80554/8618803']; $el.indeterminate = !!p.redo['mk/80554/8618803']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">BÀI TẬP LÝ THUYẾT UNIT 2</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80554/8618803', '0d9e86287104c31797cd5f4cb70917ff41e6b740')">
+                  <button @click.stop="p.seen('mk/80554/8618803', '0d9e86287104c31797cd5f4cb70917ff41e6b740')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/10</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80554/pages/bai-tap-lu-thuyet-unit-2-2" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><span>Các con làm bài Quiz tổng kết chương học dưới đây nhé:</span></p>
+<p><span>Link làm bài: <a class="inline_disabled" href="https://lms.vinschool.edu.vn/courses/80554/quizzes/2173661?preview=1" rel="noopener" target="_blank">$CANVAS_OBJECT_REFERENCE$/quizzes/mastercourse_1_5621_03ba05eda2e7e8a2d37284da380bb72f?preview=1</a></span></p>
+<p><span>Lưu ý: Các con nhớ ghi rõ họ tên, lớp học của mình nhé</span></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="THẢO LUẬN" data-type="discussion" data-sec="0"
+             data-pkey="mk/80554/8618804" data-hash="086544607caf2a006c7102cece9147afb86f09e0" data-ts="1792372303000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80554/8618804'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80554/8618804'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80554/8618804']; $el.indeterminate = !!p.redo['mk/80554/8618804']"
+                     @change="await p.toggle('mk/80554/8618804', '086544607caf2a006c7102cece9147afb86f09e0'); $el.checked = !!p.done['mk/80554/8618804']; $el.indeterminate = !!p.redo['mk/80554/8618804']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="thảo luận">💬</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">THẢO LUẬN</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">thảo luận</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80554/8618804', '086544607caf2a006c7102cece9147afb86f09e0')">
+                  <button @click.stop="p.seen('mk/80554/8618804', '086544607caf2a006c7102cece9147afb86f09e0')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/10</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80554/discussion_topics/687406" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p>Theo con khi bật nhảy cơ thể con sẽ có thay đổi như thế nào?</p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+      </div>
+    </section>
+    
+    <!-- Một Tuần học / Bài học -->
+    <section x-data="{ open: false }"
+             x-effect="if (q || filtering) open = true"
+             id="mod-2" data-module data-title="Unit 1: Khám phá các kiểu vận động ( Từ ngày 15/8 - 12/9)"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
