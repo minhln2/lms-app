@@ -440,6 +440,16 @@ function tdAnhLat(lat, trang) {
   .td-bang-dang{background:rgba(253,224,71,.35)}
   .td-bang-o i.td-sang{background:#fde047}
   /* Chỗ bấm trên bảng (như .td-tu): hàng chữ cả ô, hàng từ từng tiếng. Ô chữ nới vùng chạm bằng padding + margin âm (ADR 0016). */
+  /* Sách mở (2026-10-19): hai cột tranh + chữ ngay dưới, chỉ ở màn hình ngang (doiNay). Ô chữ cùng phông / cỡ chữ cấp A với .td-o. */
+  .td-doi{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;background:#fff}
+  .td-doi-cot{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.5cqh;padding:2.5cqh 1.8cqw;min-width:0;min-height:0}
+  .td-doi-cot + .td-doi-cot{border-left:2px dashed #ede9fe}
+  .td-doi-tranh{flex:1 1 0;min-height:0;width:100%;display:flex;align-items:flex-end;justify-content:center}
+  .td-doi-tranh img{width:100%;height:100%;object-fit:contain;object-position:center bottom;user-select:none;-webkit-user-select:none}
+  .td-doi-o{flex:none;max-width:100%;border-radius:1.4rem;border:1px solid rgba(255,255,255,.55);box-shadow:0 4px 18px rgba(0,0,0,.2);color:#1f1a33;
+    background:rgba(255,253,245,1);padding:.5rem 1rem;line-height:1.62;text-align:justify}
+  .td-doi-o .td-tu{padding:0 .04em}   /* cột hẹp: lề trong của từ (.td-tu .12em) làm câu ngắn xuống dòng — đo 2026-10-19 */
+  .td-A .td-doi-o{font-size:clamp(26px,4.3cqw,44px);line-height:1.75}
   .td-bang-tu{display:inline-block;border-radius:.4rem;cursor:pointer;transition:transform .4s}
   .td-bang-luoi-chu .td-bang-tu{padding:.15em .3em;margin:-.15em -.3em}
   .td-bang-tu.td-nhan{background:#ddd6fe;transform:scale(1.12)}
@@ -474,6 +484,7 @@ function tdAnhLat(lat, trang) {
       henLat: 0,               // hẹn tự lật sau khi hết audio trang
       vong: 0,                 // số hiệu vòng tô sáng đang sống
       mucLuc: false,           // ngăn mục lục đang mở
+      ngang: false,            // màn hình NGANG đủ cao (iPad ngang, máy tính) — sách mở (doiNgang)
       viTriMo: 0,              // vị trí đã lưu LÚC MỞ truyện (mo() đặt) — bấm lại chương đang dở trong mục lục thì về đây
       // Đồng hồ trang (ADR 0060): trang ĐỦ GIỜ khi ở lại T giây (tab hiện) hoặc audio trang phát hết.
       demTrang: 0,             // hẹn "đủ giờ" của lượt ở trang hiện tại; 0 = không hẹn
@@ -551,6 +562,26 @@ function tdAnhLat(lat, trang) {
         this.datTrang(this.trangCua(vt));
       },
       tg() { return this.trs[this.trang - 1]; },
+      // ── Sách mở (2026-10-19, tapdoc.cap_doi): ở màn hình ngang, cặp trang [a, b] của tr.doi hiện cạnh nhau — mỗi trang tranh + chữ
+      // ngay dưới. `trang` vẫn là trang ĐANG ĐỌC (a hoặc b): audio, tô sáng, thanh kéo, bong bóng, đủ giờ đều theo nó như trang đơn.
+      // Tự đọc sang trang sau (hetAm) đi a → b trong cùng sách mở; nút / vuốt / phím (lat) nhảy qua CẢ cặp. Màn hình dọc / điện thoại:
+      // trang đơn như cũ — bố cục (bo_cuc) chung mọi máy nên tiến độ, nhật ký thu, "đọc đủ các trang" không lệch. Bài test tắt bằng
+      // window.TD_SACH_MO = false (bài đo bố cục trang đơn).
+      doiNgang() { this.ngang = innerWidth > innerHeight && innerHeight >= 600; },
+      capCua(n) {
+        if (!this.ngang || window.TD_SACH_MO === false || !this.tr || !Array.isArray(this.tr.doi)) return null;
+        return this.tr.doi.find((c) => c[0] === n || c[1] === n) || null;
+      },
+      doiNay() { return this.tr && (this.view === 'doc' || this.view === 'nghe') ? this.capCua(this.trang) : null; },
+      // Trang cuối ĐANG HIỆN (trang phải của sách mở) — "đọc xong" tính theo nó.
+      cuoiHien() { const c = this.doiNay(); return c ? c[1] : this.trang; },
+      // Chạm chữ ở trang BÊN KIA của sách mở: chuyển trang đang đọc sang đó (như lật, không tự phát) rồi xử lý như chạm từ thường.
+      bamTrang(p, i, e) {
+        if (p !== this.trang) this.datTrang(p);
+        this.nhan(i, e);
+      },
+      // Ô chữ đang đọc (trang đơn: x-ref o; sách mở: ô của trang đang đọc mang data-td-o).
+      oChu() { return this.$refs.o || document.querySelector('.td-doc [data-td-o]'); },
       // Mã của trang đang mở trong nhật ký lật của bản thu: mã câu đầu trang; trang bảng (không có câu) = TD.MA_BANG.
       maLat() { const g = this.tg(); return g.bang ? TD.MA_BANG : g.c0; },
       // Trang bảng âm/vần: bước đang đọc (để tô sáng ô + chữ) — null khi không phải trang bảng.
@@ -590,7 +621,8 @@ function tdAnhLat(lat, trang) {
       },
       // Chấm của ô số trang: trang đang mở · trang đọc gần nhất (vi_tri, giữ lớp td-ch-thay của CSS) · còn lại.
       loaiCham(p) {
-        if (p.so === this.trang) return 'td-ch-nay';
+        const cd = this.doiNay();
+        if (p.so === this.trang || (cd && (p.so === cd[0] || p.so === cd[1]))) return 'td-ch-nay';
         if (p.bang) return '';     // trang bảng không phải "trang đọc gần nhất" theo mã câu
         const c = this.s(this.id);
         if (!c.bat_dau && !c.doc_xong) return '';      // truyện chưa đọc mở từ trang 1 — vi_tri cũ không phải "trang đọc gần nhất"
@@ -602,10 +634,11 @@ function tdAnhLat(lat, trang) {
       coAnh() { const t = this.tg(); return !!t.anh && !this.anhHong[this.anhUrl(t.anh)]; },
       // Kiểu "nguyên tranh" (ADR 0056 2026-10-05): cảnh có ảnh, dat = 'tranh' và biết cỡ gốc (w, h > 0; JSON cũ thiếu thì
       // coi là phủ). Ảnh lỗi → coAnh() sai → trang trơn như mọi cảnh mất ảnh.
-      datTranh() { const t = this.tg(); return this.coAnh() && t.dat === 'tranh' && t.w > 0 && t.h > 0; },
+      datTranh() { const t = this.tg(); return !this.doiNay() && this.coAnh() && t.dat === 'tranh' && t.w > 0 && t.h > 0; },
       // Phủ: ảnh là nền cover (CSS). Nguyên tranh: nền trắng (tranh sách thường nền trắng — không thành hộp trắng trên nền kem),
       // tranh là <img class="td-tranh"> trong than().
       nenTrang() {
+        if (this.doiNay()) return 'background:#fff';
         if (!this.coAnh()) return '';
         return this.datTranh() ? 'background:#fff' : 'background-image:url(' + JSON.stringify(this.anhUrl(this.tg().anh)) + ')';
       },
@@ -697,7 +730,7 @@ function tdAnhLat(lat, trang) {
           im.src = u;
         }
         this.taiTruoc();
-        if (this.thu && this.thu.dang) this.thuLat(this.maLat());
+        if (this.thu && this.thu.dang) this.ghiLat();
         this.batDem();
       },
       // Tải trước ảnh + audio trang kế để lật không phải chờ (cùng cảnh thì file đã có sẵn).
@@ -710,7 +743,11 @@ function tdAnhLat(lat, trang) {
 
       lat(d) {
         if (this.thu && this.thu.dem > 0) return;   // đếm ngược thu âm: nhật ký phải bắt đầu ở trang 1 (nút, vuốt, phím đều qua đây)
-        const n = this.trang + d;
+        // Sách mở: lật qua CẢ cặp; lùi vào trang phải của cặp trước thì về trang trái của cặp đó.
+        const c = this.doiNay();
+        let n = d > 0 ? (c ? c[1] : this.trang) + 1 : (c ? c[0] : this.trang) - 1;
+        const c2 = d < 0 ? this.capCua(n) : null;
+        if (c2) n = c2[0];
         if (n < 1) return;
         if (n > this.trs.length) return this.hetTruyen();
         const dang = this.dangDoc;
@@ -721,8 +758,9 @@ function tdAnhLat(lat, trang) {
       // và nút ✅ Xong khi đang thu ở trang cuối (thuXong, _td_thuam.html) — nút đó gọi thẳng thuXong, không qua hetTruyen.
       ghiXong() {
         const c = this.s(this.id);
-        if (this.trang < this.trs.length || !c.bat_dau || c.doc_xong) return;
-        c.doc_xong = true; c.vi_tri = this.tg().c0; c.ts_vt = Date.now();
+        const cuoi = this.cuoiHien();                     // sách mở: trang phải là trang cuối đang hiện
+        if (cuoi < this.trs.length || !c.bat_dau || c.doc_xong) return;
+        c.doc_xong = true; c.vi_tri = this.trs[cuoi - 1].c0; c.ts_vt = Date.now();
         this.luuCucBo(); this.guiTrang(true, true);
       },
       // ▶ ở trang cuối, hoặc audio trang cuối phát hết (hetAm). Đọc xong (ADR 0060) = đã có bat_dau + đang ở trang cuối;
@@ -1098,7 +1136,7 @@ function tdAnhLat(lat, trang) {
       // Đo xong ghi LẠI thuộc tính style đúng bằng viTri (dat()): lúc đo hàm đã chạm vào style của bong bóng, mà Alpine không ghi lại
       // khi viTri không đổi chuỗi.
       datBong(i) {
-        const pop = this.$refs.bong, tu = this.$refs.o && this.$refs.o.querySelector('[data-td-tu="' + i + '"]');
+        const o0 = this.oChu(), pop = this.$refs.bong, tu = o0 && o0.querySelector('[data-td-tu="' + i + '"]');
         if (!pop || !tu || !this.bong) return;
         const pr = pop.parentElement.getBoundingClientRect(), r = tu.getBoundingClientRect();
         const dat = (viTri) => { this.bong.viTri = viTri; pop.setAttribute('style', viTri); };
@@ -1326,6 +1364,27 @@ function tdAnhLat(lat, trang) {
         if (!t || !t.dang || t.tam) return;
         t.lat.push([Math.round(this.thuMs()), ma]);
       },
+      // Sách mở: bé đọc CẢ hai trang mà có thể không chạm trang phải → nhật ký chỉ có trang trái thì trang phải "chưa đọc" (luật
+      // hoàn thành). Rời cặp (lật đi / Kết thúc) mà trang phải chưa vào nhật ký: chèn nó ở mốc chia thời gian ở cặp theo số tiếng hai trang.
+      // `t.doi` = {a, b, tu (ms vào cặp), coB}. Gọi thay thuLat ở datTrang / thuMoDoan; thuXong gọi thuRoiDoi().
+      ghiLat() {
+        const t = this.thu;
+        if (!t || !t.dang || t.tam) return;
+        const moi = this.doiNay();
+        if (t.doi && (!moi || moi[0] !== t.doi.a)) this.thuRoiDoi();
+        this.thuLat(this.maLat());
+        if (!moi) return;
+        if (!t.doi) t.doi = { a: moi[0], b: moi[1], tu: Math.round(this.thuMs()), coB: false };
+        if (this.trang === moi[1]) t.doi.coB = true;
+      },
+      thuRoiDoi() {
+        const t = this.thu, d = t && t.doi;
+        if (!d) return;
+        t.doi = null;
+        if (d.coB || !t.dang || t.tam) return;
+        const na = this.trs[d.a - 1].tu.length, nb = this.trs[d.b - 1].tu.length, bay = this.thuMs();
+        t.lat.push([Math.round(d.tu + (bay - d.tu) * na / (na + nb)), this.trs[d.b - 1].c0]);
+      },
       thuByte() { return this.thu.doan.reduce((s, d) => s + d.blob.size, 0); },
 
       thuMoDoan() {
@@ -1356,7 +1415,7 @@ function tdAnhLat(lat, trang) {
         may.luong.getAudioTracks().forEach((x) => { x.onended = () => this.thuTam(); });   // micro bị hệ thống ngắt
         rec.start();
         t.t0 = t0; t.dang = true; t.tam = false;
-        this.thuLat(this.maLat());
+        this.ghiLat();
         clearInterval(may.hen);
         may.hen = setInterval(() => { if (this.thu === t && t.dang && !t.tam && this.thuMs() >= TD.DAI_MAX) this.thuXong(); }, 1000);
       },
@@ -1419,6 +1478,7 @@ function tdAnhLat(lat, trang) {
         if (!t || !t.dang || t.het) return;
         t.het = true;                                   // chặn lần gọi thứ hai trong lúc chờ đóng đoạn
         // Kết thúc thu ở TRANG CUỐI (nút ✅ Xong, hay tự dừng vì quá dài) = đọc xong như ▶ ở trang cuối, nếu đủ luật (ghiXong).
+        this.thuRoiDoi();                               // sách mở: trang phải chưa vào nhật ký thì ghi nốt (trước khi tạm dừng)
         this.ghiXong();
         t.tam = true;
         await this.thuDongDoan();
@@ -1717,6 +1777,8 @@ function tdAnhLat(lat, trang) {
         },
 
         async init() {
+          this.doiNgang();
+          addEventListener('resize', () => this.doiNgang());     // sách mở chỉ khi màn hình ngang (xoay iPad)
           this.st = this.docCucBo();
           try {
             const r = await fetch(this.goc + 'index.json');
@@ -2428,7 +2490,26 @@ function tdAnhLat(lat, trang) {
           </template>
         </div>
         </template>
-        <template x-if="!tg().bang">
+        
+        <template x-if="doiNay()">
+        <div class="td-doi" data-td-doi>
+          <template x-for="p in doiNay()" :key="'doi' + p">
+            <div class="td-doi-cot" :data-td-doi-trang="p" :class="p === trang ? 'td-doi-nay' : ''">
+              <div class="td-doi-tranh"><img alt="" draggable="false" data-td-doi-tranh :src="anhUrl(trs[p - 1].anh)"
+                   :style="trs[p - 1].w > 0 ? 'max-width:' + 2 * trs[p - 1].w + 'px;max-height:' + 2 * trs[p - 1].h + 'px' : ''"></div>
+              <div class="td-doi-o" :data-td-o="p === trang ? '' : null">
+                <template x-for="(w, i) in trs[p - 1].tu" :key="p + '-' + i">
+                  <span><template x-if="w.nl"><br></template><span class="td-tu" :data-td-tu="p === trang ? i : null"
+                        :class="{ 'td-sang': p === trang && tuSang === i, 'td-nhan': p === trang && nhanI === i }"
+                        @pointerdown="bamTrang(p, i, $event)" @pointermove="diNhan($event)" @pointerup="p === trang && nha(i)" @pointerleave="huyNhan()" @pointercancel="huyNhan()"
+                        @contextmenu.prevent x-text="w.c"></span> </span>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+        </template>
+        <template x-if="!tg().bang && !doiNay()">
         <div class="td-o" data-td-o x-ref="o" :style="kinh()">
           <template x-for="(w, i) in tg().tu" :key="trang + '-' + i">
             <span><template x-if="w.nl"><br></template><span class="td-tu" :data-td-tu="i"
@@ -2463,7 +2544,7 @@ function tdAnhLat(lat, trang) {
           <button type="button" class="td-n td-n-phu td-toc-vong" data-td-toc-vong x-show="!dangThu()" :aria-label="'Tốc độ: ' + tenToc()" @click="vongToc()" x-text="bieuToc()"></button>
           
           <span class="td-so-o" data-td-trang-o>
-            <span class="td-chu">Trang</span> <b data-td-so-trang x-text="trang + ' / ' + trs.length"></b>
+            <span class="td-chu">Trang</span> <b data-td-so-trang x-text="(doiNay() ? doiNay()[0] + '–' + doiNay()[1] : trang) + ' / ' + trs.length"></b>
             <span class="td-chams" aria-hidden="true" x-show="!dangThu() && trs.length <= TRANG_CHAM"><template x-for="p in (trs.length <= TRANG_CHAM ? trs : [])" :key="p.so"><i class="td-ch" :data-td-cham="p.so" :class="loaiCham(p)"></i></template></span>
             <span class="td-thanh-tr" data-td-thanh-tr aria-hidden="true" x-show="!dangThu() && trs.length > TRANG_CHAM"><i :style="'width:' + (100 * trang / trs.length) + '%'"></i></span>
           </span>
@@ -2475,7 +2556,7 @@ function tdAnhLat(lat, trang) {
   <span class="td-chu" data-td-thu-gio x-text="thu && thu.dang ? (thu.tam ? 'Đang tạm dừng ở trang ' + trang : 'Đang thu') : ''"></span>
   <button type="button" class="td-n td-n-phu" data-td-thu-tam aria-label="Tạm dừng thu" x-show="thu && !thu.tam" @click="thuTam()">⏸<span class="td-chu"> Tạm dừng</span></button>
   <button type="button" class="td-n td-n-do" data-td-thu-tiep aria-label="Thu tiếp" x-show="thu && thu.tam" @click="thuTiep()">▶<span class="td-chu"> Thu tiếp</span></button>
-  <button type="button" class="td-n td-n-phu" data-td-thu-xong :aria-label="trang >= trs.length ? 'Xong' : 'Kết thúc'" @click="thuXong()"><span x-text="trang >= trs.length ? '✅' : '⏹'"></span><span class="td-chu" x-text="trang >= trs.length ? ' Xong' : ' Kết thúc'"></span></button>
+  <button type="button" class="td-n td-n-phu" data-td-thu-xong :aria-label="cuoiHien() >= trs.length ? 'Xong' : 'Kết thúc'" @click="thuXong()"><span x-text="cuoiHien() >= trs.length ? '✅' : '⏹'"></span><span class="td-chu" x-text="cuoiHien() >= trs.length ? ' Xong' : ' Kết thúc'"></span></button>
 </span>
           <button type="button" class="td-n td-n-phu td-n-tron" data-td-toi aria-label="Trang sau" @click="lat(1)">▶</button>
         </div>
