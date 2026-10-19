@@ -433,7 +433,7 @@ window.LS.ham();
     // Nhãn loại mục để dòng "Đang lọc" gọi tên chip đang bật. (tojson trong <script> — được.)
     var LOAI = { "page": "\ud83d\udcc4 v\u0103n b\u1ea3n","assignment": "\ud83d\udcdd b\u00e0i t\u1eadp","quiz": "\ud83e\uddea b\u00e0i ki\u1ec3m tra","discussion": "\ud83d\udcac th\u1ea3o lu\u1eadn", };
     var TIEN_DO_KEY = "mk/79967/";
-    var TONG_MUC = 9;
+    var TONG_MUC = 10;
     var CO_HW = false;
     /** State của TRANG MÔN. Trước đây nằm thẳng trong `x-data` của <body>; nay phải là hàm vì
         ô tìm dùng chung (`_timkiem.html`) chèn thêm thành viên — nhét vào thuộc tính HTML là
@@ -694,7 +694,7 @@ timMo: false,
             <span class="min-w-0 flex-1">UNIT 1: EM VÀ TRỢ LÝ AI (Từ 13/08/2026 đến 13/11/2026)</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/9'"></span>
+                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/10'"></span>
             </template>
           </button>
         </li>
@@ -740,14 +740,183 @@ timMo: false,
         <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">UNIT 1: EM VÀ TRỢ LÝ AI (Từ 13/08/2026 đến 13/11/2026)</span>
         <template x-if="p.online">
           <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
-                :class="moduleDone($el.closest('[data-module]'), p.done) === 9
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 10
                         ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
-                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/9'"></span>
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/10'"></span>
         </template>
-        <span class="text-xs text-slate-400 shrink-0">9 mục</span>
+        <span class="text-xs text-slate-400 shrink-0">10 mục</span>
       </button>
 
       <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-sechead data-title="1. Tài liệu hướng dẫn học" data-sec="1"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>1. Tài liệu hướng dẫn học</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="Tương tác và sáng tạo cùng AI" data-type="assignment" data-sec="1"
+             data-pkey="mk/79967/8312114" data-hash="1e8e43db7d3398283b21684d2f782aaacfb6a0ea" data-ts="1792380432000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/79967/8312114'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/79967/8312114'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/79967/8312114']; $el.indeterminate = !!p.redo['mk/79967/8312114']"
+                     @change="await p.toggle('mk/79967/8312114', '1e8e43db7d3398283b21684d2f782aaacfb6a0ea'); $el.checked = !!p.done['mk/79967/8312114']; $el.indeterminate = !!p.redo['mk/79967/8312114']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài tập">📝</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Tương tác và sáng tạo cùng AI</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài tập</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/79967/8312114', '1e8e43db7d3398283b21684d2f782aaacfb6a0ea')">
+                  <button @click.stop="p.seen('mk/79967/8312114', '1e8e43db7d3398283b21684d2f782aaacfb6a0ea')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                  <span>10 điểm</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/10</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/79967/assignments/2870439" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><strong><img alt="Muc_tieu.png" height="50" loading="lazy" src="materials/cong-nghe-thong-tin-1/unit-1-em-va-tro-ly-ai-tu-13-08-2026-den-13-11-2026/Muc_tieu-1.png" width="50"/><span> </span>Mục tiêu bài học: <br/></strong>1. Học sinh g<span>iao tiếp được với một trợ lý AI bằng giọng nói để thực hiện một yêu cầu tìm kiếm đơn giản.</span><br/>2. Học sinh l<span>ựa chọn được thông tin phù hợp từ các kết quả (hình ảnh, văn bản ngắn) mà AI cung cấp để phục vụ cho một mục đích cụ thể.</span><br/>3. Học sinh s<span>ử dụng được một công cụ AI tạo sinh để hiện thực hóa một ý tưởng đơn giản thành sản phẩm hình ảnh.</span></p>
+<p>4. Học sinh p<span>hân biệt được vai trò của bản thân (người ra ý tưởng, người ra lệnh) và vai trò của AI (người thực thi) trong việc tạo ra một sản phẩm chung.</span></p>
+<p><span>5. Học sinh trình bày được về sản phẩm do mình và AI đồng sáng tạo và chia sẻ cảm xúc về sản phẩm đó.</span></p>
+<p><strong><img alt="Videos.png" height="50" loading="lazy" src="materials/cong-nghe-thong-tin-1/unit-1-em-va-tro-ly-ai-tu-13-08-2026-den-13-11-2026/Videos-1.png" width="50"/>Video:</strong></p>
+<p><iframe allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen" frameborder="0" height="315" loading="lazy" src="https://www.youtube.com/embed/uBXt4DHM-Sk?si=G_g9GqccHmEErpPp" title="YouTube video player" width="560"></iframe></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Gặp gỡ những người bạn thông minh" data-type="assignment" data-sec="1"
+             data-pkey="mk/79967/8312113" data-hash="4f37e353be1628a2b26a5d1ee3595c7a81f73cbe" data-ts="1787374359000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/79967/8312113'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/79967/8312113'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/79967/8312113']; $el.indeterminate = !!p.redo['mk/79967/8312113']"
+                     @change="await p.toggle('mk/79967/8312113', '4f37e353be1628a2b26a5d1ee3595c7a81f73cbe'); $el.checked = !!p.done['mk/79967/8312113']; $el.indeterminate = !!p.redo['mk/79967/8312113']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài tập">📝</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Gặp gỡ những người bạn thông minh</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài tập</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/79967/8312113', '4f37e353be1628a2b26a5d1ee3595c7a81f73cbe')">
+                  <button @click.stop="p.seen('mk/79967/8312113', '4f37e353be1628a2b26a5d1ee3595c7a81f73cbe')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                  <span>10 điểm</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 22/08</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/79967/assignments/2870429" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><strong><img alt="Muc_tieu.png" height="50" loading="lazy" src="materials/cong-nghe-thong-tin-1/unit-1-em-va-tro-ly-ai-tu-13-08-2026-den-13-11-2026/Muc_tieu-1.png" width="50"/><span> </span>Mục tiêu bài học: <br/></strong>1. Học sinh nhận diện được các thiết bị, ứng dụng có sử dụng AI trong các bối cảnh quen thuộc (gia đình, lớp học). <br/>2. Học sinh mô tả được chức năng chính của một công cụ AI bằng ngôn ngữ đơn giản (ví dụ: "Robot hút bụi giúp lau nhà sạch sẽ"). <br/>3. Học sinh phân biệt được đâu là một hành động do AI thực hiện và đâu là hành động do con người thực hiện trong các tình huống cho trước. </p>
+<p>4. Học sinh giải thích được rằng các "bạn AI" cần năng lượng (điện) để hoạt động. </p>
+<p><strong><img alt="Videos.png" height="50" loading="lazy" src="materials/cong-nghe-thong-tin-1/unit-1-em-va-tro-ly-ai-tu-13-08-2026-den-13-11-2026/Videos-1.png" width="50"/>Video:</strong></p>
+<p><iframe allowfullscreen="allowfullscreen" height="569" loading="lazy" mozallowfullscreen="mozallowfullscreen" src="https://docs.google.com/presentation/d/e/2PACX-1vS1_VbV5hNcYYCT0OrZODsnZuzITChTxkvTkQEsCjCkcft1TmlBNWiZxTWeiWPpXA/pubembed?start=false&amp;loop=false&amp;delayms=3000" title="embedded content" webkitallowfullscreen="webkitallowfullscreen" width="960"></iframe></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
         
         
         <div data-sechead data-title="3. Bài tập ôn tập kiến thức" data-sec="3"
@@ -1118,98 +1287,6 @@ timMo: false,
                 
               </div>
 
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-sechead data-title="1. Tài liệu hướng dẫn học" data-sec="1"
-             x-show="headingMatches($el, f)"
-             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
-             style="padding-left: 1.0rem">
-          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
-          <template x-if="p.online">
-            <input type="checkbox" title="Đánh dấu cả nhóm này"
-                   x-effect="syncSecBox($el, p.done)"
-                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
-                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-          </template>
-          <span>1. Tài liệu hướng dẫn học</span>
-        </div>
-        
-        
-        
-        <div data-item data-title="Gặp gỡ những người bạn thông minh" data-type="assignment" data-sec="1"
-             data-pkey="mk/79967/8312113" data-hash="4f37e353be1628a2b26a5d1ee3595c7a81f73cbe" data-ts="1787374359000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['mk/79967/8312113'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['mk/79967/8312113'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['mk/79967/8312113']; $el.indeterminate = !!p.redo['mk/79967/8312113']"
-                     @change="await p.toggle('mk/79967/8312113', '4f37e353be1628a2b26a5d1ee3595c7a81f73cbe'); $el.checked = !!p.done['mk/79967/8312113']; $el.indeterminate = !!p.redo['mk/79967/8312113']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài tập">📝</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
-              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
-                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Gặp gỡ những người bạn thông minh</span>
-                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
-                     :class="o ? 'rotate-180' : ''"
-                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </button>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài tập</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('mk/79967/8312113', '4f37e353be1628a2b26a5d1ee3595c7a81f73cbe')">
-                  <button @click.stop="p.seen('mk/79967/8312113', '4f37e353be1628a2b26a5d1ee3595c7a81f73cbe')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                  <span>10 điểm</span>
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 22/08</span>
-                
-                
-                <a href="https://lms.vinschool.edu.vn/courses/79967/assignments/2870429" target="_blank" rel="noopener"
-                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
-                
-              </div>
-
-              
-              <div x-show="o" x-collapse x-cloak
-                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
-                <p><strong><img alt="Muc_tieu.png" height="50" loading="lazy" src="materials/cong-nghe-thong-tin-1/unit-1-em-va-tro-ly-ai-tu-13-08-2026-den-13-11-2026/Muc_tieu-1.png" width="50"/><span> </span>Mục tiêu bài học: <br/></strong>1. Học sinh nhận diện được các thiết bị, ứng dụng có sử dụng AI trong các bối cảnh quen thuộc (gia đình, lớp học). <br/>2. Học sinh mô tả được chức năng chính của một công cụ AI bằng ngôn ngữ đơn giản (ví dụ: "Robot hút bụi giúp lau nhà sạch sẽ"). <br/>3. Học sinh phân biệt được đâu là một hành động do AI thực hiện và đâu là hành động do con người thực hiện trong các tình huống cho trước. </p>
-<p>4. Học sinh giải thích được rằng các "bạn AI" cần năng lượng (điện) để hoạt động. </p>
-<p><strong><img alt="Videos.png" height="50" loading="lazy" src="materials/cong-nghe-thong-tin-1/unit-1-em-va-tro-ly-ai-tu-13-08-2026-den-13-11-2026/Videos-1.png" width="50"/>Video:</strong></p>
-<p><iframe allowfullscreen="allowfullscreen" height="569" loading="lazy" mozallowfullscreen="mozallowfullscreen" src="https://docs.google.com/presentation/d/e/2PACX-1vS1_VbV5hNcYYCT0OrZODsnZuzITChTxkvTkQEsCjCkcft1TmlBNWiZxTWeiWPpXA/pubembed?start=false&amp;loop=false&amp;delayms=3000" title="embedded content" webkitallowfullscreen="webkitallowfullscreen" width="960"></iframe></p>
-              </div>
               
             </div>
           </div>
