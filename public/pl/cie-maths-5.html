@@ -433,7 +433,7 @@ window.LS.ham();
     // Nhãn loại mục để dòng "Đang lọc" gọi tên chip đang bật. (tojson trong <script> — được.)
     var LOAI = { "page": "\ud83d\udcc4 v\u0103n b\u1ea3n","file": "\ud83d\udcce t\u00e0i li\u1ec7u","external": "\ud83d\udd17 li\u00ean k\u1ebft ngo\u00e0i","link": "\u27a1\ufe0f m\u1ee5c", };
     var TIEN_DO_KEY = "pl/79608/";
-    var TONG_MUC = 114;
+    var TONG_MUC = 117;
     var CO_HW = true;
     /** State của TRANG MÔN. Trước đây nằm thẳng trong `x-data` của <body>; nay phải là hàm vì
         ô tìm dùng chung (`_timkiem.html`) chèn thêm thành viên — nhét vào thuộc tính HTML là
@@ -701,10 +701,10 @@ timMo: false,
         <li x-show="mucHien(1, f)">
           <button type="button" @click="toiMuc(1); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
-            <span class="min-w-0 flex-1">Exam Practice</span>
+            <span class="min-w-0 flex-1">Week 10 - 8.2 Adding and Subtracting Fractions + 3.1 Mean, Mode and Median</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/1'"></span>
+                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/4'"></span>
             </template>
           </button>
         </li>
@@ -712,7 +712,7 @@ timMo: false,
         <li x-show="mucHien(2, f)">
           <button type="button" @click="toiMuc(2); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
-            <span class="min-w-0 flex-1">Week 10 - 8.2 Adding and Subtracting Fractions + 3.1 Mean, Mode and Median</span>
+            <span class="min-w-0 flex-1">Exam Practice</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
                     x-text="moduleDone(document.getElementById('mod-2'), p.done) + '/1'"></span>
@@ -887,98 +887,7 @@ timMo: false,
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: true }"
              x-effect="if (q || filtering) open = true"
-             id="mod-1" data-module data-title="Exam Practice"
-             x-show="moduleMatches($el, f)"
-             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <button @click="open = !open"
-              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
-        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
-             :class="open ? 'rotate-90' : ''"
-             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-        </svg>
-        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">Exam Practice</span>
-        <template x-if="p.online">
-          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
-                :class="moduleDone($el.closest('[data-module]'), p.done) === 1
-                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
-                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/1'"></span>
-        </template>
-        <span class="text-xs text-slate-400 shrink-0">1 mục</span>
-      </button>
-
-      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
-        
-        
-        <div data-item data-title="SATs Papers" data-type="external" data-sec="0"
-             data-pkey="pl/79608/9096654" data-hash="b759c803461f69810eb70a6eb0139d93fb19ba65" data-ts="1792458900000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['pl/79608/9096654'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79608/9096654'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79608/9096654']; $el.indeterminate = !!p.redo['pl/79608/9096654']"
-                     @change="await p.toggle('pl/79608/9096654', 'b759c803461f69810eb70a6eb0139d93fb19ba65'); $el.checked = !!p.done['pl/79608/9096654']; $el.indeterminate = !!p.redo['pl/79608/9096654']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
-              <a href="https://www.satspapersguide.co.uk/ks2-year-6-sats/ks2-year-6-sats-papers/#ks2maths" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                SATs Papers
-                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                </svg>
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79608/9096654', 'b759c803461f69810eb70a6eb0139d93fb19ba65')">
-                  <button @click.stop="p.seen('pl/79608/9096654', 'b759c803461f69810eb70a6eb0139d93fb19ba65')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 20/10</span>
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-      </div>
-    </section>
-    
-    <!-- Một Tuần học / Bài học -->
-    <section x-data="{ open: false }"
-             x-effect="if (q || filtering) open = true"
-             id="mod-2" data-module data-title="Week 10 - 8.2 Adding and Subtracting Fractions + 3.1 Mean, Mode and Median"
+             id="mod-1" data-module data-title="Week 10 - 8.2 Adding and Subtracting Fractions + 3.1 Mean, Mode and Median"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -991,11 +900,11 @@ timMo: false,
         <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">Week 10 - 8.2 Adding and Subtracting Fractions + 3.1 Mean, Mode and Median</span>
         <template x-if="p.online">
           <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
-                :class="moduleDone($el.closest('[data-module]'), p.done) === 1
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 4
                         ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
-                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/1'"></span>
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/4'"></span>
         </template>
-        <span class="text-xs text-slate-400 shrink-0">1 mục</span>
+        <span class="text-xs text-slate-400 shrink-0">4 mục</span>
       </button>
 
       <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
@@ -1013,6 +922,186 @@ timMo: false,
                    class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
           </template>
           <span>Optional Activities</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="Adding and Subtracting Fractions - Worded Problems" data-type="file" data-sec="3"
+             data-pkey="pl/79608/9115087" data-hash="416693a57f9077819b29f8e56f7ecb9fc9b1193b" data-ts="1792544792000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/9115087'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/9115087'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/9115087']; $el.indeterminate = !!p.redo['pl/79608/9115087']"
+                     @change="await p.toggle('pl/79608/9115087', '416693a57f9077819b29f8e56f7ecb9fc9b1193b'); $el.checked = !!p.done['pl/79608/9115087']; $el.indeterminate = !!p.redo['pl/79608/9115087']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/grade-5-word-problems-adding-subtracting-fractions-b/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Adding and Subtracting Fractions - Worded Problems
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/9115087', '416693a57f9077819b29f8e56f7ecb9fc9b1193b')">
+                  <button @click.stop="p.seen('pl/79608/9115087', '416693a57f9077819b29f8e56f7ecb9fc9b1193b')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>77.2 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 21/10</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Adding and Subtracting Fractions - Worded Problems 2" data-type="file" data-sec="3"
+             data-pkey="pl/79608/9115088" data-hash="9ef7a0d844bee83390b3a14a39ee7b21bc0e1f9d" data-ts="1792544850000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/9115088'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/9115088'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/9115088']; $el.indeterminate = !!p.redo['pl/79608/9115088']"
+                     @change="await p.toggle('pl/79608/9115088', '9ef7a0d844bee83390b3a14a39ee7b21bc0e1f9d'); $el.checked = !!p.done['pl/79608/9115088']; $el.indeterminate = !!p.redo['pl/79608/9115088']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/grade-5-word-problems-adding-subtracting-fractions-c/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Adding and Subtracting Fractions - Worded Problems 2
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/9115088', '9ef7a0d844bee83390b3a14a39ee7b21bc0e1f9d')">
+                  <button @click.stop="p.seen('pl/79608/9115088', '9ef7a0d844bee83390b3a14a39ee7b21bc0e1f9d')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>73.1 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 21/10</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Word problems adding and subtracting fractions.pdf" data-type="file" data-sec="3"
+             data-pkey="pl/79608/9115118" data-hash="9965000920007c866f1e5a89b12033a7a6a60988" data-ts="1792545162000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/9115118'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/9115118'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/9115118']; $el.indeterminate = !!p.redo['pl/79608/9115118']"
+                     @change="await p.toggle('pl/79608/9115118', '9965000920007c866f1e5a89b12033a7a6a60988'); $el.checked = !!p.done['pl/79608/9115118']; $el.indeterminate = !!p.redo['pl/79608/9115118']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/word-problems-adding-and-subtracting-fractions/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Word problems adding and subtracting fractions.pdf
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/9115118', '9965000920007c866f1e5a89b12033a7a6a60988')">
+                  <button @click.stop="p.seen('pl/79608/9115118', '9965000920007c866f1e5a89b12033a7a6a60988')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>102.8 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 21/10</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
         </div>
         
         
@@ -1105,6 +1194,97 @@ timMo: false,
                    class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
           </template>
           <span>Class Resources</span>
+        </div>
+        
+        
+        
+      </div>
+    </section>
+    
+    <!-- Một Tuần học / Bài học -->
+    <section x-data="{ open: false }"
+             x-effect="if (q || filtering) open = true"
+             id="mod-2" data-module data-title="Exam Practice"
+             x-show="moduleMatches($el, f)"
+             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <button @click="open = !open"
+              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
+        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
+             :class="open ? 'rotate-90' : ''"
+             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">Exam Practice</span>
+        <template x-if="p.online">
+          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 1
+                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/1'"></span>
+        </template>
+        <span class="text-xs text-slate-400 shrink-0">1 mục</span>
+      </button>
+
+      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-item data-title="SATs Papers" data-type="external" data-sec="0"
+             data-pkey="pl/79608/9096654" data-hash="b759c803461f69810eb70a6eb0139d93fb19ba65" data-ts="1792458900000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/9096654'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/9096654'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/9096654']; $el.indeterminate = !!p.redo['pl/79608/9096654']"
+                     @change="await p.toggle('pl/79608/9096654', 'b759c803461f69810eb70a6eb0139d93fb19ba65'); $el.checked = !!p.done['pl/79608/9096654']; $el.indeterminate = !!p.redo['pl/79608/9096654']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://www.satspapersguide.co.uk/ks2-year-6-sats/ks2-year-6-sats-papers/#ks2maths" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                SATs Papers
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/9096654', 'b759c803461f69810eb70a6eb0139d93fb19ba65')">
+                  <button @click.stop="p.seen('pl/79608/9096654', 'b759c803461f69810eb70a6eb0139d93fb19ba65')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 20/10</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
         </div>
         
         
