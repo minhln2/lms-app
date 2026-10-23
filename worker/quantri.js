@@ -18,7 +18,8 @@
  *   POST /api/quantri/diem/cong {user, diem, ghi_chu} → bố mẹ tự cộng, khoá them:<ms>:<8 hex> → {ok, cong, du}
  *   POST /api/quantri/tick/go {user, key}         → "về chưa học": xoá khoá KV rồi đối chiếu (gỡ tick: + nhom:) → {ok, tru, du}
  *   POST /api/quantri/thuoc/go {user, mon, i, c}  → bỏ cờ "đã thuộc" (writeKnown v 0, không dính ⭐) → {ok}
- *   GET  /api/quantri/hoc-tap?user=&phan=         → dong (≤ 30 ngày, ≤ 500 dòng) · tapdoc · on (thẻ) · tu (từ đã tra)
+ *   GET  /api/quantri/hoc-tap?user=&phan=         → dong (≤ 30 ngày, ≤ 500 dòng) · tapdoc · on (thẻ) · tu (từ đã tra) ·
+ *                                                 toan (mọi lượt làm Toán ôn thi: {cols, rows} như GET /api/toan, worker/toan.js)
  *
  * Gỡ điểm và xoá hàng nguồn đi trong MỘT db.batch (một giao dịch D1), câu gỡ điểm đứng ĐẦU: hỏng giữa chừng là không gì bị
  * ghi; gọi lại an toàn (dòng `huy:` có khoá UNIQUE — gỡ không hai lần; xoá hàng không có là vô hại).
@@ -27,6 +28,7 @@ import { kiemQuantri, cauHuy, ngayVN, soDu, an, docManifest, doiChieuKV, doiChie
          dangHieuLuc, huyDiem, kyBieuDo, cotBieuDo, BIEU_DO, LICH_SU_QT, GHI_CHU_MAX, TRU_MAX, KHOA_TIEN_DO } from "./diem.js";
 import { phatLai } from "./lich_on.js";
 import { writeKnown } from "./study.js";
+import { readLuot } from "./toan.js";
 import { kiemUser, kiemTruyen } from "./tapdoc.js";
 import { khoLietCo, khoXoa } from "./kho.js";
 
@@ -360,13 +362,13 @@ async function hocTu(env, url, user) {
   return r.results || [];
 }
 
-const PHAN = { dong: hocDong, tapdoc: hocTapdoc, on: hocOn, tu: hocTu };
+const PHAN = { dong: hocDong, tapdoc: hocTapdoc, on: hocOn, tu: hocTu, toan: (env, url, user) => readLuot(env, user) };
 
 /** Lịch sử học tập, nạp lười theo tab (spec §6). Tiến độ theo môn tính ở TRÌNH DUYỆT (dữ liệu nhúng + /api/progress). */
 async function routeHocTap(request, env, url) {
   const user = kiemU(url.searchParams.get("user"));
   const phan = url.searchParams.get("phan") || "";
-  if (!Object.hasOwn(PHAN, phan)) throw sai("Thiếu hoặc sai 'phan' (dong | tapdoc | on | tu)");
+  if (!Object.hasOwn(PHAN, phan)) throw sai("Thiếu hoặc sai 'phan' (dong | tapdoc | on | tu | toan)");
   return PHAN[phan](env, url, user);
 }
 

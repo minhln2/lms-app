@@ -28,6 +28,13 @@ export const DIEM = {
   ON: 1,                                 // mỗi lượt ôn tập, trong ON_LUOT lượt đầu mỗi ngày của mỗi thẻ
   ON_NHO: 2,                             // thưởng lượt nhớ / đúng đầu tiên trong ON_LUOT lượt đó
   ON_LUOT: 3,
+  // Ôn tập Toán 6 (worker/toan_diem.js, ADR 0070): THAY luật ôn ở trên cho môn `toan-6` — chủ dự án duyệt 2026-10-23.
+  TOAN: {
+    BAI: { "mo-khoa": [5, 3], "tang-toc": [10, 5], "chinh-phuc": [15, 8], "thu-thach": [20, 10] },   // theo `muc` của bài: [đủ (g 3), nửa (g 2)]; mỗi bài tối đa MỘT lần ĐỦ trong đời
+    GIANG: 20,                           // xong bài giảng MỘT dạng, hoặc xong phần Kiến thức của chuyên đề (mỗi cái một lần)
+    MOC: { 2: 20, 3: 40, 4: 60 },        // dạng lên 🟢 / 🔵 / ⭐ (một lần mỗi mốc mỗi dạng, kể cả tụt rồi lên lại)
+    DAT: 100,                            // chuyên đề Đạt (một lần)
+  },
 };
 export const LICH_SU = 100;      // số dòng lịch sử GET /api/diem trả
 export const GHI_CHU_MAX = 200;  // ghi chú khi bố mẹ trừ
@@ -104,7 +111,7 @@ export async function soDu(env, user) {
 
 /** Khoảng [`tien`, `tien` + 1 ở ký tự cuối) — quét tiền tố bằng `khoa >= ? AND khoa < ?` (đi được chỉ mục UNIQUE
  *  (user_id, khoa)), thay phép so mẫu tiền tố. Tiền tố kết thúc bằng ":" → cận trên ";". */
-const khoang = (tien) => [tien, tien.slice(0, -1) + String.fromCharCode(tien.charCodeAt(tien.length - 1) + 1)];
+export const khoang = (tien) => [tien, tien.slice(0, -1) + String.fromCharCode(tien.charCodeAt(tien.length - 1) + 1)];
 
 // ── Lượt + dòng gỡ (ADR 0063) ────────────────────────────────────────────────
 // `#` không có trong mọi khoá nguồn (id môn / mục Canvas là số, id truyện [a-z0-9-], id thẻ f.|q. + hex, ngày YYYY-MM-DD):
@@ -381,7 +388,9 @@ export async function congThuam(env, user, t) {
 // ── Manifest (dist/diem/<user>.json, src/builder.py) ───────────────────────
 /**
  * {mon: {<course_id>: {slug, ten, muc: {<item_id>: tên}, nhom: {<sechead_id>: {ten, muc: [item_id]}}}}} — CHỈ môn có cờ
- * `diem`. Không có / 404 / JSON vỡ / thiếu `mon` → null: coi như không môn nào có cờ (cộng 0). ASSETS ném lỗi → ném
+ * `diem`, và môn ngoài LMS khoá bằng chính slug (hiện chỉ `toan-6`, `muc` / `nhom` rỗng, thêm `toan` = cấu trúc chuyên đề / dạng / bài
+ * cho worker/toan_diem.js — src/builder.py `_mon_toan`; khoá không phải số nên không bao giờ khớp `tick:<cid>/` / `nhom:` / cổng `moc:tick:`).
+ * Không có / 404 / JSON vỡ / thiếu `mon` → null: coi như không môn nào có cờ (cộng 0). ASSETS ném lỗi → ném
  * (nơi gọi bọc an()).
  */
 export async function docManifest(env, url, user) {
@@ -661,6 +670,7 @@ export async function doiChieuKV(env, url, user) {
  *   sheet:<slug>:…             → lop, <slug>            (bảng lớp, ADR 0068)
  *   td:…                       → doc, "tap-doc"
  *   on:…                       → on, null               (lichSu điền mon của dòng ôn gộp từ attempt)
+ *   toan:…                     → on, "toan-6"           (điểm Ôn tập Toán 6: mỗi bài / mốc một dòng, không gộp)
  *   them:… · doi:…             → bo_me, null
  *   moc:… / lạ                 → null, null
  */
@@ -675,19 +685,22 @@ export function phanLoai(khoa, mf) {
   if (m) return { loai: "lop", mon: m[1] };
   if (k.startsWith("td:")) return { loai: "doc", mon: "tap-doc" };
   if (k.startsWith("on:")) return { loai: "on", mon: null };
+  if (k.startsWith("toan:")) return { loai: "on", mon: "toan-6" };   // điểm Ôn tập Toán 6 (worker/toan_diem.js): chip "Ôn tập" + môn Toán
   if (k.startsWith("them:") || k.startsWith("doi:")) return { loai: "bo_me", mon: null };
   return { loai: null, mon: null };
 }
 
 /**
  * Hàm thuần: dòng `khoa` gỡ riêng được (POST /api/quantri/diem/huy)? CHỈ nguồn mà gỡ suông là BỀN: tập đọc (mốc "lần đầu"
- * đã ghi — không tự sinh lại) và bố mẹ tự cộng. tick: / sheet: KHÔNG (lượt đối chiếu kế tiếp cộng lại ngay — phải bỏ tick);
+ * đã ghi — không tự sinh lại), điểm từng bài Toán (`toan:bai:`; mốc / bài giảng / đạt của Toán thì KHÔNG — lượt kế tiếp của dạng
+ * tính lại từ sổ và cộng lại ngay) và bố mẹ tự cộng. tick: / sheet: KHÔNG (lượt đối chiếu kế tiếp cộng lại ngay — phải bỏ tick);
  * nhom: (suy từ section) · on: (lịch sử gộp theo ngày) · doi: · moc: · huy: KHÔNG. Một hàm cho route lẫn cờ `huy` của lichSu.
  */
 export function huyDuoc(khoa) {
   return /^td:(?:doc|thuam):[a-z0-9-]+(?:#\d+)?$/.test(khoa)
     || /^td:quiz:[a-z0-9-]+:\d+(?:#\d+)?$/.test(khoa)
-    || /^them:\d+:[0-9a-f]{8}$/.test(khoa);
+    || /^them:\d+:[0-9a-f]{8}$/.test(khoa)
+    || /^toan:bai:[a-z0-9.-]+:(?:du|nua|bu)(?:#\d+)?$/.test(khoa);   // điểm một bài Toán: làm lại bài mới được cộng lại (không tự sinh lại)
 }
 
 /** Khoá dòng bố mẹ tự cộng: them:<ms>:<8 hex> — phần ngẫu nhiên để hai lượt cùng mili-giây không đụng khoá UNIQUE. */

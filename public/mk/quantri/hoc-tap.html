@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <title>Lịch sử học tập — Quản trị — MK</title>
-  <link rel="stylesheet" href="../../assets/tw.50c2de0d.css">
+  <link rel="stylesheet" href="../../assets/tw.cde4acea.css">
 <script>
 window.LS = (function () {
   var ve = null, goc = '', dang = 0, henCuon = null, cho = null;
@@ -170,23 +170,96 @@ window.LS.ham();
   <script defer src="../../assets/alpine.63d2636a.js"></script>
   <style>[x-cloak]{display:none!important}</style>
   <script>
-    // Lịch sử học tập (spec §5, §6; ADR 0069) — /{id}/quantri/hoc-tap. Năm tab = năm màn hình ở hash (ADR 0067), nạp LƯỜI:
+    // Lịch sử học tập (spec §5, §6; ADR 0069) — /{id}/quantri/hoc-tap. Sáu tab = sáu màn hình ở hash (ADR 0067), nạp LƯỜI;
+    // tab Toán CHỈ có với học sinh trong toan/hoc_sinh.json (`co_toan` của builder, R23) — học sinh khác: năm tab, #toan bị bỏ qua:
     //   dong   GET hoc-tap?phan=dong   — chip Loại + Môn
     //   mon    TIEN_DO nhúng + GET /api/progress (công khai) — MỌI môn (quyết định 2026-10-16), không lọc
     //   tapdoc GET hoc-tap?phan=tapdoc — không lọc
     //   on     GET hoc-tap?phan=on     — chip Môn; thẻ known = 1 → "Bỏ đã thuộc" (POST thuoc/go, không dính ⭐)
     //   tu     GET hoc-tap?phan=tu     — chip Môn
+    //   toan   ../toan/kho.json (CÙNG tệp trang Toán của con dùng) + GET hoc-tap?phan=toan; mức tính bằng CHÍNH toan_muc.js
+    //          (import động, như trang con — spec 2026-10-21 §6: một hàm dùng chung). Không có kho / kho không chuyên đề nào
+    //          → "chưa có nội dung", KHÔNG gọi API. Lỗi nạp (mô-đun không import được, GET hỏng) → dòng lỗi + nút "Thử lại" trong tab,
+    //          không để "Đang tải…" treo; có kho mà TOAN_MUC rỗng → "Lỗi dựng trang Toán" (+ console.warn), không thử lại được.
     // Chữ thẻ: ../study/<môn>.json (cùng file trang ôn tập), như khối "Thẻ đã thuộc" cũ của diem.html; id không còn → hiện id.
     const TIEN_DO = [{"cid": "80231", "muc": ["9117580", "7943790", "7943789", "7943791", "7943784", "7943786", "8935528", "7943807", "7943802", "7943804", "7943799", "7943800", "7943794", "7943796", "7943809", "7943811", "7943814", "8863217", "7943816", "7943819", "7943822", "8807007", "7943825", "7943828", "7943831", "7943833", "8752117", "7943838", "7943836", "7943850", "8613081", "7943842", "7943844", "7943846", "7943843", "8451396", "7943859", "7943857", "7943854", "7943855"], "nhom": [["9117580", "7943790", "7943789", "7943791"], ["7943784", "7943786"], ["8935528", "7943807"], ["7943802", "7943804"], ["7943799", "7943800"], ["7943794", "7943796"], ["7943809", "7943811"], ["7943814"], ["8863217", "7943816"], ["7943819", "7943822"], ["8807007", "7943825"], ["7943828", "7943831", "7943833"], ["8752117"], ["7943838"], ["7943836"], ["7943850", "8613081"], ["7943842", "7943844", "7943846", "7943843"], ["8451396", "7943859"], ["7943857"], ["7943854", "7943855"]], "slug": "tieng-viet-1", "ten": "Ti\u1ebfng Vi\u1ec7t 1"}, {"cid": "80353", "muc": ["9100458", "9100466", "9036381", "9036382", "9036385", "9036387", "9036221", "9055161", "9003490", "9003785", "9003788", "9003790", "9003793", "9030509", "8965359", "8965495", "8471762", "8263761", "8623877", "8550202", "8623896", "8623894", "8710579", "8710581", "8852056", "8869382", "8852048"], "nhom": [["9100458"], ["9100466", "9036381", "9036382", "9036385", "9036387"], ["9036221", "9055161"], ["9003490", "9003785", "9003788", "9003790", "9003793"], ["9030509"], ["8965359", "8965495"], ["8471762"], ["8263761"], ["8623877"], ["8550202"], ["8623896"], ["8623894"], ["8710579"], ["8710581"], ["8852056"], ["8869382"], ["8852048"]], "slug": "cie-maths-1", "ten": "CIE Maths 1"}, {"cid": "80352", "muc": ["9051768", "8471754", "8471756", "8471757", "8471758", "8633751", "8633754", "8633755", "8633753", "8710444", "8710445", "8710446", "8710448", "8710449", "8710450", "8772803", "8772805", "8772806", "8772807", "8772808", "8821943", "8821945", "8821946", "8884847", "8884848", "8884851", "8884852", "8884853", "8884854", "8884850", "8959018", "8959019", "8959021", "9030512", "9030514", "9030516"], "nhom": [["9051768"], ["8471754"], ["8471756", "8471757", "8471758"], ["8633751"], ["8633754", "8633755", "8633753"], ["8710444", "8710445", "8710446"], ["8710448", "8710449", "8710450"], ["8772803"], ["8772805", "8772806", "8772807", "8772808"], ["8821943"], ["8821945", "8821946"], ["8884847", "8884848"], ["8884851", "8884852", "8884853", "8884854", "8884850"], ["8959018", "8959019"], ["8959021"], ["9030512"], ["9030514", "9030516"]], "slug": "cie-esl-1", "ten": "CIE ESL 1"}, {"cid": "145788", "muc": ["9100479", "9038430", "9038431", "9038505", "9038506", "8921943", "8921876", "8921878", "8921880", "8921863", "8799107", "8799106", "8799178", "8799110", "8799136", "8868897", "8868857", "8868858", "8868867", "8868892", "8868895", "8921761", "8921854"], "nhom": [["9100479"], ["9038430", "9038431", "9038505", "9038506"], ["8921943", "8921876", "8921878", "8921880"], ["8921863"], ["8799107"], ["8799106"], ["8799178", "8799110", "8799136"], ["8868897"], ["8868857", "8868858"], ["8868867", "8868892", "8868895"], ["8921761"], ["8921854"]], "slug": "cie-science-1", "ten": "CIE Science 1"}, {"cid": "79967", "muc": ["8312114", "8312113", "8312121", "8312125", "8312120", "8312122", "8312124", "8312116", "8312117", "8312118"], "nhom": [["8312114", "8312113"], ["8312121", "8312125", "8312120", "8312122", "8312124"], ["8312116", "8312117", "8312118"]], "slug": "cong-nghe-thong-tin-1", "ten": "C\u00f4ng Ngh\u1ec7 Th\u00f4ng Tin 1"}, {"cid": "80232", "muc": ["7945317", "7945318", "7945311", "7945312", "7945327", "7945328", "7945330", "7945329", "7945325", "7945323", "7945320", "7945275"], "nhom": [["7945317", "7945318"], ["7945311", "7945312"], ["7945327", "7945328", "7945330", "7945329"], ["7945325"], ["7945323"], ["7945320"]], "slug": "viet-nam-hoc-1", "ten": "Vi\u1ec7t Nam H\u1ecdc 1"}, {"cid": "80230", "muc": ["7943373", "7943374", "7943380", "7943381", "7943382", "7943378", "7943379", "7943386", "7943387"], "nhom": [["7943373", "7943374"], ["7943380", "7943381", "7943382", "7943378", "7943379"], ["7943386", "7943387"]], "slug": "giao-duc-ky-nang-pham-chat-1", "ten": "Gi\u00e1o D\u1ee5c K\u1ef9 N\u0103ng Ph\u1ea9m Ch\u1ea5t 1"}, {"cid": "80354", "muc": ["8326372", "8326373", "8326374", "8326371"], "nhom": [], "slug": "mi-thuat-1", "ten": "M\u0129 Thu\u1eadt 1"}, {"cid": "80235", "muc": ["9099870", "9099850", "9099827", "8940998", "8941004", "8862105", "8862102", "8862115", "8751938", "8593578", "8594989", "8595171", "8593508", "8749998"], "nhom": [["9099870"], ["9099850"], ["9099827"], ["8940998", "8941004"], ["8862105", "8862102"], ["8862115"], ["8751938"], ["8593578", "8594989", "8595171"], ["8593508"], ["8749998"]], "slug": "global-perspectives-1", "ten": "Global Perspectives 1"}, {"cid": "80065", "muc": ["8875823", "8875827", "8875831", "8875903", "8875906", "8875908", "8875912", "8875916", "8875918", "8875889", "8875890", "8875895", "8875896", "8875862", "8875865", "8875867", "8875874", "8875878", "8875882", "8875839", "8875843", "8875846", "8875848", "8875852"], "nhom": [["8875839", "8875843", "8875846", "8875848", "8875852"]], "slug": "am-nhac-1", "ten": "\u00c2m Nh\u1ea1c 1"}, {"cid": "80554", "muc": ["8618804", "8618792", "8618793", "8618794", "8618795", "8618796", "8618797", "8618798", "8618799", "8618800", "8618801", "8618802", "8618803", "8618786", "8618787", "8618788", "8618789", "8618790", "8618791"], "nhom": [], "slug": "giao-duc-the-chat-1", "ten": "Gi\u00e1o D\u1ee5c Th\u1ec3 Ch\u1ea5t 1"}];
-    const TEN_MON = {"am-nhac-1": "\u00c2m Nh\u1ea1c 1", "cie-esl-1": "CIE ESL 1", "cie-maths-1": "CIE Maths 1", "cie-science-1": "CIE Science 1", "cong-nghe-thong-tin-1": "C\u00f4ng Ngh\u1ec7 Th\u00f4ng Tin 1", "giao-duc-ky-nang-pham-chat-1": "Gi\u00e1o D\u1ee5c K\u1ef9 N\u0103ng Ph\u1ea9m Ch\u1ea5t 1", "giao-duc-the-chat-1": "Gi\u00e1o D\u1ee5c Th\u1ec3 Ch\u1ea5t 1", "global-perspectives-1": "Global Perspectives 1", "lop-ms-dung": "L\u1edbp Ms Dung", "mi-thuat-1": "M\u0129 Thu\u1eadt 1", "so-tay": "\ud83d\udcd2 S\u1ed5 tay ti\u1ebfng Anh", "tap-doc": "\ud83d\udcd6 T\u1eadp \u0111\u1ecdc", "tieng-viet-1": "Ti\u1ebfng Vi\u1ec7t 1", "viet-nam-hoc-1": "Vi\u1ec7t Nam H\u1ecdc 1"};
+    const TEN_MON = {"am-nhac-1": "\u00c2m Nh\u1ea1c 1", "cie-esl-1": "CIE ESL 1", "cie-maths-1": "CIE Maths 1", "cie-science-1": "CIE Science 1", "cong-nghe-thong-tin-1": "C\u00f4ng Ngh\u1ec7 Th\u00f4ng Tin 1", "giao-duc-ky-nang-pham-chat-1": "Gi\u00e1o D\u1ee5c K\u1ef9 N\u0103ng Ph\u1ea9m Ch\u1ea5t 1", "giao-duc-the-chat-1": "Gi\u00e1o D\u1ee5c Th\u1ec3 Ch\u1ea5t 1", "global-perspectives-1": "Global Perspectives 1", "lop-ms-dung": "L\u1edbp Ms Dung", "mi-thuat-1": "M\u0129 Thu\u1eadt 1", "so-tay": "\ud83d\udcd2 S\u1ed5 tay ti\u1ebfng Anh", "tap-doc": "\ud83d\udcd6 T\u1eadp \u0111\u1ecdc", "tieng-viet-1": "Ti\u1ebfng Vi\u1ec7t 1", "toan-6": "\ud83e\uddee To\u00e1n \u00f4n thi", "viet-nam-hoc-1": "Vi\u1ec7t Nam H\u1ecdc 1"};
     const MARK_KEYS = {"checklists": ["title"], "compares": ["title"], "experiments": ["title"], "grammar": ["title"], "phrases": ["title"], "points": ["t"], "readings": ["title"], "sounds": ["title"], "topics": ["title", "def"], "watch_out": ["wrong"], "worked": ["title", "problem"]};
     const TAB = ['dong', 'mon', 'tapdoc', 'on', 'tu'];
+    const TOAN_MUC = "../../assets/toan_muc.06af5eb6.js";
+    // Năm mức của dạng (spec 2026-10-21 §6). Class là literal (Tailwind quét HTML đã render).
+    const MUC_TOAN = [
+      { icon: '⚪', ten: 'Chưa học', lop: 'bg-slate-100 text-slate-700' },
+      { icon: '🟡', ten: 'Đang học', lop: 'bg-yellow-100 text-yellow-900' },
+      { icon: '🟢', ten: 'Làm được', lop: 'bg-emerald-100 text-emerald-900' },
+      { icon: '🔵', ten: 'Thành thạo', lop: 'bg-sky-100 text-sky-900' },
+      { icon: '⭐', ten: 'Vững', lop: 'bg-amber-100 text-amber-900' },
+    ];
+    // Kết quả một lần làm suy từ g (thang của attempt): 3 đúng không gợi ý · 2 đúng sau gợi ý · 1 sai · 0 xem lời giải.
+    const KQ_TOAN = { 3: ['✅ Đúng', 'text-emerald-700'], 2: ['✅ Đúng sau gợi ý', 'text-emerald-700'], 1: ['❌ Sai', 'text-rose-700'],
+                      0: ['👀 Xem lời giải', 'text-amber-700'] };
+    // Dựng màn hình tab Toán từ kho.json + lượt làm — dữ liệu phẳng, Alpine chỉ vẽ. M = module toan_muc.js, now = epoch giây.
+    //   Lần làm của dạng = M.lanLam (luyện tập, Ôn hôm nay, bài kiểm tra chuyên đề; xếp (ts, i, g)) và "5 lần gần nhất" =
+    //   M.lanGanNhat — đúng tập + đúng cửa sổ toan_muc đếm cho mức, không lọc lại ở đây. Bước + câu trong bước (Làm cùng, Kiểm tra
+    //   hiểu nhanh) KHÔNG vào bảng, chỉ thành dòng "bài giảng: k/n bước" (bước = đúng id trong dang.buoc). Dòng tổng `<cđ>.kiem-tra`
+    //   (c = id chuyên đề) → điểm kiểm tra của chuyên đề (mucChuyenDe().kt). Lộ trình: M.buoiHienTai / M.soBuoiXong (R22).
+    function qtToan(M, kho, luot, now) {
+      const ten = (id) => ((kho.ten || {})[id] || {}).chu || id;
+      const coLuot = new Set(luot.filter((a) => a && a.ts <= now).map((a) => a.i));
+      const so = (v) => String(Math.round(v * 10) / 10).replace('.', ',');
+      const rutGon = (t) => (t.length > 60 ? t.slice(0, 59).trimEnd() + '…' : t);
+      const giangLai = [];
+      const veDang = (cid, d) => {
+        const lan = M.lanLam(d, luot, now);
+        const gan = M.lanGanNhat(d, luot, now);
+        const ly = M.canGiangLai(d, luot, now);
+        if (ly) giangLai.push({ id: d.id, chu: ten(d.id), cd_chu: ten(cid), ly_do: ly });
+        return {
+          id: d.id, chu: ten(d.id), muc: M.mucDang(d, luot, now), nang_cao: d.nang_cao === true,   // R33: nhãn ⭐ Nâng cao; mức riêng, KHÔNG vào mức chuyên đề
+          ti: gan.length ? 'đúng ' + so(gan.reduce((t, a) => t + M.diemLan(a.g), 0)) + '/' + gan.length : 'chưa làm bài',
+          buoc: (d.buoc || []).filter((b) => coLuot.has(b)).length + '/' + (d.buoc || []).length + ' bước',
+          lan: lan.slice().reverse().map((a) => {
+            const b = (kho.bai || {})[a.i] || {};
+            const kq = KQ_TOAN[a.g] || ['g = ' + a.g, 'text-slate-500'];
+            return { i: a.i, ts: a.ts, de: rutGon(String(b.chu || a.i)), x: a.x == null || a.x === '' ? '—' : String(a.x),
+                     dap: Array.isArray(b.dap) ? b.dap.join('; ') : (b.dap == null ? '' : String(b.dap)), kq: kq[0], kq_lop: kq[1] };
+          }),
+        };
+      };
+      const veCd = (cid) => {
+        const cd = kho.cd[cid];
+        const m = M.mucChuyenDe(cd, luot, now);
+        const kt = m.kt && m.kt.tong ? m.kt.dung + '/' + m.kt.tong : '';
+        return { id: cid, chu: ten(cid), muc: m.muc, da_hoc: m.da_hoc, dat: m.dat, kt,
+                 ghi: [m.dat ? '✅ đạt' : '', m.da_hoc ? 'đã học bài giảng' : '', kt ? 'kiểm tra ' + kt : ''].filter(Boolean).join(' · '),
+                 dang: (cd.dang || []).map((d) => veDang(cid, d)) };
+      };
+      const daXep = new Set();
+      const mang = [];
+      for (const g of kho.mang || []) {
+        const ds = (g.cd || []).filter((c) => kho.cd[c] && !daXep.has(c));
+        ds.forEach((c) => daXep.add(c));
+        if (ds.length) mang.push({ id: g.id, chu: g.chu || g.id, cd: ds.map(veCd) });
+      }
+      const con = Object.keys(kho.cd).filter((c) => !daXep.has(c));
+      if (con.length) mang.push({ id: '_khac', chu: 'Chuyên đề khác', cd: con.map(veCd) });
+      // Lộ trình (R22 — cùng luật trang con, worker/toan_muc.js): "đang ở" = buổi "dang_hoc" đầu tiên, không có thì buổi "chua_toi"
+      // đầu tiên (buổi "sắp có" — chuyên đề chưa duyệt / buổi kiểm tra — không phải chỗ con đang ở); buổi gộp so:[a,b] nặng b−a+1.
+      // Không ngày tháng: lộ trình không xếp lịch.
+      const loTrinh = Object.values(kho.lo_trinh || {}).map((t) => {
+        const b = M.buoiHienTai(t, kho, luot, now), x = M.soBuoiXong(t, kho, luot, now);
+        return { id: t.id, chu: t.chu || t.id, tong: x.tong, xong: x.xong,
+                 dang_o: b ? (Array.isArray(b.so) ? b.so.join('–') : String(b.so)) : '' };
+      });
+      return { trong: false, mang, giang_lai: giangLai, lo_trinh: loTrinh };
+    }
     function trangQtHoc() {
       return {
         ...phienQT(),
         user: "mk",
         ready: false, tab: 'dong', loi: '', bao: '', dang: false,
-        du: { dong: null, tapdoc: null, on: null, tu: null, mon: null },   // null = chưa nạp
+        du: { dong: null, tapdoc: null, on: null, tu: null, mon: null, toan: null },   // null = chưa nạp
+        moDang: '',             // tab Toán: dạng đang bung bảng từng lần làm (bung tại chỗ, không vào lịch sử — như hàng lọc)
         chu: {},                // môn → {id: chữ thẻ}
         locLoai: '', locMon: '', moLoc: '',   // moLoc: hàng lọc đang bung (kiểu B)
         hoi: null, dangVe: false,
@@ -220,13 +293,15 @@ window.LS.ham();
         },
         // Đổi tab xoá báo / lỗi của tab trước (không để "Đã bỏ cờ…" hay lỗi nạp tab Ôn tập treo ở tab khác).
         doiTab(t) { if (t === this.tab) return; this.tab = t; this.locLoai = ''; this.locMon = ''; this.moLoc = ''; this.bao = ''; this.loi = ''; this.nap(t); },
-        async taiTrang() { this.du = { dong: null, tapdoc: null, on: null, tu: null, mon: null }; await this.nap(this.tab); },
+        async taiTrang() { this.du = { dong: null, tapdoc: null, on: null, tu: null, mon: null, toan: null }; await this.nap(this.tab); },
         async nap(t, lai = false) {
           if (this.du[t] !== null && !lai) return;
           try {
             if (t === 'mon') {
               const p = await fetch('/api/progress').then((r) => (r.ok ? r.json() : { items: {} })).catch(() => ({ items: {} }));
               this.du.mon = qtTienDo(TIEN_DO, p.items || {}, this.user);
+            } else if (t === 'toan') {
+              this.du.toan = await this.napToan();
             } else {
               const d = await this.api('/api/quantri/hoc-tap?phan=' + t + '&user=' + encodeURIComponent(this.user));
               const ds = Array.isArray(d) ? d : [];
@@ -234,8 +309,50 @@ window.LS.ham();
               this.du[t] = ds;
             }
             this.loi = '';
-          } catch (e) { if (!e.het) this.loi = e.message; }
+          } catch (e) {
+            if (e.het) return;
+            // Tab Toán: lỗi nằm NGAY trong tab (kèm "Thử lại"); du.toan hết null nên không treo "Đang tải…".
+            if (t === 'toan') this.du.toan = { loi: e.message, thu_lai: true, tai_trang: !!e.taiTrang };
+            else this.loi = e.message;
+          }
         },
+        async napToan() {
+          let kho = null;
+          try {
+            const r = await fetch('../toan/kho.json', { headers: { accept: 'application/json' } });
+            if (r.ok) kho = await r.json();
+          } catch (e) { /* chưa dựng Toán → chưa có nội dung */ }
+          if (!kho || typeof kho !== 'object') return { trong: true };
+          // Có kho.json thì builder đã dựng Toán, nên TOAN_MUC KHÔNG được rỗng (toan.dung ném khi không chép được toan_muc.js).
+          // Rỗng = bản dựng hỏng — nói rõ, đừng giả làm "chưa có nội dung".
+          if (!TOAN_MUC) {
+            console.warn('hoc-tap: có ../toan/kho.json nhưng TOAN_MUC rỗng — builder không chép được toan_muc.js (lỗi dựng trang Toán)');
+            return { loi: 'Lỗi dựng trang Toán: trang này thiếu mô-đun tính mức (toan_muc.js). Dựng lại trang rồi mở lại.' };
+          }
+          if (!kho.cd || typeof kho.cd !== 'object' || !Object.keys(kho.cd).length) return { trong: true };
+          let M;
+          try { M = await import(TOAN_MUC); } catch (e) {
+            console.warn('hoc-tap: không nạp được ' + TOAN_MUC, e);
+            // Trình duyệt NHỚ import hỏng của một địa chỉ tới khi tải lại trang — thử lại tại chỗ vô ích, nên nút là "Tải lại trang".
+            const loi = new Error('Không tải được mô-đun tính mức Toán (toan_muc.js). Kiểm tra mạng rồi tải lại trang.');
+            loi.taiTrang = true;
+            throw loi;
+          }
+          const d = await this.api('/api/quantri/hoc-tap?phan=toan&user=' + encodeURIComponent(this.user));
+          const cols = Array.isArray(d.cols) ? d.cols : [];
+          const luot = (Array.isArray(d.rows) ? d.rows : []).map((r) => Object.fromEntries(cols.map((k, j) => [k, r[j]])));
+          return qtToan(M, kho, luot, Math.floor(Date.now() / 1000));
+        },
+        thuLaiToan() {
+          if (this.du.toan && this.du.toan.tai_trang) { location.reload(); return; }
+          this.du.toan = null;
+          this.nap('toan', true);
+        },
+        moDangToan(id) {
+          this.moDang = id;
+          this.$nextTick(() => { const e = document.querySelector('[data-qt-toan-dang="' + id + '"]'); if (e) e.scrollIntoView({ block: 'center' }); /* center: header dính không che */ });
+        },
+        mucToan(m) { return MUC_TOAN[m] || MUC_TOAN[0]; },
         async napChu(mon) {
           if (this.chu[mon]) return;
           const m = {};
@@ -384,7 +501,7 @@ window.LS.ham();
                 </div>
               </template>
               <template x-if="du[tab] === null"><p class="text-sm text-slate-500">Đang tải…</p></template>
-              <template x-if="du[tab] !== null && !loc().length"><p class="text-sm text-slate-500">Chưa có gì ở đây.</p></template>
+              <template x-if="tab !== 'toan' && du[tab] !== null && !loc().length"><p class="text-sm text-slate-500">Chưa có gì ở đây.</p></template>
 
               <template x-if="tab === 'dong'">
                 <ul class="bg-white rounded-2xl shadow divide-y divide-slate-100">
@@ -456,6 +573,104 @@ window.LS.ham();
                     </li>
                   </template>
                 </ul>
+              </template>
+
+              
+              <template x-if="tab === 'toan' && du.toan">
+                <div>
+                  <template x-if="du.toan.trong">
+                    <p data-qt-toan-trong class="bg-white rounded-2xl shadow px-4 py-3 text-sm text-slate-500">
+                      Toán ôn thi chưa có nội dung — chưa có chuyên đề nào được duyệt.</p>
+                  </template>
+                  <template x-if="du.toan.loi">
+                    <div data-qt-toan-loi role="alert" class="bg-white rounded-2xl shadow px-4 py-3 text-sm text-rose-700">
+                      <p x-text="du.toan.loi"></p>
+                      <template x-if="du.toan.thu_lai">
+                        <button type="button" data-qt-toan-thu-lai @click="thuLaiToan()"
+                                class="mt-2 h-10 px-4 rounded-lg border border-slate-300 bg-white text-slate-700 font-semibold"
+                                x-text="du.toan.tai_trang ? 'Tải lại trang' : 'Thử lại'"></button>
+                      </template>
+                    </div>
+                  </template>
+                  <template x-if="!du.toan.trong && !du.toan.loi">
+                    <div class="space-y-3">
+                      <template x-for="t in du.toan.lo_trinh" :key="t.id">
+                        <p :data-qt-toan-lt="t.id" class="bg-white rounded-2xl shadow px-4 py-3 text-sm">
+                          <b x-text="'🗺 ' + t.chu"></b><br>
+                          <span x-text="'đã xong ' + t.xong + '/' + t.tong + ' buổi' + (t.dang_o ? ' · đang ở buổi ' + t.dang_o : '')"></span>
+                        </p>
+                      </template>
+
+                      <div class="bg-white rounded-2xl shadow px-4 py-3">
+                        <p class="font-semibold">Cần giảng lại</p>
+                        <template x-if="!du.toan.giang_lai.length">
+                          <p data-qt-toan-gl-trong class="mt-1 text-sm text-slate-500">Không có dạng nào — con chưa vướng chỗ nào.</p>
+                        </template>
+                        <ul class="mt-1 divide-y divide-slate-100">
+                          <template x-for="g in du.toan.giang_lai" :key="g.id">
+                            <li :data-qt-toan-gl="g.id">
+                              <button type="button" @click="moDangToan(g.id)" class="w-full min-h-10 py-1.5 text-left text-sm">
+                                <span class="font-semibold" x-text="g.chu"></span>
+                                <span class="text-slate-500" x-text="'· ' + g.cd_chu"></span>
+                                <span class="block text-rose-700" x-text="g.ly_do"></span>
+                              </button>
+                            </li>
+                          </template>
+                        </ul>
+                      </div>
+
+                      <p class="text-xs text-slate-500">
+                        <template x-for="(m, k) in MUC_TOAN" :key="k"><span class="mr-2 whitespace-nowrap" x-text="m.icon + ' ' + m.ten"></span></template>
+                      </p>
+                      <template x-for="g in du.toan.mang" :key="g.id">
+                        <section :data-qt-toan-mang="g.id" class="bg-white rounded-2xl shadow px-4 py-3">
+                          <p class="text-xs font-semibold uppercase tracking-wide text-slate-500" x-text="g.chu"></p>
+                          <template x-for="c in g.cd" :key="c.id">
+                            <div :data-qt-toan-cd="c.id" :data-muc="c.muc" class="mt-2">
+                              <p data-qt-toan-cd-ten class="font-semibold">
+                                <span x-text="mucToan(c.muc).icon + ' ' + c.chu"></span>
+                                <span data-qt-toan-cd-ghi class="text-xs font-normal text-slate-500" x-text="c.ghi"></span>
+                              </p>
+                              <ul class="mt-1 space-y-1">
+                                <template x-for="d in c.dang" :key="d.id">
+                                  <li>
+                                    <button type="button" :data-qt-toan-dang="d.id" :data-muc="d.muc" @click="moDang = moDang === d.id ? '' : d.id"
+                                            :class="mucToan(d.muc).lop" class="w-full min-h-10 px-3 py-1.5 rounded-lg text-left text-sm flex items-center gap-2">
+                                      <span x-text="mucToan(d.muc).icon"></span>
+                                      <span class="flex-1 min-w-0"><span x-text="d.chu"></span>
+                                        <template x-if="d.nang_cao"><span data-qt-toan-nang-cao class="ml-1 inline-block text-xs font-semibold rounded-full px-2 py-0.5 bg-white border border-amber-400 text-amber-900">⭐ Nâng cao</span></template></span>
+                                      <span class="text-xs" x-text="d.ti"></span>
+                                      <span class="text-xs" x-text="moDang === d.id ? '▴' : '▾'"></span>
+                                    </button>
+                                    <template x-if="moDang === d.id">
+                                      <div :data-qt-toan-chi="d.id" class="mt-1 mb-2 ml-2 pl-3 border-l-2 border-slate-200">
+                                        <p class="text-xs text-slate-500" x-text="mucToan(d.muc).ten + ' · bài giảng: ' + d.buoc + ' · ' + d.lan.length + ' lần làm bài'"></p>
+                                        <template x-if="!d.lan.length"><p class="text-sm text-slate-500">Chưa làm bài nào của dạng này.</p></template>
+                                        <ul class="divide-y divide-slate-100">
+                                          <template x-for="(x, k) in d.lan" :key="k">
+                                            <li data-qt-toan-lan :data-i="x.i" class="py-1.5 text-sm">
+                                              <p data-de class="text-slate-700 break-words" x-text="x.de"></p>
+                                              <p class="flex flex-wrap gap-x-3 text-xs">
+                                                <span data-kq class="font-semibold" :class="x.kq_lop" x-text="x.kq"></span>
+                                                <span>con ghi: <b data-x x-text="x.x"></b></span>
+                                                <span class="text-slate-400" x-show="x.dap" x-text="'đáp số: ' + x.dap"></span>
+                                                <span class="text-slate-400" x-text="ngay(x.ts).split(', ').pop() + ' ' + gio(x.ts)"></span>
+                                              </p>
+                                            </li>
+                                          </template>
+                                        </ul>
+                                      </div>
+                                    </template>
+                                  </li>
+                                </template>
+                              </ul>
+                            </div>
+                          </template>
+                        </section>
+                      </template>
+                    </div>
+                  </template>
+                </div>
               </template>
             </section>
           </div>

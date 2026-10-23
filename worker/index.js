@@ -5,6 +5,7 @@
  *   /api/progress  → API tiến độ học tập (đọc/ghi Workers KV)
  *   /api/heartbeat → lần đồng bộ gần nhất + môn đang đóng băng (đọc KV)
  *   /api/study     → lịch ôn, kết quả làm bài, cờ "đã thuộc" (đọc/ghi D1)
+ *   /api/toan      → Ôn tập Toán 6: lịch sử làm bài của trẻ (đọc D1, cần mã bí mật; ghi qua /api/study?course=toan-6, worker/toan.js)
  *   /api/tts       → đọc to bằng Google TTS, sinh lúc bấm, cache ở edge
  *   /api/tapdoc/*  → tập đọc: tiến độ + quiz (D1), bản thu âm (R2) — mọi đường đòi mã
  *   /api/lookup    → tra nghĩa 1 từ / dịch 1 đoạn bằng Gemini (cần mã bí mật)
@@ -38,6 +39,7 @@
 
 import { readSheet, writeCell } from "./sheet.js";
 import { readCards, writeSession, writeKnown, readStats } from "./study.js";
+import { readLuot, MON_TOAN } from "./toan.js";
 import { handleTts } from "./tts.js";
 import { handleLookup, handleLookupHistory } from "./lookup.js";
 import { handleSttToken } from "./stt.js";
@@ -288,6 +290,9 @@ export default {
         return json({ error: "Thiếu hoặc sai 'user'/'course'" }, 400);
       }
       if (request.method === "GET") {
+        // Toán 6: mỗi bài / bước / ô sinh một dòng `card` (số lần làm, số lần SAI) = hồ sơ điểm yếu của trẻ. GET này không đòi mã,
+        // nên môn Toán chỉ đọc qua /api/toan (có mã). Trang Toán không bao giờ gọi GET /api/study (chỉ POST ghi lượt).
+        if (course === MON_TOAN) return json({ error: "Không có" }, 404);
         try {
           return json(await readCards(env, user, course));
         } catch (e) {
@@ -318,6 +323,25 @@ export default {
         }
       }
       return json({ error: "Method không hỗ trợ" }, 405);
+    }
+
+    // Ôn tập Toán 6: đọc lại mọi lượt làm của trẻ (trang Toán dựng mức thành thạo từ đây). Cần mã bí mật như /api/study/stats:
+    // đây là hồ sơ điểm yếu của trẻ. Ghi KHÔNG ở đây — POST /api/study?course=toan-6 (cùng writeSession; điểm: worker/toan_diem.js).
+    if (pathname === "/api/toan") {
+      if (!env.STUDY_DB) return json({ error: "Chưa cấu hình STUDY_DB" }, 503);
+      if (request.method !== "GET") return json({ error: "Method không hỗ trợ" }, 405);
+      const secret = env.LMS_SECRET || "";
+      if (!secret) return json({ error: "Chưa cấu hình LMS_SECRET" }, 503);
+      if ((request.headers.get("x-progress-key") || "") !== secret) {
+        return json({ error: "Mã bí mật không đúng" }, 401);
+      }
+      const user = url.searchParams.get("user") || "";
+      if (!/^[\w-]{1,32}$/.test(user)) return json({ error: "Thiếu hoặc sai 'user'" }, 400);
+      try {
+        return json(await readLuot(env, user));
+      } catch (e) {
+        return json({ error: String(e.message || e) }, 500);
+      }
     }
 
     // Mọi đường dẫn khác: trả file tĩnh.

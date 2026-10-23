@@ -17,6 +17,8 @@
  */
 
 import { an, congOn } from "./diem.js";
+import { congToan } from "./toan_diem.js";
+import { MON_TOAN } from "./toan.js";
 
 // Cho phép chữ, số, gạch ngang, gạch dưới và dấu chấm (id có dạng "q.4f81b2c0").
 const ID_RE = /^[\w.-]{1,64}$/;
@@ -53,6 +55,7 @@ export async function readCards(env, user, course) {
  * ngày mà lách lịch ôn, còn box/ease/due bị kẹp vào khoảng hợp lệ.
  *
  * Điểm thưởng (ADR 0061): có `url` thì SAU khi ghi xong gọi congOn (worker/diem.js) — trả thêm `cong` = điểm của cả lô.
+ * Môn Toán 6 (`MON_TOAN`) dùng luật riêng `congToan` (worker/toan_diem.js, ADR 0070): thay luật ôn ON / ON_NHO, không cộng thêm.
  * Sổ hỏng / manifest hỏng → cong 0, kết quả ôn tập vẫn đã ghi.
  */
 export async function writeSession(env, user, course, attempts, url = null) {
@@ -127,7 +130,7 @@ export async function writeSession(env, user, course, attempts, url = null) {
     .bind(user, course, now, payload);
 
   await db.batch([insertAttempts, upsertCards]);
-  const cong = url ? await an("on", () => congOn(env, url, user, course, rows, now)) : 0;
+  const cong = url ? await an("on", () => (course === MON_TOAN ? congToan : congOn)(env, url, user, course, rows, now)) : 0;
   return { ok: true, n: rows.length, cong };
 }
 
