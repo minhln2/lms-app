@@ -10,7 +10,9 @@
  *       (cùng ngày thì không bù, vẫn còn suất bù). Lượt sau khi đã xem lời giải trong ngày ghi g 0 (RB-08) nên không được điểm.
  *   - BÀI GIẢNG: +20 một lần khi xong bài giảng một dạng (`toan:giang:<dạng>`) và +20 một lần khi xong phần Kiến thức của chuyên đề
  *       (`toan:giang:<cd>.kien-thuc`) — "xong" là `daHocDang` / `daHocKienThuc` của toan_muc.js (mọi bước có lượt, cùng định nghĩa 🟡).
- *       Từng bước / ô của bài giảng: 0 (trang chữ hay bài giảng động đều ghi lượt bước như nhau).
+ *       Từng bước / ô của bài giảng: 0. Hai đường học cho CÙNG suất: trang chữ ghi lượt từng bước khi con xong bước; trang bài giảng
+ *       động ghi lượt MỌI bước của bài lúc con tới màn kết thúc (templates/toan_giang.html `ghiXongBai`) — cùng id bước, cùng khuôn lượt,
+ *       nên cùng khoá `toan:giang:*`: học chữ xong thì xem động không cộng thêm, và ngược lại (chủ dự án 2026-10-24; test T5b).
  *   - MỐC: dạng lên 🟢 +20 · 🔵 +40 · ⭐ +60 (`toan:moc:<dạng>:2|3|4`, một lần mỗi mốc mỗi dạng, kể cả tụt rồi lên lại; nhảy
  *       qua nhiều mốc một lượt thì được từng mốc); chuyên đề Đạt +100 (`toan:dat:<cd>`). Mức tính bằng CHÍNH toan_muc.js.
  *
