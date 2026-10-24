@@ -25,9 +25,15 @@
  *
  * Không có cổng "bắt đầu từ 0" (như ôn tập và tập đọc, ADR 0061): điểm chỉ phát sinh lúc route ghi một lượt, và Toán chưa có sổ
  * nào ngoài bản xem thử (không POST). Muốn bật Toán cho học sinh đã có sổ attempt `toan-6` thì phải thêm mốc trước (chưa có việc đó).
+ *
+ * Bố mẹ gỡ MỘT lần làm (3A, route `POST /api/quantri/toan/go` ở worker/quantri.js): sau khi xoá lượt, `nguonThuHoi` (hàm thuần, cuối file) tính
+ * nguồn điểm mà các lượt CÒN LẠI không còn biện minh → route gỡ bằng `huy:` (ADR 0063: con làm lại thì được cộng lại ở lượt `S#n`).
+ * "Biện minh" cùng luật như lúc cộng: bài = chạy lại `chonBai` từ không trên lượt còn lại của bài (`baiBienMinh`); mốc dạng = ĐỈNH mức của
+ * lịch sử còn lại (`mucDinh`, vì mốc là một lần kể cả tụt rồi lên lại); Đạt = chuyên đề TỪNG Đạt (`tungDat`). Chỉ GỠ, không cộng thêm
+ * phần còn biện minh mà chưa có dòng (con làm lại thì được); bài giảng `toan:giang:*` không đổi (lượt bước không gỡ được).
  */
 import { DIEM, ghiDiem, docManifest, kepTs, ngayVN, luotKe, dangHieuLuc, khoang } from "./diem.js";
-import { diemDang, daHocKienThuc, mucChuyenDe, laBuoc } from "./toan_muc.js";
+import { diemDang, daHocKienThuc, mucChuyenDe, laBuoc, mucDinh, tungDat } from "./toan_muc.js";
 
 const giay = () => Math.floor(Date.now() / 1000);
 const NHAN_MUC = { "mo-khoa": "Mở khoá", "tang-toc": "Tăng tốc", "chinh-phuc": "Chinh phục", "thu-thach": "Thử thách" };
@@ -61,10 +67,15 @@ export function traBai(T, id) {
  * có nhiều lượt của cùng bài (g 2 rồi g 3 cùng ngày) cũng đúng: không bù trong ngày, không cộng đủ hai lần.
  */
 export function chonBai(rows, T, daCo, tsNua, now) {
+  const ds = rows.map((a, i) => ({ a, i, t: kepTs(a.t, now) })).sort((p, q) => p.t - q.t || p.i - q.i);
+  return duyetBai(ds, T, daCo, tsNua);
+}
+
+/** Lõi của `chonBai` trên lượt ĐÃ kẹp mốc + xếp: ds = [{a: {i, g}, t}] (cùng mốc: thứ tự gửi). */
+function duyetBai(ds, T, daCo, tsNua) {
   const co = new Set(daCo);
   const nua = new Map(tsNua);
   const ra = [];
-  const ds = rows.map((a, i) => ({ a, i, t: kepTs(a.t, now) })).sort((p, q) => p.t - q.t || p.i - q.i);
   for (const { a, t } of ds) {
     const g = kepG(a.g);
     if (g < 2) continue;
@@ -125,10 +136,10 @@ export function chonDat(T, cid, luot, now, daCo) {
 }
 
 /** Khoảng id `attempt` của một tiền tố "<x>." — [x + ".", x + "/"] ('/' ngay sau '.'). */
-const idTrong = (x) => [`${x}.`, `${x}/`];
+export const idTrong = (x) => [`${x}.`, `${x}/`];
 
 /** Câu đọc lượt làm theo các khoảng id (cùng khuôn `readLuot` của worker/toan.js: dạng {i, c, g, ts, x}, cũ trước mới sau). */
-const cauLuot = (db, user, course, kh) => db.prepare(
+export const cauLuot = (db, user, course, kh) => db.prepare(
   `SELECT a.item_id AS i, a.concept_id AS c, a.grade AS g, a.ts, a.chose AS x
      FROM json_each(?3) AS e CROSS JOIN attempt AS a
     WHERE a.user_id = ?1 AND a.course = ?2 AND a.item_id >= json_extract(e.value, '$[0]') AND a.item_id < json_extract(e.value, '$[1]')
@@ -203,4 +214,50 @@ export async function congToan(env, url, user, course, rows, now = giay()) {
     moi.push(...chonDat(T, cid, tat.results || [], now, daCo));
   }
   return (await ghiDiem(env, user, moi, now)).cong;
+}
+
+/**
+ * Hàm thuần (3A): nguồn điểm BÀI `toan:bai:<id>:du|nua|bu` mà một dãy lượt CÒN LẠI của đúng bài đó biện minh — chạy lại luật `chonBai` từ không
+ * (không dòng nào có sẵn). `luot` = [{i, g, ts}] của MỘT bài (mốc `ts` đã kẹp lúc ghi, nên không kẹp lại); thứ tự tuỳ ý (xếp (ts, vị trí)).
+ * → Set nguồn. Bài không có trong kho (`traBai` null) → rỗng.
+ */
+export function baiBienMinh(luot, T) {
+  const ds = (luot || []).map((a, k) => ({ a: { i: a.i, g: a.g }, k, t: a.ts })).sort((p, q) => p.t - q.t || p.k - q.k);
+  return new Set(duyetBai(ds, T, new Set(), new Map()).map((r) => r.khoa));
+}
+
+/**
+ * Hàm thuần (3A): sau khi gỡ một lượt, các NGUỒN điểm mà CHÍNH lần gỡ làm mất biện minh → [nguồn] để `huy:` (cauHuy). Với mỗi phần ta tính hai lần,
+ * CÙNG kho + luật hiện tại: `truoc` = lịch sử CHƯA gỡ, `sau` = lịch sử còn lại; chỉ thu hồi khi biện minh có ở TRƯỚC mà mất ở SAU. Không so với
+ * sổ điểm: kho / luật đổi sau khi điểm đã cộng (thêm bài khó, thêm dạng cơ bản…) thì "đỉnh hiện tại" có thể thấp hơn mốc đã cộng ngay từ trước
+ * lần gỡ — gỡ một lượt sai không liên quan KHÔNG được thu hồi mốc / Đạt đó. `daCo` = tập khoá sổ đã đọc (cả `huy:` và lượt `#n`): chỉ nguồn ĐANG
+ * hiệu lực (`dangHieuLuc`) mới bị xét. Mỗi phần chỉ xét khi có dữ liệu (nơi gọi chỉ đọc phần có dòng điểm hiệu lực — Worker Free 10 ms CPU):
+ *   • `bai`  = {truoc, sau}: [{i, g, ts}] lượt của bài `id` → `toan:bai:<id>:du|nua|bu` (xem `baiBienMinh`);
+ *   • `dang` = [{d, truoc, sau}]: dạng `d` (đối tượng của manifest) và mọi lượt của nó (bước, bài, bài kiểm tra mang c = dạng)
+ *              → `toan:moc:<d.id>:lv` khi `mucDinh(truoc) ≥ lv > mucDinh(sau)` (ĐỈNH lịch sử, không phải mức hiện tại);
+ *   • `dat`  = {cid, truoc, sau}: lượt của cả chuyên đề → `toan:dat:<cid>` khi `tungDat(truoc) && !tungDat(sau)`.
+ * `toan:giang:*` không bao giờ nằm ở đây: lượt bước bài giảng không gỡ được.
+ */
+export function nguonThuHoi(T, daCo, { id, bai = null, dang = [], dat = null, now }) {
+  const ra = [];
+  if (bai) {
+    const truoc = baiBienMinh(bai.truoc, T), sau = baiBienMinh(bai.sau, T);
+    for (const s of ["du", "nua", "bu"]) {
+      const k = `toan:bai:${id}:${s}`;
+      if (dangHieuLuc(daCo, k) && truoc.has(k) && !sau.has(k)) ra.push(k);
+    }
+  }
+  for (const { d, truoc, sau } of dang) {
+    const t = mucDinh(d, truoc, now), c = mucDinh(d, sau, now);
+    for (let lv = 2; lv <= 4; lv++) {
+      const k = `toan:moc:${d.id}:${lv}`;
+      if (dangHieuLuc(daCo, k) && t >= lv && c < lv) ra.push(k);
+    }
+  }
+  if (dat) {
+    const k = `toan:dat:${dat.cid}`;
+    const cd = T.cd[dat.cid];
+    if (dangHieuLuc(daCo, k) && tungDat(cd, dat.truoc, now) && !tungDat(cd, dat.sau, now)) ra.push(k);
+  }
+  return ra;
 }

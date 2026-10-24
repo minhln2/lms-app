@@ -20,15 +20,20 @@
  *   POST /api/quantri/thuoc/go {user, mon, i, c}  → bỏ cờ "đã thuộc" (writeKnown v 0, không dính ⭐) → {ok}
  *   GET  /api/quantri/hoc-tap?user=&phan=         → dong (≤ 30 ngày, ≤ 500 dòng) · tapdoc · on (thẻ) · tu (từ đã tra) ·
  *                                                 toan (mọi lượt làm Toán ôn thi: {cols, rows} như GET /api/toan, worker/toan.js)
+ *   POST /api/quantri/toan/go {user, i, ts, g}    → gỡ MỘT lần làm Toán (ADR 0070, việc 3A): XOÁ lượt attempt (user, toan-6, i, ts, g) — NGOẠI LỆ có chủ đích
+ *                                                 của "attempt chỉ thêm", như on/go — rồi gỡ (`huy:`) điểm bài / mốc dạng / Đạt mà các lượt CÒN LẠI không
+ *                                                 còn biện minh (worker/toan_diem.js `nguonThuHoi`), dựng lại thẻ card → {ok, xoa, tru, du}
  *
  * Gỡ điểm và xoá hàng nguồn đi trong MỘT db.batch (một giao dịch D1), câu gỡ điểm đứng ĐẦU: hỏng giữa chừng là không gì bị
  * ghi; gọi lại an toàn (dòng `huy:` có khoá UNIQUE — gỡ không hai lần; xoá hàng không có là vô hại).
  */
 import { kiemQuantri, cauHuy, ngayVN, soDu, an, docManifest, doiChieuKV, doiChieuTick, lichSu, huyDuoc, phanLoai, khoaThem,
-         dangHieuLuc, huyDiem, kyBieuDo, cotBieuDo, BIEU_DO, LICH_SU_QT, GHI_CHU_MAX, TRU_MAX, KHOA_TIEN_DO } from "./diem.js";
+         dangHieuLuc, huyDiem, kyBieuDo, cotBieuDo, khoang, BIEU_DO, LICH_SU_QT, GHI_CHU_MAX, TRU_MAX, KHOA_TIEN_DO } from "./diem.js";
 import { phatLai } from "./lich_on.js";
 import { writeKnown } from "./study.js";
-import { readLuot } from "./toan.js";
+import { readLuot, MON_TOAN } from "./toan.js";
+import { traBai, nguonThuHoi, cauLuot, idTrong } from "./toan_diem.js";
+import { laBuoc } from "./toan_muc.js";
 import { kiemUser, kiemTruyen } from "./tapdoc.js";
 import { khoLietCo, khoXoa } from "./kho.js";
 
@@ -93,6 +98,15 @@ async function routeGoTruyen(request, env, url) {
   return goTruyen(env, b.user, kiemTruyen(cm, b.truyen));
 }
 
+/** Ghi lại các thẻ `card` đã dựng lại bằng phatLai: ghi = [{i, n, w, s, b, e, d, t}] (một câu UPDATE … FROM json_each, giữ `known`). */
+const cauGhiThe = (db, user, ghi) => db.prepare(
+  `UPDATE card SET n = json_extract(e.value, '$.n'), wrong = json_extract(e.value, '$.w'),
+          streak = json_extract(e.value, '$.s'), box = json_extract(e.value, '$.b'), ease = json_extract(e.value, '$.e'),
+          due = json_extract(e.value, '$.d'), last_ts = json_extract(e.value, '$.t')
+     FROM json_each(?2) AS e
+    WHERE card.user_id = ?1 AND card.item_id = json_extract(e.value, '$.i')`
+).bind(user, JSON.stringify(ghi));
+
 /** "YYYY-MM-DD" (ngày lịch VN) → epoch giây lúc 00:00 giờ VN; sai dạng / ngày không có (2026-02-30) → null. */
 export function dauNgayVN(ngay) {
   if (typeof ngay !== "string" || !NGAY_RE.test(ngay)) return null;
@@ -142,13 +156,7 @@ export async function goNgayOn(env, user, mon, ngay) {
     // xoá nó là mất lượt mà card / sao vẫn còn; để lại thì lần gỡ sau (hoặc phát lại) mới gom được.
     db.prepare(`DELETE FROM attempt WHERE ${TRONG} AND item_id IN (SELECT value FROM json_each(?5)) RETURNING id`)
       .bind(user, mon, tu, den, JSON.stringify(I)),
-    db.prepare(
-      `UPDATE card SET n = json_extract(e.value, '$.n'), wrong = json_extract(e.value, '$.w'),
-              streak = json_extract(e.value, '$.s'), box = json_extract(e.value, '$.b'), ease = json_extract(e.value, '$.e'),
-              due = json_extract(e.value, '$.d'), last_ts = json_extract(e.value, '$.t')
-         FROM json_each(?2) AS e
-        WHERE card.user_id = ?1 AND card.item_id = json_extract(e.value, '$.i')`
-    ).bind(user, JSON.stringify(ghi)),
+    cauGhiThe(db, user, ghi),
     db.prepare(`DELETE FROM card WHERE user_id = ?1 AND known = 0 AND item_id IN (SELECT value FROM json_each(?2))`)
       .bind(user, JSON.stringify(xoa)),
     db.prepare(`SELECT COALESCE(SUM(diem), 0) AS du FROM diem WHERE user_id = ?1`).bind(user),
@@ -173,6 +181,96 @@ async function routeThuoc(request, env, url) {
     `SELECT course, item_id, concept_id FROM card WHERE user_id = ?1 AND known = 1 ORDER BY course, item_id`
   ).bind(user).all();
   return (r.results || []).map((x) => ({ mon: x.course, i: x.item_id, c: x.concept_id }));
+}
+
+/**
+ * Gỡ MỘT lần làm Toán (việc 3A, ADR 0070): xoá mọi hàng `attempt` (user, toan-6, i, ts, g) — hàng trùng hệt (RD-02, bảng chỉ hiện một dòng cho chúng)
+ * đi cùng — rồi gỡ điểm không còn biện minh. Ba lượt gọi D1, mỗi lượt MỘT batch:
+ *   1. ĐỌC: các hàng khớp (cho `concept_id` = dạng) ‖ khoá điểm đã có của bài / mốc dạng của chuyên đề / Đạt (cả `huy:` và `#n`);
+ *   2. ĐỌC lượt CÒN LẠI của phần bị chạm — bài (cho thẻ card + điểm bài), dạng có mốc đang hiệu lực, cả chuyên đề chỉ khi Đạt đang hiệu lực
+ *      (Worker Free 10 ms CPU: không đọc cả sổ ~3000 lượt; không điểm hiệu lực thì không đọc lượt nào ngoài bài);
+ *   3. GHI (gỡ điểm đứng ĐẦU, một giao dịch): `huy:` các nguồn thu hồi ‖ xoá hàng ‖ dựng lại / xoá thẻ card ‖ số dư.
+ * Không có hàng nào khớp (đã gỡ trước đó) → {xoa: 0, tru: 0}, không ghi gì. Thiếu cấu trúc Toán trong manifest → 503 và KHÔNG xoá gì (không để điểm lệch lượt).
+ * Bé làm đúng lúc bố mẹ gỡ: lượt chen giữa lần đọc và lần ghi có thể được tính lệch — tự đúng lại ở lượt kế (như ADR 0063).
+ */
+export async function goLanToan(env, url, user, i, ts, g, now = giay()) {
+  const db = env.STUDY_DB;
+  const mf = await an("mf", () => docManifest(env, url, user), null);
+  const mon = mf && mf.mon && Object.values(mf.mon).find((m) => m && m.slug === MON_TOAN);
+  const T = mon && mon.toan;
+  if (!T || typeof T.cd !== "object" || T.cd === null) throw sai("Chưa đọc được cấu trúc Toán của bảng điểm — thử lại sau.", 503);
+  const cid = i.split(".")[0];
+  const cd = Object.hasOwn(T.cd, cid) ? T.cd[cid] : null;
+
+  const tien = [`toan:bai:${i}:`, ...(cd ? [`toan:moc:${cid}.`] : [])];
+  const kh = tien.flatMap((t) => [khoang(t), khoang("huy:" + t)]);
+  if (cd) kh.push([`toan:dat:${cid}`, `toan:dat:${cid}$`], [`huy:toan:dat:${cid}`, `huy:toan:dat:${cid}$`]);
+  const [khop, dd] = await db.batch([
+    db.prepare(`SELECT concept_id AS c FROM attempt WHERE user_id = ?1 AND course = ?2 AND item_id = ?3 AND ts = ?4 AND grade = ?5`)
+      .bind(user, MON_TOAN, i, ts, g),
+    db.prepare(
+      `SELECT d.khoa FROM json_each(?2) AS e CROSS JOIN diem AS d
+        WHERE d.user_id = ?1 AND d.khoa >= json_extract(e.value, '$[0]') AND d.khoa < json_extract(e.value, '$[1]')`
+    ).bind(user, JSON.stringify(kh)),
+  ]);
+  const trung = khop.results || [];
+  if (!trung.length) return { ok: true, xoa: 0, tru: 0, du: await soDu(env, user) };
+
+  const daCo = new Set((dd.results || []).map((r) => r.khoa));
+  const hieuLuc = (nguon) => dangHieuLuc(daCo, nguon) !== null;
+  const concept = new Set(trung.map((r) => r.c));
+  // Dạng bị chạm: dạng mà lượt mang trong `concept_id` (bài kiểm tra mang c = dạng) hoặc dạng chứa id bài; chỉ đọc dạng đang có mốc hiệu lực.
+  const dangCham = cd ? (cd.dang || []).filter((d) => d && d.id != null && (concept.has(d.id) || i.startsWith(d.id + "."))
+    && [2, 3, 4].some((lv) => hieuLuc(`toan:moc:${d.id}:${lv}`))) : [];
+  const canDat = !!cd && hieuLuc(`toan:dat:${cid}`);
+  const canBai = !!traBai(T, i) && ["du", "nua", "bu"].some((s) => hieuLuc(`toan:bai:${i}:${s}`));
+
+  const doc = [
+    db.prepare(`SELECT grade AS g, correct AS ok, ts FROM attempt WHERE user_id = ?1 AND course = ?2 AND item_id = ?3 ORDER BY ts, id`).bind(user, MON_TOAN, i),
+  ];
+  if (canDat) doc.push(cauLuot(db, user, MON_TOAN, [...(cd.dang || []).map((d) => idTrong(d.id)), idTrong(`${cid}.kt`), [`${cid}.kiem-tra`, `${cid}.kiem-tra/`]]));
+  else if (dangCham.length) doc.push(cauLuot(db, user, MON_TOAN, [...dangCham.map((d) => idTrong(d.id)), idTrong(`${cid}.kt`)]));
+  const kq1 = await db.batch(doc);
+  const khac = (a) => !(a.i === i && a.ts === ts && a.g === g);
+  const hangBai = kq1[0].results || [];                                          // mọi lượt của bài, CHƯA gỡ
+  const conBai = hangBai.filter((a) => !(a.ts === ts && a.g === g));               // còn lại sau gỡ
+  const nhoBai = (ls) => ls.map((a) => ({ i, g: a.g, ts: a.ts }));
+  const luotCd = kq1[1] ? (kq1[1].results || []) : [];                           // lượt của phần bị chạm, CHƯA gỡ (Đạt: cả chuyên đề)
+  const cuaDang = (d, ls) => ls.filter((a) => a.c === d.id || a.i.startsWith(d.id + "."));   // mỗi dạng chỉ xếp lượt của nó
+
+  // So TRƯỚC / SAU gỡ cùng kho + luật hiện tại: chỉ thu hồi phần chính lần gỡ làm mất biện minh (kho đổi sau khi điểm đã cộng thì không thu hồi oan).
+  const nguon = nguonThuHoi(T, daCo, {
+    id: i, now,
+    bai: canBai ? { truoc: nhoBai(hangBai), sau: nhoBai(conBai) } : null,
+    dang: dangCham.map((d) => ({ d, truoc: cuaDang(d, luotCd), sau: cuaDang(d, luotCd.filter(khac)) })),
+    dat: canDat ? { cid, truoc: luotCd, sau: luotCd.filter(khac) } : null,
+  });
+
+  const lenh = [];
+  if (nguon.length) lenh.push(cauHuy(db, user, nguon, now));
+  const iDel = lenh.length;
+  lenh.push(db.prepare(`DELETE FROM attempt WHERE user_id = ?1 AND course = ?2 AND item_id = ?3 AND ts = ?4 AND grade = ?5 RETURNING id`)
+    .bind(user, MON_TOAN, i, ts, g));
+  if (conBai.length) {
+    const k = phatLai(i, conBai.map((a) => ({ g: a.g, ok: a.ok, ts: a.ts })));
+    lenh.push(cauGhiThe(db, user, [{ i, n: k.n, w: k.wrong, s: k.streak, b: k.box, e: k.ease, d: k.due, t: k.last_ts }]));
+  } else {
+    lenh.push(db.prepare(`DELETE FROM card WHERE user_id = ?1 AND known = 0 AND item_id = ?2`).bind(user, i));
+  }
+  lenh.push(db.prepare(SUM).bind(user));
+  const kq = await db.batch(lenh);
+  return { ok: true, xoa: (kq[iDel].results || []).length,
+           tru: nguon.length ? -(kq[0].results || []).reduce((s, x) => s + x.diem, 0) : 0, du: kq[kq.length - 1].results[0].du };
+}
+
+async function routeToanGo(request, env, url) {
+  const b = await docBody(request);
+  const user = kiemU(b.user);
+  if (typeof b.i !== "string" || !ID_RE.test(b.i)) throw sai("Thiếu hoặc sai 'i'");
+  if (laBuoc(b.i)) throw sai("Lượt của bài giảng không gỡ được");
+  if (!Number.isInteger(b.ts) || b.ts < 1) throw sai("Thiếu hoặc sai 'ts'");
+  if (!Number.isInteger(b.g) || b.g < 0 || b.g > 3) throw sai("Thiếu hoặc sai 'g' (0..3)");
+  return goLanToan(env, url, user, b.i, b.ts, b.g);
 }
 
 const SUM = `SELECT COALESCE(SUM(diem), 0) AS du FROM diem WHERE user_id = ?1`;
@@ -383,6 +481,7 @@ const TUYEN = {
   "/api/quantri/tick/go": { m: "POST", fn: routeTickGo },
   "/api/quantri/thuoc/go": { m: "POST", fn: routeThuocGo },
   "/api/quantri/hoc-tap": { m: "GET", fn: routeHocTap },
+  "/api/quantri/toan/go": { m: "POST", fn: routeToanGo },
 };
 
 /** Định tuyến /api/quantri/* (trừ /api/quantri/phien). Lỗi máy chủ: chi tiết chỉ vào log. */

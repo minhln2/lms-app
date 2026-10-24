@@ -7,7 +7,7 @@
  * Số hữu tỉ CHÍNH XÁC bằng BigInt (cặp n/d đã tối giản, d > 0) — không bao giờ so số thực: 0,5 = 1/2 = 2/4, và
  * 1/3 ≠ 0,33333333333333333 (số thực làm tròn coi hai số này là một).
  *
- * Dạng đọc được (sau khi gộp khoảng trắng): số nguyên `12` · thập phân `0,75` hoặc `0.75` · phân số `3/4` (mẫu ≠ 0) ·
+ * Dạng đọc được (sau khi gộp khoảng trắng, bỏ dấu cách quanh `/`): số nguyên `12` · thập phân `0,75` hoặc `0.75` · phân số `3/4` hoặc `3 / 4` (mẫu ≠ 0) ·
  * hỗn số `2 1/3` · tỉ số `1:2` (CHỈ khi đáp số của bài là phân số — CCN-10: đề hỏi tỉ số, con quen viết `1:2`). Không nhận số âm, `%`,
  * chữ, số mũ. Gõ không đọc được → "cach_viet" (chưa đúng cách viết — KHÔNG tính là sai). Mọi loại gạch (`-` `−` `–`) được coi như một
  * (CCN-01: công thức hiển thị dấu trừ `−`, con có thể chép đúng ký tự ấy).
@@ -27,9 +27,10 @@ function rutGon(n, d) {
   return { n: n / g, d: d / g };
 }
 
-/** Bỏ khoảng trắng đầu/cuối, gộp mọi dãy khoảng trắng (cả NBSP) thành MỘT dấu cách; `−` (U+2212) `–` `‐` `‑` thành `-` (CCN-01). */
+/** Bỏ khoảng trắng đầu/cuối, gộp mọi dãy khoảng trắng (cả NBSP) thành MỘT dấu cách; `−` (U+2212) `–` `‐` `‑` thành `-` (CCN-01); bỏ dấu cách
+ *  quanh `/` ("7 / 20" = "7/20" — bàn phím iPad hay tự chèn; soát phan-so-cua-mot-so CC-03). */
 function chuanHoa(s) {
-  return String(s).trim().replace(/\s+/g, " ").replace(/[\u2212\u2013\u2010\u2011]/g, "-");
+  return String(s).trim().replace(/\s+/g, " ").replace(/ ?\/ ?/g, "/").replace(/[\u2212\u2013\u2010\u2011]/g, "-");
 }
 
 /**

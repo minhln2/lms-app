@@ -35,7 +35,8 @@
 import { phatLai } from "./lich_on.js";
 
 const NGAY = 86400;
-const VN = 7 * 3600;         // múi giờ Việt Nam (UTC+7) — mốc "cùng ngày" của `daXemLoiGiai`
+const VN = 7 * 3600;         // múi giờ Việt Nam (UTC+7) — mốc "cùng ngày" của `daXemLoiGiai` và `thuThachHomNay`
+const ngayCua = (ts) => Math.floor((ts + VN) / NGAY);   // số thứ tự ngày lịch giờ VN của một mốc epoch giây
 const GAN_NHAT = 5;          // "5 lần gần nhất" của dạng
 const DUNG_TOI_THIEU = 3;    // 🟢: ≥ 3 lần điểm 1 trong 5 lần gần nhất
 const CUA_SO_TUT = 7 * NGAY; // "mức cao nhất từng đạt trong 7 ngày qua"; cũng là mốc ôn lại của ⭐
@@ -69,14 +70,29 @@ function chuan(luot, now) {
 /** Lần làm KHÔNG-bước của dạng (luyện tập, Ôn hôm nay, bài kiểm tra chuyên đề) — nguồn của "5 lần gần nhất". */
 const laLanLam = (a, dangId) => a.c === dangId && !laBuoc(a.i);
 
+/** id bài → muc, của kho luyện `dang.bai` (bài kiểm tra chuyên đề KHÔNG ở đây: chúng nằm ngoài `dang.bai`). */
+const mucBaiCua = (dang) => new Map((dang.bai || []).filter((b) => b).map((b) => [b.id, b.muc]));
+
 /**
- * Mức của dạng SAU từng lượt liên quan (bước của dạng hoặc lần làm của dạng) → [{ts, muc}] tăng dần theo ts.
- * Mức tính lại từ đầu trên toàn bộ lịch sử, nên tự tụt khi 5 lần gần nhất xấu đi (tiêu chí nâng 2026-10-23, chủ dự án duyệt):
+ * Lượt Thử thách SAI / xem lời giải của kho dạng (`muc` = thu-thach, điểm 0 — g 1 hay g 0). Chủ dự án 2026-10-24 ("phương án b", theo tinh
+ * thần "không phạt vì thử bài khó"): lượt này VÔ HÌNH với mức dạng — không vào dãy lần làm mà mức xét (5 lần gần nhất của 🟢, hai lần LIỀN
+ * NHAU của ⭐, "lần điểm 0 gần nhất" đặt lại đồng hồ ⭐, "sai 2 lần liên tiếp" / "đã xem lời giải" của `canGiangLai`). Vẫn là một lượt
+ * (`lanLam` liệt kê đủ, `luotLuyen` đọc chuỗi mức như mọi lượt); thẻ ôn `theOn` cũng bỏ lượt này (không hạ box / ease, không kéo hạn ôn). Thử thách
+ * đúng (g ≥ 2) tính như cũ. Câu kiểm tra SOẠN SẴN (`<cd>.kt.<nn>`, không có trong `dang.bai`) không bị ảnh hưởng; đề GHÉP (`deKiemTra`) lấy chính
+ * id bài luyện nên câu thu-thach sai trong đề ghép cũng vô hình — chấp nhận, vì sổ không ghi ngữ cảnh.
+ */
+const thuThachHut = (a, mucBai) => diemLan(a.g) === 0 && mucBai.get(a.i) === "thu-thach";
+
+/**
+ * Mức của dạng SAU từng lượt liên quan (bước của dạng hoặc lần làm của dạng) → [{ts, muc}] tăng dần theo ts, ĐÚNG một mục cho mỗi lượt.
+ * Mức tính lại từ đầu trên toàn bộ lịch sử, nên tự tụt khi 5 lần gần nhất xấu đi (tiêu chí nâng 2026-10-23, chủ dự án duyệt).
+ * "Lần làm" dưới đây KHÔNG gồm lượt Thử thách sai / xem lời giải (`thuThachHut`, 2026-10-24): lượt đó chỉ thêm một mục lặp lại mức trước nó.
  *   🟡 1: mọi bước của dạng đã có lượt · 🟢 2: ≥ 3 lần điểm 1 trong 5 lần gần nhất ·
  *   🔵 3: 🟢 + điểm 1 trên ≥ 2 bài chinh-phuc KHÁC NHAU + ≥ 1 bài thu-thach (ở bất kỳ đâu trong lịch sử; "bài" = id trong `dang.bai`) ·
  *   ⭐ 4: đang 🔵 và, sau ≥ 7 ngày, có HAI lần làm LIÊN TIẾP (liền nhau trong dãy lần làm của dạng) đều điểm 1, ≥ 1 trong hai là bài
  *         chinh-phuc / thu-thach. Đồng hồ 7 ngày tính từ G = max(T🔵, ts lần điểm 0 gần nhất): cả hai lần phải ts ≥ G + 7 ngày; mỗi lần
- *         điểm 0 (sai hay xem lời giải) sau khi lên 🔵 bắt đầu lại đồng hồ. Lần ½ (g = 2) nằm giữa hai lần thì chúng KHÔNG liền nhau.
+ *         điểm 0 (sai hay xem lời giải) sau khi lên 🔵 bắt đầu lại đồng hồ — trừ lượt Thử thách sai / xem lời giải (không đặt lại đồng hồ,
+ *         cũng không chen vào giữa hai lần liền nhau). Lần ½ (g = 2) nằm giữa hai lần thì chúng KHÔNG liền nhau.
  * Kho thiếu bài thì đòi `min(cần, số bài có)`: dạng chỉ có 1 bài chinh-phuc → đòi 1; không có thu-thach → không đòi; dạng không có bài
  * chinh-phuc / thu-thach nào → 🔵 chỉ cần 🟢 và hai lần liên tiếp của ⭐ không cần là bài khó (không thì dạng đó không bao giờ 🔵).
  * T🔵 = ts của lượt đưa dạng lên 🔵 và đã giữ 🔵 liên tục từ đó (tụt rồi lên lại thì mốc 7 ngày tính lại).
@@ -84,7 +100,7 @@ const laLanLam = (a, dangId) => a.c === dangId && !laBuoc(a.i);
 function chuoiMuc(dang, ls) {
   const buoc = dang.buoc || [];
   const cuaBuoc = new Set(buoc);
-  const mucBai = new Map((dang.bai || []).map((b) => [b.id, b.muc]));
+  const mucBai = mucBaiCua(dang);
   const coMuc = (m) => new Set((dang.bai || []).filter((b) => b && b.muc === m).map((b) => b.id)).size;
   const canCP = Math.min(CHINH_PHUC_TOI_THIEU, coMuc("chinh-phuc")), canTT = Math.min(THU_THACH_TOI_THIEU, coMuc("thu-thach"));
   const coKho = coMuc("chinh-phuc") + coMuc("thu-thach") > 0;
@@ -99,6 +115,7 @@ function chuoiMuc(dang, ls) {
   for (const a of ls) {
     if (cuaBuoc.has(a.i)) daHoc.add(a.i);
     else if (laLanLam(a, dang.id)) {
+      if (thuThachHut(a, mucBai)) { ra.push({ ts: a.ts, muc: ra.length ? ra[ra.length - 1].muc : 0 }); continue; }   // vô hình: mức giữ nguyên, vẫn một mục (luotLuyen đọc chuoi[k] theo ls[k])
       lan.push(a);
       if (diemLan(a.g) === 1) {
         const m = mucBai.get(a.i);
@@ -146,18 +163,36 @@ function mucLs(dang, ls) {
 }
 
 /**
- * Các LẦN LÀM của dạng tính tới `now`, xếp tăng dần theo (ts, i, g) — đúng tập `mucDang` / `canGiangLai` / `onHomNay` đếm
- * (luyện tập, Ôn hôm nay, bài kiểm tra chuyên đề; KHÔNG có bước / thứ nằm trong bước bài giảng; lượt có ts > now bị bỏ). Trang
- * bố mẹ liệt kê từng lần làm bằng hàm này, không tự lọc lại. Mảng mới; phần tử là các lượt đưa vào (không sao chép, không sửa).
+ * Các LẦN LÀM của dạng tính tới `now`, xếp tăng dần theo (ts, i, g) — luyện tập, Ôn hôm nay, bài kiểm tra chuyên đề; KHÔNG có bước /
+ * thứ nằm trong bước bài giảng; lượt có ts > now bị bỏ. Đây là LỊCH SỬ ĐỦ để bố mẹ xem: gồm cả lượt Thử thách sai / xem lời giải
+ * (`thuThachHut`) — lượt ấy chỉ không vào cửa sổ mức, xem `lanGanNhat`. Trang bố mẹ liệt kê từng lần làm bằng hàm này, không tự lọc lại.
+ * Mảng mới; phần tử là các lượt đưa vào (không sao chép, không sửa).
  */
 export function lanLam(dang, luot, now) {
   if (!dang || dang.id == null) return [];
   return chuan(luot, now).filter((a) => laLanLam(a, dang.id));
 }
 
-/** "5 lần gần nhất" của dạng — cửa sổ mà luật 🟢 xét (≥ 3 lần điểm 1 trong đó); cuối của `lanLam`. */
+/**
+ * "5 lần gần nhất" của dạng — cửa sổ mà luật 🟢 xét (≥ 3 lần điểm 1 trong đó): 5 lần cuối của `lanLam` SAU KHI bỏ lượt Thử thách sai / xem
+ * lời giải (`thuThachHut`, 2026-10-24). Thử thách g ≥ 2 và câu bài kiểm tra chuyên đề vẫn ở trong. Trang bố mẹ dùng hàm này cho "đúng x/5".
+ */
 export function lanGanNhat(dang, luot, now) {
-  return lanLam(dang, luot, now).slice(-GAN_NHAT);
+  if (!dang || dang.id == null) return [];
+  const mucBai = mucBaiCua(dang);
+  return lanLam(dang, luot, now).filter((a) => !thuThachHut(a, mucBai)).slice(-GAN_NHAT);
+}
+
+/**
+ * Trong `lan` (các lượt của `lanLam`) những lượt KHÔNG tính vào mức dạng = lượt Thử thách sai / xem lời giải (`thuThachHut`) → Set theo CHÍNH
+ * đối tượng lượt. Tab bố mẹ gắn nhãn "(không tính vào mức)" cho các dòng này (bảng vẫn liệt kê đủ). Dạng / `lan` thiếu → Set rỗng.
+ */
+export function lanKhongTinhVaoMuc(dang, lan) {
+  const ra = new Set();
+  if (!dang || dang.id == null || !Array.isArray(lan)) return ra;
+  const mucBai = mucBaiCua(dang);
+  for (const a of lan) if (a && thuThachHut(a, mucBai)) ra.add(a);
+  return ra;
 }
 
 /** Mức của MỘT dạng tính tới `now`: 0 ⚪ chưa học · 1 🟡 · 2 🟢 · 3 🔵 · 4 ⭐. `dang` = {id, buoc, bai} (xem đầu file). */
@@ -167,20 +202,33 @@ export function mucDang(dang, luot, now) {
 }
 
 /**
+ * Mức CAO NHẤT dạng từng đạt trong lịch sử tới `now` (đỉnh của chuỗi mức sau từng lượt) — khác `mucDang` (mức HIỆN TẠI, tự tụt khi
+ * 5 lần gần nhất xấu đi). Điểm mốc dạng (🟢 / 🔵 / ⭐) là MỘT LẦN, kể cả tụt rồi lên lại (worker/toan_diem.js): bố mẹ gỡ một lần làm
+ * (3A) chỉ thu hồi mốc khi đỉnh của lịch sử CÒN LẠI không tới mốc đó — mức hiện tại thấp vì con vừa sai thì không phải lý do thu hồi.
+ */
+export function mucDinh(dang, luot, now) {
+  if (!dang || dang.id == null) return 0;
+  return Math.max(0, ...chuoiMuc(dang, lichSuDangLs(dang, chuan(luot, now))).map((p) => p.muc));
+}
+
+/**
  * Dòng tổng bài kiểm tra chuyên đề → {lan, dung, tong, dat} theo dòng MỚI NHẤT; chưa có dòng nào → null. `ls` đã xếp.
  * `dat` = ≥ 80% (x = "<đúng>/<tổng>", so bằng số nguyên) VÀ g = 3. Trang chấm ghi g = 3 khi đạt, 1 khi không — và "đạt" từ 2026-10-23
  * (chủ dự án duyệt) đòi thêm MỌI câu thu-thach của đề đúng, nên dòng 9/10 mà g = 1 là "đủ 80% nhưng sai một câu Thử thách".
  * Điều kiện thu-thach nằm ở nơi biết đề (trang, lúc Nộp) và đi theo g — không dựng lại từ lượt từng câu (không biết câu nào thuộc đề nào).
  * x hỏng (không đọc ra đúng/tổng): `dat` theo g.
  */
+function datTong(m) {
+  const r = /^\s*(\d+)\s*\/\s*(\d+)\s*$/.exec(String(m.x ?? ""));
+  if (!r) return { dung: null, tong: null, dat: m.g === 3 };   // x hỏng: dòng tổng ghi g = dat ? 3 : 1
+  const dung = +r[1], tong = +r[2];
+  return { dung, tong, dat: tong > 0 && dung * 10 >= tong * 8 && m.g === 3 };   // ≥ 0,8 bằng số nguyên, không dính số thực
+}
+
 function tongKiemTra(id, ls) {
   const dong = ls.filter((a) => a.i === `${id}.kiem-tra`);
   if (!dong.length) return null;
-  const m = dong[dong.length - 1];
-  const r = /^\s*(\d+)\s*\/\s*(\d+)\s*$/.exec(String(m.x ?? ""));
-  if (!r) return { lan: dong.length, dung: null, tong: null, dat: m.g === 3 };   // x hỏng: dòng tổng ghi g = dat ? 3 : 1
-  const dung = +r[1], tong = +r[2];
-  return { lan: dong.length, dung, tong, dat: tong > 0 && dung * 10 >= tong * 8 && m.g === 3 };   // ≥ 0,8 bằng số nguyên, không dính số thực
+  return { lan: dong.length, ...datTong(dong[dong.length - 1]) };
 }
 
 /** Dạng CƠ BẢN của chuyên đề (R33): mức, da_hoc, dat và đề kiểm tra chỉ tính các dạng này. */
@@ -232,6 +280,30 @@ export function mucChuyenDe(cd, luot, now) {
 }
 
 /**
+ * Chuyên đề TỪNG Đạt ở một thời điểm nào đó của lịch sử tới `now`? (≥ 1 thời điểm t mà `mucChuyenDe(cd, luot, t).dat`). Đạt cũng là MỘT LẦN
+ * (+100 `toan:dat:<cd>`, worker/toan_diem.js) nên bố mẹ gỡ một lần làm chỉ thu hồi khi lịch sử còn lại không còn lúc nào Đạt. Một lượt quét:
+ * chuỗi mức từng dạng cơ bản (`chuoiMuc`) và từng dòng tổng (`datTong`) là các hàm bậc thang theo ts — xét mọi mốc ts của chúng.
+ */
+export function tungDat(cd, luot, now) {
+  if (!cd) return false;
+  const ls = chuan(luot, now);
+  const dang = dangCoBan(cd);
+  if (!dang.length) return false;
+  const chuoi = dang.map((d) => chuoiMuc(d, lichSuDangLs(d, ls)));
+  const tong = ls.filter((a) => a.i === `${idCD(cd)}.kiem-tra`).map((a) => ({ ts: a.ts, dat: datTong(a).dat }));
+  if (!tong.some((t) => t.dat)) return false;
+  const moc = [...new Set([...chuoi.flatMap((c) => c.map((p) => p.ts)), ...tong.map((t) => t.ts)])].sort((a, b) => a - b);
+  const vt = chuoi.map(() => 0);   // số phần tử đã đi qua của từng chuỗi
+  let tg = 0;
+  for (const t of moc) {
+    chuoi.forEach((c, k) => { while (vt[k] < c.length && c[vt[k]].ts <= t) vt[k]++; });
+    while (tg < tong.length && tong[tg].ts <= t) tg++;
+    if (tg > 0 && tong[tg - 1].dat && chuoi.every((c, k) => vt[k] > 0 && c[vt[k] - 1].muc >= 2)) return true;
+  }
+  return false;
+}
+
+/**
  * "Xong bài giảng" + mức của các dạng có id trong tập `dangIds` (null = mọi dạng, kể cả nâng cao) của một chuyên đề, tính tới `now` →
  * [{id, hoc: `daHocDang`, muc: `mucDang`}…] theo thứ tự kho. Xếp lượt MỘT lần cho cả các dạng (Worker Free chỉ có 10 ms CPU — gọi
  * `mucDang` / `daHocDang` riêng từng dạng là xếp lại cả sổ mỗi lần). Điểm thưởng bài giảng + mốc dạng (worker/toan_diem.js) dùng hàm này.
@@ -245,7 +317,8 @@ export function diemDang(cd, luot, now, dangIds = null) {
 }
 
 /**
- * Lý do bố mẹ nên giảng lại dạng, hoặc null. Thứ tự ưu tiên:
+ * Lý do bố mẹ nên giảng lại dạng, hoặc null. "Lần làm" ở đây là dãy của cửa sổ mức (`lanGanNhat`): lượt Thử thách sai / xem lời giải
+ * (`thuThachHut`) không thành lý do nào (2026-10-24). Thứ tự ưu tiên:
  *   "sai 2 lần liên tiếp" (hai lần làm cuối đều sai — g = 1; xem lời giải g = 0 không phải "sai") ›
  *   "đã xem lời giải" (g = 0 trong 5 lần gần nhất) ›
  *   "tụt mức khi ôn" (mức hiện tại thấp hơn mức cao nhất trong 7 ngày qua, kể cả mức đang giữ lúc bắt đầu cửa sổ).
@@ -253,7 +326,8 @@ export function diemDang(cd, luot, now, dangIds = null) {
 export function canGiangLai(dang, luot, now) {
   if (!dang || dang.id == null) return null;
   const ls = lichSuDang(dang, luot, now);
-  const lan = ls.filter((a) => laLanLam(a, dang.id));
+  const mucBai = mucBaiCua(dang);
+  const lan = ls.filter((a) => laLanLam(a, dang.id) && !thuThachHut(a, mucBai));   // cùng dãy với cửa sổ mức: Thử thách sai / xem lời giải không thành lý do
   const sai = (a) => diemLan(a.g) === 0 && a.g >= 1;
   if (lan.length >= 2 && sai(lan[lan.length - 1]) && sai(lan[lan.length - 2])) return "sai 2 lần liên tiếp";
   if (lan.slice(-GAN_NHAT).some((a) => a.g === 0)) return "đã xem lời giải";
@@ -276,8 +350,10 @@ function theOn(kho, ls, now) {
   for (const cd of Object.values((kho && kho.cd) || {})) {
     for (const d of (cd && cd.dang) || []) {
       if (mucDang(d, ls, now) < 2) continue;
-      // cùng bộ lọc `laLanLam` và cùng thứ tự (ts, i, g) với chuoiMuc — thẻ dạng và mức dạng đọc đúng cùng một dãy lần làm
-      const lan = ls.filter((a) => laLanLam(a, d.id)).map((a) => ({ g: a.g, ok: a.g >= 2, ts: a.ts }));
+      // thẻ dạng phát lại các lần làm không-bước (`laLanLam`, thứ tự (ts, i, g)) TRỪ lượt Thử thách sai / xem lời giải (`thuThachHut`, 2026-10-24,
+      // rà soát I1): lượt đó không hạ box / ease và không kéo hạn ôn — cùng tinh thần "không phạt vì thử bài khó" như mức dạng
+      const mucBai = mucBaiCua(d);
+      const lan = ls.filter((a) => laLanLam(a, d.id) && !thuThachHut(a, mucBai)).map((a) => ({ g: a.g, ok: a.g >= 2, ts: a.ts }));
       ung.push({ d, due: phatLai(d.id, lan).due });
     }
   }
@@ -290,6 +366,8 @@ function theOn(kho, ls, now) {
  * bài lâu chưa làm nhất; không lấy bài kiểm tra vì chúng nằm ngoài `dang[].bai`, không lấy bài thu-thach — tuỳ chọn, ngoài
  * lượt, ruling R31). Dừng ở 10. Chưa đủ 5 thì kéo thêm dạng
  * CHƯA đến hạn nhưng gần hạn nhất, từng dạng một, cho tới khi đủ 5 hoặc hết dạng. Không dạng nào ≥ 2 → [].
+ * R31 sửa 2026-10-24 (chủ dự án: "Ôn hôm nay ra thêm bài Thử thách"): danh sách này GIỮ NGUYÊN (không thu-thach, trần 10); bài Thử
+ * thách của ngày là MỘT bài riêng, đứng cuối và NGOÀI trần — `thuThachHomNay` (trang ghép hai hàm).
  */
 export function onHomNay(kho, luot, now) {
   const ls = chuan(luot, now);
@@ -300,12 +378,53 @@ export function onHomNay(kho, luot, now) {
   for (const { d, due } of ung) {
     if (ra.length >= TOI_DA_ON) break;
     if (due > now && ra.length >= TOI_THIEU_ON) break;   // dạng chưa tới hạn chỉ để bù cho đủ 5
-    const kho = (d.bai || []).filter((b) => b.muc !== "thu-thach");   // R31: thu-thach là bài tuỳ chọn, ngoài lượt — không vào Ôn hôm nay
+    const kho = (d.bai || []).filter((b) => b.muc !== "thu-thach");   // R31: thu-thach không vào danh sách này (mỗi ngày có MỘT bài riêng: thuThachHomNay)
     const chua = kho.filter((b) => !lanCuoi.has(b.id));
     const cu = kho.filter((b) => lanCuoi.has(b.id)).sort((x, y) => lanCuoi.get(x.id) - lanCuoi.get(y.id));
     for (const b of [...chua, ...cu].slice(0, BAI_MOI_DANG)) ra.push(b.id);
   }
   return ra.slice(0, TOI_DA_ON);
+}
+
+/**
+ * Bài Thử thách CỦA NGÀY → id một bài `thu-thach` | null (R31 sửa 2026-10-24, chủ dự án: "Ôn hôm nay ra thêm bài Thử thách").
+ * Trang xếp nó CUỐI mục Ôn hôm nay, NGOÀI trần `TOI_DA_ON` của `onHomNay` (danh sách ôn không đổi), nhãn "🏆 Thử thách".
+ * Chọn: các dạng đã ≥ 🟢 (mức ≥ 2; 🔵 ⭐ cũng được) — dạng CƠ BẢN trước, NÂNG CAO sau — lấy bài `thu-thach` CHƯA TỪNG ĐÚNG (không lượt
+ * g 3 / g 2 nào của id đó): bài chưa làm lần nào trước (thứ tự kho), rồi bài có lần làm gần nhất LÂU nhất. Thứ tự là chung cho mọi dạng
+ * (cơ bản › chưa làm › làm lâu nhất › thứ tự kho), nên bài chưa làm của dạng sau đứng trước bài đã làm sai của dạng trước.
+ * Không dạng nào ≥ 🟢, hoặc mọi bài thu-thach của dạng ≥ 🟢 đã từng đúng → null (KHÔNG thay bằng bài khác).
+ * "Từng đúng" KHÔNG tính lượt g 3 / g 2 có SAU khi con đã xem lời giải bài đó (lượt g 0) cùng ngày VN — như `daXemLoiGiai` (RD-04, 2026-10-24):
+ * trang ghi g 0 cho đáp số gõ lại sau khi xem lời giải, nhưng sổ cũ / máy khác có thể còn lượt đúng sau lần xem; bài đó chưa được coi là đã làm được.
+ *
+ * ỔN ĐỊNH TRONG NGÀY VN: tính trên sổ như lúc 00:00 giờ VN của ngày chứa `now` (lượt ts ≥ 00:00:00 hôm nay không tính; cả mức dạng cũng
+ * đo lúc đó). Mở lại trang cùng ngày — kể cả sau khi con vừa làm đúng bài đó, sai bài đó, hay một dạng vừa lên / tụt 🟢 — vẫn ra CÙNG bài;
+ * sang ngày VN mới thì tính lại (bài hôm qua làm đúng thì bỏ; dạng vừa lên 🟢 hôm qua mới có bài). Vì sao không tính theo sổ hiện tại như
+ * `onHomNay`: danh sách ôn là việc cần làm, làm xong thì biến / đổi bài; còn Thử thách là MỘT bài mỗi ngày — làm xong mà bài khác hiện ra
+ * ngay thì thành vô hạn bài mỗi ngày, và con làm sai thì lại bị đổi bài ngay lúc đang muốn thử lại.
+ * Hàm thuần; mọi thứ khác (không sửa đầu vào, không phụ thuộc thứ tự lượt) như các hàm trong tệp.
+ */
+export function thuThachHomNay(kho, luot, now) {
+  const dauNgay = Math.floor((now + VN) / NGAY) * NGAY - VN;   // 00:00:00 giờ VN của ngày chứa `now`
+  const ls = chuan(luot, now).filter((a) => a.ts < dauNgay);   // ảnh chụp đầu ngày: lượt từ 00:00:00 hôm nay trở đi chưa tính
+  const lanCuoi = new Map(), dung = new Set();   // id → ts lần làm gần nhất (ls đã xếp) · id từng đúng (g 3 / g 2)
+  const xem = new Set();                          // `<id>|<ngày VN>` đã mở lời giải (g 0) tính tới lượt đang xét — ls xếp (ts, i, g) nên g 0 đứng trước g ≥ 2 cùng ts
+  for (const a of ls) {
+    lanCuoi.set(a.i, a.ts);
+    const kn = `${a.i}|${ngayCua(a.ts)}`;
+    if (a.g === 0) xem.add(kn);
+    // RD-04: đúng SAU khi đã xem lời giải bài đó cùng ngày VN không tính là "từng đúng" — chính là `daXemLoiGiai(a.i, ls, a.ts)`, chạy một lượt
+    else if (a.g >= 2 && !xem.has(kn)) dung.add(a.i);
+  }
+  const ung = [];
+  for (const cd of Object.values((kho && kho.cd) || {})) {
+    for (const d of (cd && cd.dang) || []) {
+      const con = (d && d.bai || []).filter((b) => b && b.muc === "thu-thach" && !dung.has(b.id));
+      if (!con.length || mucLs(d, ls) < 2) continue;
+      for (const b of con) ung.push({ id: b.id, nc: d.nang_cao ? 1 : 0, cu: lanCuoi.has(b.id) ? 1 : 0, ts: lanCuoi.get(b.id) || 0, k: ung.length });
+    }
+  }
+  ung.sort((p, q) => p.nc - q.nc || p.cu - q.cu || p.ts - q.ts || p.k - q.k);
+  return ung.length ? ung[0].id : null;
 }
 
 /**
@@ -582,6 +701,6 @@ export function tiepTuc(cd, luot, now) {
  * g 0); sang ngày VN mới thì hàm trả false và bài chấm bình thường.
  */
 export function daXemLoiGiai(id, luot, now) {
-  const ngay = Math.floor((now + VN) / NGAY);
-  return luot.some((l) => l.i === id && l.g === 0 && l.ts <= now && Math.floor((l.ts + VN) / NGAY) === ngay);
+  const ngay = ngayCua(now);
+  return luot.some((l) => l.i === id && l.g === 0 && l.ts <= now && ngayCua(l.ts) === ngay);
 }
