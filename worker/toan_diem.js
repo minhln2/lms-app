@@ -38,7 +38,7 @@ import { diemDang, daHocKienThuc, mucChuyenDe, laBuoc, mucDinh, tungDat } from "
 const giay = () => Math.floor(Date.now() / 1000);
 const NHAN_MUC = { "mo-khoa": "Mở khoá", "tang-toc": "Tăng tốc", "chinh-phuc": "Chinh phục", "thu-thach": "Thử thách" };
 const MUC_ICON = ["⚪", "🟡", "🟢", "🔵", "⭐"];
-const MUC_TEN = ["Chưa học", "Đang học", "Làm được", "Thành thạo", "Vững"];
+const MUC_TEN = ["Chưa học", "Đang học", "Làm được", "Thành thạo", "Học bá"];
 const tiengCD = (id) => String(id).split(".")[0];   // id chuyên đề không có dấu chấm; mọi id con bắt đầu bằng `<cd>.`
 
 /** g thô của lượt → 0..3 (writeSession kẹp lại ở SQL nhưng giữ nguyên số client gửi trong `rows`). */
