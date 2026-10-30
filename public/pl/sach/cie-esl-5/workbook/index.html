@@ -274,7 +274,7 @@ window.LS.ham();
 
 <div id="dau" data-bam="thanh" class="no-print sticky top-0 z-20">
 <header class="no-print bg-indigo-600 text-white">
-  <div class="max-w-5xl mx-auto px-4 py-2 min-w-0">
+  <div class="max-w-[76rem] mx-auto px-4 py-2 min-w-0">
     
     <nav aria-label="Đường dẫn" class="flex items-center gap-1.5 text-xs min-w-0 text-indigo-200">
   <a href="../../../../index.html" class="shrink-0 max-w-[9rem] truncate hover:underline py-2 -my-2 hover:text-white">🏠 Home</a><span class="shrink-0 text-indigo-300">›</span>
@@ -287,7 +287,14 @@ window.LS.ham();
 
 
 <nav class="no-print sticky top-0 z-20 bg-white border-b border-slate-200">
-  <div class="max-w-5xl mx-auto px-3 sm:px-4 py-2 flex items-center gap-1.5 sm:gap-2">
+  <div class="max-w-[76rem] mx-auto px-3 sm:px-4 py-2 flex items-center gap-1.5 sm:gap-2">
+    
+    <button type="button" data-nut-menu :aria-expanded="String(mlMo)"
+        @click="mlMo = !mlMo"
+        aria-label="Mục lục" title="Mục lục"
+        :class="[mlMo ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-slate-700',
+                 timMo ? 'max-sm:hidden' : '']"
+        class="lg:hidden h-9 min-w-9 shrink-0 px-2 sm:px-3 text-xs font-medium rounded-lg border whitespace-nowrap">☰<span class="hidden sm:inline"> Mục lục</span></button>
     
     
     
@@ -382,7 +389,790 @@ window.LS.ham();
 </nav>
 </div>
 
-<div class="max-w-5xl mx-auto lg:flex lg:gap-5 lg:items-start">
+<div class="max-w-[76rem] mx-auto lg:flex lg:gap-5 lg:items-start">
+
+
+
+<aside class="ml no-print select-none lg:pt-4 lg:w-60 lg:shrink-0 lg:sticky lg:pl-4 lg:pr-0"
+       @keydown.escape.window="mlMo = false">
+  <div :class="mlMo ? 'mo block' : 'hidden lg:block'"
+       data-bam class="ml-khung rounded-lg border border-slate-200 bg-white p-2 lg:overflow-y-auto">
+    <p class="px-2 pb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">Mục lục</p>
+    
+    
+    
+    <ol class="space-y-0.5">
+      
+      
+        
+          
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          
+          
+          <button type="button" @click="moUnit[1] = !moUnit[1]"
+                  :aria-expanded="String(!!moUnit[1])"
+                  class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
+                  x-text="moUnit[1] ? '▾' : '▸'"></button>
+          
+          <button type="button" @click="toiTrang(9); moUnit[1] = true"
+                  :class="unitDang === 0 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">8</span>
+            <span class="min-w-0">1 My world</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[1]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          <li><button type="button" @click="toiTrang(9)"
+                  :class="mucDang === 1 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">8</span>
+                <span class="min-w-0">1.1 What connects us with the people around us?</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(11)"
+                  :class="mucDang === 2 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">10</span>
+                <span class="min-w-0">1.2 Present perfect</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(13)"
+                  :class="mucDang === 3 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">12</span>
+                <span class="min-w-0">1.3 Prepositions before nouns</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(15)"
+                  :class="mucDang === 4 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">14</span>
+                <span class="min-w-0">1.4 A first time for everything</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(17)"
+                  :class="mucDang === 5 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">16</span>
+                <span class="min-w-0">1.5 A Girl Called Owl</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(19)"
+                  :class="mucDang === 6 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">18</span>
+                <span class="min-w-0">1.6 Check your progress</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(20)"
+                  :class="mucDang === 7 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">19</span>
+                <span class="min-w-0">1.7 Reflection</span>
+              </button></li>
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          
+          
+          <button type="button" @click="moUnit[2] = !moUnit[2]"
+                  :aria-expanded="String(!!moUnit[2])"
+                  class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
+                  x-text="moUnit[2] ? '▾' : '▸'"></button>
+          
+          <button type="button" @click="toiTrang(21); moUnit[2] = true"
+                  :class="unitDang === 8 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">20</span>
+            <span class="min-w-0">2 Sport</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[2]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          <li><button type="button" @click="toiTrang(21)"
+                  :class="mucDang === 9 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">20</span>
+                <span class="min-w-0">2.1 What can we get from sport?</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(23)"
+                  :class="mucDang === 10 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">22</span>
+                <span class="min-w-0">2.2 1st conditional with if/unless</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(25)"
+                  :class="mucDang === 11 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">24</span>
+                <span class="min-w-0">2.3 need / should / mustn’t for advice</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(27)"
+                  :class="mucDang === 12 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">26</span>
+                <span class="min-w-0">2.4 Our favourite sports stars</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(29)"
+                  :class="mucDang === 13 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">28</span>
+                <span class="min-w-0">2.5 Off Side</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(31)"
+                  :class="mucDang === 14 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">30</span>
+                <span class="min-w-0">2.6 Check your progress</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(32)"
+                  :class="mucDang === 15 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">31</span>
+                <span class="min-w-0">2.7 Reflection</span>
+              </button></li>
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          
+          
+          <button type="button" @click="moUnit[3] = !moUnit[3]"
+                  :aria-expanded="String(!!moUnit[3])"
+                  class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
+                  x-text="moUnit[3] ? '▾' : '▸'"></button>
+          
+          <button type="button" @click="toiTrang(33); moUnit[3] = true"
+                  :class="unitDang === 16 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">32</span>
+            <span class="min-w-0">3 Living things</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[3]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          <li><button type="button" @click="toiTrang(33)"
+                  :class="mucDang === 17 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">32</span>
+                <span class="min-w-0">3.1 Strategies for survival</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(35)"
+                  :class="mucDang === 18 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">34</span>
+                <span class="min-w-0">3.2 Present simple</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(37)"
+                  :class="mucDang === 19 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">36</span>
+                <span class="min-w-0">3.3 Relative clauses</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(39)"
+                  :class="mucDang === 20 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">38</span>
+                <span class="min-w-0">3.4 Animal types</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(41)"
+                  :class="mucDang === 21 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">40</span>
+                <span class="min-w-0">3.5 Song for a Whale</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(43)"
+                  :class="mucDang === 22 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">42</span>
+                <span class="min-w-0">3.6 Check your progress</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(44)"
+                  :class="mucDang === 23 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">43</span>
+                <span class="min-w-0">3.7 Reflection</span>
+              </button></li>
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          
+          
+          <button type="button" @click="moUnit[4] = !moUnit[4]"
+                  :aria-expanded="String(!!moUnit[4])"
+                  class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
+                  x-text="moUnit[4] ? '▾' : '▸'"></button>
+          
+          <button type="button" @click="toiTrang(45); moUnit[4] = true"
+                  :class="unitDang === 24 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">44</span>
+            <span class="min-w-0">4 Inventions</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[4]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          <li><button type="button" @click="toiTrang(45)"
+                  :class="mucDang === 25 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">44</span>
+                <span class="min-w-0">4.1 Gadgets and us</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(47)"
+                  :class="mucDang === 26 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">46</span>
+                <span class="min-w-0">4.2 Past simple review</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(49)"
+                  :class="mucDang === 27 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">48</span>
+                <span class="min-w-0">4.3 Will for future predictions</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(52)"
+                  :class="mucDang === 28 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">50</span>
+                <span class="min-w-0">4.4 Changing the world</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(54)"
+                  :class="mucDang === 29 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">52</span>
+                <span class="min-w-0">4.5 Start Small, Think Big</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(56)"
+                  :class="mucDang === 30 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">54</span>
+                <span class="min-w-0">4.6 Check your progress</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(57)"
+                  :class="mucDang === 31 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">55</span>
+                <span class="min-w-0">4.7 Reflection</span>
+              </button></li>
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          
+          
+          <button type="button" @click="moUnit[5] = !moUnit[5]"
+                  :aria-expanded="String(!!moUnit[5])"
+                  class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
+                  x-text="moUnit[5] ? '▾' : '▸'"></button>
+          
+          <button type="button" @click="toiTrang(58); moUnit[5] = true"
+                  :class="unitDang === 32 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">56</span>
+            <span class="min-w-0">5 Money</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[5]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          <li><button type="button" @click="toiTrang(58)"
+                  :class="mucDang === 33 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">56</span>
+                <span class="min-w-0">5.1 Spending a sum of money</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(60)"
+                  :class="mucDang === 34 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">58</span>
+                <span class="min-w-0">5.2 Comparative and superlative adverbs</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(63)"
+                  :class="mucDang === 35 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">60</span>
+                <span class="min-w-0">5.3 Quantifiers</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(65)"
+                  :class="mucDang === 36 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">62</span>
+                <span class="min-w-0">5.4 The question of money</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(67)"
+                  :class="mucDang === 37 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">64</span>
+                <span class="min-w-0">5.5 Billionaire Boy</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(69)"
+                  :class="mucDang === 38 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">66</span>
+                <span class="min-w-0">5.6 Check your progress</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(70)"
+                  :class="mucDang === 39 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">67</span>
+                <span class="min-w-0">5.7 Reflection</span>
+              </button></li>
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          
+          
+          <button type="button" @click="moUnit[6] = !moUnit[6]"
+                  :aria-expanded="String(!!moUnit[6])"
+                  class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
+                  x-text="moUnit[6] ? '▾' : '▸'"></button>
+          
+          <button type="button" @click="toiTrang(71); moUnit[6] = true"
+                  :class="unitDang === 40 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">68</span>
+            <span class="min-w-0">6 People and work</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[6]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          <li><button type="button" @click="toiTrang(71)"
+                  :class="mucDang === 41 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">68</span>
+                <span class="min-w-0">6.1 How do you get a job?</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(73)"
+                  :class="mucDang === 42 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">70</span>
+                <span class="min-w-0">6.2 Adjectives + prepositions + nouns</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(76)"
+                  :class="mucDang === 43 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">72</span>
+                <span class="min-w-0">6.3 Reported speech</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(78)"
+                  :class="mucDang === 44 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">74</span>
+                <span class="min-w-0">6.4 Let’s get a job!</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(81)"
+                  :class="mucDang === 45 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">76</span>
+                <span class="min-w-0">6.5 You Can Be Anything</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(83)"
+                  :class="mucDang === 46 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">78</span>
+                <span class="min-w-0">6.6 Check your progress</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(84)"
+                  :class="mucDang === 47 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">79</span>
+                <span class="min-w-0">6.7 Reflection</span>
+              </button></li>
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          
+          
+          <button type="button" @click="moUnit[7] = !moUnit[7]"
+                  :aria-expanded="String(!!moUnit[7])"
+                  class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
+                  x-text="moUnit[7] ? '▾' : '▸'"></button>
+          
+          <button type="button" @click="toiTrang(85); moUnit[7] = true"
+                  :class="unitDang === 48 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">80</span>
+            <span class="min-w-0">7 Nature’s power</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[7]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          <li><button type="button" @click="toiTrang(85)"
+                  :class="mucDang === 49 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">80</span>
+                <span class="min-w-0">7.1 The power of volcanoes</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(87)"
+                  :class="mucDang === 50 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">82</span>
+                <span class="min-w-0">7.2 Past simple and past continuous</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(89)"
+                  :class="mucDang === 51 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">84</span>
+                <span class="min-w-0">7.3 Connecting words</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(91)"
+                  :class="mucDang === 52 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">86</span>
+                <span class="min-w-0">7.4 The effects of nature’s power</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(93)"
+                  :class="mucDang === 53 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">88</span>
+                <span class="min-w-0">7.5 Thank You Letter</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(95)"
+                  :class="mucDang === 54 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">90</span>
+                <span class="min-w-0">7.6 Check your progress</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(96)"
+                  :class="mucDang === 55 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">91</span>
+                <span class="min-w-0">7.7 Reflection</span>
+              </button></li>
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          
+          
+          <button type="button" @click="moUnit[8] = !moUnit[8]"
+                  :aria-expanded="String(!!moUnit[8])"
+                  class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
+                  x-text="moUnit[8] ? '▾' : '▸'"></button>
+          
+          <button type="button" @click="toiTrang(97); moUnit[8] = true"
+                  :class="unitDang === 56 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">92</span>
+            <span class="min-w-0">8 Entertainment</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[8]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          <li><button type="button" @click="toiTrang(97)"
+                  :class="mucDang === 57 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">92</span>
+                <span class="min-w-0">8.1 Entertainment at home</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(100)"
+                  :class="mucDang === 58 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">94</span>
+                <span class="min-w-0">8.2 Past simple passive</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(102)"
+                  :class="mucDang === 59 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">96</span>
+                <span class="min-w-0">8.3 Adverbs of time and frequency</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(104)"
+                  :class="mucDang === 60 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">98</span>
+                <span class="min-w-0">8.4 Creating film scenes</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(106)"
+                  :class="mucDang === 61 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">100</span>
+                <span class="min-w-0">8.5 Jurassic Park</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(108)"
+                  :class="mucDang === 62 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">102</span>
+                <span class="min-w-0">8.6 Check your progress</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(110)"
+                  :class="mucDang === 63 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">103</span>
+                <span class="min-w-0">8.7 Reflection</span>
+              </button></li>
+        
+      
+        
+          </ol></li>
+          
+      <li>
+        <div class="flex items-stretch gap-1">
+          
+          
+          <button type="button" @click="moUnit[9] = !moUnit[9]"
+                  :aria-expanded="String(!!moUnit[9])"
+                  class="w-8 shrink-0 rounded text-slate-400 hover:bg-slate-100"
+                  x-text="moUnit[9] ? '▾' : '▸'"></button>
+          
+          <button type="button" @click="toiTrang(111); moUnit[9] = true"
+                  :class="unitDang === 64 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'"
+                  class="flex-1 min-w-0 text-left px-2 py-2 rounded text-xs font-medium leading-snug flex gap-2">
+            <span class="tabular-nums text-slate-400 shrink-0">104</span>
+            <span class="min-w-0">9 Amazing art</span>
+          </button>
+        </div>
+        <ol x-show="moUnit[9]" x-cloak class="mt-0.5 space-y-0.5">
+        
+      
+        
+          <li><button type="button" @click="toiTrang(111)"
+                  :class="mucDang === 65 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">104</span>
+                <span class="min-w-0">9.1 Amazing art around us</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(114)"
+                  :class="mucDang === 66 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">106</span>
+                <span class="min-w-0">9.2 Present perfect for unfinished past</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(116)"
+                  :class="mucDang === 67 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">108</span>
+                <span class="min-w-0">9.3 Present tenses with future meaning</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(118)"
+                  :class="mucDang === 68 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">110</span>
+                <span class="min-w-0">9.4 Amazing architecture</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(120)"
+                  :class="mucDang === 69 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">112</span>
+                <span class="min-w-0">9.5 Willow</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(122)"
+                  :class="mucDang === 70 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">114</span>
+                <span class="min-w-0">9.6 Check your progress</span>
+              </button></li>
+        
+      
+        
+          <li><button type="button" @click="toiTrang(123)"
+                  :class="mucDang === 71 ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-500 hover:bg-slate-50'"
+                  class="w-full text-left pl-9 pr-2 py-2 rounded text-xs leading-snug flex gap-2">
+                <span class="tabular-nums text-slate-400 shrink-0">115</span>
+                <span class="min-w-0">9.7 Reflection</span>
+              </button></li>
+        
+      
+      </ol></li>
+    </ol>
+  </div>
+</aside>
 
 <div class="min-w-0 lg:flex-1">
 
@@ -831,8 +1621,8 @@ window.LS.ham();
 </i><span class="mo" data-w="0.91350" style="left:4.542%;top:95.408%;font-size:1.568cqw">Original material © Cambridge University Press 2021. This material is not final and is subject to further changes prior to publication. </span><i class="nl" style="left:41.848%;top:96.908%">
 </i><span class="mo" data-w="0.16300" style="left:41.848%;top:96.908%;font-size:1.568cqw">ISBN_9781108810906.</span></div></div></section>
 <section class="trang" id="tr-9" data-tr="9"><div class="khung"><img src="anh/trang-9.webp" width="1063" height="1333" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.71112" style="left:14.444%;top:2.938%;font-size:1.568cqw">We are working with Cambridge Assessment International Education towards endorsement of this title.</span><i class="nl" style="left:11.111%;top:6.673%">
-</i><span data-w="0.04516" style="left:11.111%;top:6.673%;font-size:7.526cqw">1</span><i class="nl" style="left:30.223%;top:6.691%">
-</i><span data-w="0.30994" style="left:30.223%;top:6.691%;font-size:7.335cqw">My world</span><i class="nl" style="left:12.420%;top:16.513%">
+</i><span class="mo" data-w="0.04516" style="left:11.111%;top:6.673%;font-size:7.526cqw">1</span><i class="nl" style="left:30.223%;top:6.691%">
+</i><span class="mo" data-w="0.30994" style="left:30.223%;top:6.691%;font-size:7.335cqw">My world</span><i class="nl" style="left:12.420%;top:16.513%">
 </i><span data-w="0.69895" style="left:12.420%;top:16.513%;font-size:3.821cqw">  1.1  What connects us with the people </span><i class="nl" style="left:11.109%;top:20.264%">
 </i><span data-w="0.19136" style="left:11.109%;top:20.264%;font-size:3.821cqw">around us?</span><i class="nl" style="left:11.111%;top:26.870%">
 </i><span data-w="0.01631" style="left:11.111%;top:26.870%;font-size:1.881cqw">1 </span><span data-w="0.10229" style="left:14.223%;top:26.869%;font-size:1.881cqw">Vocabulary</span><span data-w="0.08830" style="left:24.453%;top:26.869%;font-size:1.881cqw"> Emotions</span><i class="nl" style="left:14.223%;top:29.578%">
@@ -1416,8 +2206,8 @@ window.LS.ham();
 </i><span class="mo" data-w="0.91350" style="left:4.542%;top:95.408%;font-size:1.568cqw">Original material © Cambridge University Press 2021. This material is not final and is subject to further changes prior to publication. </span><i class="nl" style="left:41.848%;top:96.908%">
 </i><span class="mo" data-w="0.16300" style="left:41.848%;top:96.908%;font-size:1.568cqw">ISBN_9781108810906.</span></div></div></section>
 <section class="trang" id="tr-21" data-tr="21"><div class="khung"><img src="anh/trang-21.webp" width="1063" height="1333" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.71112" style="left:14.444%;top:2.938%;font-size:1.568cqw">We are working with Cambridge Assessment International Education towards endorsement of this title.</span><i class="nl" style="left:11.111%;top:6.673%">
-</i><span data-w="0.04523" style="left:11.111%;top:6.673%;font-size:7.526cqw">2</span><i class="nl" style="left:30.222%;top:6.691%">
-</i><span data-w="0.18618" style="left:30.222%;top:6.691%;font-size:7.335cqw">Sport</span><i class="nl" style="left:12.420%;top:16.513%">
+</i><span class="mo" data-w="0.04523" style="left:11.111%;top:6.673%;font-size:7.526cqw">2</span><i class="nl" style="left:30.222%;top:6.691%">
+</i><span class="mo" data-w="0.18618" style="left:30.222%;top:6.691%;font-size:7.335cqw">Sport</span><i class="nl" style="left:12.420%;top:16.513%">
 </i><span data-w="0.60589" style="left:12.420%;top:16.513%;font-size:3.821cqw">  2.1  What can we get from sport?</span><i class="nl" style="left:24.556%;top:26.873%">
 </i><span data-w="0.01631" style="left:24.556%;top:26.873%;font-size:1.881cqw">1 </span><span data-w="0.10229" style="left:27.668%;top:26.871%;font-size:1.881cqw">Vocabulary</span><span data-w="0.06487" style="left:37.897%;top:26.871%;font-size:1.881cqw"> Sports</span><i class="nl" style="left:27.668%;top:29.581%">
 </i><span data-w="0.06457" style="left:27.668%;top:29.581%;font-size:1.881cqw">Do the </span><span data-w="0.14246" style="left:34.125%;top:29.581%;font-size:1.881cqw">Name the Sport</span><span data-w="0.23765" style="left:48.371%;top:29.581%;font-size:1.881cqw"> quiz. Read the defi nitions </span><i class="nl" style="left:27.668%;top:31.581%">
@@ -1848,8 +2638,8 @@ window.LS.ham();
 </i><span class="mo" data-w="0.91350" style="left:4.542%;top:95.408%;font-size:1.568cqw">Original material © Cambridge University Press 2021. This material is not final and is subject to further changes prior to publication. </span><i class="nl" style="left:41.848%;top:96.908%">
 </i><span class="mo" data-w="0.16300" style="left:41.848%;top:96.908%;font-size:1.568cqw">ISBN_9781108810906.</span></div></div></section>
 <section class="trang" id="tr-33" data-tr="33"><div class="khung"><img src="anh/trang-33.webp" width="1063" height="1333" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.71112" style="left:14.444%;top:2.938%;font-size:1.568cqw">We are working with Cambridge Assessment International Education towards endorsement of this title.</span><i class="nl" style="left:11.111%;top:6.673%">
-</i><span data-w="0.04516" style="left:11.111%;top:6.673%;font-size:7.526cqw">3</span><i class="nl" style="left:30.223%;top:6.691%">
-</i><span data-w="0.42648" style="left:30.223%;top:6.691%;font-size:7.335cqw">Living things</span><i class="nl" style="left:12.420%;top:16.513%">
+</i><span class="mo" data-w="0.04516" style="left:11.111%;top:6.673%;font-size:7.526cqw">3</span><i class="nl" style="left:30.223%;top:6.691%">
+</i><span class="mo" data-w="0.42648" style="left:30.223%;top:6.691%;font-size:7.335cqw">Living things</span><i class="nl" style="left:12.420%;top:16.513%">
 </i><span data-w="0.47608" style="left:12.420%;top:16.513%;font-size:3.821cqw">  3.1  Strategies for survival</span><i class="nl" style="left:11.111%;top:23.119%">
 </i><span data-w="0.01631" style="left:11.111%;top:23.119%;font-size:1.881cqw">1 </span><span data-w="0.45701" style="left:14.223%;top:23.118%;font-size:1.881cqw">What can you remember about Emperor penguins?</span><i class="nl" style="left:14.223%;top:25.118%">
 </i><span data-w="0.41578" style="left:14.223%;top:25.118%;font-size:1.881cqw">Complete the sentences with the correct word.</span><i class="nl" style="left:24.406%;top:29.762%">
@@ -2326,8 +3116,8 @@ window.LS.ham();
 </i><span class="mo" data-w="0.91350" style="left:4.542%;top:95.408%;font-size:1.568cqw">Original material © Cambridge University Press 2021. This material is not final and is subject to further changes prior to publication. </span><i class="nl" style="left:41.848%;top:96.908%">
 </i><span class="mo" data-w="0.16300" style="left:41.848%;top:96.908%;font-size:1.568cqw">ISBN_9781108810906.</span></div></div></section>
 <section class="trang" id="tr-45" data-tr="45"><div class="khung"><img src="anh/trang-45.webp" width="1063" height="1333" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.71112" style="left:14.444%;top:2.938%;font-size:1.568cqw">We are working with Cambridge Assessment International Education towards endorsement of this title.</span><i class="nl" style="left:11.111%;top:6.673%">
-</i><span data-w="0.04516" style="left:11.111%;top:6.673%;font-size:7.526cqw">4</span><i class="nl" style="left:30.223%;top:6.691%">
-</i><span data-w="0.34412" style="left:30.223%;top:6.691%;font-size:7.335cqw">Inventions</span><i class="nl" style="left:12.420%;top:16.513%">
+</i><span class="mo" data-w="0.04516" style="left:11.111%;top:6.673%;font-size:7.526cqw">4</span><i class="nl" style="left:30.223%;top:6.691%">
+</i><span class="mo" data-w="0.34412" style="left:30.223%;top:6.691%;font-size:7.335cqw">Inventions</span><i class="nl" style="left:12.420%;top:16.513%">
 </i><span data-w="0.36884" style="left:12.420%;top:16.513%;font-size:3.821cqw">  4.1  Gadgets and us</span><i class="nl" style="left:11.111%;top:23.119%">
 </i><span data-w="0.01631" style="left:11.111%;top:23.119%;font-size:1.881cqw">1 </span><span data-w="0.67379" style="left:14.223%;top:23.118%;font-size:1.881cqw">Complete the words and number the gadgets and equipment in the picture.</span><i class="nl" style="left:14.222%;top:43.921%">
 </i><span data-w="0.01648" style="left:14.222%;top:43.921%;font-size:1.881cqw">a </span><i class="nl" style="left:17.539%;top:43.921%">
@@ -2852,8 +3642,8 @@ window.LS.ham();
 </i><span class="mo" data-w="0.91350" style="left:4.542%;top:95.408%;font-size:1.568cqw">Original material © Cambridge University Press 2021. This material is not final and is subject to further changes prior to publication. </span><i class="nl" style="left:41.848%;top:96.908%">
 </i><span class="mo" data-w="0.16300" style="left:41.848%;top:96.908%;font-size:1.568cqw">ISBN_9781108810906.</span></div></div></section>
 <section class="trang" id="tr-58" data-tr="58"><div class="khung"><img src="anh/trang-58.webp" width="1063" height="1333" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.71112" style="left:14.444%;top:2.938%;font-size:1.568cqw">We are working with Cambridge Assessment International Education towards endorsement of this title.</span><i class="nl" style="left:11.111%;top:6.673%">
-</i><span data-w="0.04516" style="left:11.111%;top:6.673%;font-size:7.526cqw">5</span><i class="nl" style="left:30.223%;top:6.691%">
-</i><span data-w="0.22150" style="left:30.223%;top:6.691%;font-size:7.335cqw">Money</span><i class="nl" style="left:12.420%;top:16.513%">
+</i><span class="mo" data-w="0.04516" style="left:11.111%;top:6.673%;font-size:7.526cqw">5</span><i class="nl" style="left:30.223%;top:6.691%">
+</i><span class="mo" data-w="0.22150" style="left:30.223%;top:6.691%;font-size:7.335cqw">Money</span><i class="nl" style="left:12.420%;top:16.513%">
 </i><span data-w="0.54620" style="left:12.420%;top:16.513%;font-size:3.821cqw">  5.1  Spending a sum of money</span><i class="nl" style="left:11.111%;top:24.870%">
 </i><span data-w="0.01631" style="left:11.111%;top:24.870%;font-size:1.881cqw">1 </span><span data-w="0.10668" style="left:14.222%;top:24.733%;font-size:2.352cqw">Vocabulary</span><span data-w="0.48914" style="left:24.890%;top:24.868%;font-size:1.881cqw">  Can you fi nd and circle six words in the word puzzle? </span><i class="nl" style="left:38.289%;top:28.732%">
 </i><span data-w="0.01242" style="left:38.289%;top:28.732%;font-size:1.881cqw">o</span><span data-w="0.01324" style="left:40.248%;top:28.836%;font-size:1.881cqw">n</span><span data-w="0.01284" style="left:42.228%;top:28.977%;font-size:1.881cqw">e</span><i class="nl" style="left:30.042%;top:29.750%">
@@ -3400,8 +4190,8 @@ window.LS.ham();
 </i><span class="mo" data-w="0.91350" style="left:4.542%;top:95.408%;font-size:1.568cqw">Original material © Cambridge University Press 2021. This material is not final and is subject to further changes prior to publication. </span><i class="nl" style="left:41.848%;top:96.908%">
 </i><span class="mo" data-w="0.16300" style="left:41.848%;top:96.908%;font-size:1.568cqw">ISBN_9781108810906.</span></div></div></section>
 <section class="trang" id="tr-71" data-tr="71"><div class="khung"><img src="anh/trang-71.webp" width="1063" height="1333" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.71112" style="left:14.444%;top:2.938%;font-size:1.568cqw">We are working with Cambridge Assessment International Education towards endorsement of this title.</span><i class="nl" style="left:11.111%;top:6.673%">
-</i><span data-w="0.04516" style="left:11.111%;top:6.673%;font-size:7.526cqw">6</span><i class="nl" style="left:30.223%;top:6.691%">
-</i><span data-w="0.56288" style="left:30.223%;top:6.691%;font-size:7.335cqw">People and work</span><i class="nl" style="left:12.420%;top:16.513%">
+</i><span class="mo" data-w="0.04516" style="left:11.111%;top:6.673%;font-size:7.526cqw">6</span><i class="nl" style="left:30.223%;top:6.691%">
+</i><span class="mo" data-w="0.56288" style="left:30.223%;top:6.691%;font-size:7.335cqw">People and work</span><i class="nl" style="left:12.420%;top:16.513%">
 </i><span data-w="0.48249" style="left:12.420%;top:16.513%;font-size:3.821cqw">  6.1  How do you get a job?</span><i class="nl" style="left:11.111%;top:23.119%">
 </i><span data-w="0.01631" style="left:11.111%;top:23.119%;font-size:1.881cqw">1 </span><span data-w="0.10229" style="left:14.223%;top:23.118%;font-size:1.881cqw">Vocabulary</span><span data-w="0.04418" style="left:24.453%;top:23.118%;font-size:1.881cqw"> Jobs</span><i class="nl" style="left:14.223%;top:25.828%">
 </i><span data-w="0.45496" style="left:14.223%;top:25.828%;font-size:1.881cqw">Complete the sentences with the correct adjective. </span><i class="nl" style="left:14.223%;top:27.828%">
@@ -3923,8 +4713,8 @@ window.LS.ham();
 </i><span class="mo" data-w="0.91350" style="left:4.542%;top:95.408%;font-size:1.568cqw">Original material © Cambridge University Press 2021. This material is not final and is subject to further changes prior to publication. </span><i class="nl" style="left:41.848%;top:96.908%">
 </i><span class="mo" data-w="0.16300" style="left:41.848%;top:96.908%;font-size:1.568cqw">ISBN_9781108810906.</span></div></div></section>
 <section class="trang" id="tr-85" data-tr="85"><div class="khung"><img src="anh/trang-85.webp" width="1063" height="1333" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.71112" style="left:14.444%;top:2.938%;font-size:1.568cqw">We are working with Cambridge Assessment International Education towards endorsement of this title.</span><i class="nl" style="left:11.111%;top:6.673%">
-</i><span data-w="0.04516" style="left:11.111%;top:6.673%;font-size:7.526cqw">7</span><i class="nl" style="left:30.223%;top:6.691%">
-</i><span data-w="0.51070" style="left:30.223%;top:6.691%;font-size:7.335cqw">Nature’s power</span><i class="nl" style="left:12.420%;top:16.513%">
+</i><span class="mo" data-w="0.04516" style="left:11.111%;top:6.673%;font-size:7.526cqw">7</span><i class="nl" style="left:30.223%;top:6.691%">
+</i><span class="mo" data-w="0.51070" style="left:30.223%;top:6.691%;font-size:7.335cqw">Nature’s power</span><i class="nl" style="left:12.420%;top:16.513%">
 </i><span data-w="0.50815" style="left:12.420%;top:16.513%;font-size:3.821cqw">  7.1  The power of volcanoes</span><i class="nl" style="left:11.111%;top:23.119%">
 </i><span data-w="0.01631" style="left:11.111%;top:23.119%;font-size:1.881cqw">1 </span><span data-w="0.10229" style="left:14.223%;top:23.118%;font-size:1.881cqw">Vocabulary</span><span data-w="0.09699" style="left:24.453%;top:23.118%;font-size:1.881cqw"> Volcanoes</span><i class="nl" style="left:14.223%;top:25.828%">
 </i><span data-w="0.41998" style="left:14.223%;top:25.828%;font-size:1.881cqw"> Choose the correct words to label the diagram.</span><i class="nl" style="left:25.093%;top:29.349%">
@@ -4492,8 +5282,8 @@ window.LS.ham();
 </i><span class="mo" data-w="0.91350" style="left:4.542%;top:95.408%;font-size:1.568cqw">Original material © Cambridge University Press 2021. This material is not final and is subject to further changes prior to publication. </span><i class="nl" style="left:41.848%;top:96.908%">
 </i><span class="mo" data-w="0.16300" style="left:41.848%;top:96.908%;font-size:1.568cqw">ISBN_9781108810906.</span></div></div></section>
 <section class="trang" id="tr-97" data-tr="97"><div class="khung"><img src="anh/trang-97.webp" width="1063" height="1333" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.71112" style="left:14.444%;top:2.938%;font-size:1.568cqw">We are working with Cambridge Assessment International Education towards endorsement of this title.</span><i class="nl" style="left:11.111%;top:6.673%">
-</i><span data-w="0.04516" style="left:11.111%;top:6.673%;font-size:7.526cqw">8</span><i class="nl" style="left:30.223%;top:6.691%">
-</i><span data-w="0.48003" style="left:30.223%;top:6.691%;font-size:7.335cqw">Entertainment</span><i class="nl" style="left:12.420%;top:16.513%">
+</i><span class="mo" data-w="0.04516" style="left:11.111%;top:6.673%;font-size:7.526cqw">8</span><i class="nl" style="left:30.223%;top:6.691%">
+</i><span class="mo" data-w="0.48003" style="left:30.223%;top:6.691%;font-size:7.335cqw">Entertainment</span><i class="nl" style="left:12.420%;top:16.513%">
 </i><span data-w="0.49660" style="left:12.420%;top:16.513%;font-size:3.821cqw">  8.1  Entertainment at home</span><i class="nl" style="left:11.111%;top:23.119%">
 </i><span data-w="0.01631" style="left:11.111%;top:23.119%;font-size:1.881cqw">1 </span><span data-w="0.22549" style="left:14.223%;top:23.118%;font-size:1.881cqw">Look at the word puzzle. </span><i class="nl" style="left:14.223%;top:25.118%">
 </i><span data-w="0.43057" style="left:14.223%;top:25.118%;font-size:1.881cqw">Can you ﬁ nd six words to match the deﬁ nitions?</span><i class="nl" style="left:14.223%;top:28.537%">
@@ -5896,16 +6686,16 @@ window.LS.ham();
       soiNet: false, soiDem: 0,   // chế độ soi nét (?soinet=1) — xem `_soiVe`
       chonDang: null,
       // Trang bắt đầu của từng unit — để tự mở đúng unit đang đọc.
-      unitTr: [],
+      unitTr: [9, 21, 33, 45, 58, 71, 85, 97, 111],
       // Trang mở đầu và CẤP của từng mục, theo đúng thứ tự vẽ ra. Cần cả hai
       // để biết "đang đọc trang 15" thuộc mục nào: mục đang đọc là mục CUỐI
       // CÙNG có trang mở đầu ≤ trang hiện tại, chứ không phải mục có trang mở
       // đầu BẰNG trang hiện tại. Luật cũ (`===`) chỉ sáng đúng một trang duy
       // nhất của mỗi mục, còn 9/10 thời gian đọc thì mục lục không sáng gì.
-      mlP: [],
+      mlP: [9, 9, 11, 13, 15, 17, 19, 20, 21, 21, 23, 25, 27, 29, 31, 32, 33, 33, 35, 37, 39, 41, 43, 44, 45, 45, 47, 49, 52, 54, 56, 57, 58, 58, 60, 63, 65, 67, 69, 70, 71, 71, 73, 76, 78, 81, 83, 84, 85, 85, 87, 89, 91, 93, 95, 96, 97, 97, 100, 102, 104, 106, 108, 110, 111, 111, 114, 116, 118, 120, 122, 123],
       // ⚠ `default=1`: mục lục một cấp KHÔNG có trường `c`, và `map` trả về
       // `Undefined` — `tojson` nổ ngay lúc build, cả trang trắng.
-      mlC: [],
+      mlC: [1, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2],
       tim: '', soKq: 0, viTri: 0,
       user: "pl", course: "cie-esl-5",
       secret: localStorage.getItem('lms_key') || '',
