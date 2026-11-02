@@ -445,10 +445,12 @@ async function hocTapdoc(env, url, user) {
 
 // Trần ON_MAX lấy thẻ ĐÃ THUỘC trước (known DESC): thẻ đánh dấu thuộc mà chưa ôn lần nào có last_ts = 0, xếp theo last_ts thì bị
 // cắt đầu tiên → không trang nào bỏ cờ của nó được nữa. Trả về vẫn xếp mới nhất trước (sắp lại sau khi cắt).
+// Bài tập (id nhóm "b.…", tab Bài tập) cũng để lại dòng `card` nhưng KHÔNG phải thẻ ôn: tab này gán nhãn bằng ../study/<môn>.json,
+// nơi b.* không có → hiện id trần. Loại ở SQL (trước LIMIT) để chúng không đẩy thẻ thật ra khỏi trần ON_MAX.
 async function hocOn(env, url, user) {
   const r = await env.STUDY_DB.prepare(
     `SELECT item_id AS i, concept_id AS c, course AS mon, n, wrong, streak, box, due, known, last_ts
-       FROM card WHERE user_id = ?1 ORDER BY known DESC, last_ts DESC, item_id LIMIT ?2`
+       FROM card WHERE user_id = ?1 AND item_id NOT LIKE 'b.%' ORDER BY known DESC, last_ts DESC, item_id LIMIT ?2`
   ).bind(user, ON_MAX).all();
   return (r.results || []).sort((p, q) => (q.last_ts || 0) - (p.last_ts || 0) || (p.i < q.i ? -1 : p.i > q.i ? 1 : 0));
 }
@@ -460,13 +462,28 @@ async function hocTu(env, url, user) {
   return r.results || [];
 }
 
-const PHAN = { dong: hocDong, tapdoc: hocTapdoc, on: hocOn, tu: hocTu, toan: (env, url, user) => readLuot(env, user) };
+/**
+ * Bài tập (ADR 0072): MỌI lượt có id nhóm "b.…" của học sinh, mọi môn, cũ trước mới sau — dạng cột + hàng như `readLuot`.
+ * course = slug môn (trang lọc theo môn của tệp .bai-tap.json), i = id nhóm, c = id kiến thức, g = 0..3, ts = epoch giây (đã kẹp),
+ * x = câu con tự viết (ý `viet`, ≤ 600 ký tự) hoặc null. Mức thành thạo TÍNH LẠI ở trình duyệt bằng worker/bai_tap.js `mucKt`.
+ * `LIKE 'b.%'`: "." không phải ký tự đại diện; id thẻ ôn ("q.…", "st.…") và Toán ("cd.…") không bắt đầu bằng "b.".
+ */
+async function hocBt(env, url, user) {
+  const r = await env.STUDY_DB.prepare(
+    `SELECT course, item_id AS i, concept_id AS c, grade AS g, ts, chose AS x
+       FROM attempt WHERE user_id = ?1 AND item_id LIKE 'b.%' ORDER BY ts, id`
+  ).bind(user).all();
+  const cols = ["course", "i", "c", "g", "ts", "x"];
+  return { cols, rows: (r.results || []).map((o) => cols.map((c) => o[c])) };
+}
+
+const PHAN = { dong: hocDong, tapdoc: hocTapdoc, on: hocOn, tu: hocTu, toan: (env, url, user) => readLuot(env, user), bt: hocBt };
 
 /** Lịch sử học tập, nạp lười theo tab (spec §6). Tiến độ theo môn tính ở TRÌNH DUYỆT (dữ liệu nhúng + /api/progress). */
 async function routeHocTap(request, env, url) {
   const user = kiemU(url.searchParams.get("user"));
   const phan = url.searchParams.get("phan") || "";
-  if (!Object.hasOwn(PHAN, phan)) throw sai("Thiếu hoặc sai 'phan' (dong | tapdoc | on | tu | toan)");
+  if (!Object.hasOwn(PHAN, phan)) throw sai("Thiếu hoặc sai 'phan' (dong | tapdoc | on | tu | toan | bt)");
   return PHAN[phan](env, url, user);
 }
 

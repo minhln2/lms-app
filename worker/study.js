@@ -26,6 +26,8 @@ const MAX_ATTEMPTS = 200; // một phiên dài nhất còn hợp lý
 const MS_CAP = 600000;    // 10 phút cho một câu là quá thừa
 const DUE_CAP = 31536000; // không cho hoãn quá 1 năm
 const MAX_KNOWN = 500;    // một lượt tick nhóm lớn nhất còn hợp lý
+const X_CAP = 64;         // `x` (phương án đã chọn / chữ con gõ) dài nhất
+const X_CAP_BT = 600;     // riêng Bài tập (id nhóm tiền tố "b."): ý `viet` lưu câu con tự viết để bố mẹ đọc (khu quản trị, tab Bài tập)
 
 const ok = (s) => typeof s === "string" && ID_RE.test(s);
 
@@ -72,7 +74,7 @@ export async function writeSession(env, user, course, attempts, url = null) {
       g: Number(a.g) || 0,
       ms: Number(a.ms) || 0,
       t: Number(a.t) || now,
-      x: typeof a.x === "string" ? a.x.slice(0, 64) : null,
+      x: typeof a.x === "string" ? a.x.slice(0, a.i.startsWith("b.") ? X_CAP_BT : X_CAP) : null,
       box: Number(a.box) || 1,
       ease: Number(a.ease) || 250,
       due: Number(a.due) || now,
