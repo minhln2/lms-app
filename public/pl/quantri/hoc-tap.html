@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <title>Lịch sử học tập — Quản trị — PL</title>
-  <link rel="stylesheet" href="../../assets/tw.e40ebfe9.css">
+  <link rel="stylesheet" href="../../assets/tw.2fe5e8b5.css">
 <script>
 window.LS = (function () {
   var ve = null, goc = '', dang = 0, henCuon = null, cho = null;
@@ -194,7 +194,7 @@ window.LS.ham();
     const TAB = ['dong', 'mon', 'tapdoc', 'on', 'tu', 'toan', 'bt'];
     const TOAN_MUC = "../../assets/toan_muc.cf56682c.js";
     const BAI_TAP = ["cie-maths-5"];   // slug các môn có ../study/<slug>.bai-tap.json
-    const BAI_TAP_JS = "../../assets/bai_tap.f9093e59.js";
+    const BAI_TAP_JS = "../../assets/bai_tap.f75532bc.js";
     // Năm mức của dạng (spec 2026-10-21 §6). Class là literal (Tailwind quét HTML đã render).
     const MUC_TOAN = [
       { icon: '⚪', ten: 'Chưa học', lop: 'bg-slate-100 text-slate-700' },
@@ -370,8 +370,12 @@ window.LS.ham();
             const kq = KQ_BT[cuoi.g] || ['g = ' + cuoi.g, 'text-slate-500'];
             const luotViet = yy.kieu === 'viet' ? qtVietLuot(M, ls, yy) : [];
             if (luotViet.length) viet++;
+            // Kiểu ý ĐIỀU KIỆN (cot · o_dk · the_o · noi_nhom): `x` của sổ = phép tính con đã điền (chữ thường, không phải JSON chấm câu viết).
+            // Trường riêng `dien`, vẽ cạnh `luot`; KHÔNG qua qtVietLuot / docXViet và KHÔNG cộng vào `viet` («N câu tự viết»).
+            const co = (M.KIEU_DIEN || []).includes(yy.kieu) ? ls.filter((a) => typeof a.x === 'string' && a.x.trim()) : [];
+            const dien = co.length ? co[co.length - 1].x : '';
             y.push({ id: n.id, nguon: yy.nguon, nhan: yy.nhan, bt: yy.bt, tier: yy.tier, kieu: yy.kieu, so_lan: ls.length,
-                     g: cuoi.g, kq: kq[0], kq_lop: kq[1], ts: cuoi.ts, luot: luotViet });
+                     g: cuoi.g, kq: kq[0], kq_lop: kq[1], ts: cuoi.ts, luot: luotViet, dien });
           }
           y.sort((p, q) => q.ts - p.ts);
           const ghi = [!lam.length ? 'chưa làm' : muc <= 1 ? '⚠ yếu' : '', viet ? viet + ' câu tự viết' : ''].filter(Boolean).join(' · ');
@@ -1012,6 +1016,9 @@ window.LS.ham();
                                             </li>
                                           </template>
                                         </ul>
+                                      </template>
+                                      <template x-if="y.dien">
+                                        <p data-qt-bt-dien class="mt-1 whitespace-pre-wrap break-words rounded-lg bg-slate-50 px-3 py-2 text-slate-800" x-text="'Con điền: ' + y.dien"></p>
                                       </template>
                                     </li>
                                   </template>
