@@ -37,8 +37,9 @@
  * đây đúng là thứ không nên đưa vào đó.
  */
 
-const MODEL = "gemini-3.1-flash-lite";
-const ENDPOINT =
+// Export cho worker/cham_viet.js (chấm câu viết dùng CHUNG model, endpoint, trần ngày, bộ gọi-lại và sổ lỗi với tra cứu).
+export const MODEL = "gemini-3.1-flash-lite";
+export const ENDPOINT =
   `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
 /** Trần lượt gọi mỗi ngày. Vượt thì 429 — mềm, không phải lỗi. */
@@ -270,6 +271,22 @@ export async function tieuThu(env, day) {
   return n;
 }
 
+/**
+ * Ghi một lỗi của Gemini vào sổ `lookup_loi` (gộp theo ngày, colo, mã). `ma` = mã HTTP Google trả về (0 = không tới được: mạng đứt).
+ *
+ * Ghi xuống D1 chứ không chỉ console: lỗi này phụ thuộc COLO nên lúc có lúc không, và chỉ xảy ra khi TRẺ bấm. `wrangler tail` chỉ
+ * bắt được nếu đúng lúc mình ngồi xem — đã hai lần thu log 4–5 phút mà không lượt nào đi qua.
+ * Hỏng ở đây KHÔNG được che mất lỗi gốc, nên nuốt riêng. Dùng chung với worker/cham_viet.js.
+ */
+export async function ghiLoiGemini(env, day, colo, ma, t) {
+  try {
+    await env.STUDY_DB.prepare(
+      "INSERT INTO lookup_loi (day, colo, ma, n, cuoi) VALUES (?1, ?2, ?3, 1, ?4) " +
+      "ON CONFLICT(day, colo, ma) DO UPDATE SET n = n + 1, cuoi = ?4"
+    ).bind(day, colo, ma, String(t ?? "").slice(0, 200)).run();
+  } catch (e) { /* sổ ghi lỗi hỏng thì thôi, đừng che lỗi gốc */ }
+}
+
 /** Mã lỗi ĐÁNG thử lại. 412 nằm đây vì một lý do cụ thể, xem ghi chú dưới. */
 const THU_LAI = new Set([412, 429, 500, 502, 503, 504]);
 
@@ -289,10 +306,11 @@ const THU_LAI = new Set([412, 429, 500, 502, 503, 504]);
  * KHÔNG thử lại 400/401/403: sai yêu cầu hay sai khoá thì gọi lại vẫn sai, chỉ
  * tốn thêm một khoảng chờ.
  */
-async function goiLai(uri, colo, body) {
+export async function goiLai(uri, colo, body, them = {}) {
+  // `them` = header thêm (chấm câu viết gửi khoá bằng `x-goog-api-key` để KHÔNG nằm trong URL; tra cứu vẫn `?key=` như cũ).
   const gui = () => fetch(uri, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...them },
     body: JSON.stringify(body),
   });
   const r = await gui();
@@ -439,16 +457,7 @@ export async function handleLookup(request, env) {
     // Cloudflare gần người dùng nhất, và colo đó đổi giữa các ngày. Không ghi
     // colo thì cùng một mã lỗi lúc xảy ra lúc không, không cách nào đối chiếu.
     console.warn(`Gemini ${g.status} @colo=${colo}: ${t.slice(0, 400)}`);
-    // Ghi xuống D1 chứ không chỉ console: lỗi này phụ thuộc COLO nên lúc có lúc
-    // không, và chỉ xảy ra khi TRẺ bấm. `wrangler tail` chỉ bắt được nếu đúng lúc
-    // mình ngồi xem — đã hai lần thu log 4–5 phút mà không lượt nào đi qua.
-    // Hỏng ở đây KHÔNG được che mất lỗi gốc, nên nuốt riêng.
-    try {
-      await env.STUDY_DB.prepare(
-        "INSERT INTO lookup_loi (day, colo, ma, n, cuoi) VALUES (?1, ?2, ?3, 1, ?4) " +
-        "ON CONFLICT(day, colo, ma) DO UPDATE SET n = n + 1, cuoi = ?4"
-      ).bind(day, colo, g.status, t.slice(0, 200)).run();
-    } catch (e) { /* sổ ghi lỗi hỏng thì thôi, đừng che lỗi gốc */ }
+    await ghiLoiGemini(env, day, colo, g.status, t);
     return json({ error: `Gemini lỗi ${g.status}`, chi_tiet: t.slice(0, 300), colo }, 502);
   }
 

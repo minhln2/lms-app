@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <title>Lịch sử học tập — Quản trị — PL</title>
-  <link rel="stylesheet" href="../../assets/tw.9bfb3ed4.css">
+  <link rel="stylesheet" href="../../assets/tw.e40ebfe9.css">
 <script>
 window.LS = (function () {
   var ve = null, goc = '', dang = 0, henCuon = null, cho = null;
@@ -194,7 +194,7 @@ window.LS.ham();
     const TAB = ['dong', 'mon', 'tapdoc', 'on', 'tu', 'toan', 'bt'];
     const TOAN_MUC = "../../assets/toan_muc.cf56682c.js";
     const BAI_TAP = ["cie-maths-5"];   // slug các môn có ../study/<slug>.bai-tap.json
-    const BAI_TAP_JS = "../../assets/bai_tap.f1bf39cd.js";
+    const BAI_TAP_JS = "../../assets/bai_tap.f9093e59.js";
     // Năm mức của dạng (spec 2026-10-21 §6). Class là literal (Tailwind quét HTML đã render).
     const MUC_TOAN = [
       { icon: '⚪', ten: 'Chưa học', lop: 'bg-slate-100 text-slate-700' },
@@ -275,6 +275,48 @@ window.LS.ham();
     const KQ_BT = { 3: ['✅ Đúng ngay', 'text-emerald-700'], 2: ['✅ Đúng sau khi sai', 'text-emerald-700'], 1: ['❌ Sai', 'text-rose-700'],
                     0: ['👀 Xem lời giải', 'text-amber-700'] };
     const TIER_BT = [['focus', 'Focus'], ['practice', 'Practice'], ['challenge', 'Challenge']];
+    // Câu viết (ý `viet`): MỌI lượt có chữ của MỘT nhóm, MỚI TRƯỚC — để bố mẹ đọc câu của con, thấy bằng chứng máy trích, nhận xét, và đổi kết luận
+    // (POST /api/quantri/bt/sua). M = bai_tap.js (docXViet, tachDoan); ls = lượt của nhóm, cũ trước mới sau ({g, ts, x}); yy = ý trong `ys` (tu_kiem, tu_kiem_ma).
+    // Mỗi lượt: {ts, l (lượt thứ mấy | null), g, dat (g ≥ 2), loai ('may' | 'tu' | 'cu' | 'mau'), tc: [{nhan, dat}], doan: [{t, mark}], nx, bm, dan, nut: [{chu, dat}]}.
+    //   tc    chip tiêu chí theo thứ tự tài liệu rồi mã lạ; nhãn = phần trước dấu «:» đầu của tu_kiem (không có thì cả câu); mã không còn trong tài liệu: «(tiêu chí cũ)»
+    //   doan  câu của con cắt theo vùng máy đã trích (chỉ tiêu chí ĐẠT của lượt máy); trích không tìm thấy thì không tô
+    //   nut   lượt máy: MỘT nút lật kết luận · tự kiểm / chữ trần: «Đạt» + «Chưa đạt» · đã sửa (bm): MỘT nút đổi lại · «mở bài mẫu»: không nút
+    function qtVietLuot(M, ls, yy) {
+      const ma = yy.tu_kiem_ma || [];
+      const nhanTc = (m) => {
+        const i = ma.indexOf(m);
+        if (i < 0) return '(tiêu chí cũ)';
+        const t = String((yy.tu_kiem || [])[i] == null ? '' : yy.tu_kiem[i]);
+        const k = t.indexOf(':');
+        return (k > 0 ? t.slice(0, k) : t).trim() || '(tiêu chí cũ)';
+      };
+      const ra = [];
+      for (const a of ls) {
+        if (typeof a.x !== 'string' || !a.x.trim()) continue;
+        const x = M.docXViet(a.x);
+        if (x.loai === 'trong') continue;
+        const dat = a.g >= 2, bm = x.bm;
+        const khoa = x.loai === 'may' ? x.k : x.loai === 'tu' ? x.tk : {};
+        const maTc = [...ma.filter((m) => Object.hasOwn(khoa, m)), ...Object.keys(khoa).filter((m) => !ma.includes(m))];
+        const tc = maTc.map((m) => ({ nhan: nhanTc(m), dat: khoa[m] === 1 }));
+        const trich = x.loai === 'may' ? maTc.filter((m) => x.k[m] === 1 && x.q[m]).map((m) => x.q[m]) : [];
+        const doan = x.loai === 'mau' ? [] : M.tachDoan(x.t == null ? '' : x.t, trich);
+        // Kết luận đang có hiệu lực = bố mẹ sửa (bm.d) nếu có, không thì theo g (g ≥ 2 = đạt) — KHÔNG theo kết luận của máy (m.d): lượt máy cho đạt mà con đã xem bài mẫu có g 0,
+        // chip hiện «Chưa đạt» thì nút phải là «Đánh là đạt» (cùng chiều chip). Worker trả đúng g gốc khi bố mẹ đổi về kết luận gốc.
+        const hienHanh = bm ? bm.d === 1 : dat;
+        let dan = '', nut = [];
+        if (x.loai === 'mau') { /* không có gì để chấm */ }
+        else if (bm) { dan = 'Bố mẹ đã sửa kết luận — đổi lại được:'; nut = [{ chu: hienHanh ? 'Đổi lại: chưa đạt' : 'Đổi lại: đạt', dat: !hienHanh }]; }
+        else if (x.loai === 'may') { dan = 'Bố mẹ thấy máy chấm sai?'; nut = [{ chu: hienHanh ? 'Đánh là chưa đạt' : 'Đánh là đạt', dat: !hienHanh }]; }
+        else {
+          const b = Object.keys(x.tk).length, d = Object.values(x.tk).filter((v) => v === 1).length;
+          dan = x.loai === 'tu' ? 'Con tự tick ' + d + '/' + (b || ma.length) + ' — bố mẹ chấm:' : 'Bố mẹ chấm:';
+          nut = [{ chu: 'Đạt', dat: true }, { chu: 'Chưa đạt', dat: false }];
+        }
+        ra.push({ ts: a.ts, l: x.l, g: a.g, dat, loai: x.loai, tc, doan, nx: x.n || '', bm, dan, nut });
+      }
+      return ra.reverse();
+    }
     // Dựng màn hình tab Bài tập — dữ liệu phẳng, Alpine chỉ vẽ. M = bai_tap.js; docs = [[slug, tài liệu dựng | null]]; luotTat = lượt "b.%" của
     // học sinh (mọi môn, {course, i, c, g, ts, x}); now = epoch giây. Mỗi môn: tiến độ ba mức + bảng kiến thức (theo thứ tự `kien_thuc` của tài liệu).
     //   mức   = M.mucKt(lượt của môn, M.cacNhom(doc), now) — CÙNG hàm trang con dùng; BỐN chấm, tô `mức` chấm (mức 0 = bốn chấm rỗng, mức 4 = đủ bốn); chú giải liệt kê đúng năm mức TEN_MUC kèm hình chấm (`chu_giai`).
@@ -290,7 +332,8 @@ window.LS.ham();
         const duyet = (b, bt) => {
           const ids = [];
           for (const y of b.y || []) {
-            ys.push({ nguon: b.nguon || '', nhan: y.nhan || '', kieu: y.kieu, tier: b.tier, bt, nhom: y.nhom || [] });
+            ys.push({ nguon: b.nguon || '', nhan: y.nhan || '', kieu: y.kieu, tier: b.tier, bt, nhom: y.nhom || [],
+                      tu_kiem: Array.isArray(y.tu_kiem) ? y.tu_kiem : [], tu_kiem_ma: Array.isArray(y.tu_kiem_ma) ? y.tu_kiem_ma : [] });
             for (const n of y.nhom || []) ids.push(n.id);
           }
           return ids;
@@ -325,11 +368,10 @@ window.LS.ham();
             if (n.kt !== k.id || !theoNhom.has(n.id)) continue;
             const ls = theoNhom.get(n.id), cuoi = ls[ls.length - 1];
             const kq = KQ_BT[cuoi.g] || ['g = ' + cuoi.g, 'text-slate-500'];
-            const co = ls.filter((a) => typeof a.x === 'string' && a.x.trim());
-            const x = yy.kieu === 'viet' && co.length ? co[co.length - 1].x : '';
-            if (x) viet++;
+            const luotViet = yy.kieu === 'viet' ? qtVietLuot(M, ls, yy) : [];
+            if (luotViet.length) viet++;
             y.push({ id: n.id, nguon: yy.nguon, nhan: yy.nhan, bt: yy.bt, tier: yy.tier, kieu: yy.kieu, so_lan: ls.length,
-                     g: cuoi.g, kq: kq[0], kq_lop: kq[1], ts: cuoi.ts, x });
+                     g: cuoi.g, kq: kq[0], kq_lop: kq[1], ts: cuoi.ts, luot: luotViet });
           }
           y.sort((p, q) => q.ts - p.ts);
           const ghi = [!lam.length ? 'chưa làm' : muc <= 1 ? '⚠ yếu' : '', viet ? viet + ' câu tự viết' : ''].filter(Boolean).join(' · ');
@@ -348,6 +390,7 @@ window.LS.ham();
         du: { dong: null, tapdoc: null, on: null, tu: null, mon: null, toan: null, bt: null },   // null = chưa nạp
         moDang: '',             // tab Toán: dạng đang bung bảng từng lần làm (bung tại chỗ, không vào lịch sử — như hàng lọc)
         moBt: '',               // tab Bài tập: kiến thức đang bung danh sách ý ("<môn>/<kiến thức>")
+        suaKhoa: '', suaLoi: '', // tab Bài tập: lượt vừa sửa kết luận hỏng ("<id nhóm>/<ts>") + lời máy chủ, hiện ngay dưới lượt đó
         chu: {},                // môn → {id: chữ thẻ}
         locLoai: '', locMon: '', moLoc: '',   // moLoc: hàng lọc đang bung (kiểu B)
         hoi: null, dangVe: false,
@@ -466,6 +509,19 @@ window.LS.ham();
           const cols = Array.isArray(d.cols) ? d.cols : [];
           const luot = (Array.isArray(d.rows) ? d.rows : []).map((r) => Object.fromEntries(cols.map((k, j) => [k, r[j]])));
           return qtBaiTap(M, docs, luot, Math.floor(Date.now() / 1000));
+        },
+        // Tab Bài tập: bố mẹ đổi kết luận MỘT lượt chấm câu viết (máy / tự kiểm / chữ cũ). Đổi được lại bằng nút «Đổi lại». KHÔNG đụng ⭐ (máy chủ không cộng / trừ).
+        // Xong nạp lại tab (`nap('bt', true)`) để chấm, mức thành thạo và nhãn «Bố mẹ đã sửa» tính lại từ sổ.
+        async suaViet(mon, y, l, dat) {
+          if (this.dang) return;
+          this.dang = true; this.bao = ''; this.suaLoi = ''; this.suaKhoa = y.id + '/' + l.ts;
+          try {
+            await this.api('/api/quantri/bt/sua', { user: this.user, mon, i: y.id, ts: l.ts, dat });
+            this.bao = 'Đã đổi kết luận lượt chấm — ⭐ không đổi (muốn trừ ⭐ thì vào trang Điểm).';
+            await this.nap('bt', true);
+          } catch (e) {
+            if (!e.het) this.suaLoi = e.message;      // hết phiên: api() đã báo ở ô mã
+          } finally { this.dang = false; }
         },
         thuLaiBt() {
           if (this.du.bt && this.du.bt.tai_trang) { location.reload(); return; }
@@ -915,8 +971,47 @@ window.LS.ham();
                                         <span data-qt-bt-kq class="font-semibold" :class="y.kq_lop" x-text="y.kq"></span>
                                         <span class="text-slate-400" x-text="y.so_lan + ' lượt · ' + ngay(y.ts).split(', ').pop() + ' ' + gio(y.ts)"></span>
                                       </p>
-                                      <template x-if="y.x">
-                                        <p data-qt-bt-x class="mt-1 whitespace-pre-wrap break-words rounded-lg bg-slate-50 px-3 py-2 text-slate-800" x-text="y.x"></p>
+                                      <template x-if="y.luot && y.luot.length">
+                                        <ul data-qt-bt-luots class="mt-1.5 space-y-2">
+                                          <template x-for="(l, li) in y.luot" :key="li">
+                                            <li data-qt-bt-luot :data-loai="l.loai" :data-g="l.g" :data-ts="l.ts" class="rounded-lg border border-slate-200 px-2.5 py-2">
+                                              <p data-qt-bt-luot-tit class="text-xs text-slate-500 break-words"
+                                                 x-text="y.nguon + (y.nhan ? ' · ý ' + y.nhan : '') + ' · ' + ngay(l.ts).split(', ').pop().replace(/\/\d{4}$/, '') + ' ' + gio(l.ts) + ' giờ VN' + (l.l != null ? ' · lượt ' + l.l : '')"></p>
+                                              <p class="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
+                                                <template x-if="l.loai !== 'mau'">
+                                                  <span data-qt-bt-luot-chip :data-dat="l.dat ? '1' : '0'" class="rounded-full px-2 py-0.5 font-semibold"
+                                                        :class="l.dat ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'" x-text="l.dat ? 'Đạt' : 'Chưa đạt'"></span>
+                                                </template>
+                                                <template x-if="l.loai === 'may'"><span data-qt-bt-luot-nguon class="text-slate-600">🤖</span></template>
+                                                <template x-if="l.loai === 'tu'"><span data-qt-bt-luot-nguon class="text-slate-600">Tự kiểm (máy chấm bận)</span></template>
+                                                <template x-if="l.bm"><span data-qt-bt-luot-bm class="rounded-full bg-indigo-50 px-2 py-0.5 font-semibold text-indigo-700">👪 Bố mẹ đã sửa</span></template>
+                                              </p>
+                                              <template x-if="l.loai === 'mau'"><p data-qt-bt-mau class="mt-1 text-xs text-amber-800">Mở bài mẫu khi chưa đạt</p></template>
+                                              <template x-if="l.loai !== 'mau'">
+                                                <p data-qt-bt-x class="mt-1.5 whitespace-pre-wrap break-words rounded-lg bg-slate-50 px-3 py-2 text-slate-800"><template x-for="(d, di) in l.doan" :key="di"><span><template x-if="d.mark"><mark data-qt-bt-trich class="rounded bg-emerald-200 px-0.5 text-slate-900" x-text="d.t"></mark></template><template x-if="!d.mark"><span x-text="d.t"></span></template></span></template></p>
+                                              </template>
+                                              <template x-if="l.tc.length">
+                                                <ul data-qt-bt-tc class="mt-1.5 flex flex-wrap gap-1.5 text-xs">
+                                                  <template x-for="(c, ci) in l.tc" :key="ci">
+                                                    <li data-qt-bt-tc-chip :data-dat="c.dat ? '1' : '0'" class="rounded-full px-2 py-0.5 break-words"
+                                                        :class="c.dat ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800'" x-text="(c.dat ? '✓ ' : '✗ ') + c.nhan"></li>
+                                                  </template>
+                                                </ul>
+                                              </template>
+                                              <template x-if="l.nx"><p data-qt-bt-nx class="mt-1.5 text-xs text-slate-600 break-words" x-text="l.nx"></p></template>
+                                              <template x-if="l.nut.length">
+                                                <div data-qt-bt-sua class="mt-2 flex flex-wrap items-center gap-2">
+                                                  <p data-qt-bt-sua-dan class="text-xs text-slate-600" x-text="l.dan"></p>
+                                                  <template x-for="(n, ni) in l.nut" :key="ni">
+                                                    <button type="button" data-qt-bt-sua-nut :data-dat="n.dat ? '1' : '0'" @click="suaViet(m.slug, y, l, n.dat)" :disabled="dang"
+                                                            class="min-h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-700 disabled:opacity-50" x-text="n.chu"></button>
+                                                  </template>
+                                                </div>
+                                              </template>
+                                              <p data-qt-bt-sua-loi x-show="suaLoi && suaKhoa === y.id + '/' + l.ts" x-text="suaLoi" role="alert" class="mt-1 text-xs font-semibold text-rose-700"></p>
+                                            </li>
+                                          </template>
+                                        </ul>
                                       </template>
                                     </li>
                                   </template>

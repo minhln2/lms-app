@@ -10,6 +10,7 @@
  *   /api/tapdoc/*  → tập đọc: tiến độ + quiz (D1), bản thu âm (R2) — mọi đường đòi mã
  *   /api/lookup    → tra nghĩa 1 từ / dịch 1 đoạn bằng Gemini (cần mã bí mật)
  *   /api/lookup/history → từ đã tra, gộp theo từ + số lần (cần mã bí mật)
+ *   /api/cham-viet → Gemini chấm câu viết của tab «Bài tập» Math 5; 3 lượt/câu/ngày + chung trần 300 với tra cứu (worker/cham_viet.js; cần mã bí mật)
  *   /api/stt-token → mã tạm cho 🎤 (Gemini Transcribe Live, worker/stt.js; cần mã bí mật)
  *   /api/diem      → điểm thưởng: số dư + lịch sử (mã bí mật); /api/diem/doi: bố mẹ trừ (phiên quản trị)
  *   /api/quantri/phien → đổi PARENT_SECRET lấy phiên quản trị 24 giờ (worker/diem.js, ADR 0061)
@@ -42,6 +43,7 @@ import { readCards, writeSession, writeKnown, readStats } from "./study.js";
 import { readLuot, MON_TOAN } from "./toan.js";
 import { handleTts } from "./tts.js";
 import { handleLookup, handleLookupHistory } from "./lookup.js";
+import { handleChamViet } from "./cham_viet.js";
 import { handleSttToken } from "./stt.js";
 import { handleTapdoc } from "./tapdoc.js";
 import { handleDiem, doiChieuTick, doiChieuSheet, doiTrangThai, soDu, an } from "./diem.js";
@@ -259,6 +261,7 @@ export default {
 
     if (pathname === "/api/lookup/history") return handleLookupHistory(request, env, url);
     if (pathname === "/api/lookup") return handleLookup(request, env);
+    if (pathname === "/api/cham-viet") return handleChamViet(request, env, url);
     if (pathname === "/api/stt-token") return handleSttToken(request, env);
 
     if (pathname === "/api/study/stats") {

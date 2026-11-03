@@ -113,7 +113,7 @@ window.LS.ham();
   <title>Ôn tập · CIE Maths 1</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.9bfb3ed4.css">
+  <link rel="stylesheet" href="../assets/tw.e40ebfe9.css">
   
   <script type="module">
     import { sched, phatLai } from "../assets/lich_on.ebee479f.js";
@@ -191,6 +191,16 @@ window.LS.ham();
     var BT_MAU = ['bg-sky-600 border-sky-600', 'bg-amber-600 border-amber-600', 'bg-emerald-600 border-emerald-600',
                   'bg-fuchsia-600 border-fuchsia-600', 'bg-rose-600 border-rose-600', 'bg-teal-600 border-teal-600'];
     var BT_TEN_DK = { mean: 'mean', mode: 'mode', median: 'median', range: 'range', tong: 'total', n: 'số thẻ' };
+    // Chấm câu viết bằng Gemini (plan 2026-11-03-cham-cau-viet-gemini, Task 4): trạng thái của MỖI ý `viet` nằm ở `btVV[y.id]`.
+    //   tt null (chưa chấm) → 'cho' (đã gửi, nút khoá) → 'may' (Gemini đã chấm) | 'tu' (lùi về tự kiểm: tick như cũ).
+    // BT_V0 = giá trị đọc khi ý chưa có trạng thái (đọc thì không tạo khoá: template gọi lúc vẽ).
+    //   mayChua = ý này đã có ÍT NHẤT MỘT lượt máy chấm mà CHƯA đạt (trong lần mở trang này): bài mẫu mở ra sau đó, kể cả lúc đang tự kiểm, là «xem bài mẫu khi chưa đạt» → g 0.
+    //   thayMau = bài mẫu đã HIỆN ra lúc ý này đang tự kiểm (dính suốt phiên trang): gọi máy lại sau đó phải gửi xem_mau true, không thì Gemini cho đạt là Worker ghi g 3 cho câu chép bài mẫu.
+    var BT_V0 = Object.freeze({ tt: null, kq: null, luot: 0, con: null, ly: '', dat: false, xemMau: false, text: '', tuKq: null, mayChua: false, thayMau: false });
+    var BT_LY_TU = ['nghi_lenh', 'het_cau', 'het_ngay', 'khong_co', 'loi'];   // mã lùi về tự kiểm mà route /api/cham-viet được phép trả (§5)
+    var BT_LY_THOANG = ['loi', 'ngoai_tuyen'];      // lùi về tự kiểm vì lỗi THOÁNG QUA: con sửa chữ thì Kiểm tra gọi máy lại (hết lượt / hết ngày / lệnh / chưa có khoá thì không)
+    var BT_CHO_MS = 15000;   // quá hạn này thì bỏ chờ → tự kiểm; Worker vẫn có thể đã ghi MỘT lượt máy (chấp nhận: plan, Review Focus #5)
+    var BT_LUOT_CAU = 3;     // = LUOT_CAU của worker/cham_viet.js: «hết lượt» nghĩa là hôm nay đã có ĐỦ ngần ấy lượt máy
 
     function baiTapStore() {
       return {
@@ -201,6 +211,7 @@ window.LS.ham();
         btKq: {},       // y.id → kết quả hiển thị của lần Kiểm tra gần nhất {nhom, cells, ly, muc, cond, tuKiem}
         btB: {},        // bai.id → {kiem, giai (đã từng mở), mo (đang mở), fb, dung}
         btN: {},        // id nhóm ghi sổ → {first, dung, tung, out}
+        btVV: {},       // y.id (ý `viet`) → {tt: null|'cho'|'may'|'tu', kq, luot, con, ly, dat, xemMau, text, tuKq, mayChua, thayMau}
         btCur: {},      // bài gốc → chỉ số đề đang hiện (0 = gốc, k = bien_the[k-1])
         btNoiSel: {}, btThe: {}, btMore: null, btDong: {},
 
@@ -527,6 +538,7 @@ window.LS.ham();
           return K;
         },
         btKiem(b) {
+          if (this.btNutKiem(b).tat) return;      // máy đang chấm câu viết: không gửi đôi (nút cũng khoá; đây là hàng rào thứ hai)
           const bt = window.baiTap, S = this.btBS(b);
           const now = Math.floor(Date.now() / 1000);
           const ms = Math.max(0, Date.now() - (BT.t0.get(b.id) || Date.now()));
@@ -538,22 +550,40 @@ window.LS.ham();
             const K = { nhom: {}, tuKiem: !!(this.btKq[y.id] || {}).tuKiem };
             if (!this.btDaLam(y, tl)) { chua.push(ten); this.btKq[y.id] = K; return; }
             if (y.kieu === 'viet') {
-              const n = y.nhom[0], text = String(tl.text || '').trim();
+              // Câu viết: Gemini chấm (route /api/cham-viet, bất đồng bộ); lỗi / hết lượt / ngoại tuyến → tự kiểm bằng tick như trước tính năng.
+              // Lời nhắc của ý này (đang chấm, chưa đạt, chưa tick đủ) do btTongKet dựng từ btVV, vì kết quả đến SAU lúc bấm.
+              const n = y.nhom[0], text = String(tl.text || '').trim().slice(0, 600);
               if (text.length < 15) { tin.push('Phần ' + ten + ': viết ít nhất một câu rồi bấm Kiểm tra.'); canh = true; this.btKq[y.id] = K; return; }
               cham++;
-              const dungHet = bt.chamY(y, tl, b)[n.id] === 'dung';
-              K.nhom[n.id] = dungHet ? 'dung' : 'sai';
-              if (!K.tuKiem) {          // lần đầu: chỉ mở danh sách tự kiểm (máy không chấm câu viết)
-                K.tuKiem = true; canh = true; K.nhom = {};
-                tin.push('Phần ' + ten + ' máy không chấm: tick những ý bài viết của con có (so với bài mẫu ở Lời giải), rồi bấm Kiểm tra lần nữa để lưu.');
-              } else {
-                const N = this.btNN(n), x = text.slice(0, 600);
+              const V = this.btV(y);
+              if (V.tt === 'tu' && S.mo) V.thayMau = true;      // bài mẫu đang hiện lúc tự kiểm: máy gọi lại (nếu có) gửi xem_mau true
+              // Đang tự kiểm vì lỗi thoáng qua mà con đã SỬA chữ, và máy gọi được (có khoá, trang online, trình duyệt không báo ngoại tuyến): thử máy lại.
+              if (V.tt === 'tu' && BT_LY_THOANG.includes(V.ly) && text !== V.text && this.secret && this.online && navigator.onLine !== false) { V.tt = null; V.ly = ''; V.tuKq = null; }
+              K.tuKiem = V.tt === 'tu';
+              if (V.tt === 'cho' || V.dat) { this.btKq[y.id] = K; return; }      // đang chấm / đã đạt: không gửi gì
+              if (V.tt === 'tu') {          // đang tự kiểm: chấm bằng tick, ghi sổ kèm tick + lý do phải lùi
+                const dungHet = bt.chamY(y, tl, b)[n.id] === 'dung';
+                K.nhom[n.id] = dungHet ? 'dung' : 'sai';
+                const lan = V.luot + 1, g = bt.gViet({ dat: dungHet, lan, xemMau: V.xemMau, goiY: !!(S.gy && (y.goi_y_manh || []).length) }), N = this.btNN(n), tk = {};
+                (y.tu_kiem_ma || []).forEach((ma, i) => { tk[ma] = tl.tick[i] ? 1 : 0; });
+                const x = bt.goiX({ v: 1, t: text, l: lan, tk, ly: V.ly || 'loi' });
                 N.dung = dungHet;
-                if (N.first === null) { N.first = dungHet ? 3 : 1; ghi(n, N.first, dungHet, x); if (dungHet) N.ever = true; }
-                else if (dungHet && !N.tung && !N.out) { N.out = true; N.ever = true; ghi(n, 2, true, x); }
-                if (dungHet) N.tung = true; else { canh = true; tin.push('Phần ' + ten + ': chưa tick đủ các ý — nếu bài viết còn thiếu thì viết thêm rồi tick.'); }
+                if (N.first === null) { N.first = g; ghi(n, g, g >= 2, x); if (g >= 2) N.ever = true; }
+                else if (dungHet && !N.tung && !N.out) { N.out = true; if (g >= 2) N.ever = true; ghi(n, g, g >= 2, x); }
+                if (dungHet) N.tung = true;
+                V.luot = lan; V.tuKq = dungHet ? 'dung' : 'sai';
+                this.btKq[y.id] = K;
+                return;
               }
+              if (!this.secret || !this.online) {      // không gọi được máy: chỉ mở danh sách tự kiểm, chưa ghi gì (như «lần đầu» cũ)
+                V.tt = 'tu'; V.ly = !this.online ? 'ngoai_tuyen' : 'khoa'; V.tuKq = null; V.text = text;      // V.text = chữ lúc lùi: «sửa chữ» (thử máy lại) so với nó
+                if (S.mo) V.thayMau = true;
+                K.tuKiem = true; this.btKq[y.id] = K;
+                return;
+              }
+              V.tt = 'cho'; V.ly = ''; V.text = text;      // khoá nút + ô chữ NGAY (đồng bộ): route không khoá giữa đếm và ghi
               this.btKq[y.id] = K;
+              this.btChamViet(b, y, text, ms);
               return;
             }
             if (y.kieu === 'the' && bt.chuaDuThe(y, tl)) {
@@ -590,10 +620,151 @@ window.LS.ham();
           }
           S.kiem++;
           if (chua.length) { canh = true; tin.push('Chưa làm ý ' + chua.join(', ') + '.'); }
-          const dau = sai ? '✗ Chưa đúng hết — sửa chỗ màu đỏ rồi kiểm tra lại.' : (canh ? '' : '✓ Đúng hết rồi!');
-          S.fb = { loai: sai ? 'bad' : canh ? 'warn' : 'ok', tin: [dau, ...goiy, ...tin].filter(Boolean).join(' ') };
-          S.dung = this.btBaiDung(b);
+          S.fbP = { sai, canh, tin, goiy: [...goiy] };      // phần chấm ĐỒNG BỘ của lần bấm; btTongKet ghép thêm phần ý `viet` (kết quả của máy đến sau)
+          this.btTongKet(b);
           this.btLuu(rows);
+        },
+        // Dòng phản hồi + dấu «✓ xong» của cả bài = phần chấm đồng bộ (S.fbP) ghép với trạng thái từng ý `viet`: đang chấm, máy chưa cho đạt, hay tick chưa đủ
+        // đều KHÔNG được ra «✓ Đúng hết rồi!». Gọi lúc cuối btKiem và mỗi khi máy chấm xong / lùi về tự kiểm.
+        btTongKet(b) {
+          const S = this.btBS(b), P = S.fbP;
+          if (!P) return;
+          let sai = P.sai, canh = P.canh, cho = false;
+          const tin = [...P.tin];
+          (b.y || []).forEach((y, yi) => {
+            if (y.kieu !== 'viet') return;
+            const V = this.btVR(y);
+            if (V.tt === 'cho') { canh = true; cho = true; }
+            else if (V.tt === 'may' && !V.dat) canh = true;      // lời nhắc nằm trong thẻ kết quả của ý, khỏi nhắc hai lần
+            else if (V.tt === 'tu' && V.tuKq !== 'dung') {
+              canh = true;
+              if (V.tuKq === 'sai') tin.push('Phần ' + (y.nhan || String(yi + 1)) + ': chưa tick đủ các ý — nếu bài viết còn thiếu thì viết thêm rồi tick.');
+            }
+          });
+          const dau = sai ? '✗ Chưa đúng hết — sửa chỗ màu đỏ rồi kiểm tra lại.' : (canh ? '' : '✓ Đúng hết rồi!');
+          const chu = [dau, ...P.goiy, ...tin].filter(Boolean).join(' ');
+          S.fb = chu ? { loai: sai ? 'bad' : canh ? 'warn' : 'ok', tin: chu } : null;
+          S.dung = !cho && this.btBaiDung(b);
+        },
+        // ── Chấm câu viết bằng Gemini ───────────────────────────────────────────────────────────────────────────────────────
+        btV(y) { if (!this.btVV[y.id]) this.btVV[y.id] = { ...BT_V0 }; return this.btVV[y.id]; },
+        btVR(y) { return this.btVV[y.id] || BT_V0; },      // chỉ đọc (template): không tạo khoá
+        // Nút Kiểm tra: khoá trong lúc máy đang chấm (chặn gửi đôi); sau lượt chưa đạt đổi thành «Sửa xong — chấm lại».
+        btNutKiem(b) {
+          let cho = false, lai = false;
+          for (const y of (b && b.y) || []) {
+            if (y.kieu !== 'viet') continue;
+            const V = this.btVR(y);
+            if (V.tt === 'cho') cho = true; else if (V.tt === 'may' && !V.dat) lai = true;
+          }
+          return cho ? { chu: 'Đang chấm…', tat: true } : lai ? { chu: 'Sửa xong — chấm lại', tat: false } : { chu: 'Kiểm tra', tat: false };
+        },
+        // Bài mẫu chỉ hiện sau khi máy đã chấm xong ít nhất một lượt (hoặc khi đã lùi về tự kiểm): chép bài mẫu rồi mới nộp là không được.
+        btMauMo(y) { const V = this.btVR(y); return V.luot > 0 || V.tt === 'tu'; },
+        // Ô chữ cao đủ chứa cả câu (tới 600 ký tự): không cuộn bên trong, không cắt dòng đầu; ngắn lại thì thu về `rows`. Ẩn (tab khác) thì để `rows`, mở / gõ lại thì đo lại.
+        btAutoCao(el) {
+          if (!el) return;
+          el.style.height = '';
+          if (!el.offsetParent) return;
+          el.style.height = (el.scrollHeight + el.offsetHeight - el.clientHeight) + 'px';
+        },
+        btAutoCaoHen(el, text) { Alpine.nextTick(() => this.btAutoCao(el)); },      // `text` chỉ để x-effect theo dõi chữ đang gõ; đo SAU khi x-model đã đổ chữ vào ô
+        async btChamViet(b, y, text, ms) {
+          const bt = window.baiTap, V = this.btV(y), S = this.btBS(b), n = y.nhom[0];
+          const xm = V.xemMau || V.thayMau;      // con đã thấy bài mẫu (sau lượt chưa đạt, hoặc lúc tự kiểm) thì lượt này là g 0 dù Gemini cho đạt
+          const ac = new AbortController(), han = setTimeout(() => ac.abort(), BT_CHO_MS);
+          let r = null, d = null;
+          try {
+            r = await fetch('/api/cham-viet', {
+              method: 'POST', signal: ac.signal,
+              headers: { 'content-type': 'application/json', 'x-progress-key': this.secret },
+              body: JSON.stringify({ user: this.user, course: this.course, i: n.id, text, lan: V.luot + 1, ms, xem_mau: xm, goi_y: !!(S.gy && (y.goi_y_manh || []).length) }),
+            });
+            d = await r.json();
+          } catch (e) { d = null; } finally { clearTimeout(han); }      // mạng / quá hạn / không phải JSON: lùi về tự kiểm, KHÔNG ghi lượt máy nào
+          const may = !!d && r.ok && d.loai === 'may' && typeof d.dat === 'boolean' && Array.isArray(d.tc) && Array.isArray(d.so_sai);
+          if (may) {
+            const g = Number.isInteger(d.g) && d.g >= 0 && d.g <= 3 ? d.g : bt.gViet({ dat: d.dat, lan: V.luot + 1, xemMau: xm });
+            const ch = (v) => (typeof v === 'string' ? v : '');
+            V.kq = {
+              tc: d.tc.filter(t => t && typeof t === 'object').map(t => ({ ma: ch(t.ma), dat: t.dat === true, trich: ch(t.trich), ghi: ch(t.ghi) })),
+              so_sai: d.so_sai.filter(e => e && typeof e === 'object').map(e => ({ trich: ch(e.trich), goi_y: ch(e.goi_y) })),
+              nx: ch(d.nx),
+            };
+            V.tt = 'may'; V.dat = d.dat; V.con = Number.isInteger(d.con) ? d.con : null;
+            if (!d.dat) V.mayChua = true;
+            V.luot = Math.max(V.luot + 1, Number(d.lan) || 0);
+            const N = this.btNN(n);      // sổ bài (x/y bài, gợi ý cuối mức, «📘 Xem lại thẻ») chạy như cũ; lượt này do Worker ghi
+            N.dung = d.dat;
+            if (xm && !V.xemMau) { V.xemMau = true; N.out = true; }      // lượt này Worker đã ghi g 0 (xem_mau true): btGhiMau khỏi ghi thêm một dòng g 0 nữa
+            if (N.first === null) N.first = g;
+            if (g >= 2) N.ever = true;
+            if (d.dat) N.tung = true;
+            if (d.ghi === false && d.row && typeof d.row === 'object') this.btLuu([d.row]);       // Worker ghi hỏng: trang tự đẩy qua /api/study
+            if (Number(d.cong) > 0 && window.baoDiem) window.baoDiem(Number(d.cong));
+          } else {
+            V.tt = 'tu'; V.tuKq = null;
+            V.ly = r && r.status === 401 ? 'khoa' : (d && d.loai === 'tu' && BT_LY_TU.includes(d.ly) ? d.ly : 'loi');
+            if (V.ly === 'het_cau') {
+              V.luot = Math.max(V.luot, BT_LUOT_CAU);      // hôm nay đã đủ lượt máy: tự kiểm không lấy lại được g 3
+              // Tải lại trang giữa chừng: `mayChua` của lần mở trước mất. Worker nói hôm nay câu này CHƯA có lượt máy đạt nào (`co_dat` false)
+              // thì cả ba lượt đều chưa đạt → bài mẫu mở ra là «xem bài mẫu khi chưa đạt» (g 0), y như thấy tận mắt. `co_dat` true: con đã đạt rồi.
+              if (d && d.co_dat === false) V.mayChua = true;
+            }
+            const K = this.btKq[y.id] || { nhom: {} };
+            K.tuKiem = true; this.btKq[y.id] = K;
+          }
+          this.btTongKet(b);
+          this.btGhiMau(b);      // bài mẫu có thể đang HIỆN (Lời giải mở từ lúc máy còn đang chấm)
+        },
+        // Bài mẫu đang HIỆN trong khi máy đã chấm mà chưa cho đạt → ghi MỘT lượt g 0 (luật «0 = xem lời giải khi chưa đúng»). Gọi lúc mở Lời giải và lúc máy chấm xong.
+        // Đang tự kiểm: ghi 0 NẾU ý đã có ≥ 1 lượt máy chấm chưa đạt (V.mayChua) mà con chưa tick đủ — không thì hết lượt máy / máy lỗi sau lượt chưa đạt là đường chép bài mẫu
+        // lấy g 2. Tự kiểm do lỗi TRƯỚC khi có lượt máy nào (chưa khoá, ngoại tuyến, 502 ngay lượt đầu) thì KHÔNG ghi 0, như cũ.
+        btGhiMau(b) {
+          const S = this.btBS(b);
+          if (!S.mo) return;
+          const now = Math.floor(Date.now() / 1000), ms = Math.max(0, Date.now() - (BT.t0.get(b.id) || Date.now())), rows = [];
+          for (const y of b.y || []) {
+            if (y.kieu !== 'viet') continue;
+            const V = this.btVV[y.id];
+            if (V && V.tt === 'tu') V.thayMau = true;      // bài mẫu HIỆN lúc đang tự kiểm (kể cả khi chưa có lượt máy nào, nên chưa ghi g 0): nhớ cho lần gọi máy lại
+            if (!V || !(V.luot > 0) || V.dat || V.xemMau) continue;
+            const n = y.nhom[0];
+            if (!(V.tt === 'may' || (V.tt === 'tu' && V.mayChua && !this.btNN(n).tung))) continue;
+            V.xemMau = true;
+            this.btNN(n).out = true;
+            rows.push({ i: n.id, c: n.kt, ok: 0, g: 0, ms, x: window.baiTap.goiX({ v: 1, mau: 1 }), t: now });
+          }
+          this.btLuu(rows);
+        },
+        // Chữ hiện ra của thẻ kết quả / tự kiểm (mọi chữ do Gemini sinh chỉ đi qua x-text ở template).
+        btVietTit(y) {
+          const V = this.btVR(y), k = V.kq;
+          if (!k) return '';
+          if (V.dat) return '✅ Đạt — đủ cả ' + k.tc.length + ' ý';
+          if (k.so_sai.length) return '🟡 Kiểm lại một con số';
+          return '🟡 Gần được rồi — còn thiếu ' + k.tc.filter(t => !t.dat).length + ' ý';
+        },
+        btVietChan(y) {
+          const V = this.btVR(y);
+          if (V.dat) return '🤖 Máy chấm (Gemini) · ghi sổ: đạt';
+          return '🤖 Máy chấm (Gemini) · có thể nhầm — bố mẹ sẽ xem lại' + (V.con === null ? '' : ' · còn ' + V.con + ' lượt chấm câu này hôm nay');
+        },
+        btSoHien(y) {      // dòng «🔢 …»: mỗi số sai một dòng; không có số sai mà câu có chữ số thì khen một dòng
+          const V = this.btVR(y), k = V.kq;
+          if (!k) return [];
+          if (k.so_sai.length) return k.so_sai.map(e => ({ sai: true, chu: '🔢 Con ghi «' + e.trich + '» — máy tính ra số khác. ' + e.goi_y }));
+          return /\d/.test(V.text) ? [{ sai: false, chu: '🔢 Các số con ghi đều đúng.' }] : [];
+        },
+        btTcHien(y) { const k = this.btVR(y).kq; return k ? k.tc : []; },
+        btTuIdx(y, ma) { return (y.tu_kiem_ma || []).indexOf(ma); },
+        // Thẻ KẾT QUẢ của máy chỉ hiện NHÃN của tiêu chí (window.baiTap.nhanTieuChi: phần trước «:», bỏ ngoặc có chữ số), không hiện nguyên câu `tu_kiem`
+        // (7/14 ý có đáp số máy tính trong chữ đó). Danh sách TỰ KIỂM ở dưới vẫn hiện nguyên câu (x-html `tu_kiem_html`) như trước tính năng.
+        btNhanTc(y, ma) { const i = this.btTuIdx(y, ma); return i < 0 ? '(tiêu chí cũ)' : window.baiTap.nhanTieuChi((y.tu_kiem || [])[i]); },
+        btTuTit(y) {
+          const ly = this.btVR(y).ly;
+          return ly === 'het_cau' ? 'Hôm nay máy đã chấm câu này ' + BT_LUOT_CAU + ' lượt — con tự kiểm nhé'
+            : ly === 'ngoai_tuyen' || ly === 'khoa' ? 'Chưa kết nối được máy chấm — con tự kiểm nhé' : 'Máy chấm đang bận — con tự kiểm nhé';
         },
         // Mở / đóng lời giải. Khoá tới lần Kiểm tra đầu. Lần ĐẦU mở: nhóm đã Kiểm tra mà chưa từng đúng ghi g = 0 (trừ câu viết).
         btMoGiai(b) {
@@ -603,7 +774,7 @@ window.LS.ham();
             S.giai = true;
             const now = Math.floor(Date.now() / 1000), ms = Math.max(0, Date.now() - (BT.t0.get(b.id) || Date.now())), rows = [];
             for (const y of b.y || []) {
-              if (y.kieu === 'viet') continue;
+              if (y.kieu === 'viet') continue;      // câu viết: g 0 do btGhiMau (chỉ khi máy đã chấm mà chưa đạt)
               for (const n of y.nhom || []) {
                 const N = this.btN[n.id];
                 if (N && N.first !== null && !N.tung && !N.out) { N.out = true; rows.push({ i: n.id, c: n.kt, ok: 0, g: 0, ms, x: null, t: now }); }
@@ -612,6 +783,7 @@ window.LS.ham();
             this.btLuu(rows);
           }
           S.mo = !S.mo;
+          this.btGhiMau(b);
         },
         // "↻ Bài tương tự": đề kế (gốc → biến thể 1 → … → gốc), mở khi bài GỐC đã Kiểm tra một lần.
         btTuongTu(g) {
@@ -640,7 +812,7 @@ window.LS.ham();
         user, course,
         // Nút "📒 Sổ tay" ở khối Grammar: concept → trang sổ tay (builder dựng từ sotay/nguon/<user>.json).
         soTay: {},
-        data: null, err: '', ready: false, online: false,
+        data: null, err: '', ready: false, online: false, dangNap: false,
         flP: null,              // hàng đợi flushBuffer: MỘT chuỗi promise cho mọi nơi gọi
         secret: localStorage.getItem('lms_key') || '',
         cards: {},              // item_id → {n, wrong, box, ease, due, last_ts}
@@ -705,20 +877,9 @@ window.LS.ham();
           }
         },
 
-        async init() {
-          const btNap = this.btNap();   // song song với học liệu: 404 / lỗi thì không có tab, mọi thứ khác như cũ
-          try {
-            const r = await fetch('study/cie-maths-1.json', { headers: { accept: 'application/json' } });
-            if (!r.ok) throw new Error('HTTP ' + r.status);
-            this.data = await r.json();
-            this.pickFirstUnit();   // không còn mục "cả môn"
-          } catch (e) {
-            this.err = 'Không tải được học liệu ôn tập.';
-            this.ready = true;
-            return;
-          }
-          // Lịch ôn: không có cũng học được, chỉ là không ghi lại (mở file cục
-          // bộ, hoặc bản trên GitHub Pages). Không báo lỗi.
+        // GET sổ lịch ôn. Có API (200) thì nạp thẻ và `online = true`. Không có cũng học được, chỉ là không ghi lại (mở file cục bộ, hoặc bản
+        // trên GitHub Pages): chế độ chỉ đọc, không báo lỗi. Trả `online`.
+        async napApi() {
           try {
             const r = await fetch(`/api/study?user=${this.user}&course=${this.course}`,
                                   { headers: { accept: 'application/json' } });
@@ -731,6 +892,30 @@ window.LS.ham();
               this.online = true;
             }
           } catch (e) { /* chế độ chỉ đọc */ }
+          return this.online;
+        },
+
+        async init() {
+          const btNap = this.btNap();   // song song với học liệu: 404 / lỗi thì không có tab, mọi thứ khác như cũ
+          try {
+            const r = await fetch('study/cie-maths-1.json', { headers: { accept: 'application/json' } });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            this.data = await r.json();
+            this.pickFirstUnit();   // không còn mục "cả môn"
+          } catch (e) {
+            this.err = 'Không tải được học liệu ôn tập.';
+            this.ready = true;
+            return;
+          }
+          await this.napApi();
+          // Mạng về lại (trình duyệt báo `online`) mà trang đang ở chế độ chỉ đọc vì lúc tải không với tới API: thăm dò lại, giống lúc tải trang.
+          // Chỉ chiều này: `offline` KHÔNG đặt online = false — `online` còn khoá ô tick (canMark), thanh tiến độ và chế độ ôn, mà lượt ghi lúc mất mạng
+          // vẫn vào đệm rồi tự gửi lại; mất mạng giữa chừng thì chỗ cần biết (Kiểm tra câu viết) đã xét `navigator.onLine`.
+          window.addEventListener('online', () => {
+            if (this.online || this.dangNap) return;
+            this.dangNap = true;
+            this.napApi().then((ok) => { if (ok) this.flushBuffer(); }).finally(() => { this.dangNap = false; });
+          });
           this.flushBuffer();
           this.traGan();
           this.chonGan();
@@ -5392,14 +5577,60 @@ registerProcessor('thu-16k',T);`;
                 </div>
               </template>
 
-              <!-- viết câu -->
+              <!-- viết câu: Gemini chấm (btVV tt: cho → may), lỗi / hết lượt / ngoại tuyến → danh sách tự kiểm (tt tu). Mọi chữ do Gemini sinh CHỈ qua x-text. -->
               <template x-if="y.kieu === 'viet'">
                 <div class="mt-1.5">
-                  <textarea rows="3" data-bt-viet x-model="btTL[y.id].text" placeholder="Viết bằng tiếng Anh…"
+                  <textarea rows="3" data-bt-viet x-model="btTL[y.id].text" maxlength="600" :readonly="btVR(y).tt === 'cho'" placeholder="Viết bằng tiếng Anh…"
+                            x-effect="btAutoCaoHen($el, (btTL[y.id] || {}).text)" @focus="btAutoCao($el)" @resize.window.debounce.150ms="btAutoCao($el)"
+                            :class="btVR(y).tt === 'cho' ? 'bg-slate-50' : ''"
                             class="w-full rounded-[10px] border-[1.5px] border-slate-400 p-2 text-[15px]"></textarea>
+                  <p data-bt-viet-dem class="text-right text-xs text-slate-500" x-text="String(((btTL[y.id] || {}).text || '').length) + '/600'"></p>
+
+                  <!-- đang chấm -->
+                  <template x-if="btVR(y).tt === 'cho'">
+                    <div data-bt-viet-cho role="status" class="mt-2.5 flex items-center gap-2 rounded-[14px] border-[1.5px] border-slate-300 bg-slate-50 px-3 py-2.5 text-[14.5px]">
+                      <span class="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-[2.5px] border-indigo-200 border-t-indigo-600"></span>
+                      <span>Máy đang đọc câu của con… <span class="text-[12.5px] text-slate-500">(khoảng 2 giây)</span></span>
+                    </div>
+                  </template>
+
+                  <!-- máy chấm xong: đạt / chưa đạt -->
+                  <template x-if="btVR(y).tt === 'may' && btVR(y).kq">
+                    <div data-bt-viet-kq :data-dat="btVR(y).dat ? '1' : '0'"
+                         :class="btVR(y).dat ? 'border-emerald-300 bg-emerald-50' : 'border-amber-300 bg-amber-50'"
+                         class="mt-2.5 rounded-[14px] border-[1.5px] px-3 py-2.5">
+                      <h4 data-bt-viet-tit class="mb-1.5 text-[15px] font-bold" x-text="btVietTit(y)"></h4>
+                      <template x-for="(tc, ti) in btTcHien(y)" :key="ti">
+                        <div data-bt-viet-tc :data-dat="tc.dat ? '1' : '0'" :data-ma="tc.ma"
+                             class="grid grid-cols-[22px_minmax(0,1fr)] gap-1.5 border-b border-dashed border-slate-200 py-1.5 text-[14.5px] last:border-b-0">
+                          <span x-text="tc.dat ? '✅' : '❌'"></span>
+                          <span class="min-w-0">
+                            <span data-bt-viet-nhan x-text="btNhanTc(y, tc.ma)"></span>
+                            <template x-if="tc.dat && tc.trich">
+                              <q data-bt-viet-trich class="mt-1 block break-words rounded-md bg-emerald-100 px-1.5 py-px text-[13px] text-emerald-900 [quotes:'«'_'»']" x-text="tc.trich"></q>
+                            </template>
+                            <template x-if="!tc.dat && tc.ghi">
+                              <span data-bt-viet-ghi class="mt-0.5 block break-words text-[13px] text-amber-700" x-text="tc.ghi"></span>
+                            </template>
+                          </span>
+                        </div>
+                      </template>
+                      <template x-for="(so, si) in btSoHien(y)" :key="si">
+                        <p data-bt-viet-so :data-sai="so.sai ? '1' : '0'" :class="so.sai ? 'bg-red-50 text-red-800' : 'bg-emerald-50 text-emerald-800'"
+                           class="mt-2 break-words rounded-lg px-2 py-1.5 text-sm" x-text="so.chu"></p>
+                      </template>
+                      <template x-if="btVR(y).kq.nx">
+                        <p data-bt-viet-nx class="mt-2 break-words rounded-[10px] border border-slate-200 bg-white px-2.5 py-2 text-[14.5px]" x-text="btVR(y).kq.nx"></p>
+                      </template>
+                      <p data-bt-viet-ai class="mt-1.5 text-[11.5px] leading-snug text-slate-500" x-text="btVietChan(y)"></p>
+                    </div>
+                  </template>
+
+                  <!-- lùi về tự kiểm -->
                   <template x-if="(btKq[y.id] || {}).tuKiem">
-                    <div data-bt-tu-kiem class="mt-2 rounded-[10px] bg-slate-50 px-2 py-1.5">
-                      <p class="my-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">Tự kiểm — bài của con có…</p>
+                    <div data-bt-tu-kiem class="mt-2.5 rounded-[14px] border-[1.5px] border-slate-300 bg-slate-50 px-3 py-2.5">
+                      <h4 data-bt-tu-tit class="text-[15px] font-bold" x-text="btTuTit(y)"></h4>
+                      <p class="mb-1 mt-1 text-[12.5px] text-slate-500">Tick những ý câu của con đã có, rồi bấm Kiểm tra lần nữa. Bố mẹ sẽ đọc câu của con.</p>
                       <template x-for="(t, ti) in (y.tu_kiem_html || [])" :key="ti">
                         <label class="flex min-h-10 items-center gap-2 text-[14.5px]">
                           <input type="checkbox" x-model="btTL[y.id].tick[ti]" class="h-8 w-8 shrink-0 accent-indigo-600">
@@ -5417,7 +5648,8 @@ registerProcessor('thu-16k',T);`;
           <div data-bt-fb x-show="(btB[e.b.id] || {}).fb" x-cloak :class="btClsFb(e.b)" class="mt-2.5 rounded-[10px] px-2.5 py-1.5 text-sm" x-text="((btB[e.b.id] || {}).fb || {}).tin"></div>
 
           <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
-            <button type="button" data-bt-kiem @click="btKiem(e.b)" class="min-h-10 rounded-[10px] bg-indigo-600 px-4 text-[15px] font-semibold text-white">Kiểm tra</button>
+            <button type="button" data-bt-kiem @click="btKiem(e.b)" :disabled="btNutKiem(e.b).tat"
+                    class="min-h-10 rounded-[10px] bg-indigo-600 px-4 text-[15px] font-semibold text-white disabled:cursor-wait disabled:opacity-60"><span x-show="btNutKiem(e.b).tat" class="mr-1.5 inline-block h-4 w-4 animate-spin rounded-full border-[2.5px] border-white/40 border-t-white align-[-3px]"></span><span x-text="btNutKiem(e.b).chu"></span></button>
             <button type="button" data-bt-giai @click="btMoGiai(e.b)" :disabled="!btDaKiem(e.b)" :title="btDaKiem(e.b) ? '' : 'Làm thử một lần rồi mới xem được lời giải'"
                     class="min-h-10 rounded-[10px] border border-indigo-200 bg-white px-3 text-sm font-semibold text-indigo-800 disabled:cursor-not-allowed disabled:opacity-40"
                     x-text="(btB[e.b.id] || {}).mo ? 'Ẩn lời giải' : 'Lời giải'"></button>
@@ -5451,8 +5683,11 @@ registerProcessor('thu-16k',T);`;
                         </div>
                       </div>
                     </template>
-                    <template x-if="y.kieu === 'viet'">
+                    <template x-if="y.kieu === 'viet' && btMauMo(y)">
                       <div data-bt-bai-mau class="py-1.5 text-[15px]"><b>Bài mẫu:</b> <span x-html="y.bai_mau_html || ''"></span></div>
+                    </template>
+                    <template x-if="y.kieu === 'viet' && !btMauMo(y)">
+                      <p data-bt-mau-khoa class="py-1.5 text-[13.5px] text-slate-500">Lời giải (bài mẫu) mở sau khi máy chấm xong</p>
                     </template>
                   </div>
                   <template x-if="y.visual && y.visual.html">

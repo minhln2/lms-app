@@ -23,6 +23,9 @@
  *   POST /api/quantri/toan/go {user, i, ts, g}    → gỡ MỘT lần làm Toán (ADR 0070, việc 3A): XOÁ lượt attempt (user, toan-6, i, ts, g) — NGOẠI LỆ có chủ đích
  *                                                 của "attempt chỉ thêm", như on/go — rồi gỡ (`huy:`) điểm bài / mốc dạng / Đạt mà các lượt CÒN LẠI không
  *                                                 còn biện minh (worker/toan_diem.js `nguonThuHoi`), dựng lại thẻ card → {ok, xoa, tru, du}
+ *   POST /api/quantri/bt/sua {user, mon, i, ts, dat} → bố mẹ đổi KẾT LUẬN của MỘT lượt Bài tập có chữ (ý `viet`, ADR 0072): UPDATE đúng một dòng
+ *                                                 attempt (grade / correct / chose + `bm`) — NGOẠI LỆ thứ hai của "attempt chỉ thêm" (ngoại lệ đầu:
+ *                                                 on/go, toan/go xoá dòng) — rồi dựng lại card của nhóm bằng phatLai. KHÔNG đụng sổ ⭐ → {ok, g}
  *
  * Gỡ điểm và xoá hàng nguồn đi trong MỘT db.batch (một giao dịch D1), câu gỡ điểm đứng ĐẦU: hỏng giữa chừng là không gì bị
  * ghi; gọi lại an toàn (dòng `huy:` có khoá UNIQUE — gỡ không hai lần; xoá hàng không có là vô hại).
@@ -31,6 +34,7 @@ import { kiemQuantri, cauHuy, ngayVN, soDu, an, docManifest, doiChieuKV, doiChie
          dangHieuLuc, huyDiem, kyBieuDo, cotBieuDo, khoang, BIEU_DO, LICH_SU_QT, GHI_CHU_MAX, TRU_MAX, KHOA_TIEN_DO } from "./diem.js";
 import { phatLai } from "./lich_on.js";
 import { writeKnown } from "./study.js";
+import { docXViet, goiX } from "./bai_tap.js";
 import { readLuot, MON_TOAN } from "./toan.js";
 import { traBai, nguonThuHoi, cauLuot, idTrong } from "./toan_diem.js";
 import { laBuoc } from "./toan_muc.js";
@@ -44,6 +48,7 @@ const MON_RE = /^[\w-]{1,64}$/;     // slug môn — cùng luật /api/study
 const NGAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const KEY_RE = /^[\w-]+\/\d+\/[\w-]+$/;   // khoá tiến độ — cùng luật worker/index.js
 const ID_RE = /^[\w.-]{1,64}$/;           // id thẻ / khái niệm — cùng luật worker/study.js
+const NHOM_BT_RE = /^b\.[0-9a-f]{8}$/;     // id nhóm bài tập (ADR 0072)
 export const DONG_MAX = 500, DONG_NGAY = 30, ON_MAX = 2000, TU_MAX = 500;
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -465,7 +470,8 @@ async function hocTu(env, url, user) {
 /**
  * Bài tập (ADR 0072): MỌI lượt có id nhóm "b.…" của học sinh, mọi môn, cũ trước mới sau — dạng cột + hàng như `readLuot`.
  * course = slug môn (trang lọc theo môn của tệp .bai-tap.json), i = id nhóm, c = id kiến thức, g = 0..3, ts = epoch giây (đã kẹp),
- * x = câu con tự viết (ý `viet`, ≤ 600 ký tự) hoặc null. Mức thành thạo TÍNH LẠI ở trình duyệt bằng worker/bai_tap.js `mucKt`.
+ * x = chữ ghi sổ của ý `viet` (≤ 2400 ký tự: JSON `{v:1,t,l,m|tk|mau,bm}` của worker/bai_tap.js, hoặc chữ trần của lượt cũ) hoặc null; trình duyệt đọc bằng `docXViet`.
+ * Mức thành thạo TÍNH LẠI ở trình duyệt bằng worker/bai_tap.js `mucKt`.
  * `LIKE 'b.%'`: "." không phải ký tự đại diện; id thẻ ôn ("q.…", "st.…") và Toán ("cd.…") không bắt đầu bằng "b.".
  */
 async function hocBt(env, url, user) {
@@ -475,6 +481,60 @@ async function hocBt(env, url, user) {
   ).bind(user).all();
   const cols = ["course", "i", "c", "g", "ts", "x"];
   return { cols, rows: (r.results || []).map((o) => cols.map((c) => o[c])) };
+}
+
+/**
+ * Bố mẹ đổi kết luận của MỘT lượt có chữ của ý `viet` (tìm dòng ĐẦU, `ORDER BY id`, có (user, mon, i, ts) và `chose` không NULL).
+ *   - lượt «mở bài mẫu» (`mau`) và `chose` rỗng không có chữ để chấm → 400;
+ *   - `chose` mới = `chose` cũ GIỮ NGUYÊN `m` / `tk` + `bm {d, ts, g0}` (`g0` = `grade` trước lần sửa ĐẦU, giữ qua các lần sau); chữ trần của lượt cũ
+ *     thành `{v:1, t: chữ cũ, bm}`; qua `goiX` nên không vượt X_VIET;
+ *   - `g`: đổi VỀ kết luận gốc (`dat` ≡ `g0 ≥ 2`; hay đánh trúng kết luận đang có) thì `g = g0` — g 0 (xem bài mẫu) và g 2 (mở gợi ý) không bị nâng lên khi lật hai lần.
+ *     Đổi sang kết luận KHÁC gốc: chưa đạt 1; đạt 3 nếu là lượt chấm ĐẦU (`l` 1, hoặc lượt cũ không có `l` mà g 3 / 1 — hai điểm duy nhất của lượt đầu thời chữ trần), còn lại 2;
+ *   - UPDATE grade / correct / chose và ghi lại card (phatLai theo ts, id) trong MỘT batch. KHÔNG đụng bảng diem: sửa kết luận không cộng / trừ sao
+ *     (bố mẹ trừ bằng công cụ sẵn có ở /quantri/diem). Lượt bé ghi chen giữa lúc đọc và lúc ghi thì card lệch một lượt, tự đúng ở lượt ôn kế (như goNgayOn).
+ */
+export async function suaKetLuanViet(env, user, mon, i, ts, dat) {
+  const db = env.STUDY_DB;
+  const dong = await db.prepare(
+    `SELECT id, grade, chose FROM attempt WHERE user_id = ?1 AND course = ?2 AND item_id = ?3 AND ts = ?4 AND chose IS NOT NULL ORDER BY id LIMIT 1`
+  ).bind(user, mon, i, ts).first();
+  if (!dong) throw sai("Không có lượt này", 404);
+  const x = docXViet(dong.chose);
+  if (x.loai === "mau" || x.loai === "trong") throw sai("Lượt này không sửa được");
+
+  let o = null;   // JSON v1 giữ nguyên mọi khoá; chữ trần / JSON hỏng / phiên bản lạ → {v:1, t: nguyên chuỗi cũ}
+  try { const p = JSON.parse(dong.chose); if (p && typeof p === "object" && !Array.isArray(p) && p.v === 1) o = p; } catch { /* chữ trần */ }
+  if (!o) o = { v: 1, t: x.t };
+  else if (typeof o.t !== "string") o.t = x.t;
+  const now = giay();
+  const g0 = x.bm && x.bm.g0 !== null ? x.bm.g0 : dong.grade;
+  o.bm = { d: dat ? 1 : 0, ts: now, g0 };
+  const chose = goiX(o);
+
+  // Kết luận GỐC = theo g0 (g ≥ 2 là đạt). Bố mẹ đổi VỀ kết luận gốc (hay đánh trúng kết luận đang có) thì trả đúng g0: g 0 vì con xem bài mẫu không
+  // thành 1 / 3, g 2 vì mở gợi ý không thành 3. Chỉ khi bố mẹ ĐỔI kết luận mới áp công thức bên dưới.
+  const lanDau = x.l === 1 || (x.l == null && (dong.grade === 3 || dong.grade === 1));
+  const g = dat === (g0 >= 2) ? g0 : dat ? (lanDau ? 3 : 2) : 1;
+  const ok = g >= 2 ? 1 : 0;
+
+  const ls = (await db.prepare(`SELECT id, grade AS g, correct AS ok, ts FROM attempt WHERE user_id = ?1 AND item_id = ?2 ORDER BY ts, id`)
+    .bind(user, i).all()).results || [];
+  const k = phatLai(i, ls.map((a) => (a.id === dong.id ? { g, ok, ts: a.ts } : { g: a.g, ok: a.ok, ts: a.ts })));
+  await db.batch([
+    db.prepare(`UPDATE attempt SET grade = ?1, correct = ?2, chose = ?3 WHERE id = ?4`).bind(g, ok, chose, dong.id),
+    cauGhiThe(db, user, [{ i, n: k.n, w: k.wrong, s: k.streak, b: k.box, e: k.ease, d: k.due, t: k.last_ts }]),
+  ]);
+  return { ok: true, g };
+}
+
+async function routeBtSua(request, env) {
+  const b = await docBody(request);
+  const user = kiemU(b.user);
+  if (typeof b.mon !== "string" || !MON_RE.test(b.mon)) throw sai("Thiếu hoặc sai 'mon'");
+  if (typeof b.i !== "string" || !NHOM_BT_RE.test(b.i)) throw sai("Thiếu hoặc sai 'i'");
+  if (!Number.isInteger(b.ts) || b.ts < 1) throw sai("Thiếu hoặc sai 'ts'");
+  if (typeof b.dat !== "boolean") throw sai("Thiếu hoặc sai 'dat' (true | false)");
+  return suaKetLuanViet(env, user, b.mon, b.i, b.ts, b.dat);
 }
 
 const PHAN = { dong: hocDong, tapdoc: hocTapdoc, on: hocOn, tu: hocTu, toan: (env, url, user) => readLuot(env, user), bt: hocBt };
@@ -499,6 +559,7 @@ const TUYEN = {
   "/api/quantri/thuoc/go": { m: "POST", fn: routeThuocGo },
   "/api/quantri/hoc-tap": { m: "GET", fn: routeHocTap },
   "/api/quantri/toan/go": { m: "POST", fn: routeToanGo },
+  "/api/quantri/bt/sua": { m: "POST", fn: routeBtSua },
 };
 
 /** Định tuyến /api/quantri/* (trừ /api/quantri/phien). Lỗi máy chủ: chi tiết chỉ vào log. */

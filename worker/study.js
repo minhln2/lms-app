@@ -23,11 +23,12 @@ import { MON_TOAN } from "./toan.js";
 // Cho phép chữ, số, gạch ngang, gạch dưới và dấu chấm (id có dạng "q.4f81b2c0").
 const ID_RE = /^[\w.-]{1,64}$/;
 const MAX_ATTEMPTS = 200; // một phiên dài nhất còn hợp lý
-const MS_CAP = 600000;    // 10 phút cho một câu là quá thừa
+export const MS_CAP = 600000;    // 10 phút cho một câu là quá thừa (export: worker/cham_viet.js kẹp `ms` của dòng sổ y như SQL bên dưới)
 const DUE_CAP = 31536000; // không cho hoãn quá 1 năm
 const MAX_KNOWN = 500;    // một lượt tick nhóm lớn nhất còn hợp lý
 const X_CAP = 64;         // `x` (phương án đã chọn / chữ con gõ) dài nhất
-const X_CAP_BT = 600;     // riêng Bài tập (id nhóm tiền tố "b."): ý `viet` lưu câu con tự viết để bố mẹ đọc (khu quản trị, tab Bài tập)
+const X_CAP_BT = 2400;    // riêng Bài tập (id nhóm tiền tố "b."): lượt `viet` là JSON có phiên bản (câu con viết + kết luận của máy, plan chấm câu viết §3),
+                          // bố mẹ đọc ở khu quản trị. `goiX` (worker/bai_tap.js) bảo đảm JSON ≤ 2400 nên đường cắt này không bao giờ làm gãy JSON
 
 const ok = (s) => typeof s === "string" && ID_RE.test(s);
 
@@ -201,6 +202,9 @@ export async function readStats(env, user, course, minN = 2, limit = 20) {
           -- NULL, đưa vào chỉ làm nhiễu prompt sinh lại: cả giá trị của truy vấn
           -- này nằm ở chỗ nói được "em chọn nhầm CÁI GÌ".
           AND chose IS NOT NULL
+          -- Bài tập (id nhóm "b.…"): chose là câu con tự viết / JSON chấm câu viết, tới 2400 ký tự — không phải phương án nhiễu,
+          -- và đừng để nó phình group_concat.
+          AND item_id NOT LIKE 'b.%'
         GROUP BY concept_id ORDER BY wrong30 DESC LIMIT ?4`
     ).bind(user, course, since, limit),
   ]);

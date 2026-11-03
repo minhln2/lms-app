@@ -426,3 +426,238 @@ export function mucKt(luot, cacY, now) {
   }
   return ra;
 }
+
+// ═══════════════════════════ Chấm câu viết bằng Gemini (plan 2026-11-03-cham-cau-viet-gemini) ═══════════════════════════
+//
+// Ba hàm thuần dùng chung cho Worker (`worker/cham_viet.js`), trang con và khu bố mẹ. KHÔNG import thêm gì ở đây (builder viết lại đúng
+// MỘT dòng import `toan_cham`). `x` của lượt `viet` (cột `attempt.chose`) là JSON có phiên bản:
+//   máy chấm   {"v":1,"t":câu,"l":lan,"m":{"d":0|1,"k":{ma:0|1},"q":{ma:trích},"c":{ma:ghi_chưa_đạt},"s":[{"q":trích,"h":gợi_ý}],"n":nhận_xét}}
+//   tự kiểm    {"v":1,"t":câu,"l":lan,"tk":{ma:0|1},"ly":"loi|het_cau|het_ngay|khong_co|nghi_lenh|khoa|ngoai_tuyen"}
+//   bài mẫu    {"v":1,"mau":1}                 (mở bài mẫu khi chưa đạt, g 0)
+//   bố mẹ sửa  …,"bm":{"d":0|1,"ts":epoch,"g0":grade_trước_lần_sửa_đầu}   (thêm vào bất kỳ dạng nào có `t`)
+// Lượt cũ (trước tính năng) có `x` là chữ trần → `docXViet` đọc thành loai "cu".
+
+/** Trần độ dài `x` ghi vào sổ (ký tự). `writeSession` cắt `x` của id `b.*` ở đúng con số này, nên JSON do `goiX` ra không bao giờ bị cắt gãy. */
+export const X_VIET = 2400;
+
+/**
+ * Điểm `g` (0..3) của MỘT lượt chấm câu viết — bảng §4, theo thứ tự điều kiện:
+ *   xemMau (đã mở bài mẫu khi chưa đạt)           → 0
+ *   đạt, lan === 1 (lượt chấm đầu), chưa mở gợi ý → 3
+ *   đạt                                           → 2   (kể cả đạt lượt đầu nhưng đã mở «💡 Gợi ý»: trần 2)
+ *   chưa đạt                                      → 1
+ * `ok` của dòng sổ = g >= 2. `lan` là số thứ tự lượt chấm của nhóm (máy + tự kiểm, từ 1); chỉ số `1` đúng kiểu mới được 3.
+ */
+export function gViet({ dat, lan, xemMau = false, goiY = false }) {
+  if (xemMau) return 0;
+  if (!dat) return 1;
+  return lan === 1 && !goiY ? 3 : 2;
+}
+
+/** Cắt bớt ÍT NHẤT `bot` ký tự JSON của chuỗi `s`: bỏ `bot + 1` ký tự cuối rồi thêm «…» (mỗi ký tự bỏ đi ≥ 1 ký tự JSON ⇒ mất ròng ≥ `bot`). Hết chỗ cắt thì "". */
+function catBot(s, bot) {
+  const giu = s.length - bot - 1;
+  if (giu <= 0) return "";
+  let r = s.slice(0, giu);
+  if (/[\ud800-\udbff]$/.test(r)) r = r.slice(0, -1);   // không chặt đôi cặp surrogate (emoji)
+  return r + "…";
+}
+
+const laObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+
+/**
+ * Đối tượng `x` → chuỗi JSON ≤ X_VIET ký tự (không sửa đầu vào). Vừa thì giữ nguyên; quá thì cắt LẦN LƯỢT, mỗi chuỗi chỉ cắt phần dư và
+ * chuỗi bị cắt thêm «…», sau mỗi lần đo lại:
+ *   m.n → các m.c → các m.s[].h → các m.q → t        (trong một nhóm nhiều chuỗi: từ chuỗi CUỐI trở lại; chuỗi cắt hết thành "" rồi sang chuỗi kế)
+ * Khoá cấu trúc (v, l, m.d, m.k, tk, ly, bm) không bao giờ bị cắt ⇒ `docXViet` đọc được. Hình dạng quá lạ vẫn quá dài sau mọi bước thì trả `{"v":1}`.
+ */
+export function goiX(o) {
+  const goc = JSON.stringify(o);
+  if (goc.length <= X_VIET) return goc;
+  const b = JSON.parse(goc);   // bản sao để cắt
+  const m = laObj(b?.m) ? b.m : null;
+  const nhom = [
+    () => (m ? [[m, "n"]] : []),
+    () => (laObj(m?.c) ? Object.keys(m.c).reverse().map((k) => [m.c, k]) : []),
+    () => (Array.isArray(m?.s) ? m.s.filter(laObj).reverse().map((e) => [e, "h"]) : []),
+    () => (laObj(m?.q) ? Object.keys(m.q).reverse().map((k) => [m.q, k]) : []),
+    () => (laObj(b) ? [[b, "t"]] : []),
+  ];
+  for (const lay of nhom) {
+    for (const [cha, khoa] of lay()) {
+      if (typeof cha[khoa] !== "string") continue;
+      const bot = JSON.stringify(b).length - X_VIET;
+      if (bot <= 0) return JSON.stringify(b);
+      cha[khoa] = catBot(cha[khoa], bot);
+    }
+  }
+  const ra = JSON.stringify(b);
+  return ra.length <= X_VIET ? ra : '{"v":1}';
+}
+
+// Bộ lọc cho `docXViet`: `x` là dữ liệu trình duyệt gửi lên, nên KHÔNG tin hình dạng. Lọc về đúng kiểu để chỗ hiển thị (x-text) không ném.
+const chuoi = (v) => (typeof v === "string" ? v : null);
+const bit = (v) => (v === 0 || v === 1 ? v : null);
+const soHuuHan = (v) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+function mapLoc(v, loc) {
+  const ra = {};
+  if (laObj(v)) for (const [k, x] of Object.entries(v)) { const y = loc(x); if (y !== null) ra[k] = y; }
+  return ra;
+}
+
+/**
+ * `x` (chuỗi hoặc null) → {loai, t, l, d, k, q, c, s, n, tk, ly, bm}. Không bao giờ ném.
+ *   loai "may" (có `m`) · "tu" (có `tk` / `ly`) · "mau" (`mau`) · "cu" (chữ trần của lượt trước tính năng; JSON cắt cụt / hỏng / phiên bản lạ:
+ *   `t` = NGUYÊN chuỗi gốc) · "trong" (null / rỗng / không phải chuỗi).
+ *   d = kết luận máy 0|1 hoặc null · k {ma:0|1} · q {ma:trích} · c {ma:ghi} · s [{q, h}] · tk {ma:0|1} · bm {d, ts, g0} hoặc null.
+ * Khoá vắng: chuỗi / số / d / n / ly / bm → null; k, q, c, tk → {}; s → [].
+ */
+export function docXViet(x) {
+  const rong = (loai, t = null) => ({ loai, t, l: null, d: null, k: {}, q: {}, c: {}, s: [], n: null, tk: {}, ly: null, bm: null });
+  if (typeof x !== "string" || !x.trim()) return rong("trong");
+  if (!x.trim().startsWith("{")) return rong("cu", x);
+  let o;
+  try { o = JSON.parse(x); } catch { return rong("cu", x); }
+  if (!laObj(o) || o.v !== 1) return rong("cu", x);
+  const ra = rong("cu", chuoi(o.t));
+  ra.l = soHuuHan(o.l);
+  if (laObj(o.bm)) ra.bm = { d: bit(o.bm.d), ts: soHuuHan(o.bm.ts), g0: Number.isInteger(o.bm.g0) && o.bm.g0 >= 0 && o.bm.g0 <= 3 ? o.bm.g0 : null };
+  if (laObj(o.m)) {
+    const m = o.m;
+    ra.loai = "may";
+    ra.d = bit(m.d);
+    ra.k = mapLoc(m.k, bit);
+    ra.q = mapLoc(m.q, chuoi);
+    ra.c = mapLoc(m.c, chuoi);
+    ra.s = (Array.isArray(m.s) ? m.s : []).filter(laObj).map((e) => ({ q: chuoi(e.q) ?? "", h: chuoi(e.h) ?? "" }));
+    ra.n = chuoi(m.n);
+  } else if (laObj(o.tk) || typeof o.ly === "string") {
+    ra.loai = "tu";
+    ra.tk = mapLoc(o.tk, bit);
+    ra.ly = chuoi(o.ly);
+  } else if (o.mau) {
+    ra.loai = "mau";
+  } else if (ra.t === null) {
+    ra.t = x;   // JSON v1 không có gì đọc được: cho hiện nguyên chuỗi như lượt cũ
+  }
+  return ra;
+}
+
+// ── Vùng trích: khu bố mẹ tô <mark> đoạn câu của con mà máy đã trích làm bằng chứng ─────────────────────────────────────────
+// CÙNG luật khớp với `coTrich` của worker/cham_viet.js (chuẩn hoá chữ thường / nháy cong / khoảng trắng / dấu phẩy / ký tự không độ rộng,
+// tách theo `…` hoặc `...`, mỗi mảnh ≥ 2 chữ/số, tối đa 3 mảnh, tổng ≥ 4, đúng THỨ TỰ, mỗi mảnh đứng ở BIÊN chữ/số) — nhưng trả VỊ TRÍ trong câu gốc
+// thay vì true/false. Hai bản phải khớp nhau từng ca: tests/test_cham_viet_js.mjs đối chiếu `vungTrich !== null` ⇔ `coTrich`. Khác biệt có chủ ý: bản này
+// đòi câu ĐÃ NFC (tachDoan lo), vì vị trí phải đo trên chính chuỗi hiển thị.
+const KHONG_DO_RONG_VT = /[\u200b-\u200d\u2060\ufeff]/;   // = KHONG_DO_RONG của cham_viet.js; viết bằng escape để một lần lưu / định dạng không làm rơi ký tự vô hình
+const BO_DAU_HAI_DAU_VT = /^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu;
+const TRUOC_LA_CHU_VT = /[\p{L}\p{N}]$/u, SAU_LA_CHU_VT = /^[\p{L}\p{N}]/u;
+const TRICH_MANH_MAX = 3, TRICH_MANH_CHU_MIN = 2, TRICH_CHU_MIN = 4;
+
+/**
+ * `chuan` của cham_viet.js kèm bản đồ vị trí: {n, tu, den} — `n` là chuỗi đã chuẩn hoá, `tu[k]` / `den[k]` = đoạn [tu, den) của câu gốc mà ký tự thứ k của `n`
+ * (theo đơn vị mã UTF-16) sinh ra. Khoảng trắng gộp thì trỏ vào khoảng trắng ĐẦU; khoảng trắng bị bỏ (đầu / cuối / quanh dấu phẩy) không có mục nào.
+ */
+function chuanBanDo(s) {
+  const n = [], tu = [], den = [];
+  const dua = (c, a, b) => { for (let k = 0; k < c.length; k++) { n.push(c[k]); tu.push(a); den.push(b); } };
+  let i = 0;
+  for (const ch of s) {
+    const a = i, b = i + ch.length;
+    i = b;
+    if (KHONG_DO_RONG_VT.test(ch)) continue;
+    const c = ch.toLowerCase().replace(/[’‘ʼ´`]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, "-");
+    if (/^\s$/.test(c)) {
+      if (n.length && n[n.length - 1] !== " " && n[n.length - 1] !== ",") dua(" ", a, b);
+      continue;
+    }
+    if (c === "," && n.length && n[n.length - 1] === " ") { n.pop(); tu.pop(); den.pop(); }
+    dua(c, a, b);
+  }
+  while (n.length && n[n.length - 1] === " ") { n.pop(); tu.pop(); den.pop(); }
+  return { n: n.join(""), tu, den };
+}
+
+const demChuVt = (s) => (s.match(/[\p{L}\p{N}]/gu) || []).length;
+
+/** Vị trí đầu tiên ≥ `tuViTri` mà `m` đứng ở BIÊN (ký tự ngay trước / sau không phải chữ hoặc số), -1 nếu không có — như `timOBien` của cham_viet.js. */
+function timBien(nen, m, tuViTri) {
+  for (let i = nen.indexOf(m, tuViTri); i >= 0; i = nen.indexOf(m, i + 1)) {
+    if (TRUOC_LA_CHU_VT.test(nen.slice(Math.max(0, i - 2), i))) continue;
+    if (SAU_LA_CHU_VT.test(nen.slice(i + m.length, i + m.length + 2))) continue;
+    return i;
+  }
+  return -1;
+}
+
+/**
+ * Các vùng [từ, đến) của `cau` (ĐÃ NFC) mà `trich` chỉ tới — mỗi mảnh của trích một vùng, theo thứ tự — hoặc null khi `trich` không khớp
+ * (đúng khi và chỉ khi `coTrich` của cham_viet.js trả false). Không ném với đầu vào không phải chuỗi.
+ */
+export function vungTrich(cau, trich) {
+  if (typeof cau !== "string" || typeof trich !== "string") return null;
+  const bd = chuanBanDo(cau);
+  const manh = trich.split(/…|\.{3}/).map((m) => chuanBanDo(m.normalize("NFC")).n.replace(BO_DAU_HAI_DAU_VT, "")).filter(Boolean);
+  if (!manh.length || manh.length > TRICH_MANH_MAX) return null;
+  const ra = [];
+  let tuViTri = 0, chu = 0;
+  for (const m of manh) {
+    const c = demChuVt(m);
+    if (c < TRICH_MANH_CHU_MIN) return null;
+    const i = timBien(bd.n, m, tuViTri);
+    if (i < 0) return null;
+    tuViTri = i + m.length;
+    chu += c;
+    ra.push([bd.tu[i], bd.den[i + m.length - 1]]);
+  }
+  return chu >= TRICH_CHU_MIN ? ra : null;
+}
+
+/**
+ * Cắt `cau` (chuẩn hoá NFC để vị trí đo trên đúng chuỗi hiển thị) thành các đoạn liên tiếp [{t, mark}]: đoạn nằm trong vùng của ÍT NHẤT một trích khớp thì
+ * mark = true. Trích không khớp thì bỏ qua (không tô gì). Vùng chồng / liền kề nhau gộp một. Nối mọi `t` lại ra đúng `cau`. Câu rỗng → [].
+ */
+export function tachDoan(cau, trichs) {
+  const t = typeof cau === "string" ? cau.normalize("NFC") : "";
+  if (!t) return [];
+  const vung = [];
+  for (const tr of Array.isArray(trichs) ? trichs : []) vung.push(...(vungTrich(t, tr) || []));
+  vung.sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+  const gop = [];
+  for (const [a, b] of vung) {
+    const cuoi = gop[gop.length - 1];
+    if (cuoi && a <= cuoi[1]) cuoi[1] = Math.max(cuoi[1], b);
+    else gop.push([a, b]);
+  }
+  const ra = [];
+  let vt = 0;
+  for (const [a, b] of gop) {
+    if (a > vt) ra.push({ t: t.slice(vt, a), mark: false });
+    ra.push({ t: t.slice(a, b), mark: true });
+    vt = b;
+  }
+  if (vt < t.length) ra.push({ t: t.slice(vt), mark: false });
+  return ra;
+}
+
+const NGOAC_CO_SO = /\s*\([^()]*\p{Nd}[^()]*\)/gu, CHU_SO_LIEN = /\p{Nd}+(?:[.,]\p{Nd}+)*/gu;
+
+/**
+ * Nhãn của một tiêu chí tự kiểm (`tu_kiem`) cho THẺ KẾT QUẢ của máy chấm (con thấy, ngay sau lượt chưa đạt). Câu `tu_kiem` đầy đủ có khi chứa đáp số
+ * máy tính ngay trong chữ («so sánh range: B 36, D 69», «dùng range nhỏ nhất (17)»): đưa lên thẻ máy thì bộ lọc «không lộ đáp số» của Worker mất tác dụng.
+ * Luật (cùng nhãn chip khu bố mẹ, thêm việc bỏ ngoặc):
+ *   - bỏ MỌI cụm ngoặc đơn có chữ số (lồng thì từ trong cùng ra ngoài; ngoặc không chữ số giữ nguyên);
+ *   - có «:» → nhãn = phần trước dấu «:» đầu tiên (chữ số ở đó, vd «Group 1», giữ nguyên);
+ *   - không có «:» → mọi chữ số còn lại của câu thành «…» (một số thập phân = một «…»).
+ * Danh sách TỰ KIỂM (đường lùi, con tự tick) vẫn hiện nguyên câu như trước tính năng. Không ném với đầu vào không phải chuỗi; luôn trả chữ không rỗng.
+ */
+export function nhanTieuChi(t) {
+  let s = typeof t === "string" ? t : "";
+  for (let truoc = null; truoc !== s;) { truoc = s; s = s.replace(NGOAC_CO_SO, ""); }
+  s = s.replace(/\s+/g, " ").trim();
+  const che = (x) => x.replace(CHU_SO_LIEN, "\u2026");
+  const i = s.indexOf(":");
+  let nhan = i >= 0 ? s.slice(0, i).replace(/\s*\([^)]*$/, "") : che(s);   // ngoặc mở dở trước «:» thì cắt tại ngoặc
+  nhan = nhan.replace(/[\s,;]+$/, "").trim();
+  if (!nhan && i >= 0) nhan = che(s.slice(i + 1)).replace(/^[\s,;:]+|[\s,;]+$/g, "");   // nhãn rỗng (câu mở đầu bằng «:»): lấy phần sau, đã che số
+  return nhan || "Tiêu chí";
+}
