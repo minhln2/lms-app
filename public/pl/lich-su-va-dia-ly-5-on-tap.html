@@ -114,7 +114,7 @@ window.LS.ham();
   <title>Ôn tập · Lịch Sử và Địa Lý 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.2fe5e8b5.css">
+  <link rel="stylesheet" href="../assets/tw.dfae3f16.css">
   
   <script type="module">
     import { sched, phatLai } from "../assets/lich_on.ebee479f.js";
@@ -295,6 +295,7 @@ window.LS.ham();
         btSang(k) { this.btDatMuc(k); window.scrollTo(0, 0); },
         btDatBai(i) {
           this.btMuc = i; this.btMore = null; this.btTier = this.btMucDau();
+          if (BT.doc.muc[i].concept) this.openAncestors(BT.doc.muc[i].concept);   // cây bên trái bung tới mục đang làm
           try { sessionStorage.setItem(BT_MUC_KHOA, BT.doc.muc[i].ten); } catch (e) { /* riêng tư */ }
         },
         btDoiVi() { this.btVi = !this.btVi; try { localStorage.setItem('lms_bt_vi', this.btVi ? '1' : '0'); } catch (e) { /* riêng tư/đầy */ } },
@@ -1658,7 +1659,29 @@ timMo: false,
             this.screen = 'start';
           }
         },
+        // Cây bên trái theo TAB đang mở: nhánh không có nội dung của tab (không thẻ / không câu hỏi / không bài tập / không tóm tắt)
+        // thì mờ đi và không bấm được — bấm vào chỉ ra màn hình trống. Tab «Từ đã tra» không theo phạm vi: mọi dòng bấm được.
+        navCo(id) {
+          const m = this.mode;
+          if (m === 'hist') return true;
+          const sub = this.subtree(id);
+          if (m === 'bt') return this.btMucs().some(x => sub.has(x.concept));
+          const ds = m === 'cards' ? this.data?.flashcards : m === 'quiz' ? this.data?.quiz : this.data?.summary;
+          return (ds || []).some(x => sub.has(x.concept));
+        },
+        // Tab Bài tập chọn mục theo `btMuc` (mỗi mục bài tập gắn `concept` = id mục trong cây), không theo `scope`:
+        // bấm một mục trên cây = chọn mục bài tập đó; bấm cả Unit = mục MỚI NHẤT của Unit (cùng luật mặc định D6).
+        navChon(id) { return this.mode === 'bt' ? this.btMucNow().concept === id : this.scope === id; },
+        navBam(id) {
+          if (!this.navCo(id)) return;
+          if (this.mode !== 'bt') { this.setScope(id); return; }
+          const sub = this.subtree(id);
+          const ds = this.btMucs();
+          for (let i = ds.length - 1; i >= 0; i--) if (sub.has(ds[i].concept)) { this.btDatBai(i); break; }
+          this.navOpen = false;
+        },
         get scopeName() {
+          if (this.mode === 'bt' && this.btOk) return this.btMucNow().ten || '';   // tab Bài tập: breadcrumb = mục bài tập đang làm (không theo scope)
           if (!this.scope) return 'Cả môn';
           return this.label((this.data?.concepts || []).find(x => x.id === this.scope)) || this.scope;
         },
@@ -1875,6 +1898,7 @@ timMo: false,
           if (m === 'hist') this.loadHist();
           // Mở tab Bài tập lần đầu: mức đầu tiên chưa xong (tính lúc này, khi lịch D1 đã về).
           if (m === 'bt' && !this.btTierDat) { this.btTierDat = true; this.btTier = this.btMucDau(); }
+          if (m === 'bt' && this.btOk && this.btMucNow().concept) this.openAncestors(this.btMucNow().concept);
         },
         start(n) {
           this._cerr = {};                       // xoá bộ nhớ đệm mỗi phiên
@@ -4340,8 +4364,8 @@ registerProcessor('thu-16k',T);`;
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
                 </svg>
               </button>
-              <button @click="setScope(u.id)"
-                      :class="scope === u.id ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-100'"
+              <button @click="navBam(u.id)" :data-nav="u.id" :disabled="!navCo(u.id)" :aria-disabled="String(!navCo(u.id))"
+                      :class="navChon(u.id) ? 'bg-indigo-600 text-white' : !navCo(u.id) ? 'text-slate-700 opacity-40 cursor-not-allowed' : 'text-slate-700 hover:bg-slate-100'"
                       class="flex-1 min-w-0 text-left px-2 py-1.5 rounded-lg text-sm">
                 <span class="block truncate" x-text="label(u)"></span>
               </button>
@@ -4353,8 +4377,8 @@ registerProcessor('thu-16k',T);`;
                 class="ml-5 border-l border-slate-200 pl-1.5 space-y-0.5">
               <template x-for="sec in navKids(u.id)" :key="sec.id">
                 <li>
-                  <button @click="setScope(sec.id)"
-                          :class="scope === sec.id ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'"
+                  <button @click="navBam(sec.id)" :data-nav="sec.id" :disabled="!navCo(sec.id)" :aria-disabled="String(!navCo(sec.id))"
+                          :class="navChon(sec.id) ? 'bg-indigo-600 text-white' : !navCo(sec.id) ? 'text-slate-600 opacity-40 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-100'"
                           class="w-full flex items-center gap-1.5 text-left px-2 py-1.5 rounded-lg text-xs">
                     <span class="w-1.5 h-1.5 rounded-full shrink-0"
                           :class="branchStat(sec.id).wrong > 0 ? 'bg-rose-400' : 'bg-slate-300'"></span>
