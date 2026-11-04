@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -591,19 +596,19 @@ window.LS.ham();
 </i><span data-w="0.12522" style="left:11.781%;top:30.330%;font-size:1.961cqw">B. Its name</span><i class="nl" style="left:11.781%;top:32.237%">
 </i><span data-w="0.13227" style="left:11.781%;top:32.237%;font-size:1.961cqw">C. Its owner</span><i class="nl" style="left:11.781%;top:34.143%">
 </i><span data-w="0.15418" style="left:11.781%;top:34.143%;font-size:1.961cqw">D. Its location</span><i class="nl" style="left:11.781%;top:37.060%">
-</i><span class="mo" data-w="0.15531" style="left:11.781%;top:37.060%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:39.977%">
+</i><span data-w="0.15531" style="left:11.781%;top:37.060%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:39.977%">
 </i><span data-w="0.31039" style="left:11.781%;top:39.977%;font-size:1.961cqw">2. Which change is melting?</span><i class="nl" style="left:11.781%;top:42.899%">
 </i><span data-w="0.10412" style="left:11.781%;top:42.899%;font-size:1.961cqw">A. Liquid </span><span data-w="0.01961" style="left:22.206%;top:42.956%;font-size:1.961cqw">→</span><span data-w="0.05939" style="left:24.167%;top:42.899%;font-size:1.961cqw"> solid</span><i class="nl" style="left:11.781%;top:44.812%">
-</i><span data-w="0.09104" style="left:11.781%;top:44.812%;font-size:1.961cqw">B. Solid </span><span data-w="0.01961" style="left:20.891%;top:44.868%;font-size:1.961cqw">→</span><span class="mo" data-w="0.06892" style="left:22.851%;top:44.812%;font-size:1.961cqw"> liquid</span><i class="nl" style="left:11.781%;top:46.725%">
+</i><span data-w="0.09104" style="left:11.781%;top:44.812%;font-size:1.961cqw">B. Solid </span><span data-w="0.01961" style="left:20.891%;top:44.868%;font-size:1.961cqw">→</span><span data-w="0.06892" style="left:22.851%;top:44.812%;font-size:1.961cqw"> liquid</span><i class="nl" style="left:11.781%;top:46.725%">
 </i><span data-w="0.10333" style="left:11.781%;top:46.725%;font-size:1.961cqw">C. Liquid </span><span data-w="0.01961" style="left:22.124%;top:46.781%;font-size:1.961cqw">→</span><span data-w="0.04573" style="left:24.085%;top:46.725%;font-size:1.961cqw"> gas</span><i class="nl" style="left:11.781%;top:48.638%">
-</i><span data-w="0.07831" style="left:11.781%;top:48.638%;font-size:1.961cqw">D. Gas </span><span data-w="0.01961" style="left:19.616%;top:48.694%;font-size:1.961cqw">→</span><span class="mo" data-w="0.06892" style="left:21.577%;top:48.638%;font-size:1.961cqw"> liquid</span><i class="nl" style="left:11.781%;top:51.555%">
-</i><span class="mo" data-w="0.15531" style="left:11.781%;top:51.555%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:54.471%">
+</i><span data-w="0.07831" style="left:11.781%;top:48.638%;font-size:1.961cqw">D. Gas </span><span data-w="0.01961" style="left:19.616%;top:48.694%;font-size:1.961cqw">→</span><span data-w="0.06892" style="left:21.577%;top:48.638%;font-size:1.961cqw"> liquid</span><i class="nl" style="left:11.781%;top:51.555%">
+</i><span data-w="0.15531" style="left:11.781%;top:51.555%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:54.471%">
 </i><span data-w="0.57882" style="left:11.781%;top:54.471%;font-size:1.961cqw">3. Which statements about evaporation are correct?</span><i class="nl" style="left:11.781%;top:57.388%">
 </i><span data-w="0.42773" style="left:11.781%;top:57.388%;font-size:1.961cqw">A. It only happens at the boiling point.</span><i class="nl" style="left:11.781%;top:59.295%">
 </i><span data-w="0.30871" style="left:11.781%;top:59.295%;font-size:1.961cqw">B. It happens only to solids.</span><i class="nl" style="left:11.781%;top:61.201%">
 </i><span data-w="0.43302" style="left:11.781%;top:61.201%;font-size:1.961cqw">C. It happens at the surface of a liquid.</span><i class="nl" style="left:11.781%;top:63.108%">
 </i><span data-w="0.35820" style="left:11.781%;top:63.108%;font-size:1.961cqw">D. It changes a gas into a liquid.</span><i class="nl" style="left:11.781%;top:66.024%">
-</i><span class="mo" data-w="0.15531" style="left:11.781%;top:66.024%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:71.782%">
+</i><span data-w="0.15531" style="left:11.781%;top:66.024%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:71.782%">
 </i><span data-w="0.16943" style="left:11.781%;top:71.782%;font-size:1.961cqw">Key vocabulary</span><i class="nl" style="left:11.781%;top:74.699%">
 </i><span data-w="0.34371" style="left:11.781%;top:74.699%;font-size:1.961cqw">substance — a type of material</span><i class="nl" style="left:11.781%;top:76.605%">
 </i><span data-w="0.55145" style="left:11.781%;top:76.605%;font-size:1.961cqw">property — something that describes a substance</span><i class="nl" style="left:11.781%;top:78.512%">
@@ -655,19 +660,19 @@ window.LS.ham();
 </i><span data-w="0.10282" style="left:11.781%;top:62.262%;font-size:1.961cqw">B. Plastic</span><i class="nl" style="left:11.781%;top:64.168%">
 </i><span data-w="0.10747" style="left:11.781%;top:64.168%;font-size:1.961cqw">C. Copper</span><i class="nl" style="left:11.781%;top:66.075%">
 </i><span data-w="0.09312" style="left:11.781%;top:66.075%;font-size:1.961cqw">D. Wood</span><i class="nl" style="left:11.781%;top:68.992%">
-</i><span class="mo" data-w="0.15531" style="left:11.781%;top:68.992%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:71.908%">
+</i><span data-w="0.15531" style="left:11.781%;top:68.992%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:71.908%">
 </i><span data-w="0.51247" style="left:11.781%;top:71.908%;font-size:1.961cqw">2. Which material is a good thermal insulator?</span><i class="nl" style="left:11.781%;top:74.825%">
 </i><span data-w="0.10825" style="left:11.781%;top:74.825%;font-size:1.961cqw">A. Copper</span><i class="nl" style="left:11.781%;top:76.732%">
 </i><span data-w="0.14712" style="left:11.781%;top:76.732%;font-size:1.961cqw">B. Aluminium</span><i class="nl" style="left:11.781%;top:78.638%">
 </i><span data-w="0.10225" style="left:11.781%;top:78.638%;font-size:1.961cqw">C. Plastic</span><i class="nl" style="left:11.781%;top:80.545%">
 </i><span data-w="0.07490" style="left:11.781%;top:80.545%;font-size:1.961cqw">D. Iron</span><i class="nl" style="left:11.781%;top:83.461%">
-</i><span class="mo" data-w="0.15531" style="left:11.781%;top:83.461%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:86.378%">
+</i><span data-w="0.15531" style="left:11.781%;top:83.461%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:86.378%">
 </i><span data-w="0.47388" style="left:11.781%;top:86.378%;font-size:1.961cqw">3. Why can a saucepan have a metal base?</span></div></div></section>
 <section class="trang" id="tr-6" data-tr="6"><div class="khung"><img src="anh/trang-6.webp" width="1020" height="1320" alt="" loading="lazy"><div class="chu"><span data-w="0.41735" style="left:11.781%;top:9.093%;font-size:1.961cqw">A. Metal is a good thermal conductor.</span><i class="nl" style="left:11.781%;top:10.999%">
 </i><span data-w="0.25627" style="left:11.781%;top:10.999%;font-size:1.961cqw">B. Metal is always soft.</span><i class="nl" style="left:11.781%;top:12.906%">
 </i><span data-w="0.25527" style="left:11.781%;top:12.906%;font-size:1.961cqw">C. Metal stops all heat.</span><i class="nl" style="left:11.781%;top:14.812%">
 </i><span data-w="0.41571" style="left:11.781%;top:14.812%;font-size:1.961cqw">D. Metal cannot change temperature.</span><i class="nl" style="left:11.781%;top:17.729%">
-</i><span class="mo" data-w="0.15531" style="left:11.781%;top:17.729%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:23.487%">
+</i><span data-w="0.15531" style="left:11.781%;top:17.729%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:23.487%">
 </i><span data-w="0.33657" style="left:11.781%;top:23.487%;font-size:1.961cqw">Practice 3 — Scientific enquiry</span><i class="nl" style="left:11.781%;top:26.403%">
 </i><span data-w="0.71214" style="left:11.781%;top:26.403%;font-size:1.961cqw">A student tests four materials to find out whether they conduct </span><i class="nl" style="left:11.781%;top:28.310%">
 </i><span data-w="0.11853" style="left:11.781%;top:28.310%;font-size:1.961cqw">electricity.</span><i class="nl" style="left:11.781%;top:31.227%">
@@ -711,13 +716,13 @@ window.LS.ham();
 </i><span data-w="0.21490" style="left:11.781%;top:60.463%;font-size:1.961cqw">2. Changes of state</span><i class="nl" style="left:11.781%;top:63.379%">
 </i><span data-w="0.41884" style="left:11.781%;top:63.379%;font-size:1.961cqw">Many changes of state are reversible.</span><i class="nl" style="left:11.781%;top:66.296%">
 </i><span data-w="0.08355" style="left:11.781%;top:66.296%;font-size:1.961cqw">Melting</span><i class="nl" style="left:11.781%;top:69.219%">
-</i><span data-w="0.05939" style="left:11.781%;top:69.219%;font-size:1.961cqw">solid </span><span data-w="0.01961" style="left:17.729%;top:69.275%;font-size:1.961cqw">→</span><span class="mo" data-w="0.06892" style="left:19.690%;top:69.219%;font-size:1.961cqw"> liquid</span><i class="nl" style="left:11.781%;top:72.136%">
+</i><span data-w="0.05939" style="left:11.781%;top:69.219%;font-size:1.961cqw">solid </span><span data-w="0.01961" style="left:17.729%;top:69.275%;font-size:1.961cqw">→</span><span data-w="0.06892" style="left:19.690%;top:69.219%;font-size:1.961cqw"> liquid</span><i class="nl" style="left:11.781%;top:72.136%">
 </i><span data-w="0.09573" style="left:11.781%;top:72.136%;font-size:1.961cqw">Freezing</span><i class="nl" style="left:11.781%;top:75.059%">
 </i><span data-w="0.06892" style="left:11.781%;top:75.059%;font-size:1.961cqw">liquid </span><span data-w="0.01961" style="left:18.685%;top:75.115%;font-size:1.961cqw">→</span><span data-w="0.05939" style="left:20.645%;top:75.059%;font-size:1.961cqw"> solid</span><i class="nl" style="left:11.781%;top:77.975%">
 </i><span data-w="0.13324" style="left:11.781%;top:77.975%;font-size:1.961cqw">Evaporation</span><i class="nl" style="left:11.781%;top:80.898%">
 </i><span data-w="0.06892" style="left:11.781%;top:80.898%;font-size:1.961cqw">liquid </span><span data-w="0.01961" style="left:18.685%;top:80.954%;font-size:1.961cqw">→</span><span data-w="0.04573" style="left:20.645%;top:80.898%;font-size:1.961cqw"> gas</span><i class="nl" style="left:11.781%;top:83.815%">
 </i><span data-w="0.15141" style="left:11.781%;top:83.815%;font-size:1.961cqw">Condensation</span><i class="nl" style="left:11.781%;top:86.738%">
-</i><span data-w="0.04573" style="left:11.781%;top:86.738%;font-size:1.961cqw">gas </span><span data-w="0.01961" style="left:16.356%;top:86.794%;font-size:1.961cqw">→</span><span class="mo" data-w="0.06892" style="left:18.317%;top:86.738%;font-size:1.961cqw"> liquid</span></div></div></section>
+</i><span data-w="0.04573" style="left:11.781%;top:86.738%;font-size:1.961cqw">gas </span><span data-w="0.01961" style="left:16.356%;top:86.794%;font-size:1.961cqw">→</span><span data-w="0.06892" style="left:18.317%;top:86.738%;font-size:1.961cqw"> liquid</span></div></div></section>
 <section class="trang" id="tr-8" data-tr="8"><div class="khung"><img src="anh/trang-8.webp" width="1020" height="1320" alt="" loading="lazy"><div class="chu"><span data-w="0.32000" style="left:11.781%;top:11.934%;font-size:1.961cqw">3. Reversible or irreversible?</span><i class="nl" style="left:11.781%;top:14.850%">
 </i><span data-w="0.14455" style="left:11.781%;top:14.850%;font-size:1.961cqw">Ask yourself:</span><i class="nl" style="left:11.781%;top:17.767%">
 </i><span data-w="0.47839" style="left:11.781%;top:17.767%;font-size:1.961cqw">Can I change it back to what it was before?</span><i class="nl" style="left:11.781%;top:20.684%">
@@ -752,10 +757,10 @@ window.LS.ham();
 </i><span data-w="0.66631" style="left:11.781%;top:45.620%;font-size:1.961cqw">4. What evidence would show that the change is reversible?</span><i class="nl" style="left:11.781%;top:54.219%">
 </i><span data-w="0.16943" style="left:11.781%;top:54.219%;font-size:1.961cqw">Key vocabulary</span><i class="nl" style="left:11.781%;top:57.136%">
 </i><span data-w="0.62327" style="left:11.781%;top:57.136%;font-size:1.961cqw">reversible change — a change that can be changed back</span><i class="nl" style="left:11.781%;top:59.048%">
-</i><span data-w="0.17710" style="left:11.781%;top:59.048%;font-size:1.961cqw">melting — solid </span><span data-w="0.01961" style="left:29.502%;top:59.105%;font-size:1.961cqw">→</span><span class="mo" data-w="0.06892" style="left:31.462%;top:59.048%;font-size:1.961cqw"> liquid</span><i class="nl" style="left:11.781%;top:60.961%">
+</i><span data-w="0.17710" style="left:11.781%;top:59.048%;font-size:1.961cqw">melting — solid </span><span data-w="0.01961" style="left:29.502%;top:59.105%;font-size:1.961cqw">→</span><span data-w="0.06892" style="left:31.462%;top:59.048%;font-size:1.961cqw"> liquid</span><i class="nl" style="left:11.781%;top:60.961%">
 </i><span data-w="0.19307" style="left:11.781%;top:60.961%;font-size:1.961cqw">freezing — liquid </span><span data-w="0.01961" style="left:31.095%;top:61.017%;font-size:1.961cqw">→</span><span data-w="0.05939" style="left:33.056%;top:60.961%;font-size:1.961cqw"> solid</span><i class="nl" style="left:11.781%;top:62.874%">
 </i><span data-w="0.23539" style="left:11.781%;top:62.874%;font-size:1.961cqw">evaporation — liquid </span><span data-w="0.01961" style="left:35.327%;top:62.930%;font-size:1.961cqw">→</span><span data-w="0.20731" style="left:37.288%;top:62.874%;font-size:1.961cqw"> gas at the surface</span><i class="nl" style="left:11.781%;top:64.787%">
-</i><span data-w="0.22765" style="left:11.781%;top:64.787%;font-size:1.961cqw">condensation — gas </span><span data-w="0.01961" style="left:34.559%;top:64.843%;font-size:1.961cqw">→</span><span class="mo" data-w="0.06892" style="left:36.520%;top:64.787%;font-size:1.961cqw"> liquid</span><i class="nl" style="left:11.781%;top:66.694%">
+</i><span data-w="0.22765" style="left:11.781%;top:64.787%;font-size:1.961cqw">condensation — gas </span><span data-w="0.01961" style="left:34.559%;top:64.843%;font-size:1.961cqw">→</span><span data-w="0.06892" style="left:36.520%;top:64.787%;font-size:1.961cqw"> liquid</span><i class="nl" style="left:11.781%;top:66.694%">
 </i><span data-w="0.70039" style="left:11.781%;top:66.694%;font-size:1.961cqw">fair test — a test where only the variable being investigated is </span><i class="nl" style="left:11.781%;top:68.600%">
 </i><span data-w="0.09406" style="left:11.781%;top:68.600%;font-size:1.961cqw">changed</span><i class="nl" style="left:11.781%;top:74.358%">
 </i><span data-w="0.36143" style="left:11.781%;top:74.358%;font-size:1.961cqw">PAGE 4 — UNIT 2 PRACTICE TEST</span><i class="nl" style="left:11.781%;top:79.181%">
@@ -775,26 +780,26 @@ window.LS.ham();
 </i><span data-w="0.10282" style="left:11.781%;top:48.423%;font-size:1.961cqw">B. Plastic</span><i class="nl" style="left:11.781%;top:50.330%">
 </i><span data-w="0.10747" style="left:11.781%;top:50.330%;font-size:1.961cqw">C. Copper</span><i class="nl" style="left:11.781%;top:52.237%">
 </i><span data-w="0.09312" style="left:11.781%;top:52.237%;font-size:1.961cqw">D. Wood</span><i class="nl" style="left:11.781%;top:55.153%">
-</i><span class="mo" data-w="0.15531" style="left:11.781%;top:55.153%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:58.070%">
+</i><span data-w="0.15531" style="left:11.781%;top:55.153%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:58.070%">
 </i><span data-w="0.33702" style="left:11.781%;top:58.070%;font-size:1.961cqw">6. Which change is reversible?</span><i class="nl" style="left:11.781%;top:60.987%">
 </i><span data-w="0.15139" style="left:11.781%;top:60.987%;font-size:1.961cqw">A. Melting ice</span><i class="nl" style="left:11.781%;top:62.893%">
 </i><span data-w="0.18739" style="left:11.781%;top:62.893%;font-size:1.961cqw">B. Burning paper</span><i class="nl" style="left:11.781%;top:64.800%">
 </i><span data-w="0.19978" style="left:11.781%;top:64.800%;font-size:1.961cqw">C. Cooking an egg</span><i class="nl" style="left:11.781%;top:66.706%">
 </i><span data-w="0.16588" style="left:11.781%;top:66.706%;font-size:1.961cqw">D. Rusting iron</span><i class="nl" style="left:11.781%;top:69.623%">
-</i><span class="mo" data-w="0.15531" style="left:11.781%;top:69.623%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:72.540%">
+</i><span data-w="0.15531" style="left:11.781%;top:69.623%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:72.540%">
 </i><span data-w="0.67969" style="left:11.781%;top:72.540%;font-size:1.961cqw">7. Which change happens when a liquid becomes a gas at its </span><i class="nl" style="left:11.781%;top:74.446%">
 </i><span data-w="0.09329" style="left:11.781%;top:74.446%;font-size:1.961cqw">surface?</span><i class="nl" style="left:11.781%;top:77.363%">
 </i><span data-w="0.12514" style="left:11.781%;top:77.363%;font-size:1.961cqw">A. Freezing</span><i class="nl" style="left:11.781%;top:79.269%">
 </i><span data-w="0.18061" style="left:11.781%;top:79.269%;font-size:1.961cqw">B. Condensation</span><i class="nl" style="left:11.781%;top:81.176%">
 </i><span data-w="0.11218" style="left:11.781%;top:81.176%;font-size:1.961cqw">C. Melting</span><i class="nl" style="left:11.781%;top:83.083%">
 </i><span data-w="0.16376" style="left:11.781%;top:83.083%;font-size:1.961cqw">D. Evaporation</span><i class="nl" style="left:11.781%;top:85.999%">
-</i><span class="mo" data-w="0.15531" style="left:11.781%;top:85.999%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:88.916%">
+</i><span data-w="0.15531" style="left:11.781%;top:85.999%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:88.916%">
 </i><span data-w="0.60839" style="left:11.781%;top:88.916%;font-size:1.961cqw">8. Why are some saucepan handles made from plastic?</span></div></div></section>
 <section class="trang" id="tr-11" data-tr="11"><div class="khung"><img src="anh/trang-11.webp" width="1020" height="1320" alt="" loading="lazy"><div class="chu"><span data-w="0.41649" style="left:11.781%;top:9.093%;font-size:1.961cqw">A. Plastic is a good thermal insulator.</span><i class="nl" style="left:11.781%;top:10.999%">
 </i><span data-w="0.44422" style="left:11.781%;top:10.999%;font-size:1.961cqw">B. Plastic is a good electrical conductor.</span><i class="nl" style="left:11.781%;top:12.906%">
 </i><span data-w="0.42235" style="left:11.781%;top:12.906%;font-size:1.961cqw">C. Plastic melts at every temperature.</span><i class="nl" style="left:11.781%;top:14.812%">
 </i><span data-w="0.45067" style="left:11.781%;top:14.812%;font-size:1.961cqw">D. Plastic is always a thermal conductor.</span><i class="nl" style="left:11.781%;top:17.729%">
-</i><span class="mo" data-w="0.15531" style="left:11.781%;top:17.729%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:23.487%">
+</i><span data-w="0.15531" style="left:11.781%;top:17.729%;font-size:1.961cqw">Answer: ______</span><i class="nl" style="left:11.781%;top:23.487%">
 </i><span data-w="0.35067" style="left:11.781%;top:23.487%;font-size:1.961cqw">Part C — Apply Your Knowledge</span><i class="nl" style="left:11.781%;top:26.403%">
 </i><span data-w="0.76096" style="left:11.781%;top:26.403%;font-size:1.961cqw">9. A student puts a metal spoon and a wooden spoon into hot water.</span><i class="nl" style="left:11.781%;top:29.320%">
 </i><span data-w="0.65929" style="left:11.781%;top:29.320%;font-size:1.961cqw">Which spoon would usually conduct thermal energy better?</span><i class="nl" style="left:11.781%;top:35.078%">

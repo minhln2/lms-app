@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -545,7 +550,7 @@ window.LS.ham();
 </i><span data-w="0.37698" style="left:9.088%;top:66.023%;font-size:2.688cqw">Topic-by-Topic Worked Examples </span><i class="nl" style="left:9.088%;top:69.443%">
 </i><span data-w="0.79285" style="left:9.088%;top:69.443%;font-size:1.764cqw">Let&#x27;s look at how to answer &#x27;Explain the Mistake&#x27; questions across the three main Stage 6 topic areas.</span><i class="nl" style="left:9.088%;top:72.244%">
 </i><span data-w="0.51423" style="left:9.088%;top:72.244%;font-size:2.184cqw">Topic 1: Addition &amp; Subtraction (Decimals &amp; Place Value)</span><i class="nl" style="left:9.088%;top:74.920%">
-</i><span class="mo" data-w="0.28586" style="left:9.088%;top:74.920%;font-size:1.764cqw">Student Work Sample (Question): </span><span data-w="0.30856" style="left:37.703%;top:74.920%;font-size:1.764cqw">Alex subtracted 3.28 from 15.4 like this:</span><i class="nl" style="left:9.088%;top:76.571%">
+</i><span data-w="0.28586" style="left:9.088%;top:74.920%;font-size:1.764cqw">Student Work Sample (Question): </span><span data-w="0.30856" style="left:37.703%;top:74.920%;font-size:1.764cqw">Alex subtracted 3.28 from 15.4 like this:</span><i class="nl" style="left:9.088%;top:76.571%">
 </i><span data-w="0.04408" style="left:9.088%;top:76.571%;font-size:1.764cqw">  15.4</span><i class="nl" style="left:9.088%;top:78.223%">
 </i><span data-w="0.04997" style="left:9.088%;top:78.223%;font-size:1.764cqw">-  3.28</span><i class="nl" style="left:9.088%;top:79.874%">
 </i><span data-w="0.03524" style="left:9.088%;top:79.874%;font-size:1.764cqw">------</span><i class="nl" style="left:9.088%;top:81.525%">
@@ -557,13 +562,13 @@ window.LS.ham();
 </i><span class="mo" data-w="0.27849" style="left:34.050%;top:96.223%;font-size:1.512cqw">Stage 6 Mathematics Reasoning  |  Page </span><span data-w="0.00981" style="left:61.926%;top:96.061%;font-size:1.764cqw">1</span><span class="mo" data-w="0.02097" style="left:62.909%;top:96.223%;font-size:1.512cqw"> of </span><span data-w="0.00981" style="left:65.009%;top:96.061%;font-size:1.764cqw">6</span></div></div></section>
 <section class="trang" id="tr-2" data-tr="2"><div class="khung"><img src="anh/trang-2.webp" width="993" height="1404" alt="" loading="lazy"><div class="chu"><span data-w="0.79423" style="left:9.970%;top:7.527%;font-size:1.680cqw">2. EXPLAIN IT (ESL Model Explanation): &quot;Alex forgot to write a placeholder zero in the hundredths column </span><i class="nl" style="left:9.970%;top:9.095%">
 </i><span data-w="0.70094" style="left:9.970%;top:9.095%;font-size:1.680cqw">(15.40). As a result, Alex subtracted 0 from 8 instead of regrouping and subtracting 8 from 10.&quot;</span><i class="nl" style="left:9.970%;top:11.019%">
-</i><span class="mo" data-w="0.18179" style="left:9.970%;top:11.019%;font-size:1.680cqw">3. FIX IT (Correct Math):</span><i class="nl" style="left:9.970%;top:12.588%">
+</i><span data-w="0.18179" style="left:9.970%;top:11.019%;font-size:1.680cqw">3. FIX IT (Correct Math):</span><i class="nl" style="left:9.970%;top:12.588%">
 </i><span data-w="0.06062" style="left:9.970%;top:12.588%;font-size:1.680cqw">    15.40</span><i class="nl" style="left:9.970%;top:14.156%">
 </i><span data-w="0.05686" style="left:9.970%;top:14.156%;font-size:1.680cqw">  -  3.28</span><i class="nl" style="left:9.970%;top:15.724%">
 </i><span data-w="0.04841" style="left:9.970%;top:15.724%;font-size:1.680cqw">  -------</span><i class="nl" style="left:9.970%;top:17.293%">
 </i><span data-w="0.65150" style="left:9.970%;top:17.293%;font-size:1.680cqw">    12.12  (Regroup from tenths: 10 - 8 = 2 hundredths, 3 - 2 = 1 tenth, 15 - 3 = 12 units).</span><i class="nl" style="left:9.088%;top:22.861%">
 </i><span data-w="0.29832" style="left:9.088%;top:22.861%;font-size:2.184cqw">Averages (Mean, Mode, Median)</span><i class="nl" style="left:9.088%;top:25.537%">
-</i><span class="mo" data-w="0.28586" style="left:9.088%;top:25.537%;font-size:1.764cqw">Student Work Sample (Question): </span><span data-w="0.49373" style="left:37.703%;top:25.537%;font-size:1.764cqw">Sam calculated the mean of these 4 test scores: 10, 12, 14, 24.</span><i class="nl" style="left:9.088%;top:27.189%">
+</i><span data-w="0.28586" style="left:9.088%;top:25.537%;font-size:1.764cqw">Student Work Sample (Question): </span><span data-w="0.49373" style="left:37.703%;top:25.537%;font-size:1.764cqw">Sam calculated the mean of these 4 test scores: 10, 12, 14, 24.</span><i class="nl" style="left:9.088%;top:27.189%">
 </i><span data-w="0.43875" style="left:9.088%;top:27.189%;font-size:1.764cqw">Sam wrote on his calculator: 10 + 12 + 14 + 24 ÷ 4 = 42.</span><i class="nl" style="left:9.088%;top:28.840%">
 </i><span data-w="0.57742" style="left:9.088%;top:28.840%;font-size:1.764cqw">Task: Explain why Sam&#x27;s answer of 42 is incorrect and find the true mean.</span><i class="nl" style="left:9.970%;top:32.274%">
 </i><span data-w="0.41542" style="left:9.970%;top:32.274%;font-size:1.848cqw">File 2 Breakdown (Mean &amp; Order of Operations)</span><i class="nl" style="left:9.970%;top:34.472%">
@@ -572,12 +577,12 @@ window.LS.ham();
 </i><span data-w="0.78862" style="left:9.970%;top:37.965%;font-size:1.680cqw">2. EXPLAIN IT (ESL Model Explanation): &quot;Sam made an order of operations mistake on his calculator. He </span><i class="nl" style="left:9.970%;top:39.533%">
 </i><span data-w="0.75835" style="left:9.970%;top:39.533%;font-size:1.680cqw">divided only the last number (24 ÷ 4 = 6) and added it to 10 + 12 + 14 = 36, giving 42. He forgot to put </span><i class="nl" style="left:9.970%;top:41.102%">
 </i><span data-w="0.30924" style="left:9.970%;top:41.102%;font-size:1.680cqw">brackets around the sum before dividing.&quot;</span><i class="nl" style="left:9.970%;top:43.026%">
-</i><span class="mo" data-w="0.18179" style="left:9.970%;top:43.026%;font-size:1.680cqw">3. FIX IT (Correct Math):</span><i class="nl" style="left:9.970%;top:44.594%">
+</i><span data-w="0.18179" style="left:9.970%;top:43.026%;font-size:1.680cqw">3. FIX IT (Correct Math):</span><i class="nl" style="left:9.970%;top:44.594%">
 </i><span data-w="0.40809" style="left:9.970%;top:44.594%;font-size:1.680cqw">   Step 1: Calculate total sum = 10 + 12 + 14 + 24 = 60.</span><i class="nl" style="left:9.970%;top:46.163%">
 </i><span data-w="0.36738" style="left:9.970%;top:46.163%;font-size:1.680cqw">   Step 2: Divide sum by total count = 60 ÷ 4 = 15.</span><i class="nl" style="left:9.970%;top:47.731%">
 </i><span data-w="0.19027" style="left:9.970%;top:47.731%;font-size:1.680cqw">   The correct mean is 15.</span><i class="nl" style="left:9.088%;top:53.300%">
 </i><span data-w="0.36453" style="left:9.088%;top:53.300%;font-size:2.184cqw">Fractions, Decimals &amp; Percentages (FPD)</span><i class="nl" style="left:9.088%;top:55.976%">
-</i><span class="mo" data-w="0.28586" style="left:9.088%;top:55.976%;font-size:1.764cqw">Student Work Sample (Question): </span><span data-w="0.30905" style="left:37.703%;top:55.976%;font-size:1.764cqw">Mia tried to add two fractions: 1/4 + 2/5.</span><i class="nl" style="left:9.088%;top:57.627%">
+</i><span data-w="0.28586" style="left:9.088%;top:55.976%;font-size:1.764cqw">Student Work Sample (Question): </span><span data-w="0.30905" style="left:37.703%;top:55.976%;font-size:1.764cqw">Mia tried to add two fractions: 1/4 + 2/5.</span><i class="nl" style="left:9.088%;top:57.627%">
 </i><span data-w="0.38678" style="left:9.088%;top:57.627%;font-size:1.764cqw">Mia wrote: 1/4 + 2/5 = (1 + 2) / (4 + 5) = 3/9 = 1/3.</span><i class="nl" style="left:9.088%;top:59.279%">
 </i><span data-w="0.54667" style="left:9.088%;top:59.279%;font-size:1.764cqw">Task: Explain the mistake Mia made and calculate the correct answer.</span><i class="nl" style="left:9.970%;top:62.712%">
 </i><span data-w="0.55279" style="left:9.970%;top:62.712%;font-size:1.848cqw">File 3 Breakdown (Adding Fractions with Unlike Denominators)</span><i class="nl" style="left:9.970%;top:64.910%">
@@ -585,7 +590,7 @@ window.LS.ham();
 </i><span data-w="0.77656" style="left:9.970%;top:66.835%;font-size:1.680cqw">2. EXPLAIN IT (ESL Model Explanation): &quot;Mia mistakenly added the denominators together. You cannot </span><i class="nl" style="left:9.970%;top:68.403%">
 </i><span data-w="0.73883" style="left:9.970%;top:68.403%;font-size:1.680cqw">add fractions with different denominators directly. Mia must first convert both fractions to equivalent </span><i class="nl" style="left:9.970%;top:69.972%">
 </i><span data-w="0.32407" style="left:9.970%;top:69.972%;font-size:1.680cqw">fractions with a common denominator (20).&quot;</span><i class="nl" style="left:9.970%;top:71.896%">
-</i><span class="mo" data-w="0.18179" style="left:9.970%;top:71.896%;font-size:1.680cqw">3. FIX IT (Correct Math):</span><i class="nl" style="left:9.970%;top:73.465%">
+</i><span data-w="0.18179" style="left:9.970%;top:71.896%;font-size:1.680cqw">3. FIX IT (Correct Math):</span><i class="nl" style="left:9.970%;top:73.465%">
 </i><span data-w="0.30971" style="left:9.970%;top:73.465%;font-size:1.680cqw">   Common denominator for 4 and 5 is 20.</span><i class="nl" style="left:9.970%;top:75.033%">
 </i><span data-w="0.22011" style="left:9.970%;top:75.033%;font-size:1.680cqw">   1/4 = 5/20   and   2/5 = 8/20</span><i class="nl" style="left:9.970%;top:76.601%">
 </i><span data-w="0.16417" style="left:9.970%;top:76.601%;font-size:1.680cqw">   5/20 + 8/20 = 13/20.</span><i class="nl" style="left:9.970%;top:78.169%">
@@ -598,91 +603,91 @@ window.LS.ham();
 </i><span data-w="0.53484" style="left:9.466%;top:9.808%;font-size:1.680cqw">Ben measured the temperature at 6:00 AM (-4°C) and at 2:00 PM (7°C).</span><i class="nl" style="left:9.466%;top:11.376%">
 </i><span data-w="0.42039" style="left:9.466%;top:11.376%;font-size:1.680cqw">To find the temperature rise, Ben calculated: 7 - 4 = 3°C.</span><i class="nl" style="left:9.466%;top:12.944%">
 </i><span data-w="0.58073" style="left:9.466%;top:12.944%;font-size:1.680cqw">Explain why Ben&#x27;s answer is wrong and calculate the correct temperature rise.</span><i class="nl" style="left:9.088%;top:16.182%">
-</i><span class="mo" data-w="0.18346" style="left:9.088%;top:16.182%;font-size:1.596cqw">Explain the mistake here: </span><i class="nl" style="left:9.088%;top:17.667%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:17.667%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:19.152%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:19.152%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:20.637%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:20.637%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:24.558%">
-</i><span class="mo" data-w="0.19672" style="left:9.088%;top:24.558%;font-size:1.596cqw">Correct Working &amp; Answer: </span><i class="nl" style="left:9.088%;top:26.043%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:26.043%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:27.528%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:27.528%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:30.168%">
+</i><span data-w="0.18346" style="left:9.088%;top:16.182%;font-size:1.596cqw">Explain the mistake here: </span><i class="nl" style="left:9.088%;top:17.667%">
+</i><span data-w="0.81630" style="left:9.088%;top:17.667%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:19.152%">
+</i><span data-w="0.81630" style="left:9.088%;top:19.152%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:20.637%">
+</i><span data-w="0.81630" style="left:9.088%;top:20.637%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:24.558%">
+</i><span data-w="0.19672" style="left:9.088%;top:24.558%;font-size:1.596cqw">Correct Working &amp; Answer: </span><i class="nl" style="left:9.088%;top:26.043%">
+</i><span data-w="0.81630" style="left:9.088%;top:26.043%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:27.528%">
+</i><span data-w="0.81630" style="left:9.088%;top:27.528%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:30.168%">
 </i><span data-w="0.51244" style="left:9.088%;top:30.168%;font-size:2.184cqw">Question 2: Decimals (Multi-Step Money Word Problem)</span><i class="nl" style="left:9.466%;top:33.557%">
 </i><span data-w="0.59533" style="left:9.466%;top:33.557%;font-size:1.680cqw">Emma bought a book for £6.45 and a pencil for £1.80. She paid with a £20 note.</span><i class="nl" style="left:9.466%;top:35.125%">
 </i><span data-w="0.64622" style="left:9.466%;top:35.125%;font-size:1.680cqw">Emma calculated her change: £20.00 - £6.45 = £13.55. She said her change is £13.55.</span><i class="nl" style="left:9.466%;top:36.694%">
 </i><span data-w="0.45899" style="left:9.466%;top:36.694%;font-size:1.680cqw">Explain the mistake Emma made in solving the word problem.</span><i class="nl" style="left:9.088%;top:39.932%">
-</i><span class="mo" data-w="0.18346" style="left:9.088%;top:39.932%;font-size:1.596cqw">Explain the mistake here: </span><i class="nl" style="left:9.088%;top:41.417%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:41.417%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:42.902%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:42.902%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:44.387%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:44.387%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:48.307%">
-</i><span class="mo" data-w="0.19672" style="left:9.088%;top:48.307%;font-size:1.596cqw">Correct Working &amp; Answer: </span><i class="nl" style="left:9.088%;top:49.793%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:49.793%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:52.433%">
+</i><span data-w="0.18346" style="left:9.088%;top:39.932%;font-size:1.596cqw">Explain the mistake here: </span><i class="nl" style="left:9.088%;top:41.417%">
+</i><span data-w="0.81630" style="left:9.088%;top:41.417%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:42.902%">
+</i><span data-w="0.81630" style="left:9.088%;top:42.902%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:44.387%">
+</i><span data-w="0.81630" style="left:9.088%;top:44.387%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:48.307%">
+</i><span data-w="0.19672" style="left:9.088%;top:48.307%;font-size:1.596cqw">Correct Working &amp; Answer: </span><i class="nl" style="left:9.088%;top:49.793%">
+</i><span data-w="0.81630" style="left:9.088%;top:49.793%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:52.433%">
 </i><span data-w="0.65139" style="left:9.088%;top:52.433%;font-size:2.184cqw">Question 3: Averages (Selecting the Right Measure of Central Tendency)</span><i class="nl" style="left:9.466%;top:55.822%">
 </i><span data-w="0.49733" style="left:9.466%;top:55.822%;font-size:1.680cqw">A shop owner wants to know the typical shoe size sold in her shop.</span><i class="nl" style="left:9.466%;top:57.390%">
 </i><span data-w="0.36101" style="left:9.466%;top:57.390%;font-size:1.680cqw">Five customers bought shoe sizes: 4, 4, 4, 5, 11.</span><i class="nl" style="left:9.466%;top:58.958%">
 </i><span data-w="0.56877" style="left:9.466%;top:58.958%;font-size:1.680cqw">The shop owner calculated the mean: (4 + 4 + 4 + 5 + 11) ÷ 5 = 28 ÷ 5 = 5.6.</span><i class="nl" style="left:9.466%;top:60.527%">
 </i><span data-w="0.79959" style="left:9.466%;top:60.527%;font-size:1.680cqw">She decided to order shoe size 5.6 for her next stock shipment. Explain why using the mean was a mistake.</span><i class="nl" style="left:9.088%;top:63.764%">
-</i><span class="mo" data-w="0.18346" style="left:9.088%;top:63.764%;font-size:1.596cqw">Explain the mistake here: </span><i class="nl" style="left:9.088%;top:65.249%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:65.249%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:66.734%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:66.734%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:68.220%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:68.220%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:71.190%">
+</i><span data-w="0.18346" style="left:9.088%;top:63.764%;font-size:1.596cqw">Explain the mistake here: </span><i class="nl" style="left:9.088%;top:65.249%">
+</i><span data-w="0.81630" style="left:9.088%;top:65.249%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:66.734%">
+</i><span data-w="0.81630" style="left:9.088%;top:66.734%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:68.220%">
+</i><span data-w="0.81630" style="left:9.088%;top:68.220%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:71.190%">
 </i><span data-w="0.35552" style="left:9.088%;top:71.190%;font-size:1.596cqw">Which average should she use instead and why?: </span><i class="nl" style="left:9.088%;top:72.675%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:72.675%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:74.160%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:74.160%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:80.150%">
+</i><span data-w="0.81630" style="left:9.088%;top:72.675%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:74.160%">
+</i><span data-w="0.81630" style="left:9.088%;top:74.160%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:80.150%">
 </i><span data-w="0.58145" style="left:9.088%;top:80.150%;font-size:2.184cqw">Question 4: Averages (Working Backwards from a Known Mean)</span><i class="nl" style="left:9.466%;top:83.539%">
 </i><span data-w="0.37035" style="left:9.466%;top:83.539%;font-size:1.680cqw">The mean score of 3 children in a quiz is 8 marks.</span><i class="nl" style="left:9.466%;top:85.108%">
 </i><span data-w="0.35827" style="left:9.466%;top:85.108%;font-size:1.680cqw">A 4th child joins the group and scores 12 marks.</span><i class="nl" style="left:9.466%;top:86.676%">
 </i><span data-w="0.41498" style="left:9.466%;top:86.676%;font-size:1.680cqw">Liam calculated the new mean: (8 + 12) ÷ 2 = 10 marks.</span><i class="nl" style="left:9.466%;top:88.244%">
 </i><span data-w="0.44970" style="left:9.466%;top:88.244%;font-size:1.680cqw">Explain the mistake Liam made in calculating the new mean.</span><i class="nl" style="left:34.050%;top:96.223%">
 </i><span class="mo" data-w="0.27849" style="left:34.050%;top:96.223%;font-size:1.512cqw">Stage 6 Mathematics Reasoning  |  Page </span><span data-w="0.00981" style="left:61.926%;top:96.061%;font-size:1.764cqw">3</span><span class="mo" data-w="0.02097" style="left:62.909%;top:96.223%;font-size:1.512cqw"> of </span><span data-w="0.00981" style="left:65.009%;top:96.061%;font-size:1.764cqw">6</span></div></div></section>
-<section class="trang" id="tr-4" data-tr="4"><div class="khung"><img src="anh/trang-4.webp" width="993" height="1404" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.18346" style="left:9.088%;top:6.452%;font-size:1.596cqw">Explain the mistake here: </span><i class="nl" style="left:9.088%;top:7.937%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:7.937%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:9.422%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:9.422%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:10.907%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:10.907%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:13.877%">
-</i><span class="mo" data-w="0.19672" style="left:9.088%;top:13.877%;font-size:1.596cqw">Correct Working &amp; Answer: </span><i class="nl" style="left:9.088%;top:15.362%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:15.362%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:16.847%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:16.847%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:19.487%">
+<section class="trang" id="tr-4" data-tr="4"><div class="khung"><img src="anh/trang-4.webp" width="993" height="1404" alt="" loading="lazy"><div class="chu"><span data-w="0.18346" style="left:9.088%;top:6.452%;font-size:1.596cqw">Explain the mistake here: </span><i class="nl" style="left:9.088%;top:7.937%">
+</i><span data-w="0.81630" style="left:9.088%;top:7.937%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:9.422%">
+</i><span data-w="0.81630" style="left:9.088%;top:9.422%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:10.907%">
+</i><span data-w="0.81630" style="left:9.088%;top:10.907%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:13.877%">
+</i><span data-w="0.19672" style="left:9.088%;top:13.877%;font-size:1.596cqw">Correct Working &amp; Answer: </span><i class="nl" style="left:9.088%;top:15.362%">
+</i><span data-w="0.81630" style="left:9.088%;top:15.362%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:16.847%">
+</i><span data-w="0.81630" style="left:9.088%;top:16.847%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:19.487%">
 </i><span data-w="0.61329" style="left:9.088%;top:19.487%;font-size:2.184cqw">Question 5: Fractions &amp; Decimals (Ordering Mixed Representations)</span><i class="nl" style="left:9.466%;top:22.876%">
 </i><span data-w="0.59059" style="left:9.466%;top:22.876%;font-size:1.680cqw">Lucas was asked to order these values from smallest to largest: 3/5, 0.62, 65%.</span><i class="nl" style="left:9.466%;top:24.445%">
 </i><span data-w="0.52996" style="left:9.466%;top:24.445%;font-size:1.680cqw">Lucas wrote: 3/5, 65%, 0.62 because 3/5 = 0.35, 65% = 0.65, and 0.62.</span><i class="nl" style="left:9.466%;top:26.013%">
 </i><span data-w="0.28552" style="left:9.466%;top:26.013%;font-size:1.680cqw">Explain the two mistakes Lucas made.</span><i class="nl" style="left:9.088%;top:29.251%">
 </i><span data-w="0.19143" style="left:9.088%;top:29.251%;font-size:1.596cqw">Explain the mistakes here: </span><i class="nl" style="left:9.088%;top:30.736%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:30.736%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:32.221%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:32.221%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:33.706%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:33.706%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:36.676%">
+</i><span data-w="0.81630" style="left:9.088%;top:30.736%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:32.221%">
+</i><span data-w="0.81630" style="left:9.088%;top:32.221%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:33.706%">
+</i><span data-w="0.81630" style="left:9.088%;top:33.706%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:36.676%">
 </i><span data-w="0.18430" style="left:9.088%;top:36.676%;font-size:1.596cqw">Correct Working &amp; Order: </span><i class="nl" style="left:9.088%;top:38.161%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:38.161%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:39.646%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:39.646%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:42.286%">
+</i><span data-w="0.81630" style="left:9.088%;top:38.161%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:39.646%">
+</i><span data-w="0.81630" style="left:9.088%;top:39.646%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:42.286%">
 </i><span data-w="0.52602" style="left:9.088%;top:42.286%;font-size:2.184cqw">Question 6: Percentages (Multi-Step Percentage Discount)</span><i class="nl" style="left:9.466%;top:45.676%">
 </i><span data-w="0.38901" style="left:9.466%;top:45.676%;font-size:1.680cqw">A jacket costs £80. It is on sale with a 25% discount.</span><i class="nl" style="left:9.466%;top:47.244%">
 </i><span data-w="0.34755" style="left:9.466%;top:47.244%;font-size:1.680cqw">Noah calculated the sale price: £80 - 25 = £55.</span><i class="nl" style="left:9.466%;top:48.812%">
 </i><span data-w="0.56210" style="left:9.466%;top:48.812%;font-size:1.680cqw">Explain why Noah&#x27;s calculation is incorrect and calculate the true sale price.</span><i class="nl" style="left:9.088%;top:52.050%">
-</i><span class="mo" data-w="0.18346" style="left:9.088%;top:52.050%;font-size:1.596cqw">Explain the mistake here: </span><i class="nl" style="left:9.088%;top:53.535%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:53.535%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:55.020%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:55.020%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:56.505%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:56.505%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:59.475%">
-</i><span class="mo" data-w="0.19672" style="left:9.088%;top:59.475%;font-size:1.596cqw">Correct Working &amp; Answer: </span><i class="nl" style="left:9.088%;top:60.960%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:60.960%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:62.446%">
-</i><span class="mo" data-w="0.81630" style="left:9.088%;top:62.446%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:34.050%;top:96.223%">
+</i><span data-w="0.18346" style="left:9.088%;top:52.050%;font-size:1.596cqw">Explain the mistake here: </span><i class="nl" style="left:9.088%;top:53.535%">
+</i><span data-w="0.81630" style="left:9.088%;top:53.535%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:55.020%">
+</i><span data-w="0.81630" style="left:9.088%;top:55.020%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:56.505%">
+</i><span data-w="0.81630" style="left:9.088%;top:56.505%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:59.475%">
+</i><span data-w="0.19672" style="left:9.088%;top:59.475%;font-size:1.596cqw">Correct Working &amp; Answer: </span><i class="nl" style="left:9.088%;top:60.960%">
+</i><span data-w="0.81630" style="left:9.088%;top:60.960%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:9.088%;top:62.446%">
+</i><span data-w="0.81630" style="left:9.088%;top:62.446%;font-size:1.596cqw">____________________________________________________________________________________________</span><i class="nl" style="left:34.050%;top:96.223%">
 </i><span class="mo" data-w="0.27849" style="left:34.050%;top:96.223%;font-size:1.512cqw">Stage 6 Mathematics Reasoning  |  Page </span><span data-w="0.00981" style="left:61.926%;top:96.061%;font-size:1.764cqw">4</span><span class="mo" data-w="0.02097" style="left:62.909%;top:96.223%;font-size:1.512cqw"> of </span><span data-w="0.00981" style="left:65.009%;top:96.061%;font-size:1.764cqw">6</span></div></div></section>
 <section class="trang" id="tr-5" data-tr="5"><div class="khung"><img src="anh/trang-5.webp" width="993" height="1404" alt="" loading="lazy"><div class="chu"><span data-w="0.38461" style="left:9.088%;top:6.418%;font-size:2.688cqw">Part 4: Answer Key &amp; Explanations</span><i class="nl" style="left:9.088%;top:9.837%">
 </i><span data-w="0.81712" style="left:9.088%;top:9.837%;font-size:1.764cqw">Use this section to self-check your answers. Compare your explanation with the model responses to see </span><i class="nl" style="left:9.088%;top:11.488%">
 </i><span data-w="0.37232" style="left:9.088%;top:11.488%;font-size:1.764cqw">if you included all key mathematical vocabulary.</span><i class="nl" style="left:9.088%;top:14.290%">
 </i><span data-w="0.45855" style="left:9.088%;top:14.290%;font-size:2.184cqw">Question 1 Answer: Temperature Rise (-4°C to 7°C)</span><i class="nl" style="left:9.970%;top:18.004%">
 </i><span data-w="0.02301" style="left:9.970%;top:18.004%;font-size:1.848cqw">✅</span><i class="nl" style="left:12.271%;top:18.034%">
-</i><span class="mo" data-w="0.27580" style="left:12.271%;top:18.034%;font-size:1.848cqw"> Model Solution &amp; Explanations</span><i class="nl" style="left:9.970%;top:20.233%">
+</i><span data-w="0.27580" style="left:12.271%;top:18.034%;font-size:1.848cqw"> Model Solution &amp; Explanations</span><i class="nl" style="left:9.970%;top:20.233%">
 </i><span data-w="0.79437" style="left:9.970%;top:20.233%;font-size:1.680cqw">• Explanation of Mistake: Ben subtracted 4 from 7 as if the starting temperature was positive 4°C. Because </span><i class="nl" style="left:9.970%;top:21.801%">
 </i><span data-w="0.79264" style="left:9.970%;top:21.801%;font-size:1.680cqw">the starting temperature was negative (-4°C), Ben should have calculated the distance from -4°C to 0°C (4 </span><i class="nl" style="left:9.970%;top:23.370%">
 </i><span data-w="0.28118" style="left:9.970%;top:23.370%;font-size:1.680cqw">degrees) plus 0°C to 7°C (7 degrees).</span><i class="nl" style="left:9.970%;top:24.938%">
 </i><span data-w="0.63408" style="left:9.970%;top:24.938%;font-size:1.680cqw">• Correct Math: 7 - (-4) = 7 + 4 = 11°C (or 4°C up to 0°C + 7°C up to 7°C = 11°C rise).</span><i class="nl" style="left:9.088%;top:30.507%">
 </i><span data-w="0.42979" style="left:9.088%;top:30.507%;font-size:2.184cqw">Question 2 Answer: Multi-Step Money Problem</span><i class="nl" style="left:9.970%;top:34.222%">
 </i><span data-w="0.02301" style="left:9.970%;top:34.222%;font-size:1.848cqw">✅</span><i class="nl" style="left:12.271%;top:34.252%">
-</i><span class="mo" data-w="0.27580" style="left:12.271%;top:34.252%;font-size:1.848cqw"> Model Solution &amp; Explanations</span><i class="nl" style="left:9.970%;top:36.450%">
+</i><span data-w="0.27580" style="left:12.271%;top:34.252%;font-size:1.848cqw"> Model Solution &amp; Explanations</span><i class="nl" style="left:9.970%;top:36.450%">
 </i><span data-w="0.77454" style="left:9.970%;top:36.450%;font-size:1.680cqw">• Explanation of Mistake: Emma forgot to subtract the cost of the pencil (£1.80). She only subtracted the </span><i class="nl" style="left:9.970%;top:38.018%">
 </i><span data-w="0.76677" style="left:9.970%;top:38.018%;font-size:1.680cqw">book (£6.45) from £20.00. In a multi-step problem, she must find the total cost of both items first before </span><i class="nl" style="left:9.970%;top:39.587%">
 </i><span data-w="0.18098" style="left:9.970%;top:39.587%;font-size:1.680cqw">subtracting from £20.00.</span><i class="nl" style="left:9.970%;top:41.155%">
 </i><span data-w="0.64352" style="left:9.970%;top:41.155%;font-size:1.680cqw">• Correct Math: Total cost = £6.45 + £1.80 = £8.25. Change = £20.00 - £8.25 = £11.75.</span><i class="nl" style="left:9.088%;top:46.724%">
 </i><span data-w="0.42339" style="left:9.088%;top:46.724%;font-size:2.184cqw">Question 3 Answer: Shoe Size Average Context</span><i class="nl" style="left:9.970%;top:50.439%">
 </i><span data-w="0.02301" style="left:9.970%;top:50.439%;font-size:1.848cqw">✅</span><i class="nl" style="left:12.271%;top:50.469%">
-</i><span class="mo" data-w="0.27580" style="left:12.271%;top:50.469%;font-size:1.848cqw"> Model Solution &amp; Explanations</span><i class="nl" style="left:9.970%;top:52.667%">
+</i><span data-w="0.27580" style="left:12.271%;top:50.469%;font-size:1.848cqw"> Model Solution &amp; Explanations</span><i class="nl" style="left:9.970%;top:52.667%">
 </i><span data-w="0.80416" style="left:9.970%;top:52.667%;font-size:1.680cqw">• Explanation of Mistake: Using the mean was a mistake because shoe sizes are discrete numbers and size </span><i class="nl" style="left:9.970%;top:54.236%">
 </i><span data-w="0.77441" style="left:9.970%;top:54.236%;font-size:1.680cqw">5.6 does not exist. Also, the dataset contains an extreme outlier (size 11) which pulls the mean up away </span><i class="nl" style="left:9.970%;top:55.804%">
 </i><span data-w="0.15298" style="left:9.970%;top:55.804%;font-size:1.680cqw">from the typical size.</span><i class="nl" style="left:9.970%;top:57.372%">
@@ -690,14 +695,14 @@ window.LS.ham();
 </i><span data-w="0.28270" style="left:9.970%;top:58.940%;font-size:1.680cqw">shoe size sold, or the Median (size 4).</span><i class="nl" style="left:9.088%;top:64.509%">
 </i><span data-w="0.46944" style="left:9.088%;top:64.509%;font-size:2.184cqw">Question 4 Answer: Working Backwards from Mean</span><i class="nl" style="left:9.970%;top:68.224%">
 </i><span data-w="0.02301" style="left:9.970%;top:68.224%;font-size:1.848cqw">✅</span><i class="nl" style="left:12.271%;top:68.254%">
-</i><span class="mo" data-w="0.27580" style="left:12.271%;top:68.254%;font-size:1.848cqw"> Model Solution &amp; Explanations</span><i class="nl" style="left:9.970%;top:70.453%">
+</i><span data-w="0.27580" style="left:12.271%;top:68.254%;font-size:1.848cqw"> Model Solution &amp; Explanations</span><i class="nl" style="left:9.970%;top:70.453%">
 </i><span data-w="0.75970" style="left:9.970%;top:70.453%;font-size:1.680cqw">• Explanation of Mistake: Liam averaged the old mean (8) and the new score (12) directly. You cannot </span><i class="nl" style="left:9.970%;top:72.021%">
 </i><span data-w="0.73514" style="left:9.970%;top:72.021%;font-size:1.680cqw">average a mean and a single score. Liam forgot to find the original total score of the 3 children first.</span><i class="nl" style="left:9.970%;top:73.589%">
 </i><span data-w="0.79494" style="left:9.970%;top:73.589%;font-size:1.680cqw">• Correct Math: Original total = 3 × 8 = 24 marks. New total with 4th child = 24 + 12 = 36 marks. New mean </span><i class="nl" style="left:9.970%;top:75.158%">
 </i><span data-w="0.14445" style="left:9.970%;top:75.158%;font-size:1.680cqw">= 36 ÷ 4 = 9 marks.</span><i class="nl" style="left:9.088%;top:80.727%">
 </i><span data-w="0.43116" style="left:9.088%;top:80.727%;font-size:2.184cqw">Question 5 Answer: Ordering Mixed FPD Values</span><i class="nl" style="left:9.970%;top:84.441%">
 </i><span data-w="0.02301" style="left:9.970%;top:84.441%;font-size:1.848cqw">✅</span><i class="nl" style="left:12.271%;top:84.472%">
-</i><span class="mo" data-w="0.27580" style="left:12.271%;top:84.472%;font-size:1.848cqw"> Model Solution &amp; Explanations</span><i class="nl" style="left:9.970%;top:86.670%">
+</i><span data-w="0.27580" style="left:12.271%;top:84.472%;font-size:1.848cqw"> Model Solution &amp; Explanations</span><i class="nl" style="left:9.970%;top:86.670%">
 </i><span data-w="0.80324" style="left:9.970%;top:86.670%;font-size:1.680cqw">• Explanation of Mistake: Lucas made two errors. First, 3/5 is equal to 0.60 (or 60%), NOT 0.35. Second, he </span><i class="nl" style="left:9.970%;top:88.238%">
 </i><span data-w="0.49076" style="left:9.970%;top:88.238%;font-size:1.680cqw">listed 0.62 after 65% (0.65) even though 0.62 is smaller than 0.65.</span><i class="nl" style="left:9.970%;top:89.807%">
 </i><span data-w="0.77861" style="left:9.970%;top:89.807%;font-size:1.680cqw">• Correct Conversion &amp; Order: 3/5 = 60% (0.60), 0.62 = 62%, 65% = 65%. Correct order from smallest to </span><i class="nl" style="left:34.050%;top:96.223%">
@@ -705,7 +710,7 @@ window.LS.ham();
 <section class="trang" id="tr-6" data-tr="6"><div class="khung"><img src="anh/trang-6.webp" width="993" height="1404" alt="" loading="lazy"><div class="chu"><span data-w="0.17258" style="left:9.970%;top:7.527%;font-size:1.680cqw">largest: 3/5, 0.62, 65%.</span><i class="nl" style="left:9.088%;top:13.096%">
 </i><span data-w="0.36945" style="left:9.088%;top:13.096%;font-size:2.184cqw">Question 6 Answer: Percentage Discount</span><i class="nl" style="left:9.970%;top:16.810%">
 </i><span data-w="0.02301" style="left:9.970%;top:16.810%;font-size:1.848cqw">✅</span><i class="nl" style="left:12.271%;top:16.840%">
-</i><span class="mo" data-w="0.27580" style="left:12.271%;top:16.840%;font-size:1.848cqw"> Model Solution &amp; Explanations</span><i class="nl" style="left:9.970%;top:19.039%">
+</i><span data-w="0.27580" style="left:12.271%;top:16.840%;font-size:1.848cqw"> Model Solution &amp; Explanations</span><i class="nl" style="left:9.970%;top:19.039%">
 </i><span data-w="0.80466" style="left:9.970%;top:19.039%;font-size:1.680cqw">• Explanation of Mistake: Noah subtracted the number 25 directly from £80 (£80 - 25 = £55). 25% means 25 </span><i class="nl" style="left:9.970%;top:20.607%">
 </i><span data-w="0.35909" style="left:9.970%;top:20.607%;font-size:1.680cqw">out of 100 (or 1/4 of the total amount), NOT £25.</span><i class="nl" style="left:9.970%;top:22.175%">
 </i><span data-w="0.63549" style="left:9.970%;top:22.175%;font-size:1.680cqw">• Correct Math: 25% of £80 = £80 ÷ 4 = £20. Discounted sale price = £80 - £20 = £60.</span><i class="nl" style="left:34.050%;top:96.223%">

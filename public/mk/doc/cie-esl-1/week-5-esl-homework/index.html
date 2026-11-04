@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -499,14 +504,14 @@ window.LS.ham();
 </i><span data-w="0.02228" style="left:78.298%;top:75.314%;font-size:2.124cqw">th</span><i class="nl" style="left:88.085%;top:75.314%">
 </i><span data-w="0.02262" style="left:88.085%;top:75.314%;font-size:2.124cqw">sh</span><i class="nl" style="left:8.824%;top:82.122%">
 </i><span data-w="0.02124" style="left:8.824%;top:82.122%;font-size:2.124cqw">7.​</span><span data-w="0.79717" style="left:11.765%;top:82.122%;font-size:2.124cqw">Circle the correct article:                                                                                                       /4 </span><i class="nl" style="left:25.008%;top:87.170%">
-</i><span class="mo" data-w="0.04212" style="left:25.008%;top:87.170%;font-size:2.124cqw">It’s </span><span class="mo" data-w="0.08242" style="left:29.220%;top:87.170%;font-size:2.124cqw">a  / an </span><span data-w="0.09611" style="left:37.461%;top:87.170%;font-size:2.124cqw">umbrella. </span><i class="nl" style="left:49.510%;top:84.953%">
+</i><span data-w="0.04212" style="left:25.008%;top:87.170%;font-size:2.124cqw">It’s </span><span data-w="0.08242" style="left:29.220%;top:87.170%;font-size:2.124cqw">a  / an </span><span data-w="0.09611" style="left:37.461%;top:87.170%;font-size:2.124cqw">umbrella. </span><i class="nl" style="left:49.510%;top:84.953%">
 </i><span data-w="0.01593" style="left:49.510%;top:84.953%;font-size:2.124cqw">2.</span><i class="nl" style="left:69.943%;top:87.170%">
-</i><span class="mo" data-w="0.04212" style="left:69.943%;top:87.170%;font-size:2.124cqw">It’s </span><span class="mo" data-w="0.08242" style="left:74.155%;top:87.170%;font-size:2.124cqw">a  / an </span><span data-w="0.04401" style="left:82.396%;top:87.170%;font-size:2.124cqw">map.</span><i class="nl" style="left:6.740%;top:84.953%">
+</i><span data-w="0.04212" style="left:69.943%;top:87.170%;font-size:2.124cqw">It’s </span><span data-w="0.08242" style="left:74.155%;top:87.170%;font-size:2.124cqw">a  / an </span><span data-w="0.04401" style="left:82.396%;top:87.170%;font-size:2.124cqw">map.</span><i class="nl" style="left:6.740%;top:84.953%">
 </i><span data-w="0.01593" style="left:6.740%;top:84.953%;font-size:2.124cqw">1.</span></div></div></section>
 <section class="trang" id="tr-3" data-tr="3"><div class="khung"><img src="anh/trang-3.webp" width="1020" height="1320" alt="" loading="lazy"><div class="chu"><span data-w="0.01593" style="left:6.740%;top:4.615%;font-size:2.124cqw">3.</span><i class="nl" style="left:49.510%;top:4.615%">
 </i><span data-w="0.02655" style="left:49.510%;top:4.615%;font-size:2.124cqw">4.  </span><i class="nl" style="left:69.328%;top:6.433%">
-</i><span class="mo" data-w="0.04212" style="left:69.328%;top:6.433%;font-size:2.124cqw">It’s </span><span class="mo" data-w="0.08242" style="left:73.540%;top:6.433%;font-size:2.124cqw">a  / an </span><span class="mo" data-w="0.05631" style="left:81.781%;top:6.433%;font-size:2.124cqw">apple.</span><i class="nl" style="left:25.038%;top:6.833%">
-</i><span class="mo" data-w="0.04212" style="left:25.038%;top:6.833%;font-size:2.124cqw">It’s </span><span class="mo" data-w="0.08242" style="left:29.250%;top:6.833%;font-size:2.124cqw">a  / an </span><span class="mo" data-w="0.08917" style="left:37.491%;top:6.833%;font-size:2.124cqw">calendar.</span><i class="nl" style="left:5.882%;top:14.053%">
+</i><span data-w="0.04212" style="left:69.328%;top:6.433%;font-size:2.124cqw">It’s </span><span data-w="0.08242" style="left:73.540%;top:6.433%;font-size:2.124cqw">a  / an </span><span data-w="0.05631" style="left:81.781%;top:6.433%;font-size:2.124cqw">apple.</span><i class="nl" style="left:25.038%;top:6.833%">
+</i><span data-w="0.04212" style="left:25.038%;top:6.833%;font-size:2.124cqw">It’s </span><span data-w="0.08242" style="left:29.250%;top:6.833%;font-size:2.124cqw">a  / an </span><span data-w="0.08917" style="left:37.491%;top:6.833%;font-size:2.124cqw">calendar.</span><i class="nl" style="left:5.882%;top:14.053%">
 </i><span data-w="0.84369" style="left:5.882%;top:14.053%;font-size:2.124cqw">8. Look, circle and write:                                                                                                                /2 </span><i class="nl" style="left:6.740%;top:18.329%">
 </i><span data-w="0.02120" style="left:6.740%;top:18.329%;font-size:2.124cqw">1. </span><i class="nl" style="left:56.828%;top:18.329%">
 </i><span data-w="0.22378" style="left:56.828%;top:18.329%;font-size:2.124cqw">                      2 eraser</span><span data-w="0.01956" style="left:79.207%;top:18.329%;font-size:2.124cqw">s.</span><i class="nl" style="left:52.353%;top:22.132%">

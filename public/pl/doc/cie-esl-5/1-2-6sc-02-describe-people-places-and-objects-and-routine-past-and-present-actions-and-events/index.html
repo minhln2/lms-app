@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -502,11 +507,11 @@ window.LS.ham();
 </i><span data-w="0.21807" style="left:73.437%;top:51.980%;font-size:2.917cqw">I can include </span><i class="nl" style="left:74.775%;top:58.210%">
 </i><span data-w="0.19129" style="left:74.775%;top:58.210%;font-size:2.917cqw">interesting </span><i class="nl" style="left:74.533%;top:64.439%">
 </i><span data-w="0.19619" style="left:74.533%;top:64.439%;font-size:2.917cqw">facts about </span><i class="nl" style="left:74.170%;top:70.669%">
-</i><span class="mo" data-w="0.20351" style="left:74.170%;top:70.669%;font-size:2.917cqw">carnivorous </span><i class="nl" style="left:78.162%;top:76.898%">
+</i><span data-w="0.20351" style="left:74.170%;top:70.669%;font-size:2.917cqw">carnivorous </span><i class="nl" style="left:78.162%;top:76.898%">
 </i><span data-w="0.11339" style="left:78.162%;top:76.898%;font-size:2.917cqw">plants.</span><i class="nl" style="left:6.812%;top:55.095%">
 </i><span data-w="0.21349" style="left:6.812%;top:55.095%;font-size:2.917cqw">I can write a </span><i class="nl" style="left:3.980%;top:61.325%">
 </i><span data-w="0.27002" style="left:3.980%;top:61.325%;font-size:2.917cqw">fact file about a </span><i class="nl" style="left:7.311%;top:67.554%">
-</i><span class="mo" data-w="0.20351" style="left:7.311%;top:67.554%;font-size:2.917cqw">carnivorous </span><i class="nl" style="left:12.868%;top:73.784%">
+</i><span data-w="0.20351" style="left:7.311%;top:67.554%;font-size:2.917cqw">carnivorous </span><i class="nl" style="left:12.868%;top:73.784%">
 </i><span data-w="0.08218" style="left:12.868%;top:73.784%;font-size:2.917cqw">plan.</span><i class="nl" style="left:41.616%;top:56.828%">
 </i><span data-w="0.18977" style="left:41.616%;top:56.828%;font-size:2.501cqw">I can use the </span><i class="nl" style="left:40.154%;top:62.164%">
 </i><span data-w="0.21903" style="left:40.154%;top:62.164%;font-size:2.501cqw">present simple </span><i class="nl" style="left:42.442%;top:67.501%">
@@ -570,11 +575,11 @@ window.LS.ham();
 </i><span data-w="0.21807" style="left:73.437%;top:51.980%;font-size:2.917cqw">I can include </span><i class="nl" style="left:74.775%;top:58.210%">
 </i><span data-w="0.19129" style="left:74.775%;top:58.210%;font-size:2.917cqw">interesting </span><i class="nl" style="left:74.533%;top:64.439%">
 </i><span data-w="0.19619" style="left:74.533%;top:64.439%;font-size:2.917cqw">facts about </span><i class="nl" style="left:74.170%;top:70.669%">
-</i><span class="mo" data-w="0.20351" style="left:74.170%;top:70.669%;font-size:2.917cqw">carnivorous </span><i class="nl" style="left:78.162%;top:76.898%">
+</i><span data-w="0.20351" style="left:74.170%;top:70.669%;font-size:2.917cqw">carnivorous </span><i class="nl" style="left:78.162%;top:76.898%">
 </i><span data-w="0.11339" style="left:78.162%;top:76.898%;font-size:2.917cqw">plants.</span><i class="nl" style="left:6.812%;top:55.095%">
 </i><span data-w="0.21349" style="left:6.812%;top:55.095%;font-size:2.917cqw">I can write a </span><i class="nl" style="left:3.980%;top:61.325%">
 </i><span data-w="0.27002" style="left:3.980%;top:61.325%;font-size:2.917cqw">fact file about a </span><i class="nl" style="left:7.311%;top:67.554%">
-</i><span class="mo" data-w="0.20351" style="left:7.311%;top:67.554%;font-size:2.917cqw">carnivorous </span><i class="nl" style="left:12.868%;top:73.784%">
+</i><span data-w="0.20351" style="left:7.311%;top:67.554%;font-size:2.917cqw">carnivorous </span><i class="nl" style="left:12.868%;top:73.784%">
 </i><span data-w="0.08218" style="left:12.868%;top:73.784%;font-size:2.917cqw">plan.</span><i class="nl" style="left:41.616%;top:56.828%">
 </i><span data-w="0.18977" style="left:41.616%;top:56.828%;font-size:2.501cqw">I can use the </span><i class="nl" style="left:40.154%;top:62.164%">
 </i><span data-w="0.21903" style="left:40.154%;top:62.164%;font-size:2.501cqw">present simple </span><i class="nl" style="left:42.442%;top:67.501%">

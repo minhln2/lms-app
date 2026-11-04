@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -463,51 +468,51 @@ window.LS.ham();
 </i><span data-w="0.39526" style="left:5.899%;top:39.114%;font-size:1.634cqw">rewrite the sentence correctly on the line provided.</span><i class="nl" style="left:10.801%;top:41.311%">
 </i><span data-w="0.37830" style="left:10.801%;top:41.311%;font-size:1.634cqw">She didn&#x27;t went to the park yesterday afternoon.</span><i class="nl" style="left:7.859%;top:41.445%">
 </i><span data-w="0.01497" style="left:7.859%;top:41.445%;font-size:1.797cqw">1.</span><i class="nl" style="left:10.801%;top:44.126%">
-</i><span class="mo" data-w="0.78647" style="left:10.801%;top:44.126%;font-size:1.634cqw">Correction: ____________________________________________________________________</span><i class="nl" style="left:10.801%;top:46.942%">
+</i><span data-w="0.78647" style="left:10.801%;top:44.126%;font-size:1.634cqw">Correction: ____________________________________________________________________</span><i class="nl" style="left:10.801%;top:46.942%">
 </i><span data-w="0.42430" style="left:10.801%;top:46.942%;font-size:1.634cqw">They runned very fast during the school race last week.</span><i class="nl" style="left:7.859%;top:47.076%">
 </i><span data-w="0.01497" style="left:7.859%;top:47.076%;font-size:1.797cqw">2.</span><i class="nl" style="left:10.801%;top:49.758%">
-</i><span class="mo" data-w="0.78647" style="left:10.801%;top:49.758%;font-size:1.634cqw">Correction: ____________________________________________________________________</span><i class="nl" style="left:10.801%;top:52.573%">
+</i><span data-w="0.78647" style="left:10.801%;top:49.758%;font-size:1.634cqw">Correction: ____________________________________________________________________</span><i class="nl" style="left:10.801%;top:52.573%">
 </i><span data-w="0.41338" style="left:10.801%;top:52.573%;font-size:1.634cqw">Did you saw the news program on television last night?</span><i class="nl" style="left:7.859%;top:52.708%">
 </i><span data-w="0.01497" style="left:7.859%;top:52.708%;font-size:1.797cqw">3.</span><i class="nl" style="left:10.801%;top:55.389%">
-</i><span class="mo" data-w="0.78647" style="left:10.801%;top:55.389%;font-size:1.634cqw">Correction: ____________________________________________________________________</span><i class="nl" style="left:10.801%;top:58.205%">
+</i><span data-w="0.78647" style="left:10.801%;top:55.389%;font-size:1.634cqw">Correction: ____________________________________________________________________</span><i class="nl" style="left:10.801%;top:58.205%">
 </i><span data-w="0.39423" style="left:10.801%;top:58.205%;font-size:1.634cqw">My brother maked a big birthday cake for our mom.</span><i class="nl" style="left:7.859%;top:58.339%">
 </i><span data-w="0.01497" style="left:7.859%;top:58.339%;font-size:1.797cqw">4.</span><i class="nl" style="left:10.801%;top:61.020%">
-</i><span class="mo" data-w="0.78647" style="left:10.801%;top:61.020%;font-size:1.634cqw">Correction: ____________________________________________________________________</span><i class="nl" style="left:10.801%;top:63.836%">
+</i><span data-w="0.78647" style="left:10.801%;top:61.020%;font-size:1.634cqw">Correction: ____________________________________________________________________</span><i class="nl" style="left:10.801%;top:63.836%">
 </i><span data-w="0.33279" style="left:10.801%;top:63.836%;font-size:1.634cqw">I eated breakfast at 7:00 AM this morning.</span><i class="nl" style="left:7.859%;top:63.970%">
 </i><span data-w="0.01497" style="left:7.859%;top:63.970%;font-size:1.797cqw">5.</span><i class="nl" style="left:10.801%;top:66.652%">
 </i><span data-w="0.77624" style="left:10.801%;top:66.652%;font-size:1.634cqw">Correction: ___________________________________________________________________</span><i class="nl" style="left:5.899%;top:75.566%">
 </i><span data-w="0.64191" style="left:5.899%;top:75.566%;font-size:1.634cqw">Write one complete sentence in the simple past tense using each verb prompt below.</span><i class="nl" style="left:10.801%;top:77.763%">
 </i><span data-w="0.05809" style="left:10.801%;top:77.763%;font-size:1.634cqw">(learn):</span><span data-w="0.74173" style="left:16.618%;top:77.763%;font-size:1.634cqw"> ________________________________________________________________________</span><i class="nl" style="left:7.859%;top:77.897%">
 </i><span data-w="0.01497" style="left:7.859%;top:77.897%;font-size:1.797cqw">1.</span><i class="nl" style="left:10.801%;top:80.913%">
-</i><span data-w="0.03627" style="left:10.801%;top:80.913%;font-size:1.634cqw">(go):</span><span class="mo" data-w="0.75196" style="left:14.436%;top:80.913%;font-size:1.634cqw"> _________________________________________________________________________</span><i class="nl" style="left:7.859%;top:81.047%">
+</i><span data-w="0.03627" style="left:10.801%;top:80.913%;font-size:1.634cqw">(go):</span><span data-w="0.75196" style="left:14.436%;top:80.913%;font-size:1.634cqw"> _________________________________________________________________________</span><i class="nl" style="left:7.859%;top:81.047%">
 </i><span data-w="0.01497" style="left:7.859%;top:81.047%;font-size:1.797cqw">2.</span><i class="nl" style="left:10.801%;top:84.063%">
-</i><span data-w="0.05842" style="left:10.801%;top:84.063%;font-size:1.634cqw">(drink):</span><span class="mo" data-w="0.75196" style="left:16.650%;top:84.063%;font-size:1.634cqw"> _________________________________________________________________________</span><i class="nl" style="left:7.859%;top:84.198%">
+</i><span data-w="0.05842" style="left:10.801%;top:84.063%;font-size:1.634cqw">(drink):</span><span data-w="0.75196" style="left:16.650%;top:84.063%;font-size:1.634cqw"> _________________________________________________________________________</span><i class="nl" style="left:7.859%;top:84.198%">
 </i><span data-w="0.01497" style="left:7.859%;top:84.198%;font-size:1.797cqw">3.</span><i class="nl" style="left:10.801%;top:87.213%">
-</i><span data-w="0.06275" style="left:10.801%;top:87.213%;font-size:1.634cqw">(speak):</span><span class="mo" data-w="0.75196" style="left:17.075%;top:87.213%;font-size:1.634cqw"> _________________________________________________________________________</span><i class="nl" style="left:7.859%;top:87.348%">
+</i><span data-w="0.06275" style="left:10.801%;top:87.213%;font-size:1.634cqw">(speak):</span><span data-w="0.75196" style="left:17.075%;top:87.213%;font-size:1.634cqw"> _________________________________________________________________________</span><i class="nl" style="left:7.859%;top:87.348%">
 </i><span data-w="0.01497" style="left:7.859%;top:87.348%;font-size:1.797cqw">4.</span><i class="nl" style="left:10.801%;top:90.364%">
-</i><span data-w="0.05178" style="left:10.801%;top:90.364%;font-size:1.634cqw">(visit):</span><span class="mo" data-w="0.75195" style="left:15.980%;top:90.364%;font-size:1.634cqw"> _________________________________________________________________________</span><i class="nl" style="left:7.859%;top:90.498%">
+</i><span data-w="0.05178" style="left:10.801%;top:90.364%;font-size:1.634cqw">(visit):</span><span data-w="0.75195" style="left:15.980%;top:90.364%;font-size:1.634cqw"> _________________________________________________________________________</span><i class="nl" style="left:7.859%;top:90.498%">
 </i><span data-w="0.01497" style="left:7.859%;top:90.498%;font-size:1.797cqw">5.</span></div></div></section>
 <section class="trang" id="tr-3" data-tr="3"><div class="khung"><img src="anh/trang-3.webp" width="1020" height="1320" alt="" loading="lazy"><div class="chu"><span data-w="0.51853" style="left:5.899%;top:8.937%;font-size:1.634cqw">Write a short paragraph (4 to 6 sentences) answering the question: </span><span data-w="0.26479" style="left:57.819%;top:8.937%;font-size:1.634cqw">&quot;What did you do last weekend?&quot;</span><i class="nl" style="left:7.124%;top:12.081%">
 </i><span data-w="0.11121" style="left:7.124%;top:12.081%;font-size:1.634cqw">Requirements:</span><span data-w="0.71755" style="left:18.252%;top:12.081%;font-size:1.634cqw"> Include at least 3 past tense verbs (regular or irregular), at least 1 negative sentence (e.g., I </span><i class="nl" style="left:7.124%;top:14.278%">
 </i><span data-w="0.55185" style="left:7.124%;top:14.278%;font-size:1.634cqw">didn&#x27;t play...), and sequence words (e.g., First, Next, After that, Finally).</span><i class="nl" style="left:7.737%;top:18.369%">
-</i><span class="mo" data-w="0.75734" style="left:7.737%;top:18.369%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:20.130%">
-</i><span class="mo" data-w="0.75734" style="left:7.737%;top:20.130%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:21.891%">
-</i><span class="mo" data-w="0.75734" style="left:7.737%;top:21.891%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:23.653%">
-</i><span class="mo" data-w="0.75734" style="left:7.737%;top:23.653%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:25.414%">
-</i><span class="mo" data-w="0.75734" style="left:7.737%;top:25.414%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:27.176%">
-</i><span class="mo" data-w="0.75734" style="left:7.737%;top:27.176%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:28.937%">
-</i><span class="mo" data-w="0.75734" style="left:7.737%;top:28.937%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:30.698%">
-</i><span class="mo" data-w="0.75734" style="left:7.737%;top:30.698%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:32.460%">
-</i><span class="mo" data-w="0.75734" style="left:7.737%;top:32.460%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:34.221%">
-</i><span class="mo" data-w="0.75734" style="left:7.737%;top:34.221%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:35.982%">
-</i><span class="mo" data-w="0.75734" style="left:7.737%;top:35.982%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:37.744%">
-</i><span class="mo" data-w="0.75734" style="left:7.737%;top:37.744%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:39.505%">
-</i><span class="mo" data-w="0.75734" style="left:7.737%;top:39.505%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:41.266%">
-</i><span class="mo" data-w="0.75734" style="left:7.737%;top:41.266%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:43.028%">
-</i><span class="mo" data-w="0.75734" style="left:7.737%;top:43.028%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:44.789%">
-</i><span class="mo" data-w="0.75734" style="left:7.737%;top:44.789%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:46.551%">
-</i><span class="mo" data-w="0.75734" style="left:7.737%;top:46.551%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:48.312%">
-</i><span class="mo" data-w="0.75734" style="left:7.737%;top:48.312%;font-size:1.634cqw">__________________________________________________________________________</span></div></div></section>
+</i><span data-w="0.75734" style="left:7.737%;top:18.369%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:20.130%">
+</i><span data-w="0.75734" style="left:7.737%;top:20.130%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:21.891%">
+</i><span data-w="0.75734" style="left:7.737%;top:21.891%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:23.653%">
+</i><span data-w="0.75734" style="left:7.737%;top:23.653%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:25.414%">
+</i><span data-w="0.75734" style="left:7.737%;top:25.414%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:27.176%">
+</i><span data-w="0.75734" style="left:7.737%;top:27.176%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:28.937%">
+</i><span data-w="0.75734" style="left:7.737%;top:28.937%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:30.698%">
+</i><span data-w="0.75734" style="left:7.737%;top:30.698%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:32.460%">
+</i><span data-w="0.75734" style="left:7.737%;top:32.460%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:34.221%">
+</i><span data-w="0.75734" style="left:7.737%;top:34.221%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:35.982%">
+</i><span data-w="0.75734" style="left:7.737%;top:35.982%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:37.744%">
+</i><span data-w="0.75734" style="left:7.737%;top:37.744%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:39.505%">
+</i><span data-w="0.75734" style="left:7.737%;top:39.505%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:41.266%">
+</i><span data-w="0.75734" style="left:7.737%;top:41.266%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:43.028%">
+</i><span data-w="0.75734" style="left:7.737%;top:43.028%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:44.789%">
+</i><span data-w="0.75734" style="left:7.737%;top:44.789%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:46.551%">
+</i><span data-w="0.75734" style="left:7.737%;top:46.551%;font-size:1.634cqw">__________________________________________________________________________</span><i class="nl" style="left:7.737%;top:48.312%">
+</i><span data-w="0.75734" style="left:7.737%;top:48.312%;font-size:1.634cqw">__________________________________________________________________________</span></div></div></section>
 
 
 <template x-if="chonDang && chonDang.kieu === 'khung'">

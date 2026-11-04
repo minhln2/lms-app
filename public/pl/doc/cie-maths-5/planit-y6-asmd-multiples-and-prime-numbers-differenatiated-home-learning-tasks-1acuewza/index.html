@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -613,9 +618,9 @@ window.LS.ham();
 </i><span data-w="0.08264" style="left:52.767%;top:46.741%;font-size:2.184cqw">9 and 6 </span><i class="nl" style="left:4.280%;top:50.903%">
 </i><span data-w="0.02719" style="left:4.280%;top:50.903%;font-size:2.184cqw">3) </span><i class="nl" style="left:10.328%;top:50.903%">
 </i><span data-w="0.83369" style="left:10.328%;top:50.903%;font-size:2.184cqw">Write three pairs of prime numbers that, when added together, create square numbers.</span><i class="nl" style="left:10.333%;top:53.717%">
-</i><span class="mo" data-w="0.19227" style="left:10.333%;top:53.717%;font-size:2.184cqw">           and            </span><i class="nl" style="left:10.333%;top:56.532%">
-</i><span class="mo" data-w="0.19227" style="left:10.333%;top:56.532%;font-size:2.184cqw">           and            </span><i class="nl" style="left:10.333%;top:59.346%">
-</i><span class="mo" data-w="0.19227" style="left:10.333%;top:59.346%;font-size:2.184cqw">           and            </span><i class="nl" style="left:32.173%;top:94.495%">
+</i><span data-w="0.19227" style="left:10.333%;top:53.717%;font-size:2.184cqw">           and            </span><i class="nl" style="left:10.333%;top:56.532%">
+</i><span data-w="0.19227" style="left:10.333%;top:56.532%;font-size:2.184cqw">           and            </span><i class="nl" style="left:10.333%;top:59.346%">
+</i><span data-w="0.19227" style="left:10.333%;top:59.346%;font-size:2.184cqw">           and            </span><i class="nl" style="left:32.173%;top:94.495%">
 </i><span class="mo" data-w="0.04075" style="left:32.173%;top:94.495%;font-size:1.512cqw">Maths</span><span class="mo" data-w="0.59871" style="left:36.248%;top:94.778%;font-size:1.344cqw"> | Year 6 | Addition, Subtraction, Multiplication and Division | Common Factors, Multiples and Prime Numbers |
 </span><i class="nl" style="left:62.938%;top:95.919%">
 </i><span class="mo" data-w="0.33184" style="left:62.938%;top:95.919%;font-size:1.344cqw">Home Learning Task: Factors, Multiples and Prime Numbers </span></div></div></section>

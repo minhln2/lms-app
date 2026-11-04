@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -516,27 +521,27 @@ window.LS.ham();
 </i><span data-w="0.07045" style="left:10.270%;top:28.995%;font-size:2.856cqw">apple</span><i class="nl" style="left:29.570%;top:28.995%">
 </i><span data-w="0.04569" style="left:29.570%;top:28.995%;font-size:2.856cqw">feel</span><i class="nl" style="left:47.499%;top:28.995%">
 </i><span data-w="0.04832" style="left:47.499%;top:28.995%;font-size:2.856cqw">fish</span><i class="nl" style="left:63.814%;top:28.995%">
-</i><span class="mo" data-w="0.08328" style="left:63.814%;top:28.995%;font-size:2.856cqw">cheese</span><i class="nl" style="left:83.947%;top:28.995%">
-</i><span class="mo" data-w="0.04181" style="left:83.947%;top:28.995%;font-size:2.856cqw">red</span><i class="nl" style="left:12.789%;top:40.670%">
+</i><span data-w="0.08328" style="left:63.814%;top:28.995%;font-size:2.856cqw">cheese</span><i class="nl" style="left:83.947%;top:28.995%">
+</i><span data-w="0.04181" style="left:83.947%;top:28.995%;font-size:2.856cqw">red</span><i class="nl" style="left:12.789%;top:40.670%">
 </i><span data-w="0.02002" style="left:12.789%;top:40.670%;font-size:2.856cqw">it</span><i class="nl" style="left:28.679%;top:40.670%">
 </i><span data-w="0.06346" style="left:28.679%;top:40.670%;font-size:2.856cqw">after</span><i class="nl" style="left:47.710%;top:40.670%">
 </i><span data-w="0.04407" style="left:47.710%;top:40.670%;font-size:2.856cqw">ant</span><i class="nl" style="left:64.051%;top:40.670%">
-</i><span class="mo" data-w="0.07851" style="left:64.051%;top:40.670%;font-size:2.856cqw">lemon</span><i class="nl" style="left:83.682%;top:40.670%">
-</i><span class="mo" data-w="0.04709" style="left:83.682%;top:40.670%;font-size:2.856cqw">dog</span><i class="nl" style="left:9.628%;top:52.345%">
-</i><span class="mo" data-w="0.08328" style="left:9.628%;top:52.345%;font-size:2.856cqw">cheese</span><i class="nl" style="left:29.761%;top:52.345%">
-</i><span class="mo" data-w="0.04181" style="left:29.761%;top:52.345%;font-size:2.856cqw">red</span><i class="nl" style="left:47.693%;top:52.345%">
+</i><span data-w="0.07851" style="left:64.051%;top:40.670%;font-size:2.856cqw">lemon</span><i class="nl" style="left:83.682%;top:40.670%">
+</i><span data-w="0.04709" style="left:83.682%;top:40.670%;font-size:2.856cqw">dog</span><i class="nl" style="left:9.628%;top:52.345%">
+</i><span data-w="0.08328" style="left:9.628%;top:52.345%;font-size:2.856cqw">cheese</span><i class="nl" style="left:29.761%;top:52.345%">
+</i><span data-w="0.04181" style="left:29.761%;top:52.345%;font-size:2.856cqw">red</span><i class="nl" style="left:47.693%;top:52.345%">
 </i><span data-w="0.04438" style="left:47.693%;top:52.345%;font-size:2.856cqw">egg</span><i class="nl" style="left:66.207%;top:52.345%">
 </i><span class="mo" data-w="0.03536" style="left:66.207%;top:52.345%;font-size:2.856cqw">off</span><i class="nl" style="left:84.004%;top:52.345%">
-</i><span class="mo" data-w="0.04064" style="left:84.004%;top:52.345%;font-size:2.856cqw">cat</span><i class="nl" style="left:9.865%;top:64.019%">
-</i><span class="mo" data-w="0.07851" style="left:9.865%;top:64.019%;font-size:2.856cqw">lemon</span><i class="nl" style="left:29.495%;top:64.019%">
-</i><span class="mo" data-w="0.04709" style="left:29.495%;top:64.019%;font-size:2.856cqw">dog</span><i class="nl" style="left:47.042%;top:64.019%">
+</i><span data-w="0.04064" style="left:84.004%;top:52.345%;font-size:2.856cqw">cat</span><i class="nl" style="left:9.865%;top:64.019%">
+</i><span data-w="0.07851" style="left:9.865%;top:64.019%;font-size:2.856cqw">lemon</span><i class="nl" style="left:29.495%;top:64.019%">
+</i><span data-w="0.04709" style="left:29.495%;top:64.019%;font-size:2.856cqw">dog</span><i class="nl" style="left:47.042%;top:64.019%">
 </i><span data-w="0.05740" style="left:47.042%;top:64.019%;font-size:2.856cqw">crab</span><i class="nl" style="left:64.608%;top:64.019%">
 </i><span class="mo" data-w="0.06734" style="left:64.608%;top:64.019%;font-size:2.856cqw">enter</span><i class="nl" style="left:83.251%;top:64.019%">
 </i><span class="mo" data-w="0.05572" style="left:83.251%;top:64.019%;font-size:2.856cqw">over</span><i class="nl" style="left:10.873%;top:75.694%">
-</i><span class="mo" data-w="0.05834" style="left:10.873%;top:75.694%;font-size:2.856cqw">cake</span><i class="nl" style="left:29.818%;top:75.694%">
-</i><span class="mo" data-w="0.04064" style="left:29.818%;top:75.694%;font-size:2.856cqw">cat</span><i class="nl" style="left:47.104%;top:75.694%">
+</i><span data-w="0.05834" style="left:10.873%;top:75.694%;font-size:2.856cqw">cake</span><i class="nl" style="left:29.818%;top:75.694%">
+</i><span data-w="0.04064" style="left:29.818%;top:75.694%;font-size:2.856cqw">cat</span><i class="nl" style="left:47.104%;top:75.694%">
 </i><span data-w="0.05617" style="left:47.104%;top:75.694%;font-size:2.856cqw">king</span><i class="nl" style="left:65.056%;top:75.694%">
-</i><span class="mo" data-w="0.05834" style="left:65.056%;top:75.694%;font-size:2.856cqw">cake</span><i class="nl" style="left:84.419%;top:75.694%">
+</i><span data-w="0.05834" style="left:65.056%;top:75.694%;font-size:2.856cqw">cake</span><i class="nl" style="left:84.419%;top:75.694%">
 </i><span data-w="0.03233" style="left:84.419%;top:75.694%;font-size:2.856cqw">up</span><i class="nl" style="left:82.697%;top:86.793%">
 </i><span class="mo" data-w="0.07367" style="left:82.697%;top:86.793%;font-size:2.688cqw">Finish</span><i class="nl" style="left:46.793%;top:94.302%">
 </i><span data-w="0.06415" style="left:46.793%;top:94.302%;font-size:1.344cqw">Page 1 of 2</span><i class="nl" style="left:79.714%;top:94.297%">
@@ -551,21 +556,21 @@ window.LS.ham();
 </i><span data-w="0.03184" style="left:30.346%;top:29.055%;font-size:2.856cqw">no</span><i class="nl" style="left:47.216%;top:29.055%">
 </i><span class="mo" data-w="0.05572" style="left:47.216%;top:29.055%;font-size:2.856cqw">over</span><i class="nl" style="left:66.447%;top:29.055%">
 </i><span data-w="0.03233" style="left:66.447%;top:29.055%;font-size:2.856cqw">up</span><i class="nl" style="left:83.921%;top:29.055%">
-</i><span class="mo" data-w="0.05235" style="left:83.921%;top:29.055%;font-size:2.856cqw">ant </span><i class="nl" style="left:10.356%;top:40.729%">
-</i><span class="mo" data-w="0.07873" style="left:10.356%;top:40.729%;font-size:2.856cqw">apple </span><i class="nl" style="left:28.744%;top:40.729%">
+</i><span data-w="0.05235" style="left:83.921%;top:29.055%;font-size:2.856cqw">ant </span><i class="nl" style="left:10.356%;top:40.729%">
+</i><span data-w="0.07873" style="left:10.356%;top:40.729%;font-size:2.856cqw">apple </span><i class="nl" style="left:28.744%;top:40.729%">
 </i><span data-w="0.06394" style="left:28.744%;top:40.729%;font-size:2.856cqw">wink</span><i class="nl" style="left:46.182%;top:40.729%">
 </i><span data-w="0.07642" style="left:46.182%;top:40.729%;font-size:2.856cqw">insect</span><i class="nl" style="left:66.801%;top:40.729%">
 </i><span data-w="0.02527" style="left:66.801%;top:40.729%;font-size:2.856cqw">of</span><i class="nl" style="left:85.127%;top:40.729%">
 </i><span data-w="0.02002" style="left:85.127%;top:40.729%;font-size:2.856cqw">it</span><i class="nl" style="left:11.112%;top:52.404%">
-</i><span class="mo" data-w="0.05537" style="left:11.112%;top:52.404%;font-size:2.856cqw">inch</span><i class="nl" style="left:27.916%;top:52.404%">
+</i><span data-w="0.05537" style="left:11.112%;top:52.404%;font-size:2.856cqw">inch</span><i class="nl" style="left:27.916%;top:52.404%">
 </i><span data-w="0.08051" style="left:27.916%;top:52.404%;font-size:2.856cqw">butter</span><i class="nl" style="left:47.695%;top:52.404%">
 </i><span data-w="0.04615" style="left:47.695%;top:52.404%;font-size:2.856cqw">can</span><i class="nl" style="left:64.542%;top:52.404%">
-</i><span class="mo" data-w="0.07873" style="left:64.542%;top:52.404%;font-size:2.856cqw">apple </span><i class="nl" style="left:82.759%;top:52.404%">
+</i><span data-w="0.07873" style="left:64.542%;top:52.404%;font-size:2.856cqw">apple </span><i class="nl" style="left:82.759%;top:52.404%">
 </i><span class="mo" data-w="0.06734" style="left:82.759%;top:52.404%;font-size:2.856cqw">enter</span><i class="nl" style="left:11.675%;top:64.079%">
-</i><span class="mo" data-w="0.05235" style="left:11.675%;top:64.079%;font-size:2.856cqw">ant </span><i class="nl" style="left:28.573%;top:64.079%">
+</i><span data-w="0.05235" style="left:11.675%;top:64.079%;font-size:2.856cqw">ant </span><i class="nl" style="left:28.573%;top:64.079%">
 </i><span class="mo" data-w="0.06734" style="left:28.573%;top:64.079%;font-size:2.856cqw">enter</span><i class="nl" style="left:47.964%;top:64.079%">
 </i><span data-w="0.04078" style="left:47.964%;top:64.079%;font-size:2.856cqw">dig</span><i class="nl" style="left:65.296%;top:64.079%">
-</i><span class="mo" data-w="0.05537" style="left:65.296%;top:64.079%;font-size:2.856cqw">inch</span><i class="nl" style="left:84.358%;top:64.079%">
+</i><span data-w="0.05537" style="left:65.296%;top:64.079%;font-size:2.856cqw">inch</span><i class="nl" style="left:84.358%;top:64.079%">
 </i><span class="mo" data-w="0.03536" style="left:84.358%;top:64.079%;font-size:2.856cqw">off</span><i class="nl" style="left:12.877%;top:75.753%">
 </i><span data-w="0.02002" style="left:12.877%;top:75.753%;font-size:2.856cqw">it</span><i class="nl" style="left:30.172%;top:75.753%">
 </i><span class="mo" data-w="0.03536" style="left:30.172%;top:75.753%;font-size:2.856cqw">off</span><i class="nl" style="left:47.513%;top:75.753%">
@@ -580,27 +585,27 @@ window.LS.ham();
 </i><span data-w="0.07045" style="left:10.354%;top:22.575%;font-size:2.856cqw">apple</span><i class="nl" style="left:29.654%;top:22.575%">
 </i><span data-w="0.04569" style="left:29.654%;top:22.575%;font-size:2.856cqw">feel</span><i class="nl" style="left:47.583%;top:22.575%">
 </i><span data-w="0.04832" style="left:47.583%;top:22.575%;font-size:2.856cqw">fish</span><i class="nl" style="left:63.898%;top:22.575%">
-</i><span class="mo" data-w="0.08328" style="left:63.898%;top:22.575%;font-size:2.856cqw">cheese</span><i class="nl" style="left:84.031%;top:22.575%">
-</i><span class="mo" data-w="0.04181" style="left:84.031%;top:22.575%;font-size:2.856cqw">red</span><i class="nl" style="left:12.873%;top:34.249%">
+</i><span data-w="0.08328" style="left:63.898%;top:22.575%;font-size:2.856cqw">cheese</span><i class="nl" style="left:84.031%;top:22.575%">
+</i><span data-w="0.04181" style="left:84.031%;top:22.575%;font-size:2.856cqw">red</span><i class="nl" style="left:12.873%;top:34.249%">
 </i><span data-w="0.02002" style="left:12.873%;top:34.249%;font-size:2.856cqw">it</span><i class="nl" style="left:28.763%;top:34.249%">
 </i><span data-w="0.06346" style="left:28.763%;top:34.249%;font-size:2.856cqw">after</span><i class="nl" style="left:47.794%;top:34.249%">
 </i><span data-w="0.04407" style="left:47.794%;top:34.249%;font-size:2.856cqw">ant</span><i class="nl" style="left:64.135%;top:34.249%">
-</i><span class="mo" data-w="0.07851" style="left:64.135%;top:34.249%;font-size:2.856cqw">lemon</span><i class="nl" style="left:83.766%;top:34.249%">
-</i><span class="mo" data-w="0.04709" style="left:83.766%;top:34.249%;font-size:2.856cqw">dog</span><i class="nl" style="left:9.712%;top:45.924%">
-</i><span class="mo" data-w="0.08328" style="left:9.712%;top:45.924%;font-size:2.856cqw">cheese</span><i class="nl" style="left:29.845%;top:45.924%">
-</i><span class="mo" data-w="0.04181" style="left:29.845%;top:45.924%;font-size:2.856cqw">red</span><i class="nl" style="left:47.777%;top:45.924%">
+</i><span data-w="0.07851" style="left:64.135%;top:34.249%;font-size:2.856cqw">lemon</span><i class="nl" style="left:83.766%;top:34.249%">
+</i><span data-w="0.04709" style="left:83.766%;top:34.249%;font-size:2.856cqw">dog</span><i class="nl" style="left:9.712%;top:45.924%">
+</i><span data-w="0.08328" style="left:9.712%;top:45.924%;font-size:2.856cqw">cheese</span><i class="nl" style="left:29.845%;top:45.924%">
+</i><span data-w="0.04181" style="left:29.845%;top:45.924%;font-size:2.856cqw">red</span><i class="nl" style="left:47.777%;top:45.924%">
 </i><span data-w="0.04438" style="left:47.777%;top:45.924%;font-size:2.856cqw">egg</span><i class="nl" style="left:66.291%;top:45.924%">
 </i><span class="mo" data-w="0.03536" style="left:66.291%;top:45.924%;font-size:2.856cqw">off</span><i class="nl" style="left:84.088%;top:45.924%">
-</i><span class="mo" data-w="0.04064" style="left:84.088%;top:45.924%;font-size:2.856cqw">cat</span><i class="nl" style="left:9.949%;top:57.599%">
-</i><span class="mo" data-w="0.07851" style="left:9.949%;top:57.599%;font-size:2.856cqw">lemon</span><i class="nl" style="left:29.579%;top:57.599%">
-</i><span class="mo" data-w="0.04709" style="left:29.579%;top:57.599%;font-size:2.856cqw">dog</span><i class="nl" style="left:47.126%;top:57.599%">
+</i><span data-w="0.04064" style="left:84.088%;top:45.924%;font-size:2.856cqw">cat</span><i class="nl" style="left:9.949%;top:57.599%">
+</i><span data-w="0.07851" style="left:9.949%;top:57.599%;font-size:2.856cqw">lemon</span><i class="nl" style="left:29.579%;top:57.599%">
+</i><span data-w="0.04709" style="left:29.579%;top:57.599%;font-size:2.856cqw">dog</span><i class="nl" style="left:47.126%;top:57.599%">
 </i><span data-w="0.05740" style="left:47.126%;top:57.599%;font-size:2.856cqw">crab</span><i class="nl" style="left:64.692%;top:57.599%">
 </i><span class="mo" data-w="0.06734" style="left:64.692%;top:57.599%;font-size:2.856cqw">enter</span><i class="nl" style="left:83.335%;top:57.599%">
 </i><span class="mo" data-w="0.05572" style="left:83.335%;top:57.599%;font-size:2.856cqw">over</span><i class="nl" style="left:10.957%;top:69.273%">
-</i><span class="mo" data-w="0.05834" style="left:10.957%;top:69.273%;font-size:2.856cqw">cake</span><i class="nl" style="left:29.902%;top:69.273%">
-</i><span class="mo" data-w="0.04064" style="left:29.902%;top:69.273%;font-size:2.856cqw">cat</span><i class="nl" style="left:47.188%;top:69.273%">
+</i><span data-w="0.05834" style="left:10.957%;top:69.273%;font-size:2.856cqw">cake</span><i class="nl" style="left:29.902%;top:69.273%">
+</i><span data-w="0.04064" style="left:29.902%;top:69.273%;font-size:2.856cqw">cat</span><i class="nl" style="left:47.188%;top:69.273%">
 </i><span data-w="0.05617" style="left:47.188%;top:69.273%;font-size:2.856cqw">king</span><i class="nl" style="left:65.140%;top:69.273%">
-</i><span class="mo" data-w="0.05834" style="left:65.140%;top:69.273%;font-size:2.856cqw">cake</span><i class="nl" style="left:84.503%;top:69.273%">
+</i><span data-w="0.05834" style="left:65.140%;top:69.273%;font-size:2.856cqw">cake</span><i class="nl" style="left:84.503%;top:69.273%">
 </i><span data-w="0.03233" style="left:84.503%;top:69.273%;font-size:2.856cqw">up</span><i class="nl" style="left:82.697%;top:80.313%">
 </i><span class="mo" data-w="0.07367" style="left:82.697%;top:80.313%;font-size:2.688cqw">Finish</span><i class="nl" style="left:46.689%;top:94.302%">
 </i><span data-w="0.06623" style="left:46.689%;top:94.302%;font-size:1.344cqw">Page 3 of 4</span><i class="nl" style="left:79.714%;top:94.297%">
@@ -611,21 +616,21 @@ window.LS.ham();
 </i><span data-w="0.03184" style="left:30.514%;top:24.758%;font-size:2.856cqw">no</span><i class="nl" style="left:47.384%;top:24.758%">
 </i><span class="mo" data-w="0.05572" style="left:47.384%;top:24.758%;font-size:2.856cqw">over</span><i class="nl" style="left:66.615%;top:24.758%">
 </i><span data-w="0.03233" style="left:66.615%;top:24.758%;font-size:2.856cqw">up</span><i class="nl" style="left:84.089%;top:24.758%">
-</i><span class="mo" data-w="0.05235" style="left:84.089%;top:24.758%;font-size:2.856cqw">ant </span><i class="nl" style="left:10.524%;top:36.433%">
-</i><span class="mo" data-w="0.07873" style="left:10.524%;top:36.433%;font-size:2.856cqw">apple </span><i class="nl" style="left:28.912%;top:36.433%">
+</i><span data-w="0.05235" style="left:84.089%;top:24.758%;font-size:2.856cqw">ant </span><i class="nl" style="left:10.524%;top:36.433%">
+</i><span data-w="0.07873" style="left:10.524%;top:36.433%;font-size:2.856cqw">apple </span><i class="nl" style="left:28.912%;top:36.433%">
 </i><span data-w="0.06394" style="left:28.912%;top:36.433%;font-size:2.856cqw">wink</span><i class="nl" style="left:46.350%;top:36.433%">
 </i><span data-w="0.07642" style="left:46.350%;top:36.433%;font-size:2.856cqw">insect</span><i class="nl" style="left:66.969%;top:36.433%">
 </i><span data-w="0.02527" style="left:66.969%;top:36.433%;font-size:2.856cqw">of</span><i class="nl" style="left:85.295%;top:36.433%">
 </i><span data-w="0.02002" style="left:85.295%;top:36.433%;font-size:2.856cqw">it</span><i class="nl" style="left:11.280%;top:48.107%">
-</i><span class="mo" data-w="0.05537" style="left:11.280%;top:48.107%;font-size:2.856cqw">inch</span><i class="nl" style="left:28.084%;top:48.107%">
+</i><span data-w="0.05537" style="left:11.280%;top:48.107%;font-size:2.856cqw">inch</span><i class="nl" style="left:28.084%;top:48.107%">
 </i><span data-w="0.08051" style="left:28.084%;top:48.107%;font-size:2.856cqw">butter</span><i class="nl" style="left:47.863%;top:48.107%">
 </i><span data-w="0.04615" style="left:47.863%;top:48.107%;font-size:2.856cqw">can</span><i class="nl" style="left:64.710%;top:48.107%">
-</i><span class="mo" data-w="0.07873" style="left:64.710%;top:48.107%;font-size:2.856cqw">apple </span><i class="nl" style="left:82.927%;top:48.107%">
+</i><span data-w="0.07873" style="left:64.710%;top:48.107%;font-size:2.856cqw">apple </span><i class="nl" style="left:82.927%;top:48.107%">
 </i><span class="mo" data-w="0.06734" style="left:82.927%;top:48.107%;font-size:2.856cqw">enter</span><i class="nl" style="left:11.843%;top:59.782%">
-</i><span class="mo" data-w="0.05235" style="left:11.843%;top:59.782%;font-size:2.856cqw">ant </span><i class="nl" style="left:28.741%;top:59.782%">
+</i><span data-w="0.05235" style="left:11.843%;top:59.782%;font-size:2.856cqw">ant </span><i class="nl" style="left:28.741%;top:59.782%">
 </i><span class="mo" data-w="0.06734" style="left:28.741%;top:59.782%;font-size:2.856cqw">enter</span><i class="nl" style="left:48.132%;top:59.782%">
 </i><span data-w="0.04078" style="left:48.132%;top:59.782%;font-size:2.856cqw">dig</span><i class="nl" style="left:65.464%;top:59.782%">
-</i><span class="mo" data-w="0.05537" style="left:65.464%;top:59.782%;font-size:2.856cqw">inch</span><i class="nl" style="left:84.526%;top:59.782%">
+</i><span data-w="0.05537" style="left:65.464%;top:59.782%;font-size:2.856cqw">inch</span><i class="nl" style="left:84.526%;top:59.782%">
 </i><span class="mo" data-w="0.03535" style="left:84.526%;top:59.782%;font-size:2.856cqw">off</span><i class="nl" style="left:13.045%;top:71.457%">
 </i><span data-w="0.02002" style="left:13.045%;top:71.457%;font-size:2.856cqw">it</span><i class="nl" style="left:30.340%;top:71.457%">
 </i><span class="mo" data-w="0.03536" style="left:30.340%;top:71.457%;font-size:2.856cqw">off</span><i class="nl" style="left:47.681%;top:71.457%">

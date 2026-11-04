@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -419,14 +424,14 @@ window.LS.ham();
 </i><span data-w="0.15106" style="left:25.159%;top:33.650%;font-size:2.184cqw">could/could not</span><i class="nl" style="left:59.444%;top:33.650%">
 </i><span data-w="0.14295" style="left:59.444%;top:33.650%;font-size:2.184cqw">must/must not</span><i class="nl" style="left:76.587%;top:33.650%">
 </i><span data-w="0.13247" style="left:76.587%;top:33.650%;font-size:2.184cqw">may/may not</span><i class="nl" style="left:42.302%;top:34.577%">
-</i><span class="mo" data-w="0.03164" style="left:42.302%;top:34.577%;font-size:2.184cqw">not</span><i class="nl" style="left:7.941%;top:34.661%">
-</i><span class="mo" data-w="0.03164" style="left:7.941%;top:34.661%;font-size:2.184cqw">not</span><i class="nl" style="left:59.444%;top:38.137%">
+</i><span data-w="0.03164" style="left:42.302%;top:34.577%;font-size:2.184cqw">not</span><i class="nl" style="left:7.941%;top:34.661%">
+</i><span data-w="0.03164" style="left:7.941%;top:34.661%;font-size:2.184cqw">not</span><i class="nl" style="left:59.444%;top:38.137%">
 </i><span data-w="0.14298" style="left:59.444%;top:38.137%;font-size:2.184cqw">should/should </span><i class="nl" style="left:7.941%;top:39.064%">
 </i><span data-w="0.12048" style="left:7.941%;top:39.064%;font-size:2.184cqw">will/will not</span><i class="nl" style="left:25.159%;top:39.064%">
 </i><span data-w="0.08165" style="left:25.159%;top:39.064%;font-size:2.184cqw">ought to</span><i class="nl" style="left:42.302%;top:39.064%">
 </i><span data-w="0.10904" style="left:42.302%;top:39.064%;font-size:2.184cqw">can/cannot</span><i class="nl" style="left:76.587%;top:39.064%">
 </i><span data-w="0.14003" style="left:76.587%;top:39.064%;font-size:2.184cqw">shall/shall not</span><i class="nl" style="left:59.444%;top:39.990%">
-</i><span class="mo" data-w="0.03164" style="left:59.444%;top:39.990%;font-size:2.184cqw">not</span><i class="nl" style="left:7.955%;top:46.621%">
+</i><span data-w="0.03164" style="left:59.444%;top:39.990%;font-size:2.184cqw">not</span><i class="nl" style="left:7.955%;top:46.621%">
 </i><span data-w="0.11990" style="left:7.955%;top:46.621%;font-size:2.352cqw">Obligation:</span><span data-w="0.68461" style="left:19.945%;top:46.714%;font-size:2.352cqw"> These words suggest duty or necessity - things that you must do.</span><i class="nl" style="left:7.955%;top:49.453%">
 </i><span data-w="0.11865" style="left:7.955%;top:49.453%;font-size:2.352cqw">Possibility:</span><span data-w="0.69970" style="left:19.820%;top:49.546%;font-size:2.352cqw"> These words express how likely or unlikely something will happen.</span><i class="nl" style="left:7.955%;top:52.285%">
 </i><span data-w="0.12394" style="left:7.955%;top:52.285%;font-size:2.352cqw">Permission:</span><span data-w="0.69915" style="left:20.349%;top:52.378%;font-size:2.352cqw"> These words relate to whether something is allowed or possible to </span><i class="nl" style="left:7.955%;top:54.374%">
@@ -449,57 +454,57 @@ window.LS.ham();
 </i><span data-w="0.33975" style="left:7.955%;top:14.439%;font-size:2.856cqw">possibility or a permission.</span><i class="nl" style="left:9.680%;top:20.920%">
 </i><span data-w="0.02053" style="left:9.680%;top:20.920%;font-size:2.184cqw">1.	</span><span data-w="0.17023" style="left:12.484%;top:20.920%;font-size:2.184cqw">You go to school.
 </span><i class="nl" style="left:12.484%;top:23.890%">
-</i><span class="mo" data-w="0.12061" style="left:12.484%;top:23.890%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:26.860%">
-</i><span class="mo" data-w="0.11836" style="left:12.484%;top:26.860%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:29.831%">
-</i><span class="mo" data-w="0.12356" style="left:12.484%;top:29.831%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:9.339%;top:34.476%">
+</i><span data-w="0.12061" style="left:12.484%;top:23.890%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:26.860%">
+</i><span data-w="0.11836" style="left:12.484%;top:26.860%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:29.831%">
+</i><span data-w="0.12356" style="left:12.484%;top:29.831%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:9.339%;top:34.476%">
 </i><span data-w="0.02394" style="left:9.339%;top:34.476%;font-size:2.184cqw">2.	</span><span data-w="0.29650" style="left:12.484%;top:34.476%;font-size:2.184cqw">Penny finishes her homework.
 </span><i class="nl" style="left:12.484%;top:37.446%">
-</i><span class="mo" data-w="0.12061" style="left:12.484%;top:37.446%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:40.416%">
-</i><span class="mo" data-w="0.11836" style="left:12.484%;top:40.416%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:43.387%">
-</i><span class="mo" data-w="0.12356" style="left:12.484%;top:43.387%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:9.405%;top:47.947%">
+</i><span data-w="0.12061" style="left:12.484%;top:37.446%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:40.416%">
+</i><span data-w="0.11836" style="left:12.484%;top:40.416%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:43.387%">
+</i><span data-w="0.12356" style="left:12.484%;top:43.387%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:9.405%;top:47.947%">
 </i><span data-w="0.02328" style="left:9.405%;top:47.947%;font-size:2.184cqw">3.	</span><span data-w="0.16665" style="left:12.484%;top:47.947%;font-size:2.184cqw">We play outside.
 </span><i class="nl" style="left:12.484%;top:50.918%">
-</i><span class="mo" data-w="0.12061" style="left:12.484%;top:50.918%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:53.888%">
-</i><span class="mo" data-w="0.11836" style="left:12.484%;top:53.888%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:56.858%">
-</i><span class="mo" data-w="0.12356" style="left:12.484%;top:56.858%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:9.283%;top:61.503%">
+</i><span data-w="0.12061" style="left:12.484%;top:50.918%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:53.888%">
+</i><span data-w="0.11836" style="left:12.484%;top:53.888%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:56.858%">
+</i><span data-w="0.12356" style="left:12.484%;top:56.858%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:9.283%;top:61.503%">
 </i><span data-w="0.02450" style="left:9.283%;top:61.503%;font-size:2.184cqw">4.	</span><span data-w="0.19275" style="left:12.484%;top:61.503%;font-size:2.184cqw">Brent drinks water.
 </span><i class="nl" style="left:12.484%;top:64.474%">
-</i><span class="mo" data-w="0.12061" style="left:12.484%;top:64.474%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:67.444%">
-</i><span class="mo" data-w="0.11836" style="left:12.484%;top:67.444%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:70.414%">
-</i><span class="mo" data-w="0.12356" style="left:12.484%;top:70.414%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:9.348%;top:75.059%">
+</i><span data-w="0.12061" style="left:12.484%;top:64.474%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:67.444%">
+</i><span data-w="0.11836" style="left:12.484%;top:67.444%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:70.414%">
+</i><span data-w="0.12356" style="left:12.484%;top:70.414%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:9.348%;top:75.059%">
 </i><span data-w="0.02385" style="left:9.348%;top:75.059%;font-size:2.184cqw">5.	</span><span data-w="0.17851" style="left:12.484%;top:75.059%;font-size:2.184cqw">They read a book.
 </span><i class="nl" style="left:12.484%;top:78.029%">
-</i><span class="mo" data-w="0.12061" style="left:12.484%;top:78.029%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:81.000%">
-</i><span class="mo" data-w="0.11836" style="left:12.484%;top:81.000%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:83.970%">
-</i><span class="mo" data-w="0.12356" style="left:12.484%;top:83.970%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:46.710%;top:94.302%">
+</i><span data-w="0.12061" style="left:12.484%;top:78.029%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:81.000%">
+</i><span data-w="0.11836" style="left:12.484%;top:81.000%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:83.970%">
+</i><span data-w="0.12356" style="left:12.484%;top:83.970%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:46.710%;top:94.302%">
 </i><span data-w="0.06580" style="left:46.710%;top:94.302%;font-size:1.344cqw">Page 2 of 3</span><i class="nl" style="left:77.938%;top:94.297%">
 </i><span class="mo" data-w="0.11166" style="left:77.938%;top:94.297%;font-size:1.282cqw">visit twinkl.com.au </span></div><a class="lk to" href="https://www.twinkl.com.au/resources/australian-resources-3---4-english/australian-resources-3---4-english-literacy/australian-resources-3---4-english-language-vocabulary" target="_blank" rel="noopener" style="left:50.000%;top:95.960%;transform:translate(-50%,-50%)" title="https://www.twinkl.com.au/resources/australian-resources-3---4-english/australia">🔗</a></div></section>
 <section class="trang" id="tr-3" data-tr="3"><div class="khung"><img src="anh/trang-3.webp" width="993" height="1404" alt="" loading="lazy"><div class="chu"><span data-w="0.85324" style="left:5.714%;top:3.430%;font-size:2.688cqw">Modal Verbs: Obligation, Permission and Possibility Sentence Rewrite</span><i class="nl" style="left:9.322%;top:8.290%">
 </i><span data-w="0.02411" style="left:9.322%;top:8.290%;font-size:2.184cqw">6.	</span><span data-w="0.17217" style="left:12.484%;top:8.290%;font-size:2.184cqw">I clean my room.
 </span><i class="nl" style="left:12.484%;top:11.260%">
-</i><span class="mo" data-w="0.12061" style="left:12.484%;top:11.260%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:14.231%">
-</i><span class="mo" data-w="0.11836" style="left:12.484%;top:14.231%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:17.201%">
-</i><span class="mo" data-w="0.12356" style="left:12.484%;top:17.201%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:9.248%;top:21.846%">
+</i><span data-w="0.12061" style="left:12.484%;top:11.260%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:14.231%">
+</i><span data-w="0.11836" style="left:12.484%;top:14.231%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:17.201%">
+</i><span data-w="0.12356" style="left:12.484%;top:17.201%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:9.248%;top:21.846%">
 </i><span data-w="0.02485" style="left:9.248%;top:21.846%;font-size:2.184cqw">8.	</span><span data-w="0.24793" style="left:12.484%;top:21.846%;font-size:2.184cqw">You speak to the teacher.
 </span><i class="nl" style="left:12.484%;top:24.816%">
-</i><span class="mo" data-w="0.12061" style="left:12.484%;top:24.816%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:27.787%">
-</i><span class="mo" data-w="0.11836" style="left:12.484%;top:27.787%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:30.757%">
-</i><span class="mo" data-w="0.12356" style="left:12.484%;top:30.757%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:9.505%;top:35.318%">
+</i><span data-w="0.12061" style="left:12.484%;top:24.816%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:27.787%">
+</i><span data-w="0.11836" style="left:12.484%;top:27.787%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:30.757%">
+</i><span data-w="0.12356" style="left:12.484%;top:30.757%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:9.505%;top:35.318%">
 </i><span data-w="0.02228" style="left:9.505%;top:35.318%;font-size:2.184cqw">7.	</span><span data-w="0.15999" style="left:12.484%;top:35.318%;font-size:2.184cqw">We visit Nanna.
 </span><i class="nl" style="left:12.484%;top:38.288%">
-</i><span class="mo" data-w="0.12061" style="left:12.484%;top:38.288%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:41.258%">
-</i><span class="mo" data-w="0.11836" style="left:12.484%;top:41.258%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:44.229%">
-</i><span class="mo" data-w="0.12356" style="left:12.484%;top:44.229%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:9.352%;top:48.873%">
+</i><span data-w="0.12061" style="left:12.484%;top:38.288%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:41.258%">
+</i><span data-w="0.11836" style="left:12.484%;top:41.258%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:44.229%">
+</i><span data-w="0.12356" style="left:12.484%;top:44.229%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:9.352%;top:48.873%">
 </i><span data-w="0.02380" style="left:9.352%;top:48.873%;font-size:2.184cqw">9.	</span><span data-w="0.17988" style="left:12.484%;top:48.873%;font-size:2.184cqw">She takes the bus.
 </span><i class="nl" style="left:12.484%;top:51.844%">
-</i><span class="mo" data-w="0.12061" style="left:12.484%;top:51.844%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:54.814%">
-</i><span class="mo" data-w="0.11836" style="left:12.484%;top:54.814%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:57.784%">
-</i><span class="mo" data-w="0.12356" style="left:12.484%;top:57.784%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:8.300%;top:62.429%">
+</i><span data-w="0.12061" style="left:12.484%;top:51.844%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:54.814%">
+</i><span data-w="0.11836" style="left:12.484%;top:54.814%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:57.784%">
+</i><span data-w="0.12356" style="left:12.484%;top:57.784%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:8.300%;top:62.429%">
 </i><span data-w="0.03433" style="left:8.300%;top:62.429%;font-size:2.184cqw">10.	</span><span data-w="0.22531" style="left:12.484%;top:62.429%;font-size:2.184cqw">Mason eats vegetables.
 </span><i class="nl" style="left:12.484%;top:65.400%">
-</i><span class="mo" data-w="0.12061" style="left:12.484%;top:65.400%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:68.370%">
-</i><span class="mo" data-w="0.11836" style="left:12.484%;top:68.370%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:71.340%">
-</i><span class="mo" data-w="0.12356" style="left:12.484%;top:71.340%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:46.726%;top:94.302%">
+</i><span data-w="0.12061" style="left:12.484%;top:65.400%;font-size:2.184cqw">Obligation: </span><i class="nl" style="left:12.484%;top:68.370%">
+</i><span data-w="0.11836" style="left:12.484%;top:68.370%;font-size:2.184cqw">Possibility: </span><i class="nl" style="left:12.484%;top:71.340%">
+</i><span data-w="0.12356" style="left:12.484%;top:71.340%;font-size:2.184cqw">Permission: </span><i class="nl" style="left:46.726%;top:94.302%">
 </i><span data-w="0.06548" style="left:46.726%;top:94.302%;font-size:1.344cqw">Page 3 of 3</span><i class="nl" style="left:77.938%;top:94.297%">
 </i><span class="mo" data-w="0.11166" style="left:77.938%;top:94.297%;font-size:1.282cqw">visit twinkl.com.au </span></div><a class="lk to" href="https://www.twinkl.com.au/resources/australian-resources-3---4-english/australian-resources-3---4-english-literacy/australian-resources-3---4-english-language-vocabulary" target="_blank" rel="noopener" style="left:50.000%;top:95.960%;transform:translate(-50%,-50%)" title="https://www.twinkl.com.au/resources/australian-resources-3---4-english/australia">🔗</a></div></section>
 

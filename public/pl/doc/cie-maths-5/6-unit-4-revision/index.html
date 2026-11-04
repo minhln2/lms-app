@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -533,12 +538,12 @@ window.LS.ham();
 </i><span data-w="0.26870" style="left:2.654%;top:55.509%;font-size:4.999cqw">REVISION</span></div></div></section>
 <section class="trang" id="tr-2" data-tr="2"><div class="khung"><img src="anh/trang-2.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.16783" style="left:10.013%;top:54.985%;font-size:2.917cqw">I can recall </span><i class="nl" style="left:4.875%;top:61.214%">
 </i><span data-w="0.27043" style="left:4.875%;top:61.214%;font-size:2.917cqw">information about </span><i class="nl" style="left:8.805%;top:67.444%">
-</i><span class="mo" data-w="0.19184" style="left:8.805%;top:67.444%;font-size:2.917cqw">addition and </span><i class="nl" style="left:9.224%;top:73.673%">
-</i><span class="mo" data-w="0.17425" style="left:9.224%;top:73.673%;font-size:2.917cqw">subtraction.</span><i class="nl" style="left:41.589%;top:55.095%">
+</i><span data-w="0.19184" style="left:8.805%;top:67.444%;font-size:2.917cqw">addition and </span><i class="nl" style="left:9.224%;top:73.673%">
+</i><span data-w="0.17425" style="left:9.224%;top:73.673%;font-size:2.917cqw">subtraction.</span><i class="nl" style="left:41.589%;top:55.095%">
 </i><span data-w="0.02092" style="left:41.589%;top:55.095%;font-size:2.917cqw">I </span><span data-w="0.17591" style="left:43.677%;top:55.095%;font-size:2.917cqw">can answer </span><i class="nl" style="left:41.645%;top:61.325%">
 </i><span data-w="0.19557" style="left:41.645%;top:61.325%;font-size:2.917cqw">questions on </span><i class="nl" style="left:41.834%;top:67.554%">
-</i><span class="mo" data-w="0.19184" style="left:41.834%;top:67.554%;font-size:2.917cqw">addition and </span><i class="nl" style="left:42.251%;top:73.784%">
-</i><span class="mo" data-w="0.17425" style="left:42.251%;top:73.784%;font-size:2.917cqw">subtraction.</span><i class="nl" style="left:72.507%;top:55.095%">
+</i><span data-w="0.19184" style="left:41.834%;top:67.554%;font-size:2.917cqw">addition and </span><i class="nl" style="left:42.251%;top:73.784%">
+</i><span data-w="0.17425" style="left:42.251%;top:73.784%;font-size:2.917cqw">subtraction.</span><i class="nl" style="left:72.507%;top:55.095%">
 </i><span data-w="0.23589" style="left:72.507%;top:55.095%;font-size:2.917cqw">I can create my </span><i class="nl" style="left:73.325%;top:61.325%">
 </i><span data-w="0.21932" style="left:73.325%;top:61.325%;font-size:2.917cqw">own questions </span><i class="nl" style="left:73.157%;top:67.554%">
 </i><span data-w="0.22279" style="left:73.157%;top:67.554%;font-size:2.917cqw">when given an </span><i class="nl" style="left:78.250%;top:73.784%">
@@ -585,12 +590,12 @@ window.LS.ham();
 <section class="trang" id="tr-7" data-tr="7"><div class="khung"><img src="anh/trang-7.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.24161" style="left:2.406%;top:2.827%;font-size:2.917cqw">Revision – Unit 4</span></div></div></section>
 <section class="trang" id="tr-8" data-tr="8"><div class="khung"><img src="anh/trang-8.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.16783" style="left:10.013%;top:54.985%;font-size:2.917cqw">I can recall </span><i class="nl" style="left:4.875%;top:61.214%">
 </i><span data-w="0.27043" style="left:4.875%;top:61.214%;font-size:2.917cqw">information about </span><i class="nl" style="left:8.805%;top:67.444%">
-</i><span class="mo" data-w="0.19184" style="left:8.805%;top:67.444%;font-size:2.917cqw">addition and </span><i class="nl" style="left:9.224%;top:73.673%">
-</i><span class="mo" data-w="0.17425" style="left:9.224%;top:73.673%;font-size:2.917cqw">subtraction.</span><i class="nl" style="left:41.589%;top:55.095%">
+</i><span data-w="0.19184" style="left:8.805%;top:67.444%;font-size:2.917cqw">addition and </span><i class="nl" style="left:9.224%;top:73.673%">
+</i><span data-w="0.17425" style="left:9.224%;top:73.673%;font-size:2.917cqw">subtraction.</span><i class="nl" style="left:41.589%;top:55.095%">
 </i><span data-w="0.02092" style="left:41.589%;top:55.095%;font-size:2.917cqw">I </span><span data-w="0.17591" style="left:43.677%;top:55.095%;font-size:2.917cqw">can answer </span><i class="nl" style="left:41.645%;top:61.325%">
 </i><span data-w="0.19557" style="left:41.645%;top:61.325%;font-size:2.917cqw">questions on </span><i class="nl" style="left:41.834%;top:67.554%">
-</i><span class="mo" data-w="0.19184" style="left:41.834%;top:67.554%;font-size:2.917cqw">addition and </span><i class="nl" style="left:42.251%;top:73.784%">
-</i><span class="mo" data-w="0.17425" style="left:42.251%;top:73.784%;font-size:2.917cqw">subtraction.</span><i class="nl" style="left:72.507%;top:55.095%">
+</i><span data-w="0.19184" style="left:41.834%;top:67.554%;font-size:2.917cqw">addition and </span><i class="nl" style="left:42.251%;top:73.784%">
+</i><span data-w="0.17425" style="left:42.251%;top:73.784%;font-size:2.917cqw">subtraction.</span><i class="nl" style="left:72.507%;top:55.095%">
 </i><span data-w="0.23589" style="left:72.507%;top:55.095%;font-size:2.917cqw">I can create my </span><i class="nl" style="left:73.325%;top:61.325%">
 </i><span data-w="0.21932" style="left:73.325%;top:61.325%;font-size:2.917cqw">own questions </span><i class="nl" style="left:73.157%;top:67.554%">
 </i><span data-w="0.22279" style="left:73.157%;top:67.554%;font-size:2.917cqw">when given an </span><i class="nl" style="left:78.250%;top:73.784%">

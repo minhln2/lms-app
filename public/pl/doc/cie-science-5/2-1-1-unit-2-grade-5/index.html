@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -702,8 +707,8 @@ window.LS.ham();
 </i><span data-w="0.01484" style="left:8.330%;top:32.760%;font-size:2.017cqw">3 </span><i class="nl" style="left:11.960%;top:32.760%">
 </i><span data-w="0.66490" style="left:11.960%;top:32.760%;font-size:2.017cqw">Suggest two ways you would know when the water boiled if you did not measure  </span><i class="nl" style="left:11.960%;top:34.498%">
 </i><span data-w="0.14453" style="left:11.960%;top:34.498%;font-size:2.017cqw">the temperature. </span><i class="nl" style="left:11.960%;top:38.018%">
-</i><span class="mo" data-w="0.80811" style="left:11.960%;top:38.018%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:41.538%">
-</i><span class="mo" data-w="0.80811" style="left:11.960%;top:41.538%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:8.330%;top:93.124%">
+</i><span data-w="0.80811" style="left:11.960%;top:38.018%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:41.538%">
+</i><span data-w="0.80811" style="left:11.960%;top:41.538%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:8.330%;top:93.124%">
 </i><span class="mo" data-w="0.70190" style="left:8.330%;top:93.124%;font-size:1.674cqw">Cambridge Primary Science 6 – Fiona Baxter &amp; Liz Dilley © Cambridge University Press 2021 </span><i class="nl" style="left:91.911%;top:93.124%">
 </i><span class="mo" data-w="0.01393" style="left:91.911%;top:93.124%;font-size:1.674cqw">7 </span></div></div></section>
 <section class="trang" id="tr-8" data-tr="8"><div class="khung"><img src="anh/trang-8.webp" width="992" height="1404" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.56232" style="left:10.528%;top:5.100%;font-size:1.674cqw"> CAMBRIDGE PRIMARY SCIENCE 6 UNIT 2: MATERIALS: PROPERTIES AND CHANGES</span><i class="nl" style="left:8.330%;top:9.441%">
@@ -761,8 +766,8 @@ window.LS.ham();
 </i><span class="mo" data-w="0.78814" style="left:14.381%;top:30.408%;font-size:2.017cqw">______________________________________________________________________________ </span><i class="nl" style="left:8.330%;top:32.760%">
 </i><span data-w="0.01484" style="left:8.330%;top:32.760%;font-size:2.017cqw">3 </span><i class="nl" style="left:11.960%;top:32.760%">
 </i><span data-w="0.80952" style="left:11.960%;top:32.760%;font-size:2.017cqw">Suggest two ways you would know when the water boiled if you did not measure the temperature.  </span><i class="nl" style="left:11.960%;top:36.280%">
-</i><span class="mo" data-w="0.80811" style="left:11.960%;top:36.280%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:39.800%">
-</i><span class="mo" data-w="0.80811" style="left:11.960%;top:39.800%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:8.330%;top:42.251%">
+</i><span data-w="0.80811" style="left:11.960%;top:36.280%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:39.800%">
+</i><span data-w="0.80811" style="left:11.960%;top:39.800%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:8.330%;top:42.251%">
 </i><span data-w="0.01484" style="left:8.330%;top:42.251%;font-size:2.017cqw">4 </span><i class="nl" style="left:11.960%;top:42.251%">
 </i><span data-w="0.01404" style="left:11.960%;top:42.251%;font-size:2.017cqw">a </span><span data-w="0.21129" style="left:14.381%;top:42.251%;font-size:2.017cqw">Are the graphs identical?  </span><i class="nl" style="left:14.381%;top:45.557%">
 </i><span class="mo" data-w="0.78814" style="left:14.381%;top:45.557%;font-size:2.017cqw">______________________________________________________________________________ </span><i class="nl" style="left:11.961%;top:47.794%">
@@ -810,8 +815,8 @@ window.LS.ham();
 </i><span class="mo" data-w="0.78814" style="left:14.381%;top:51.813%;font-size:2.017cqw">______________________________________________________________________________ </span><i class="nl" style="left:8.330%;top:54.164%">
 </i><span data-w="0.01484" style="left:8.330%;top:54.164%;font-size:2.017cqw">4 </span><i class="nl" style="left:11.961%;top:54.164%">
 </i><span data-w="0.32828" style="left:11.961%;top:54.164%;font-size:2.017cqw">Write a conclusion for the investigation. </span><i class="nl" style="left:11.961%;top:57.684%">
-</i><span class="mo" data-w="0.80811" style="left:11.961%;top:57.684%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.961%;top:61.204%">
-</i><span class="mo" data-w="0.80811" style="left:11.961%;top:61.204%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:8.330%;top:93.124%">
+</i><span data-w="0.80811" style="left:11.961%;top:57.684%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.961%;top:61.204%">
+</i><span data-w="0.80811" style="left:11.961%;top:61.204%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:8.330%;top:93.124%">
 </i><span class="mo" data-w="0.70190" style="left:8.330%;top:93.124%;font-size:1.674cqw">Cambridge Primary Science 6 – Fiona Baxter &amp; Liz Dilley © Cambridge University Press 2021 </span><i class="nl" style="left:90.963%;top:93.124%">
 </i><span class="mo" data-w="0.02340" style="left:90.963%;top:93.124%;font-size:1.674cqw">11 </span></div></div></section>
 <section class="trang" id="tr-12" data-tr="12"><div class="khung"><img src="anh/trang-12.webp" width="992" height="1404" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.56232" style="left:10.528%;top:5.100%;font-size:1.674cqw"> CAMBRIDGE PRIMARY SCIENCE 6 UNIT 2: MATERIALS: PROPERTIES AND CHANGES</span><i class="nl" style="left:8.330%;top:9.443%">
@@ -972,15 +977,15 @@ window.LS.ham();
 </i><span data-w="0.01484" style="left:8.330%;top:24.010%;font-size:2.017cqw">3 </span><i class="nl" style="left:11.960%;top:24.010%">
 </i><span data-w="0.64676" style="left:11.960%;top:24.010%;font-size:2.017cqw">How does the quantity of water added to the plaster of Paris affect the highest  </span><i class="nl" style="left:11.960%;top:25.748%">
 </i><span data-w="0.54570" style="left:11.960%;top:25.748%;font-size:2.017cqw">temperature reached? Describe the pattern you see in the results.  </span><i class="nl" style="left:11.960%;top:29.282%">
-</i><span class="mo" data-w="0.80811" style="left:11.960%;top:29.282%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:32.802%">
-</i><span class="mo" data-w="0.80811" style="left:11.960%;top:32.802%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:36.322%">
-</i><span class="mo" data-w="0.80811" style="left:11.960%;top:36.322%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:8.330%;top:38.773%">
+</i><span data-w="0.80811" style="left:11.960%;top:29.282%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:32.802%">
+</i><span data-w="0.80811" style="left:11.960%;top:32.802%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:36.322%">
+</i><span data-w="0.80811" style="left:11.960%;top:36.322%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:8.330%;top:38.773%">
 </i><span data-w="0.01484" style="left:8.330%;top:38.773%;font-size:2.017cqw">4 </span><i class="nl" style="left:11.960%;top:38.773%">
 </i><span data-w="0.55196" style="left:11.960%;top:38.773%;font-size:2.017cqw">When we dissolve Epsom salts in water the temperature decreases. </span><i class="nl" style="left:11.960%;top:41.225%">
 </i><span data-w="0.67681" style="left:11.960%;top:41.225%;font-size:2.017cqw">Is the change in temperature evidence of a chemical reaction? Say why or why not. </span><i class="nl" style="left:11.960%;top:44.745%">
-</i><span class="mo" data-w="0.80811" style="left:11.960%;top:44.745%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:48.264%">
-</i><span class="mo" data-w="0.80811" style="left:11.960%;top:48.264%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:51.784%">
-</i><span class="mo" data-w="0.80811" style="left:11.960%;top:51.784%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:8.330%;top:93.124%">
+</i><span data-w="0.80811" style="left:11.960%;top:44.745%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:48.264%">
+</i><span data-w="0.80811" style="left:11.960%;top:48.264%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:51.784%">
+</i><span data-w="0.80811" style="left:11.960%;top:51.784%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:8.330%;top:93.124%">
 </i><span class="mo" data-w="0.70190" style="left:8.330%;top:93.124%;font-size:1.674cqw">Cambridge Primary Science 6 – Fiona Baxter &amp; Liz Dilley © Cambridge University Press 2021 </span><i class="nl" style="left:90.963%;top:93.124%">
 </i><span class="mo" data-w="0.02340" style="left:90.963%;top:93.124%;font-size:1.674cqw">16 </span></div></div></section>
 <section class="trang" id="tr-17" data-tr="17"><div class="khung"><img src="anh/trang-17.webp" width="992" height="1404" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.56232" style="left:10.528%;top:5.100%;font-size:1.674cqw"> CAMBRIDGE PRIMARY SCIENCE 6 UNIT 2: MATERIALS: PROPERTIES AND CHANGES</span><i class="nl" style="left:8.330%;top:9.443%">
@@ -1002,16 +1007,16 @@ window.LS.ham();
 </i><span data-w="0.01484" style="left:8.330%;top:17.825%;font-size:2.017cqw">5 </span><i class="nl" style="left:11.960%;top:17.825%">
 </i><span data-w="0.66752" style="left:11.960%;top:17.825%;font-size:2.017cqw">Why do you think the temperature did not change much for the first 15 minutes?  </span><i class="nl" style="left:11.960%;top:19.563%">
 </i><span data-w="0.27079" style="left:11.960%;top:19.563%;font-size:2.017cqw">(Think about the particle model.) </span><i class="nl" style="left:11.960%;top:23.083%">
-</i><span class="mo" data-w="0.80811" style="left:11.960%;top:23.083%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:26.603%">
-</i><span class="mo" data-w="0.80811" style="left:11.960%;top:26.603%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:30.123%">
-</i><span class="mo" data-w="0.80811" style="left:11.960%;top:30.123%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:8.330%;top:32.574%">
+</i><span data-w="0.80811" style="left:11.960%;top:23.083%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:26.603%">
+</i><span data-w="0.80811" style="left:11.960%;top:26.603%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:30.123%">
+</i><span data-w="0.80811" style="left:11.960%;top:30.123%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:8.330%;top:32.574%">
 </i><span data-w="0.01484" style="left:8.330%;top:32.574%;font-size:2.017cqw">6 </span><i class="nl" style="left:11.960%;top:32.574%">
 </i><span data-w="0.60964" style="left:11.960%;top:32.574%;font-size:2.017cqw">Why do you think the temperatures recorded increase and then decrease? </span><i class="nl" style="left:11.960%;top:36.094%">
-</i><span class="mo" data-w="0.80811" style="left:11.960%;top:36.094%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:39.614%">
-</i><span class="mo" data-w="0.80811" style="left:11.960%;top:39.614%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:43.148%">
-</i><span class="mo" data-w="0.80811" style="left:11.960%;top:43.148%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:46.668%">
-</i><span class="mo" data-w="0.80811" style="left:11.960%;top:46.668%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:50.188%">
-</i><span class="mo" data-w="0.80811" style="left:11.960%;top:50.188%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:8.330%;top:93.124%">
+</i><span data-w="0.80811" style="left:11.960%;top:36.094%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:39.614%">
+</i><span data-w="0.80811" style="left:11.960%;top:39.614%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:43.148%">
+</i><span data-w="0.80811" style="left:11.960%;top:43.148%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:46.668%">
+</i><span data-w="0.80811" style="left:11.960%;top:46.668%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:11.960%;top:50.188%">
+</i><span data-w="0.80811" style="left:11.960%;top:50.188%;font-size:2.017cqw">________________________________________________________________________________ </span><i class="nl" style="left:8.330%;top:93.124%">
 </i><span class="mo" data-w="0.70190" style="left:8.330%;top:93.124%;font-size:1.674cqw">Cambridge Primary Science 6 – Fiona Baxter &amp; Liz Dilley © Cambridge University Press 2021 </span><i class="nl" style="left:90.963%;top:93.124%">
 </i><span class="mo" data-w="0.02340" style="left:90.963%;top:93.124%;font-size:1.674cqw">18 </span></div></div></section>
 

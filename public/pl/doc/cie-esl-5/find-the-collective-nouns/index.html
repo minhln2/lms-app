@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -425,8 +430,8 @@ window.LS.ham();
 </i><span data-w="0.27706" style="left:61.905%;top:56.602%;font-size:2.184cqw">A                          of hippos</span><i class="nl" style="left:15.333%;top:63.506%">
 </i><span data-w="0.26005" style="left:15.333%;top:63.506%;font-size:2.184cqw">A                          of lions</span><i class="nl" style="left:61.905%;top:63.506%">
 </i><span data-w="0.25824" style="left:61.905%;top:63.506%;font-size:2.184cqw">A                          of owls</span><i class="nl" style="left:8.095%;top:69.723%">
-</i><span class="mo" data-w="0.14436" style="left:8.095%;top:69.723%;font-size:2.856cqw">Word Bank</span><i class="nl" style="left:8.095%;top:69.723%">
-</i><span class="mo" data-w="0.14436" style="left:8.095%;top:69.723%;font-size:2.856cqw">Word Bank</span><i class="nl" style="left:15.773%;top:73.332%">
+</i><span data-w="0.14436" style="left:8.095%;top:69.723%;font-size:2.856cqw">Word Bank</span><i class="nl" style="left:8.095%;top:69.723%">
+</i><span data-w="0.14436" style="left:8.095%;top:69.723%;font-size:2.856cqw">Word Bank</span><i class="nl" style="left:15.773%;top:73.332%">
 </i><span class="mo" data-w="0.04525" style="left:15.773%;top:73.332%;font-size:2.184cqw">flock</span><i class="nl" style="left:15.882%;top:76.481%">
 </i><span class="mo" data-w="0.04307" style="left:15.882%;top:76.481%;font-size:2.184cqw">herd</span><i class="nl" style="left:14.893%;top:79.630%">
 </i><span class="mo" data-w="0.06285" style="left:14.893%;top:79.630%;font-size:2.184cqw">gaggle</span><i class="nl" style="left:11.549%;top:82.779%">
@@ -625,8 +630,8 @@ window.LS.ham();
 </i><span data-w="0.02024" style="left:61.905%;top:56.602%;font-size:2.184cqw">A </span><span class="mo" data-w="0.05145" style="left:63.929%;top:56.515%;font-size:2.184cqw">bloat</span><span data-w="0.09434" style="left:69.074%;top:56.602%;font-size:2.184cqw"> of hippos</span><i class="nl" style="left:15.333%;top:63.506%">
 </i><span data-w="0.02024" style="left:15.333%;top:63.506%;font-size:2.184cqw">A </span><span class="mo" data-w="0.05128" style="left:17.358%;top:63.420%;font-size:2.184cqw">pride</span><span data-w="0.07733" style="left:22.485%;top:63.506%;font-size:2.184cqw"> of lions</span><i class="nl" style="left:61.905%;top:63.506%">
 </i><span data-w="0.02024" style="left:61.905%;top:63.506%;font-size:2.184cqw">A </span><span class="mo" data-w="0.11026" style="left:63.929%;top:63.420%;font-size:2.184cqw">parliament</span><span data-w="0.07552" style="left:74.955%;top:63.506%;font-size:2.184cqw"> of owls</span><i class="nl" style="left:8.095%;top:69.723%">
-</i><span class="mo" data-w="0.14436" style="left:8.095%;top:69.723%;font-size:2.856cqw">Word Bank</span><i class="nl" style="left:8.095%;top:69.723%">
-</i><span class="mo" data-w="0.14436" style="left:8.095%;top:69.723%;font-size:2.856cqw">Word Bank</span><i class="nl" style="left:15.773%;top:73.332%">
+</i><span data-w="0.14436" style="left:8.095%;top:69.723%;font-size:2.856cqw">Word Bank</span><i class="nl" style="left:8.095%;top:69.723%">
+</i><span data-w="0.14436" style="left:8.095%;top:69.723%;font-size:2.856cqw">Word Bank</span><i class="nl" style="left:15.773%;top:73.332%">
 </i><span class="mo" data-w="0.04525" style="left:15.773%;top:73.332%;font-size:2.184cqw">flock</span><i class="nl" style="left:15.882%;top:76.481%">
 </i><span class="mo" data-w="0.04307" style="left:15.882%;top:76.481%;font-size:2.184cqw">herd</span><i class="nl" style="left:14.893%;top:79.630%">
 </i><span class="mo" data-w="0.06285" style="left:14.893%;top:79.630%;font-size:2.184cqw">gaggle</span><i class="nl" style="left:11.549%;top:82.779%">

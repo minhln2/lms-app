@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -668,18 +673,18 @@ window.LS.ham();
 </i><span data-w="0.53516" style="left:6.797%;top:58.381%;font-size:4.583cqw">fractions with different </span><i class="nl" style="left:6.797%;top:67.200%">
 </i><span data-w="0.31744" style="left:6.797%;top:67.200%;font-size:4.583cqw">denominators</span></div></div></section>
 <section class="trang" id="tr-2" data-tr="2"><div class="khung"><img src="anh/trang-2.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.10344" style="left:0.750%;top:3.549%;font-size:2.814cqw">WALT: </span><span class="mo" data-w="0.71955" style="left:11.087%;top:3.549%;font-size:2.814cqw">Estimate, add and subtract fractions with different </span><i class="nl" style="left:0.750%;top:8.959%">
-</i><span class="mo" data-w="0.20370" style="left:0.750%;top:8.959%;font-size:2.814cqw">denominators.</span><i class="nl" style="left:39.605%;top:51.980%">
-</i><span class="mo" data-w="0.23143" style="left:39.605%;top:51.980%;font-size:2.917cqw">I can add and </span><i class="nl" style="left:43.771%;top:58.210%">
+</i><span data-w="0.20370" style="left:0.750%;top:8.959%;font-size:2.814cqw">denominators.</span><i class="nl" style="left:39.605%;top:51.980%">
+</i><span data-w="0.23143" style="left:39.605%;top:51.980%;font-size:2.917cqw">I can add and </span><i class="nl" style="left:43.771%;top:58.210%">
 </i><span data-w="0.14811" style="left:43.771%;top:58.210%;font-size:2.917cqw">subtract </span><i class="nl" style="left:39.298%;top:64.439%">
 </i><span data-w="0.23755" style="left:39.298%;top:64.439%;font-size:2.917cqw">fractions with </span><i class="nl" style="left:43.529%;top:70.669%">
 </i><span data-w="0.15301" style="left:43.529%;top:70.669%;font-size:2.917cqw">different </span><i class="nl" style="left:38.734%;top:76.898%">
-</i><span class="mo" data-w="0.23863" style="left:38.734%;top:76.898%;font-size:2.917cqw">denominators.</span><i class="nl" style="left:74.338%;top:54.159%">
-</i><span class="mo" data-w="0.19870" style="left:74.338%;top:54.159%;font-size:2.501cqw">I can add and </span><i class="nl" style="left:73.201%;top:59.496%">
+</i><span data-w="0.23863" style="left:38.734%;top:76.898%;font-size:2.917cqw">denominators.</span><i class="nl" style="left:74.338%;top:54.159%">
+</i><span data-w="0.19870" style="left:74.338%;top:54.159%;font-size:2.501cqw">I can add and </span><i class="nl" style="left:73.201%;top:59.496%">
 </i><span data-w="0.22143" style="left:73.201%;top:59.496%;font-size:2.501cqw">subtract mixed </span><i class="nl" style="left:74.149%;top:64.833%">
 </i><span data-w="0.20245" style="left:74.149%;top:64.833%;font-size:2.501cqw">numbers with </span><i class="nl" style="left:78.537%;top:70.169%">
 </i><span data-w="0.11469" style="left:78.537%;top:70.169%;font-size:2.501cqw">varying </span><i class="nl" style="left:73.594%;top:75.506%">
-</i><span class="mo" data-w="0.20487" style="left:73.594%;top:75.506%;font-size:2.501cqw">denominators.</span><i class="nl" style="left:7.479%;top:56.828%">
-</i><span class="mo" data-w="0.19870" style="left:7.479%;top:56.828%;font-size:2.501cqw">I can add and </span><i class="nl" style="left:4.361%;top:62.164%">
+</i><span data-w="0.20487" style="left:73.594%;top:75.506%;font-size:2.501cqw">denominators.</span><i class="nl" style="left:7.479%;top:56.828%">
+</i><span data-w="0.19870" style="left:7.479%;top:56.828%;font-size:2.501cqw">I can add and </span><i class="nl" style="left:4.361%;top:62.164%">
 </i><span data-w="0.26102" style="left:4.361%;top:62.164%;font-size:2.501cqw">subtract fractions </span><i class="nl" style="left:6.968%;top:67.501%">
 </i><span data-w="0.20888" style="left:6.968%;top:67.501%;font-size:2.501cqw">with the same </span><i class="nl" style="left:6.298%;top:72.837%">
 </i><span data-w="0.21358" style="left:6.298%;top:72.837%;font-size:2.501cqw">denominators. </span></div></div></section>
@@ -872,18 +877,18 @@ window.LS.ham();
 <section class="trang" id="tr-13" data-tr="13"><div class="khung"><img src="anh/trang-13.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:1.981%;top:3.152%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.81272" style="left:11.170%;top:3.152%;font-size:2.501cqw">Estimate, add and subtract fractions with different denominators</span><span class="mo" data-w="0.00948" style="left:92.494%;top:3.152%;font-size:2.501cqw">.</span><i class="nl" style="left:1.981%;top:11.388%">
 </i><span data-w="0.12477" style="left:1.981%;top:11.388%;font-size:2.708cqw">Your Task</span></div></div></section>
 <section class="trang" id="tr-14" data-tr="14"><div class="khung"><img src="anh/trang-14.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.10344" style="left:0.750%;top:3.549%;font-size:2.814cqw">WALT: </span><span class="mo" data-w="0.71955" style="left:11.087%;top:3.549%;font-size:2.814cqw">Estimate, add and subtract fractions with different </span><i class="nl" style="left:0.750%;top:8.959%">
-</i><span class="mo" data-w="0.20370" style="left:0.750%;top:8.959%;font-size:2.814cqw">denominators.</span><i class="nl" style="left:39.605%;top:51.980%">
-</i><span class="mo" data-w="0.23143" style="left:39.605%;top:51.980%;font-size:2.917cqw">I can add and </span><i class="nl" style="left:43.771%;top:58.210%">
+</i><span data-w="0.20370" style="left:0.750%;top:8.959%;font-size:2.814cqw">denominators.</span><i class="nl" style="left:39.605%;top:51.980%">
+</i><span data-w="0.23143" style="left:39.605%;top:51.980%;font-size:2.917cqw">I can add and </span><i class="nl" style="left:43.771%;top:58.210%">
 </i><span data-w="0.14811" style="left:43.771%;top:58.210%;font-size:2.917cqw">subtract </span><i class="nl" style="left:39.298%;top:64.439%">
 </i><span data-w="0.23755" style="left:39.298%;top:64.439%;font-size:2.917cqw">fractions with </span><i class="nl" style="left:43.529%;top:70.669%">
 </i><span data-w="0.15301" style="left:43.529%;top:70.669%;font-size:2.917cqw">different </span><i class="nl" style="left:38.734%;top:76.898%">
-</i><span class="mo" data-w="0.23863" style="left:38.734%;top:76.898%;font-size:2.917cqw">denominators.</span><i class="nl" style="left:74.338%;top:54.159%">
-</i><span class="mo" data-w="0.19870" style="left:74.338%;top:54.159%;font-size:2.501cqw">I can add and </span><i class="nl" style="left:73.201%;top:59.496%">
+</i><span data-w="0.23863" style="left:38.734%;top:76.898%;font-size:2.917cqw">denominators.</span><i class="nl" style="left:74.338%;top:54.159%">
+</i><span data-w="0.19870" style="left:74.338%;top:54.159%;font-size:2.501cqw">I can add and </span><i class="nl" style="left:73.201%;top:59.496%">
 </i><span data-w="0.22143" style="left:73.201%;top:59.496%;font-size:2.501cqw">subtract mixed </span><i class="nl" style="left:74.149%;top:64.833%">
 </i><span data-w="0.20245" style="left:74.149%;top:64.833%;font-size:2.501cqw">numbers with </span><i class="nl" style="left:78.537%;top:70.169%">
 </i><span data-w="0.11469" style="left:78.537%;top:70.169%;font-size:2.501cqw">varying </span><i class="nl" style="left:73.594%;top:75.506%">
-</i><span class="mo" data-w="0.20487" style="left:73.594%;top:75.506%;font-size:2.501cqw">denominators.</span><i class="nl" style="left:7.479%;top:56.828%">
-</i><span class="mo" data-w="0.19870" style="left:7.479%;top:56.828%;font-size:2.501cqw">I can add and </span><i class="nl" style="left:4.361%;top:62.164%">
+</i><span data-w="0.20487" style="left:73.594%;top:75.506%;font-size:2.501cqw">denominators.</span><i class="nl" style="left:7.479%;top:56.828%">
+</i><span data-w="0.19870" style="left:7.479%;top:56.828%;font-size:2.501cqw">I can add and </span><i class="nl" style="left:4.361%;top:62.164%">
 </i><span data-w="0.26102" style="left:4.361%;top:62.164%;font-size:2.501cqw">subtract fractions </span><i class="nl" style="left:6.968%;top:67.501%">
 </i><span data-w="0.20888" style="left:6.968%;top:67.501%;font-size:2.501cqw">with the same </span><i class="nl" style="left:6.298%;top:72.837%">
 </i><span data-w="0.21358" style="left:6.298%;top:72.837%;font-size:2.501cqw">denominators. </span></div></div></section>

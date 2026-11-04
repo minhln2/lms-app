@@ -43,6 +43,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -75,6 +79,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -433,7 +438,7 @@ window.LS.ham();
     // Nhãn loại mục để dòng "Đang lọc" gọi tên chip đang bật. (tojson trong <script> — được.)
     var LOAI = { "page": "\ud83d\udcc4 v\u0103n b\u1ea3n","file": "\ud83d\udcce t\u00e0i li\u1ec7u","assignment": "\ud83d\udcdd b\u00e0i t\u1eadp","quiz": "\ud83e\uddea b\u00e0i ki\u1ec3m tra", };
     var TIEN_DO_KEY = "mk/80231/";
-    var TONG_MUC = 52;
+    var TONG_MUC = 56;
     var CO_HW = false;
     /** State của TRANG MÔN. Trước đây nằm thẳng trong `x-data` của <body>; nay phải là hàm vì
         ô tìm dùng chung (`_timkiem.html`) chèn thêm thành viên — nhét vào thuộc tính HTML là
@@ -691,10 +696,10 @@ timMo: false,
         <li x-show="mucHien(1, f)">
           <button type="button" @click="toiMuc(1); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
-            <span class="min-w-0 flex-1">TUẦN 11</span>
+            <span class="min-w-0 flex-1">TUẦN 12</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/5'"></span>
+                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/4'"></span>
             </template>
           </button>
         </li>
@@ -702,10 +707,10 @@ timMo: false,
         <li x-show="mucHien(2, f)">
           <button type="button" @click="toiMuc(2); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
-            <span class="min-w-0 flex-1">TUẦN 10</span>
+            <span class="min-w-0 flex-1">TUẦN 11</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-2'), p.done) + '/7'"></span>
+                    x-text="moduleDone(document.getElementById('mod-2'), p.done) + '/5'"></span>
             </template>
           </button>
         </li>
@@ -713,10 +718,10 @@ timMo: false,
         <li x-show="mucHien(3, f)">
           <button type="button" @click="toiMuc(3); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
-            <span class="min-w-0 flex-1">TUẦN 9</span>
+            <span class="min-w-0 flex-1">TUẦN 10</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-3'), p.done) + '/6'"></span>
+                    x-text="moduleDone(document.getElementById('mod-3'), p.done) + '/7'"></span>
             </template>
           </button>
         </li>
@@ -724,10 +729,10 @@ timMo: false,
         <li x-show="mucHien(4, f)">
           <button type="button" @click="toiMuc(4); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
-            <span class="min-w-0 flex-1">TUẦN 7</span>
+            <span class="min-w-0 flex-1">TUẦN 9</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-4'), p.done) + '/4'"></span>
+                    x-text="moduleDone(document.getElementById('mod-4'), p.done) + '/6'"></span>
             </template>
           </button>
         </li>
@@ -735,7 +740,7 @@ timMo: false,
         <li x-show="mucHien(5, f)">
           <button type="button" @click="toiMuc(5); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
-            <span class="min-w-0 flex-1">TUẦN 8</span>
+            <span class="min-w-0 flex-1">TUẦN 7</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
                     x-text="moduleDone(document.getElementById('mod-5'), p.done) + '/4'"></span>
@@ -746,10 +751,10 @@ timMo: false,
         <li x-show="mucHien(6, f)">
           <button type="button" @click="toiMuc(6); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
-            <span class="min-w-0 flex-1">Tuần 6</span>
+            <span class="min-w-0 flex-1">TUẦN 8</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-6'), p.done) + '/5'"></span>
+                    x-text="moduleDone(document.getElementById('mod-6'), p.done) + '/4'"></span>
             </template>
           </button>
         </li>
@@ -757,10 +762,10 @@ timMo: false,
         <li x-show="mucHien(7, f)">
           <button type="button" @click="toiMuc(7); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
-            <span class="min-w-0 flex-1">Tuần 5</span>
+            <span class="min-w-0 flex-1">Tuần 6</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-7'), p.done) + '/4'"></span>
+                    x-text="moduleDone(document.getElementById('mod-7'), p.done) + '/5'"></span>
             </template>
           </button>
         </li>
@@ -768,10 +773,10 @@ timMo: false,
         <li x-show="mucHien(8, f)">
           <button type="button" @click="toiMuc(8); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
-            <span class="min-w-0 flex-1">Tuần 4</span>
+            <span class="min-w-0 flex-1">Tuần 5</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-8'), p.done) + '/6'"></span>
+                    x-text="moduleDone(document.getElementById('mod-8'), p.done) + '/4'"></span>
             </template>
           </button>
         </li>
@@ -779,7 +784,7 @@ timMo: false,
         <li x-show="mucHien(9, f)">
           <button type="button" @click="toiMuc(9); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
-            <span class="min-w-0 flex-1">TUẦN 2 + 3 </span>
+            <span class="min-w-0 flex-1">Tuần 4</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
                     x-text="moduleDone(document.getElementById('mod-9'), p.done) + '/6'"></span>
@@ -790,10 +795,21 @@ timMo: false,
         <li x-show="mucHien(10, f)">
           <button type="button" @click="toiMuc(10); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
+            <span class="min-w-0 flex-1">TUẦN 2 + 3 </span>
+            <template x-if="p.online">
+              <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
+                    x-text="moduleDone(document.getElementById('mod-10'), p.done) + '/6'"></span>
+            </template>
+          </button>
+        </li>
+        
+        <li x-show="mucHien(11, f)">
+          <button type="button" @click="toiMuc(11); menuMo = false"
+                  class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
             <span class="min-w-0 flex-1">TUẦN 1_CHƯƠNG 1_CHÀO EM VÀO LỚP MỘT</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-10'), p.done) + '/5'"></span>
+                    x-text="moduleDone(document.getElementById('mod-11'), p.done) + '/5'"></span>
             </template>
           </button>
         </li>
@@ -826,7 +842,359 @@ timMo: false,
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: true }"
              x-effect="if (q || filtering) open = true"
-             id="mod-1" data-module data-title="TUẦN 11"
+             id="mod-1" data-module data-title="TUẦN 12"
+             x-show="moduleMatches($el, f)"
+             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <button @click="open = !open"
+              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
+        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
+             :class="open ? 'rotate-90' : ''"
+             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">TUẦN 12</span>
+        <template x-if="p.online">
+          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 4
+                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/4'"></span>
+        </template>
+        <span class="text-xs text-slate-400 shrink-0">4 mục</span>
+      </button>
+
+      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-sechead data-title="TỰ HỌC TUẦN 12" data-sec="1"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>TỰ HỌC TUẦN 12</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="Ôn tập tổng hợp tuần 12" data-type="assignment" data-sec="1"
+             data-pkey="mk/80231/7943755" data-hash="19ab3bb2a46a948e4463d3cc06e6067375865db7" data-ts="1793785421000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80231/7943755'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80231/7943755'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80231/7943755']; $el.indeterminate = !!p.redo['mk/80231/7943755']"
+                     @change="await p.toggle('mk/80231/7943755', '19ab3bb2a46a948e4463d3cc06e6067375865db7'); $el.checked = !!p.done['mk/80231/7943755']; $el.indeterminate = !!p.redo['mk/80231/7943755']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài tập">📝</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Ôn tập tổng hợp tuần 12</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài tập</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80231/7943755', '19ab3bb2a46a948e4463d3cc06e6067375865db7')">
+                  <button @click.stop="p.seen('mk/80231/7943755', '19ab3bb2a46a948e4463d3cc06e6067375865db7')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                  <span>10 điểm</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 04/11</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80231/assignments/2711639" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <div>Chào mừng các con đã đến với bài học vần tiếp theo của chương trình Tiếng Việt 1. Chúc các con có một giờ học vui và bổ ích.</div>
+<div>
+<h4><span><strong> Mục tiêu bài học</strong></span></h4>
+<ul>
+<li>
+<p>Con đọc đúng các tiếng, từ, câu có vần đã học.</p>
+</li>
+<li>Con viết đúng câu "Gần hồ có ngọn tháp cao vút."</li>
+</ul>
+<p><span><strong> Video</strong></span></p>
+<p>Để bài học được hiệu quả, các con hãy chuẩn bị sách giáo khoa Tiếng Việt 1 - tập 1, phiếu luyện viết, bảng con, bút chì, tẩy và thực hiện các nhiệm vụ học tập.</p>
+<p><iframe allow="autoplay *; geolocation *; microphone *; camera *; midi *; encrypted-media *" allowfullscreen="allowfullscreen" height="637" loading="lazy" src="https://onlinevinschooleduvn.h5p.com/content/1291481364205306228/embed" width="1088"></iframe></p>
+</div>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Phiếu luyện đọc tuần 12" data-type="file" data-sec="1"
+             data-pkey="mk/80231/7943756" data-hash="434ba67efd6411da9c7546e4d48d5f03080e265a" data-ts="1793785476000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80231/7943756'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80231/7943756'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80231/7943756']; $el.indeterminate = !!p.redo['mk/80231/7943756']"
+                     @change="await p.toggle('mk/80231/7943756', '434ba67efd6411da9c7546e4d48d5f03080e265a'); $el.checked = !!p.done['mk/80231/7943756']; $el.indeterminate = !!p.redo['mk/80231/7943756']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="materials/tieng-viet-1/tuan-12/BAI-DOC-TUAN-12-1.pdf" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Phiếu luyện đọc tuần 12
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80231/7943756', '434ba67efd6411da9c7546e4d48d5f03080e265a')">
+                  <button @click.stop="p.seen('mk/80231/7943756', '434ba67efd6411da9c7546e4d48d5f03080e265a')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>265.1 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 04/11</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Kể chuyện - BÀI HỌC ĐẦU TIÊN CỦA THỎ CON" data-type="assignment" data-sec="1"
+             data-pkey="mk/80231/7943758" data-hash="3c32cf0fba421b3fada51286158f13175b6080e4" data-ts="1793785422000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80231/7943758'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80231/7943758'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80231/7943758']; $el.indeterminate = !!p.redo['mk/80231/7943758']"
+                     @change="await p.toggle('mk/80231/7943758', '3c32cf0fba421b3fada51286158f13175b6080e4'); $el.checked = !!p.done['mk/80231/7943758']; $el.indeterminate = !!p.redo['mk/80231/7943758']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="bài tập">📝</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Kể chuyện - BÀI HỌC ĐẦU TIÊN CỦA THỎ CON</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">bài tập</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80231/7943758', '3c32cf0fba421b3fada51286158f13175b6080e4')">
+                  <button @click.stop="p.seen('mk/80231/7943758', '3c32cf0fba421b3fada51286158f13175b6080e4')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 04/11</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80231/assignments/2711611" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><iframe allow="autoplay *; geolocation *; microphone *; camera *; midi *; encrypted-media *" allowfullscreen="allowfullscreen" height="637" loading="lazy" src="https://onlinevinschooleduvn.h5p.com/content/1291472720883735908/embed" width="1088"></iframe> <iframe allow="autoplay *; geolocation *; microphone *; camera *; midi *; encrypted-media *" allowfullscreen="allowfullscreen" height="637" loading="lazy" src="https://onlinevinschooleduvn.h5p.com/content/1291472720883735908/embed" width="1088"></iframe></p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-sechead data-title="TÀI LIỆU THAM KHẢO TUẦN 12" data-sec="2"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>TÀI LIỆU THAM KHẢO TUẦN 12</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="Bài tập tham khảo_Tuần 12" data-type="page" data-sec="2"
+             data-pkey="mk/80231/7943760" data-hash="ffa816a9c72378432e08dcf60d3a018d7806ef3a" data-ts="1793785423000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/80231/7943760'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 2.25rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/80231/7943760'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/80231/7943760']; $el.indeterminate = !!p.redo['mk/80231/7943760']"
+                     @change="await p.toggle('mk/80231/7943760', 'ffa816a9c72378432e08dcf60d3a018d7806ef3a'); $el.checked = !!p.done['mk/80231/7943760']; $el.indeterminate = !!p.redo['mk/80231/7943760']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="văn bản">📄</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Văn bản nhúng: bấm để mở/đóng nội dung -->
+              <button @click="o = !o" class="w-full text-left flex items-center gap-2 py-2 -my-2">
+                <span class="text-sm text-slate-800 group-hover:text-indigo-700" :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">Bài tập tham khảo_Tuần 12</span>
+                <svg class="w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0"
+                     :class="o ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">văn bản</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/80231/7943760', 'ffa816a9c72378432e08dcf60d3a018d7806ef3a')">
+                  <button @click.stop="p.seen('mk/80231/7943760', 'ffa816a9c72378432e08dcf60d3a018d7806ef3a')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 04/11</span>
+                
+                
+                <a href="https://lms.vinschool.edu.vn/courses/80231/pages/bai-tap-tham-khao-tuan-12-2" target="_blank" rel="noopener"
+                   class="text-indigo-400 hover:text-indigo-600 hover:underline py-2 -my-2">Xem trang gốc ↗</a>
+                
+              </div>
+
+              
+              <div x-show="o" x-collapse x-cloak
+                   class="lms-content mt-2 mb-1 p-3 rounded-lg bg-slate-50 border border-slate-200 text-sm leading-relaxed">
+                <p><strong>Bố mẹ vui lòng cho con làm bài tập từ trang 46-49 trong Vở bài tập Tiếng Việt <a href="https://hanhtrangso.nxbgd.vn/sach-dien-tu/vo-bai-tap-tieng-viet-1-tap-mot-591" rel="noopener" target="_blank">TẠI ĐÂY</a></strong></p>
+<p><em>*Cách làm bài trên Vở bài tập Tiếng Việt online: </em></p>
+<p>- Mở trang bài cần làm.</p>
+<p>- Ấn vào biểu tượng chiếc bút bên cạnh bài tập <img alt="1.png" height="51" loading="lazy" src="https://lms.vinschool.edu.vn/users/34389/files/3508072/preview?verifier=6MNEXRO3ATYn0cjOTFUu7xLaZVA8oExJLJ9FJNPL" width="54"/></p>
+<p>- Thực hiện lần lượt các bài.</p>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+      </div>
+    </section>
+    
+    <!-- Một Tuần học / Bài học -->
+    <section x-data="{ open: false }"
+             x-effect="if (q || filtering) open = true"
+             id="mod-2" data-module data-title="TUẦN 11"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -1276,7 +1644,7 @@ timMo: false,
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: false }"
              x-effect="if (q || filtering) open = true"
-             id="mod-2" data-module data-title="TUẦN 10"
+             id="mod-3" data-module data-title="TUẦN 10"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -1864,7 +2232,7 @@ timMo: false,
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: false }"
              x-effect="if (q || filtering) open = true"
-             id="mod-3" data-module data-title="TUẦN 9"
+             id="mod-4" data-module data-title="TUẦN 9"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -2349,7 +2717,7 @@ timMo: false,
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: false }"
              x-effect="if (q || filtering) open = true"
-             id="mod-4" data-module data-title="TUẦN 7"
+             id="mod-5" data-module data-title="TUẦN 7"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -2691,7 +3059,7 @@ timMo: false,
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: false }"
              x-effect="if (q || filtering) open = true"
-             id="mod-5" data-module data-title="TUẦN 8"
+             id="mod-6" data-module data-title="TUẦN 8"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -3035,7 +3403,7 @@ timMo: false,
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: false }"
              x-effect="if (q || filtering) open = true"
-             id="mod-6" data-module data-title="Tuần 6"
+             id="mod-7" data-module data-title="Tuần 6"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -3473,7 +3841,7 @@ timMo: false,
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: false }"
              x-effect="if (q || filtering) open = true"
-             id="mod-7" data-module data-title="Tuần 5"
+             id="mod-8" data-module data-title="Tuần 5"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -3839,7 +4207,7 @@ timMo: false,
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: false }"
              x-effect="if (q || filtering) open = true"
-             id="mod-8" data-module data-title="Tuần 4"
+             id="mod-9" data-module data-title="Tuần 4"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -4416,7 +4784,7 @@ timMo: false,
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: false }"
              x-effect="if (q || filtering) open = true"
-             id="mod-9" data-module data-title="TUẦN 2 + 3 "
+             id="mod-10" data-module data-title="TUẦN 2 + 3 "
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -4942,7 +5310,7 @@ timMo: false,
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: false }"
              x-effect="if (q || filtering) open = true"
-             id="mod-10" data-module data-title="TUẦN 1_CHƯƠNG 1_CHÀO EM VÀO LỚP MỘT"
+             id="mod-11" data-module data-title="TUẦN 1_CHƯƠNG 1_CHÀO EM VÀO LỚP MỘT"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"

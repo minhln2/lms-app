@@ -30,6 +30,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -62,6 +66,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -122,14 +127,14 @@ window.LS.ham();
            một kỳ nghỉ dài trông y hệt một job đã chết. -->
       <p class="mt-1 text-indigo-200 text-sm">
         <span id="hb-checked" class="hidden">🕓 Kiểm tra lần cuối: <span></span> · </span>
-        <span>📦 Dữ liệu mới nhất: <span id="hb-changed">2026-11-04 08:14</span></span>
+        <span>📦 Dữ liệu mới nhất: <span id="hb-changed">2026-11-04 17:33</span></span>
       </p>
     </div>
   </header>
 
   <!-- Cảnh báo dữ liệu cũ: tính ngay trên trình duyệt nên vẫn hoạt động kể cả
        khi toàn bộ hệ thống đồng bộ đã chết (lúc đó không có gì gửi báo lỗi được) -->
-  <div id="stale" data-built="2026-11-04T08:14+07:00" class="hidden max-w-4xl mx-auto px-4 pt-4"></div>
+  <div id="stale" data-built="2026-11-04T17:33+07:00" class="hidden max-w-4xl mx-auto px-4 pt-4"></div>
 
   <main class="max-w-4xl mx-auto px-4 py-8">
     <div class="grid gap-6 ">

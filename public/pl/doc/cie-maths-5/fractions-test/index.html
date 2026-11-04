@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -501,10 +506,10 @@ window.LS.ham();
 </i><span data-w="0.01075" style="left:9.355%;top:81.779%;font-size:1.959cqw">4</span><i class="nl" style="left:90.230%;top:4.140%">
 </i><span data-w="0.01291" style="left:90.230%;top:4.140%;font-size:1.176cqw">60</span><i class="nl" style="left:87.381%;top:5.745%">
 </i><span data-w="0.05388" style="left:87.381%;top:5.745%;font-size:1.176cqw">total marks</span><i class="nl" style="left:88.237%;top:30.427%">
-</i><span class="mo" data-w="0.03835" style="left:88.237%;top:30.427%;font-size:1.176cqw">3 marks</span><i class="nl" style="left:88.456%;top:41.033%">
-</i><span class="mo" data-w="0.03398" style="left:88.456%;top:41.033%;font-size:1.176cqw">1 mark</span><i class="nl" style="left:88.237%;top:61.877%">
+</i><span data-w="0.03835" style="left:88.237%;top:30.427%;font-size:1.176cqw">3 marks</span><i class="nl" style="left:88.456%;top:41.033%">
+</i><span data-w="0.03398" style="left:88.456%;top:41.033%;font-size:1.176cqw">1 mark</span><i class="nl" style="left:88.237%;top:61.877%">
 </i><span class="mo" data-w="0.03835" style="left:88.237%;top:61.877%;font-size:1.176cqw">2 marks</span><i class="nl" style="left:88.237%;top:82.903%">
-</i><span class="mo" data-w="0.03835" style="left:88.237%;top:82.903%;font-size:1.176cqw">3 marks</span><i class="nl" style="left:88.332%;top:93.925%">
+</i><span data-w="0.03835" style="left:88.237%;top:82.903%;font-size:1.176cqw">3 marks</span><i class="nl" style="left:88.332%;top:93.925%">
 </i><span class="mo" data-w="0.03957" style="left:88.332%;top:93.925%;font-size:1.008cqw">Total for </span><i class="nl" style="left:88.170%;top:94.757%">
 </i><span class="mo" data-w="0.03970" style="left:88.170%;top:94.757%;font-size:1.008cqw">this page</span><i class="nl" style="left:6.132%;top:97.161%">
 </i><span class="mo" data-w="0.27386" style="left:6.132%;top:97.161%;font-size:1.344cqw">©twinkl.co.uk. You may photocopy this page.</span><i class="nl" style="left:49.447%;top:97.017%">
@@ -549,7 +554,7 @@ window.LS.ham();
 </i><span data-w="0.00753" style="left:11.445%;top:40.669%;font-size:1.371cqw">5</span><i class="nl" style="left:11.069%;top:42.877%">
 </i><span data-w="0.01505" style="left:11.069%;top:42.877%;font-size:1.371cqw">19</span><i class="nl" style="left:11.445%;top:44.003%">
 </i><span data-w="0.00753" style="left:11.445%;top:44.003%;font-size:1.371cqw">6</span><i class="nl" style="left:88.237%;top:28.931%">
-</i><span class="mo" data-w="0.03835" style="left:88.237%;top:28.931%;font-size:1.176cqw">4 marks</span><i class="nl" style="left:29.278%;top:46.296%">
+</i><span data-w="0.03835" style="left:88.237%;top:28.931%;font-size:1.176cqw">4 marks</span><i class="nl" style="left:29.278%;top:46.296%">
 </i><span data-w="0.00753" style="left:29.278%;top:46.296%;font-size:1.371cqw">7</span><i class="nl" style="left:29.278%;top:47.422%">
 </i><span data-w="0.00753" style="left:29.278%;top:47.422%;font-size:1.371cqw">8</span><i class="nl" style="left:26.848%;top:46.475%">
 </i><span data-w="0.01107" style="left:26.848%;top:46.475%;font-size:2.016cqw">2</span><i class="nl" style="left:29.278%;top:49.630%">
@@ -582,7 +587,7 @@ window.LS.ham();
 </i><span data-w="0.00753" style="left:14.421%;top:90.701%;font-size:1.371cqw">4</span><i class="nl" style="left:6.132%;top:97.161%">
 </i><span class="mo" data-w="0.27386" style="left:6.132%;top:97.161%;font-size:1.344cqw">©twinkl.co.uk. You may photocopy this page.</span><i class="nl" style="left:49.447%;top:97.017%">
 </i><span data-w="0.01107" style="left:49.447%;top:97.017%;font-size:2.016cqw">3</span><i class="nl" style="left:88.237%;top:51.120%">
-</i><span class="mo" data-w="0.03835" style="left:88.237%;top:51.120%;font-size:1.176cqw">4 marks</span><i class="nl" style="left:88.237%;top:68.900%">
+</i><span data-w="0.03835" style="left:88.237%;top:51.120%;font-size:1.176cqw">4 marks</span><i class="nl" style="left:88.237%;top:68.900%">
 </i><span class="mo" data-w="0.03835" style="left:88.237%;top:68.900%;font-size:1.176cqw">2 marks</span><i class="nl" style="left:88.237%;top:88.173%">
 </i><span class="mo" data-w="0.03835" style="left:88.237%;top:88.173%;font-size:1.176cqw">2 marks</span><i class="nl" style="left:88.332%;top:93.925%">
 </i><span class="mo" data-w="0.03957" style="left:88.332%;top:93.925%;font-size:1.008cqw">Total for </span><i class="nl" style="left:88.170%;top:94.757%">
@@ -625,9 +630,9 @@ window.LS.ham();
 </i><span data-w="0.01107" style="left:56.761%;top:69.675%;font-size:2.016cqw">3</span><i class="nl" style="left:73.103%;top:69.675%">
 </i><span data-w="0.01107" style="left:73.103%;top:69.675%;font-size:2.016cqw">4</span><i class="nl" style="left:88.237%;top:19.581%">
 </i><span class="mo" data-w="0.03835" style="left:88.237%;top:19.581%;font-size:1.176cqw">2 marks</span><i class="nl" style="left:88.456%;top:41.316%">
-</i><span class="mo" data-w="0.03398" style="left:88.456%;top:41.316%;font-size:1.176cqw">1 mark</span><i class="nl" style="left:88.456%;top:55.614%">
-</i><span class="mo" data-w="0.03398" style="left:88.456%;top:55.614%;font-size:1.176cqw">1 mark</span><i class="nl" style="left:88.456%;top:70.145%">
-</i><span class="mo" data-w="0.03398" style="left:88.456%;top:70.145%;font-size:1.176cqw">1 mark</span><i class="nl" style="left:88.332%;top:93.925%">
+</i><span data-w="0.03398" style="left:88.456%;top:41.316%;font-size:1.176cqw">1 mark</span><i class="nl" style="left:88.456%;top:55.614%">
+</i><span data-w="0.03398" style="left:88.456%;top:55.614%;font-size:1.176cqw">1 mark</span><i class="nl" style="left:88.456%;top:70.145%">
+</i><span data-w="0.03398" style="left:88.456%;top:70.145%;font-size:1.176cqw">1 mark</span><i class="nl" style="left:88.332%;top:93.925%">
 </i><span class="mo" data-w="0.03957" style="left:88.332%;top:93.925%;font-size:1.008cqw">Total for </span><i class="nl" style="left:88.170%;top:94.757%">
 </i><span class="mo" data-w="0.03970" style="left:88.170%;top:94.757%;font-size:1.008cqw">this page</span><i class="nl" style="left:6.132%;top:97.161%">
 </i><span class="mo" data-w="0.27386" style="left:6.132%;top:97.161%;font-size:1.344cqw">©twinkl.co.uk. You may photocopy this page.</span><i class="nl" style="left:49.447%;top:97.017%">
@@ -642,7 +647,7 @@ window.LS.ham();
 </i><span data-w="0.02667" style="left:8.601%;top:22.804%;font-size:2.016cqw">0.9</span><i class="nl" style="left:33.402%;top:25.953%">
 </i><span data-w="0.01506" style="left:33.402%;top:25.953%;font-size:1.371cqw">87</span><i class="nl" style="left:33.026%;top:27.079%">
 </i><span data-w="0.02258" style="left:33.026%;top:27.079%;font-size:1.371cqw">100</span><i class="nl" style="left:88.237%;top:27.449%">
-</i><span class="mo" data-w="0.03835" style="left:88.237%;top:27.449%;font-size:1.176cqw">4 marks</span><i class="nl" style="left:6.048%;top:32.715%">
+</i><span data-w="0.03835" style="left:88.237%;top:27.449%;font-size:1.176cqw">4 marks</span><i class="nl" style="left:6.048%;top:32.715%">
 </i><span data-w="0.02264" style="left:6.048%;top:32.715%;font-size:2.016cqw">7.	</span><span data-w="0.67773" style="left:8.429%;top:32.730%;font-size:2.016cqw">Recognise and use thousandths and relate them to tenths, hundredths and decimal </span><i class="nl" style="left:8.429%;top:34.441%">
 </i><span data-w="0.09450" style="left:8.429%;top:34.441%;font-size:2.016cqw">equivalents.</span><i class="nl" style="left:8.429%;top:36.906%">
 </i><span data-w="0.22811" style="left:8.429%;top:36.906%;font-size:2.016cqw">Complete the missing boxes:</span><i class="nl" style="left:14.429%;top:40.954%">
@@ -658,7 +663,7 @@ window.LS.ham();
 </i><span data-w="0.02258" style="left:9.097%;top:55.713%;font-size:1.371cqw">750</span><i class="nl" style="left:8.721%;top:56.839%">
 </i><span data-w="0.03011" style="left:8.721%;top:56.839%;font-size:1.371cqw">1000</span><i class="nl" style="left:25.633%;top:56.872%">
 </i><span data-w="0.03387" style="left:25.633%;top:56.872%;font-size:2.057cqw">100</span><i class="nl" style="left:88.237%;top:57.931%">
-</i><span class="mo" data-w="0.03835" style="left:88.237%;top:57.931%;font-size:1.176cqw">3 marks</span><i class="nl" style="left:6.048%;top:63.198%">
+</i><span data-w="0.03835" style="left:88.237%;top:57.931%;font-size:1.176cqw">3 marks</span><i class="nl" style="left:6.048%;top:63.198%">
 </i><span data-w="0.02264" style="left:6.048%;top:63.198%;font-size:2.016cqw">8.	</span><span data-w="0.74448" style="left:8.429%;top:63.212%;font-size:2.016cqw">Round decimals with 2 decimal places to the nearest whole number and to 1 decimal place.</span><i class="nl" style="left:6.968%;top:65.892%">
 </i><span data-w="0.02328" style="left:6.968%;top:65.892%;font-size:2.016cqw">a)	</span><span data-w="0.72284" style="left:9.349%;top:65.906%;font-size:2.016cqw">Circle the numbers which are rounded to 23 when rounded to the nearest whole number:</span><i class="nl" style="left:10.886%;top:69.786%">
 </i><span data-w="0.04880" style="left:10.886%;top:69.786%;font-size:2.016cqw">22.37</span><i class="nl" style="left:23.602%;top:69.786%">
@@ -674,8 +679,8 @@ window.LS.ham();
 </i><span data-w="0.03774" style="left:49.591%;top:78.037%;font-size:2.016cqw">4.72</span><i class="nl" style="left:62.306%;top:78.037%">
 </i><span data-w="0.03774" style="left:62.306%;top:78.037%;font-size:2.016cqw">4.69</span><i class="nl" style="left:75.021%;top:78.037%">
 </i><span data-w="0.03774" style="left:75.021%;top:78.037%;font-size:2.016cqw">4.76</span><i class="nl" style="left:88.237%;top:71.084%">
-</i><span class="mo" data-w="0.03835" style="left:88.237%;top:71.084%;font-size:1.176cqw">3 marks</span><i class="nl" style="left:88.237%;top:79.285%">
-</i><span class="mo" data-w="0.03835" style="left:88.237%;top:79.285%;font-size:1.176cqw">3 marks</span><i class="nl" style="left:88.332%;top:93.925%">
+</i><span data-w="0.03835" style="left:88.237%;top:71.084%;font-size:1.176cqw">3 marks</span><i class="nl" style="left:88.237%;top:79.285%">
+</i><span data-w="0.03835" style="left:88.237%;top:79.285%;font-size:1.176cqw">3 marks</span><i class="nl" style="left:88.332%;top:93.925%">
 </i><span class="mo" data-w="0.03957" style="left:88.332%;top:93.925%;font-size:1.008cqw">Total for </span><i class="nl" style="left:88.170%;top:94.757%">
 </i><span class="mo" data-w="0.03970" style="left:88.170%;top:94.757%;font-size:1.008cqw">this page</span><i class="nl" style="left:6.132%;top:97.161%">
 </i><span class="mo" data-w="0.27386" style="left:6.132%;top:97.161%;font-size:1.344cqw">©twinkl.co.uk. You may photocopy this page.</span><i class="nl" style="left:49.447%;top:97.017%">
@@ -694,7 +699,7 @@ window.LS.ham();
 </i><span data-w="0.03774" style="left:40.513%;top:20.293%;font-size:2.016cqw">28.9</span><i class="nl" style="left:7.732%;top:23.652%">
 </i><span data-w="0.04880" style="left:7.732%;top:23.652%;font-size:2.016cqw">28.92</span><i class="nl" style="left:40.513%;top:23.652%">
 </i><span data-w="0.02213" style="left:40.513%;top:23.652%;font-size:2.016cqw">29</span><i class="nl" style="left:88.237%;top:24.746%">
-</i><span class="mo" data-w="0.03835" style="left:88.237%;top:24.746%;font-size:1.176cqw">4 marks</span><i class="nl" style="left:6.048%;top:30.021%">
+</i><span data-w="0.03835" style="left:88.237%;top:24.746%;font-size:1.176cqw">4 marks</span><i class="nl" style="left:6.048%;top:30.021%">
 </i><span data-w="0.02264" style="left:6.048%;top:30.021%;font-size:2.016cqw">9.	</span><span data-w="0.56587" style="left:8.429%;top:30.035%;font-size:2.016cqw">Read, write, order and compare numbers with up to 3 decimal places.</span><i class="nl" style="left:6.976%;top:32.715%">
 </i><span data-w="0.02328" style="left:6.976%;top:32.715%;font-size:2.016cqw">a)	</span><span data-w="0.42043" style="left:9.357%;top:32.730%;font-size:2.016cqw">Use the symbols  &lt; or &gt; to compare these decimals:</span><i class="nl" style="left:26.298%;top:36.609%">
 </i><span data-w="0.05142" style="left:26.298%;top:36.609%;font-size:2.016cqw">&lt; or &gt;</span><i class="nl" style="left:8.601%;top:39.977%">
@@ -711,15 +716,15 @@ window.LS.ham();
 </i><span data-w="0.13414" style="left:25.119%;top:57.165%;font-size:2.016cqw">           550.05	</span><i class="nl" style="left:43.262%;top:57.165%">
 </i><span data-w="0.15270" style="left:43.262%;top:57.165%;font-size:2.016cqw">              50.505	</span><i class="nl" style="left:64.362%;top:57.165%">
 </i><span data-w="0.14520" style="left:64.362%;top:57.165%;font-size:2.016cqw">            550.055</span><i class="nl" style="left:88.237%;top:51.260%">
-</i><span class="mo" data-w="0.03835" style="left:88.237%;top:51.260%;font-size:1.176cqw">4 marks</span><i class="nl" style="left:6.976%;top:63.598%">
+</i><span data-w="0.03835" style="left:88.237%;top:51.260%;font-size:1.176cqw">4 marks</span><i class="nl" style="left:6.976%;top:63.598%">
 </i><span data-w="0.05999" style="left:6.976%;top:63.598%;font-size:2.016cqw"> largest</span><i class="nl" style="left:76.989%;top:63.598%">
 </i><span data-w="0.06445" style="left:76.989%;top:63.598%;font-size:2.016cqw">smallest</span><i class="nl" style="left:6.132%;top:69.472%">
 </i><span data-w="0.03371" style="left:6.132%;top:69.472%;font-size:2.016cqw">10.	</span><span data-w="0.46018" style="left:8.989%;top:69.486%;font-size:2.016cqw">Solve problems involving number up to 3 decimal places.</span><i class="nl" style="left:10.581%;top:73.511%">
 </i><span data-w="0.18120" style="left:10.581%;top:73.511%;font-size:2.016cqw">1 pint = 0.568 litres</span><i class="nl" style="left:8.390%;top:75.225%">
 </i><span data-w="0.02328" style="left:8.390%;top:75.225%;font-size:2.016cqw">a)	</span><span data-w="0.68537" style="left:10.771%;top:75.239%;font-size:2.016cqw">A recipe says Jack needs 1 1/2 pints of stock, but he only has a litre measuring jug. </span><i class="nl" style="left:10.771%;top:76.950%">
 </i><span data-w="0.25906" style="left:10.771%;top:76.950%;font-size:2.016cqw">How much stock should he use?</span><i class="nl" style="left:88.456%;top:64.205%">
-</i><span class="mo" data-w="0.03398" style="left:88.456%;top:64.205%;font-size:1.176cqw">1 mark</span><i class="nl" style="left:88.456%;top:88.173%">
-</i><span class="mo" data-w="0.03398" style="left:88.456%;top:88.173%;font-size:1.176cqw">1 mark</span><i class="nl" style="left:88.332%;top:93.925%">
+</i><span data-w="0.03398" style="left:88.456%;top:64.205%;font-size:1.176cqw">1 mark</span><i class="nl" style="left:88.456%;top:88.173%">
+</i><span data-w="0.03398" style="left:88.456%;top:88.173%;font-size:1.176cqw">1 mark</span><i class="nl" style="left:88.332%;top:93.925%">
 </i><span class="mo" data-w="0.03957" style="left:88.332%;top:93.925%;font-size:1.008cqw">Total for </span><i class="nl" style="left:88.170%;top:94.757%">
 </i><span class="mo" data-w="0.03970" style="left:88.170%;top:94.757%;font-size:1.008cqw">this page</span><i class="nl" style="left:6.132%;top:97.161%">
 </i><span class="mo" data-w="0.27386" style="left:6.132%;top:97.161%;font-size:1.344cqw">©twinkl.co.uk. You may photocopy this page.</span><i class="nl" style="left:49.447%;top:97.017%">
@@ -758,11 +763,11 @@ window.LS.ham();
 </i><span data-w="0.03371" style="left:6.048%;top:6.134%;font-size:2.016cqw">12.	</span><span data-w="0.73077" style="left:8.905%;top:6.148%;font-size:2.016cqw">Solve problems which require knowing percentage and decimal equivalents of    ,   ,   ,   , </span><i class="nl" style="left:8.429%;top:7.859%">
 </i><span data-w="0.53668" style="left:8.429%;top:7.859%;font-size:2.016cqw">and those fractions with a denominator of a multiple of 10 or 25.</span><i class="nl" style="left:8.260%;top:11.773%">
 </i><span data-w="0.73707" style="left:8.260%;top:11.773%;font-size:2.016cqw">a) In a class of children 40% of the children are boys. What fraction of the class are girls?</span><i class="nl" style="left:88.456%;top:17.845%">
-</i><span class="mo" data-w="0.03398" style="left:88.456%;top:17.845%;font-size:1.176cqw">1 mark</span><i class="nl" style="left:7.634%;top:21.203%">
+</i><span data-w="0.03398" style="left:88.456%;top:17.845%;font-size:1.176cqw">1 mark</span><i class="nl" style="left:7.634%;top:21.203%">
 </i><span data-w="0.53246" style="left:7.634%;top:21.203%;font-size:2.016cqw"> b) There are 18 girls. How many children in the class altogether?</span><i class="nl" style="left:88.237%;top:27.356%">
 </i><span class="mo" data-w="0.03835" style="left:88.237%;top:27.356%;font-size:1.176cqw">2 marks</span><i class="nl" style="left:7.634%;top:30.633%">
 </i><span data-w="0.53212" style="left:7.634%;top:30.633%;font-size:2.016cqw"> c) 25% of the boys wear glasses. How many boys wear glasses?</span><i class="nl" style="left:88.456%;top:36.786%">
-</i><span class="mo" data-w="0.03398" style="left:88.456%;top:36.786%;font-size:1.176cqw">1 mark</span><i class="nl" style="left:88.332%;top:93.925%">
+</i><span data-w="0.03398" style="left:88.456%;top:36.786%;font-size:1.176cqw">1 mark</span><i class="nl" style="left:88.332%;top:93.925%">
 </i><span class="mo" data-w="0.03957" style="left:88.332%;top:93.925%;font-size:1.008cqw">Total for </span><i class="nl" style="left:88.170%;top:94.757%">
 </i><span class="mo" data-w="0.03970" style="left:88.170%;top:94.757%;font-size:1.008cqw">this page</span><i class="nl" style="left:6.132%;top:97.161%">
 </i><span class="mo" data-w="0.27386" style="left:6.132%;top:97.161%;font-size:1.344cqw">©twinkl.co.uk. You may photocopy this page.</span><i class="nl" style="left:49.447%;top:97.017%">

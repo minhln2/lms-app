@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -703,50 +708,50 @@ window.LS.ham();
 </i><span data-w="0.44090" style="left:4.246%;top:12.450%;font-size:3.334cqw">Check your understanding</span><i class="nl" style="left:5.073%;top:24.036%">
 </i><span data-w="0.78289" style="left:5.073%;top:24.036%;font-size:2.501cqw">I measured the height of different children in grade 5.  </span><i class="nl" style="left:5.073%;top:29.372%">
 </i><span data-w="0.29528" style="left:5.073%;top:29.372%;font-size:2.501cqw">Here is what I found.</span><i class="nl" style="left:5.911%;top:39.162%">
-</i><span class="mo" data-w="0.10455" style="left:5.911%;top:39.162%;font-size:1.875cqw">Height of </span><i class="nl" style="left:5.911%;top:43.033%">
-</i><span class="mo" data-w="0.11863" style="left:5.911%;top:43.033%;font-size:1.875cqw">children in </span><i class="nl" style="left:5.911%;top:46.904%">
+</i><span data-w="0.10455" style="left:5.911%;top:39.162%;font-size:1.875cqw">Height of </span><i class="nl" style="left:5.911%;top:43.033%">
+</i><span data-w="0.11863" style="left:5.911%;top:43.033%;font-size:1.875cqw">children in </span><i class="nl" style="left:5.911%;top:46.904%">
 </i><span data-w="0.04029" style="left:5.911%;top:46.904%;font-size:1.875cqw">5B1</span><i class="nl" style="left:24.502%;top:39.162%">
-</i><span class="mo" data-w="0.07622" style="left:24.502%;top:39.162%;font-size:1.875cqw">140 cm</span><i class="nl" style="left:39.936%;top:39.162%">
-</i><span class="mo" data-w="0.07622" style="left:39.936%;top:39.162%;font-size:1.875cqw">140 cm</span><i class="nl" style="left:55.045%;top:39.162%">
+</i><span data-w="0.07622" style="left:24.502%;top:39.162%;font-size:1.875cqw">140 cm</span><i class="nl" style="left:39.936%;top:39.162%">
+</i><span data-w="0.07622" style="left:39.936%;top:39.162%;font-size:1.875cqw">140 cm</span><i class="nl" style="left:55.045%;top:39.162%">
 </i><span data-w="0.08271" style="left:55.045%;top:39.162%;font-size:1.875cqw">130 cm </span><i class="nl" style="left:70.803%;top:39.162%">
 </i><span data-w="0.07622" style="left:70.803%;top:39.162%;font-size:1.875cqw">154 cm</span><i class="nl" style="left:86.237%;top:39.162%">
 </i><span data-w="0.07622" style="left:86.237%;top:39.162%;font-size:1.875cqw">121 cm</span><i class="nl" style="left:5.911%;top:52.509%">
-</i><span class="mo" data-w="0.10455" style="left:5.911%;top:52.509%;font-size:1.875cqw">Height of </span><i class="nl" style="left:5.911%;top:56.380%">
-</i><span class="mo" data-w="0.11863" style="left:5.911%;top:56.380%;font-size:1.875cqw">children in </span><i class="nl" style="left:5.911%;top:60.251%">
+</i><span data-w="0.10455" style="left:5.911%;top:52.509%;font-size:1.875cqw">Height of </span><i class="nl" style="left:5.911%;top:56.380%">
+</i><span data-w="0.11863" style="left:5.911%;top:56.380%;font-size:1.875cqw">children in </span><i class="nl" style="left:5.911%;top:60.251%">
 </i><span data-w="0.04029" style="left:5.911%;top:60.251%;font-size:1.875cqw">5B2</span><i class="nl" style="left:24.502%;top:52.509%">
 </i><span data-w="0.07622" style="left:24.502%;top:52.509%;font-size:1.875cqw">125 cm</span><i class="nl" style="left:39.936%;top:52.509%">
 </i><span data-w="0.07622" style="left:39.936%;top:52.509%;font-size:1.875cqw">137 cm</span><i class="nl" style="left:55.370%;top:52.509%">
 </i><span data-w="0.07622" style="left:55.370%;top:52.509%;font-size:1.875cqw">163 cm</span><i class="nl" style="left:70.803%;top:52.509%">
-</i><span class="mo" data-w="0.07622" style="left:70.803%;top:52.509%;font-size:1.875cqw">140 cm</span><i class="nl" style="left:86.237%;top:52.509%">
+</i><span data-w="0.07622" style="left:70.803%;top:52.509%;font-size:1.875cqw">140 cm</span><i class="nl" style="left:86.237%;top:52.509%">
 </i><span data-w="0.07622" style="left:86.237%;top:52.509%;font-size:1.875cqw">145 cm</span><i class="nl" style="left:5.073%;top:71.908%">
 </i><span data-w="0.80822" style="left:5.073%;top:71.908%;font-size:2.501cqw">Find the mode, mean, median and range from this set of </span><i class="nl" style="left:5.073%;top:77.244%">
 </i><span data-w="0.07300" style="left:5.073%;top:77.244%;font-size:2.501cqw">data.</span><i class="nl" style="left:5.073%;top:90.433%">
 </i><span data-w="0.65864" style="left:5.073%;top:90.433%;font-size:2.501cqw">What conclusion can you make from this data?</span></div></div></section>
 <section class="trang" id="tr-9" data-tr="9"><div class="khung"><img src="anh/trang-9.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:4.243%;top:3.257%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.69045" style="left:13.432%;top:3.257%;font-size:2.501cqw">Find and interpret the mode, median, mean and range.</span><i class="nl" style="left:4.246%;top:11.277%">
 </i><span data-w="0.33045" style="left:4.246%;top:11.277%;font-size:2.501cqw">Check your understanding</span><i class="nl" style="left:2.008%;top:21.319%">
-</i><span class="mo" data-w="0.10455" style="left:2.008%;top:21.319%;font-size:1.875cqw">Height of </span><i class="nl" style="left:2.008%;top:25.190%">
-</i><span class="mo" data-w="0.11863" style="left:2.008%;top:25.190%;font-size:1.875cqw">children in </span><i class="nl" style="left:2.008%;top:29.061%">
+</i><span data-w="0.10455" style="left:2.008%;top:21.319%;font-size:1.875cqw">Height of </span><i class="nl" style="left:2.008%;top:25.190%">
+</i><span data-w="0.11863" style="left:2.008%;top:25.190%;font-size:1.875cqw">children in </span><i class="nl" style="left:2.008%;top:29.061%">
 </i><span data-w="0.04029" style="left:2.008%;top:29.061%;font-size:1.875cqw">5B1</span><i class="nl" style="left:20.598%;top:21.319%">
-</i><span class="mo" data-w="0.07622" style="left:20.598%;top:21.319%;font-size:1.875cqw">140 cm</span><i class="nl" style="left:36.032%;top:21.319%">
-</i><span class="mo" data-w="0.07622" style="left:36.032%;top:21.319%;font-size:1.875cqw">140 cm</span><i class="nl" style="left:51.141%;top:21.319%">
+</i><span data-w="0.07622" style="left:20.598%;top:21.319%;font-size:1.875cqw">140 cm</span><i class="nl" style="left:36.032%;top:21.319%">
+</i><span data-w="0.07622" style="left:36.032%;top:21.319%;font-size:1.875cqw">140 cm</span><i class="nl" style="left:51.141%;top:21.319%">
 </i><span data-w="0.08271" style="left:51.141%;top:21.319%;font-size:1.875cqw">130 cm </span><i class="nl" style="left:66.900%;top:21.319%">
 </i><span data-w="0.07622" style="left:66.900%;top:21.319%;font-size:1.875cqw">154 cm</span><i class="nl" style="left:82.334%;top:21.319%">
 </i><span data-w="0.07622" style="left:82.334%;top:21.319%;font-size:1.875cqw">121 cm</span><i class="nl" style="left:2.008%;top:34.272%">
-</i><span class="mo" data-w="0.10455" style="left:2.008%;top:34.272%;font-size:1.875cqw">Height of </span><i class="nl" style="left:2.008%;top:38.143%">
-</i><span class="mo" data-w="0.11863" style="left:2.008%;top:38.143%;font-size:1.875cqw">children in </span><i class="nl" style="left:2.008%;top:42.014%">
+</i><span data-w="0.10455" style="left:2.008%;top:34.272%;font-size:1.875cqw">Height of </span><i class="nl" style="left:2.008%;top:38.143%">
+</i><span data-w="0.11863" style="left:2.008%;top:38.143%;font-size:1.875cqw">children in </span><i class="nl" style="left:2.008%;top:42.014%">
 </i><span data-w="0.04029" style="left:2.008%;top:42.014%;font-size:1.875cqw">5B2</span><i class="nl" style="left:20.598%;top:34.272%">
 </i><span data-w="0.07622" style="left:20.598%;top:34.272%;font-size:1.875cqw">125 cm</span><i class="nl" style="left:36.032%;top:34.272%">
 </i><span data-w="0.07622" style="left:36.032%;top:34.272%;font-size:1.875cqw">137 cm</span><i class="nl" style="left:51.466%;top:34.272%">
 </i><span data-w="0.07622" style="left:51.466%;top:34.272%;font-size:1.875cqw">163 cm</span><i class="nl" style="left:66.900%;top:34.272%">
-</i><span class="mo" data-w="0.07622" style="left:66.900%;top:34.272%;font-size:1.875cqw">140 cm</span><i class="nl" style="left:82.334%;top:34.272%">
+</i><span data-w="0.07622" style="left:66.900%;top:34.272%;font-size:1.875cqw">140 cm</span><i class="nl" style="left:82.334%;top:34.272%">
 </i><span data-w="0.07622" style="left:82.334%;top:34.272%;font-size:1.875cqw">145 cm</span><i class="nl" style="left:29.250%;top:51.537%">
 </i><span data-w="0.05760" style="left:29.250%;top:51.537%;font-size:1.875cqw">Mode</span><i class="nl" style="left:42.581%;top:51.537%">
 </i><span data-w="0.05730" style="left:42.581%;top:51.537%;font-size:1.875cqw">Mean</span><i class="nl" style="left:55.913%;top:51.537%">
 </i><span data-w="0.08361" style="left:55.913%;top:51.537%;font-size:1.875cqw">Median </span><i class="nl" style="left:69.244%;top:51.537%">
 </i><span data-w="0.06641" style="left:69.244%;top:51.537%;font-size:1.875cqw">Range</span><i class="nl" style="left:32.129%;top:56.870%">
 </i><span data-w="0.07086" style="left:32.129%;top:56.870%;font-size:2.917cqw">140 </span><i class="nl" style="left:15.918%;top:56.879%">
-</i><span class="mo" data-w="0.10455" style="left:15.918%;top:56.879%;font-size:1.875cqw">Height of </span><i class="nl" style="left:15.918%;top:60.750%">
-</i><span class="mo" data-w="0.11863" style="left:15.918%;top:60.750%;font-size:1.875cqw">children in </span><i class="nl" style="left:32.790%;top:62.895%">
+</i><span data-w="0.10455" style="left:15.918%;top:56.879%;font-size:1.875cqw">Height of </span><i class="nl" style="left:15.918%;top:60.750%">
+</i><span data-w="0.11863" style="left:15.918%;top:60.750%;font-size:1.875cqw">children in </span><i class="nl" style="left:32.790%;top:62.895%">
 </i><span data-w="0.04761" style="left:32.790%;top:62.895%;font-size:2.917cqw">cm</span><i class="nl" style="left:15.918%;top:64.621%">
 </i><span data-w="0.04029" style="left:15.918%;top:64.621%;font-size:1.875cqw">5B1</span><i class="nl" style="left:45.460%;top:56.870%">
 </i><span data-w="0.07086" style="left:45.460%;top:56.870%;font-size:2.917cqw">137 </span><i class="nl" style="left:46.122%;top:62.895%">
@@ -754,9 +759,9 @@ window.LS.ham();
 </i><span data-w="0.07086" style="left:58.792%;top:56.870%;font-size:2.917cqw">140 </span><i class="nl" style="left:59.453%;top:62.895%">
 </i><span data-w="0.04761" style="left:59.453%;top:62.895%;font-size:2.917cqw">cm</span><i class="nl" style="left:70.248%;top:56.870%">
 </i><span data-w="0.09822" style="left:70.248%;top:56.870%;font-size:2.917cqw">33 cm</span><i class="nl" style="left:15.918%;top:70.677%">
-</i><span class="mo" data-w="0.10455" style="left:15.918%;top:70.677%;font-size:1.875cqw">Height of </span><i class="nl" style="left:32.947%;top:70.669%">
+</i><span data-w="0.10455" style="left:15.918%;top:70.677%;font-size:1.875cqw">Height of </span><i class="nl" style="left:32.947%;top:70.669%">
 </i><span data-w="0.05452" style="left:32.947%;top:70.669%;font-size:2.917cqw">No </span><i class="nl" style="left:15.918%;top:74.548%">
-</i><span class="mo" data-w="0.11863" style="left:15.918%;top:74.548%;font-size:1.875cqw">children in </span><i class="nl" style="left:30.623%;top:76.694%">
+</i><span data-w="0.11863" style="left:15.918%;top:74.548%;font-size:1.875cqw">children in </span><i class="nl" style="left:30.623%;top:76.694%">
 </i><span data-w="0.09090" style="left:30.623%;top:76.694%;font-size:2.917cqw">mode</span><i class="nl" style="left:15.918%;top:78.420%">
 </i><span data-w="0.04029" style="left:15.918%;top:78.420%;font-size:1.875cqw">5B2</span><i class="nl" style="left:45.460%;top:70.669%">
 </i><span data-w="0.07086" style="left:45.460%;top:70.669%;font-size:2.917cqw">142 </span><i class="nl" style="left:46.122%;top:76.694%">

@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -558,13 +563,13 @@ window.LS.ham();
 </i><span data-w="0.31409" style="left:6.064%;top:45.832%;font-size:1.680cqw">Maya: Great! Now the poster is clear.</span><i class="nl" style="left:6.064%;top:48.607%">
 </i><span data-w="0.47089" style="left:6.064%;top:48.607%;font-size:1.680cqw">Extra language challenge | Rewrite the sentences</span><i class="nl" style="left:6.064%;top:50.193%">
 </i><span data-w="0.57389" style="left:6.064%;top:50.193%;font-size:1.680cqw">34. Join using whose: The bird has long wings. Its nest is on the cliff.</span><i class="nl" style="left:6.064%;top:52.967%">
-</i><span class="mo" data-w="0.68872" style="left:6.064%;top:52.967%;font-size:1.680cqw">__________________________________________________________________________________</span><i class="nl" style="left:6.064%;top:55.741%">
+</i><span data-w="0.68872" style="left:6.064%;top:52.967%;font-size:1.680cqw">__________________________________________________________________________________</span><i class="nl" style="left:6.064%;top:55.741%">
 </i><span data-w="0.57332" style="left:6.064%;top:55.741%;font-size:1.680cqw">35. Join using which: The frog is poisonous. It has bright yellow skin.</span><i class="nl" style="left:6.064%;top:58.515%">
-</i><span class="mo" data-w="0.68872" style="left:6.064%;top:58.515%;font-size:1.680cqw">__________________________________________________________________________________</span><i class="nl" style="left:6.064%;top:61.289%">
+</i><span data-w="0.68872" style="left:6.064%;top:58.515%;font-size:1.680cqw">__________________________________________________________________________________</span><i class="nl" style="left:6.064%;top:61.289%">
 </i><span data-w="0.55352" style="left:6.064%;top:61.289%;font-size:1.680cqw">36. Change to passive: The keeper feeds the penguins every day.</span><i class="nl" style="left:6.064%;top:64.063%">
-</i><span class="mo" data-w="0.68872" style="left:6.064%;top:64.063%;font-size:1.680cqw">__________________________________________________________________________________</span><i class="nl" style="left:6.064%;top:66.838%">
+</i><span data-w="0.68872" style="left:6.064%;top:64.063%;font-size:1.680cqw">__________________________________________________________________________________</span><i class="nl" style="left:6.064%;top:66.838%">
 </i><span data-w="0.48938" style="left:6.064%;top:66.838%;font-size:1.680cqw">37. Change to passive: Volunteers protect the turtle eggs.</span><i class="nl" style="left:6.064%;top:69.612%">
-</i><span class="mo" data-w="0.68872" style="left:6.064%;top:69.612%;font-size:1.680cqw">__________________________________________________________________________________</span><i class="nl" style="left:6.064%;top:74.049%">
+</i><span data-w="0.68872" style="left:6.064%;top:69.612%;font-size:1.680cqw">__________________________________________________________________________________</span><i class="nl" style="left:6.064%;top:74.049%">
 </i><span data-w="0.38651" style="left:6.064%;top:74.049%;font-size:1.680cqw">SECTION B — READING COMPREHENSION</span><i class="nl" style="left:6.064%;top:76.823%">
 </i><span data-w="0.28651" style="left:6.064%;top:76.823%;font-size:1.680cqw">Part 1 | Notices and messages</span><i class="nl" style="left:6.064%;top:78.409%">
 </i><span data-w="0.39098" style="left:6.064%;top:78.409%;font-size:1.680cqw">Read each notice or message. Circle A, B or C.</span><i class="nl" style="left:6.064%;top:81.184%">

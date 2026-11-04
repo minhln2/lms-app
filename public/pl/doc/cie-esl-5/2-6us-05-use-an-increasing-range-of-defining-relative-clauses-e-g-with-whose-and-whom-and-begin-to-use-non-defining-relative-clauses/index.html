@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -563,7 +568,7 @@ window.LS.ham();
 <section class="trang" id="tr-5" data-tr="5"><div class="khung"><img src="anh/trang-5.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:2.427%;top:3.808%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.78099" style="left:11.616%;top:3.808%;font-size:2.501cqw">Use an increasing range of defining relative clauses (e.g. with </span><i class="nl" style="left:2.427%;top:8.609%">
 </i><span data-w="0.82290" style="left:2.427%;top:8.609%;font-size:2.501cqw">whose and whom) and begin to use non-defining relative clauses.</span><i class="nl" style="left:34.751%;top:19.195%">
 </i><span data-w="0.29936" style="left:34.751%;top:19.195%;font-size:3.750cqw">Who vs Whom</span><i class="nl" style="left:4.131%;top:37.925%">
-</i><span data-w="0.07277" style="left:4.131%;top:37.925%;font-size:3.334cqw">Use </span><span class="mo" data-w="0.07737" style="left:11.418%;top:37.925%;font-size:3.334cqw">who</span><span data-w="0.69116" style="left:19.169%;top:37.925%;font-size:3.334cqw"> when the person is the subject doing an </span><i class="nl" style="left:4.131%;top:45.042%">
+</i><span data-w="0.07277" style="left:4.131%;top:37.925%;font-size:3.334cqw">Use </span><span data-w="0.07737" style="left:11.418%;top:37.925%;font-size:3.334cqw">who</span><span data-w="0.69116" style="left:19.169%;top:37.925%;font-size:3.334cqw"> when the person is the subject doing an </span><i class="nl" style="left:4.131%;top:45.042%">
 </i><span data-w="0.12364" style="left:4.131%;top:45.042%;font-size:3.334cqw">action. </span><i class="nl" style="left:4.131%;top:59.277%">
 </i><span data-w="0.07277" style="left:4.131%;top:59.277%;font-size:3.334cqw">Use </span><span data-w="0.11214" style="left:11.418%;top:59.277%;font-size:3.334cqw">whom</span><span data-w="0.73276" style="left:22.644%;top:59.277%;font-size:3.334cqw"> when the person is the object receiving an </span><i class="nl" style="left:4.131%;top:66.394%">
 </i><span data-w="0.54655" style="left:4.131%;top:66.394%;font-size:3.334cqw">action or following a preposition.</span></div></div></section>
@@ -572,7 +577,7 @@ window.LS.ham();
 </i><span data-w="0.29936" style="left:34.751%;top:19.195%;font-size:3.750cqw">Who vs Whom</span><i class="nl" style="left:3.856%;top:30.209%">
 </i><span data-w="0.87097" style="left:3.856%;top:30.209%;font-size:3.334cqw">Use who when the subject is performing the action. </span><i class="nl" style="left:3.856%;top:44.443%">
 </i><span data-w="0.87191" style="left:3.856%;top:44.443%;font-size:3.334cqw">Use whom when the subject is receiving the action. </span><i class="nl" style="left:4.403%;top:61.908%">
-</i><span data-w="0.29199" style="left:4.403%;top:61.908%;font-size:3.334cqw">Kim is an athlete </span><span class="mo" data-w="0.07737" style="left:33.640%;top:61.908%;font-size:3.334cqw">who</span><span data-w="0.43110" style="left:41.391%;top:61.908%;font-size:3.334cqw"> enjoys distance running. </span><i class="nl" style="left:4.403%;top:76.143%">
+</i><span data-w="0.29199" style="left:4.403%;top:61.908%;font-size:3.334cqw">Kim is an athlete </span><span data-w="0.07737" style="left:33.640%;top:61.908%;font-size:3.334cqw">who</span><span data-w="0.43110" style="left:41.391%;top:61.908%;font-size:3.334cqw"> enjoys distance running. </span><i class="nl" style="left:4.403%;top:76.143%">
 </i><span data-w="0.55255" style="left:4.403%;top:76.143%;font-size:3.334cqw">Asher wrote a letter to a pen pal </span><span data-w="0.11214" style="left:59.716%;top:76.143%;font-size:3.334cqw">whom</span><span data-w="0.13604" style="left:70.942%;top:76.143%;font-size:3.334cqw"> he had </span><i class="nl" style="left:4.403%;top:83.260%">
 </i><span data-w="0.18278" style="left:4.403%;top:83.260%;font-size:3.334cqw">never met.</span></div></div></section>
 <section class="trang" id="tr-7" data-tr="7"><div class="khung"><img src="anh/trang-7.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.06887" style="left:2.427%;top:3.880%;font-size:1.875cqw">WALT: </span><span class="mo" data-w="0.86251" style="left:9.316%;top:3.880%;font-size:1.875cqw">Use an increasing range of defining relative clauses (e.g. with whose and whom) and begin </span><i class="nl" style="left:2.427%;top:7.483%">
@@ -601,12 +606,12 @@ window.LS.ham();
 <section class="trang" id="tr-11" data-tr="11"><div class="khung"><img src="anh/trang-11.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.10344" style="left:2.427%;top:2.908%;font-size:2.814cqw">WALT: </span><span class="mo" data-w="0.81019" style="left:12.765%;top:2.908%;font-size:2.814cqw">Use an increasing range of defining relative clauses (e.g. </span><i class="nl" style="left:2.427%;top:7.236%">
 </i><span class="mo" data-w="0.88056" style="left:2.427%;top:7.236%;font-size:2.814cqw">with whose and whom) and begin to use non-defining relative </span><i class="nl" style="left:2.427%;top:11.564%">
 </i><span class="mo" data-w="0.11374" style="left:2.427%;top:11.564%;font-size:2.814cqw">clauses.</span><i class="nl" style="left:31.334%;top:40.682%">
-</i><span class="mo" data-w="0.06765" style="left:31.334%;top:40.682%;font-size:2.917cqw">who</span><i class="nl" style="left:31.334%;top:46.912%">
+</i><span data-w="0.06765" style="left:31.334%;top:40.682%;font-size:2.917cqw">who</span><i class="nl" style="left:31.334%;top:46.912%">
 </i><span data-w="0.03037" style="left:31.334%;top:46.912%;font-size:2.917cqw">m</span><i class="nl" style="left:31.334%;top:48.760%">
-</i><span class="mo" data-w="0.06765" style="left:31.334%;top:48.760%;font-size:2.917cqw">who</span><i class="nl" style="left:25.857%;top:55.652%">
+</i><span data-w="0.06765" style="left:31.334%;top:48.760%;font-size:2.917cqw">who</span><i class="nl" style="left:25.857%;top:55.652%">
 </i><span data-w="0.08495" style="left:25.857%;top:55.652%;font-size:2.917cqw">whos</span><i class="nl" style="left:25.857%;top:61.881%">
 </i><span data-w="0.01978" style="left:25.857%;top:61.881%;font-size:2.917cqw">e</span><span data-w="0.08495" style="left:29.279%;top:64.865%;font-size:2.917cqw">whos</span><i class="nl" style="left:29.279%;top:71.094%">
-</i><span data-w="0.01978" style="left:29.279%;top:71.094%;font-size:2.917cqw">e</span><span class="mo" data-w="0.06765" style="left:32.256%;top:72.938%;font-size:2.917cqw">who</span><i class="nl" style="left:32.256%;top:79.167%">
+</i><span data-w="0.01978" style="left:29.279%;top:71.094%;font-size:2.917cqw">e</span><span data-w="0.06765" style="left:32.256%;top:72.938%;font-size:2.917cqw">who</span><i class="nl" style="left:32.256%;top:79.167%">
 </i><span data-w="0.03037" style="left:32.256%;top:79.167%;font-size:2.917cqw">m</span></div></div></section>
 <section class="trang" id="tr-12" data-tr="12"><div class="khung"><img src="anh/trang-12.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.10344" style="left:2.427%;top:2.908%;font-size:2.814cqw">WALT: </span><span class="mo" data-w="0.81019" style="left:12.765%;top:2.908%;font-size:2.814cqw">Use an increasing range of defining relative clauses (e.g. </span><i class="nl" style="left:2.427%;top:7.236%">
 </i><span class="mo" data-w="0.88056" style="left:2.427%;top:7.236%;font-size:2.814cqw">with whose and whom) and begin to use non-defining relative </span><i class="nl" style="left:2.427%;top:11.564%">

@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -431,16 +436,16 @@ window.LS.ham();
 </i><span class="mo" data-w="0.76330" style="left:11.769%;top:66.410%;font-size:2.294cqw">___________________________________________________________________</span><i class="nl" style="left:11.769%;top:68.744%">
 </i><span class="mo" data-w="0.76330" style="left:11.769%;top:68.744%;font-size:2.294cqw">___________________________________________________________________</span><i class="nl" style="left:11.769%;top:71.077%">
 </i><span class="mo" data-w="0.76299" style="left:11.769%;top:71.077%;font-size:2.294cqw">___________________________________________________________________</span><i class="nl" style="left:11.769%;top:73.380%">
-</i><span class="mo" data-w="0.76884" style="left:11.769%;top:73.380%;font-size:2.294cqw">___________________________________________________________________ </span><i class="nl" style="left:11.769%;top:94.045%">
+</i><span data-w="0.76884" style="left:11.769%;top:73.380%;font-size:2.294cqw">___________________________________________________________________ </span><i class="nl" style="left:11.769%;top:94.045%">
 </i><span class="mo" data-w="0.11662" style="left:11.769%;top:94.045%;font-size:1.804cqw">Stage 6 Science </span><span data-w="0.03198" style="left:23.435%;top:94.148%;font-size:1.627cqw">pg. 4</span></div></div></section>
 <section class="trang" id="tr-5" data-tr="5"><div class="khung"><img src="anh/trang-5.webp" width="1020" height="1320" alt="" loading="lazy"><div class="chu"><span data-w="0.12902" style="left:11.769%;top:9.506%;font-size:2.608cqw">Title: Lungs </span><i class="nl" style="left:11.769%;top:13.112%">
 </i><span data-w="0.13145" style="left:11.769%;top:13.112%;font-size:2.294cqw">Key question: </span><i class="nl" style="left:11.769%;top:16.461%">
 </i><span data-w="0.43934" style="left:11.769%;top:16.461%;font-size:2.294cqw">What are the functions and structure of lungs? </span><i class="nl" style="left:11.769%;top:19.809%">
 </i><span class="mo" data-w="0.76330" style="left:11.769%;top:19.809%;font-size:2.294cqw">___________________________________________________________________</span><i class="nl" style="left:11.769%;top:22.128%">
-</i><span class="mo" data-w="0.76884" style="left:11.769%;top:22.128%;font-size:2.294cqw">___________________________________________________________________ </span><i class="nl" style="left:11.769%;top:25.465%">
+</i><span data-w="0.76884" style="left:11.769%;top:22.128%;font-size:2.294cqw">___________________________________________________________________ </span><i class="nl" style="left:11.769%;top:25.465%">
 </i><span data-w="0.36346" style="left:11.769%;top:25.465%;font-size:2.294cqw"> Activity: Making a lung model Results: </span><i class="nl" style="left:11.769%;top:28.798%">
 </i><span data-w="0.70688" style="left:11.769%;top:28.798%;font-size:2.294cqw">1. What happens to the balloon when we pull the center of the rubber out? </span><i class="nl" style="left:11.769%;top:34.465%">
-</i><span class="mo" data-w="0.76884" style="left:11.769%;top:34.465%;font-size:2.294cqw">___________________________________________________________________ </span><i class="nl" style="left:11.769%;top:37.813%">
+</i><span data-w="0.76884" style="left:11.769%;top:34.465%;font-size:2.294cqw">___________________________________________________________________ </span><i class="nl" style="left:11.769%;top:37.813%">
 </i><span data-w="0.70276" style="left:11.769%;top:37.813%;font-size:2.294cqw">2. What happens to the balloon when we push the center of the rubber in? </span><i class="nl" style="left:11.769%;top:41.162%">
 </i><span class="mo" data-w="0.76330" style="left:11.769%;top:41.162%;font-size:2.294cqw">___________________________________________________________________</span><i class="nl" style="left:11.769%;top:43.480%">
 </i><span data-w="0.10243" style="left:11.769%;top:43.480%;font-size:2.294cqw">Discussion </span><i class="nl" style="left:11.769%;top:46.816%">

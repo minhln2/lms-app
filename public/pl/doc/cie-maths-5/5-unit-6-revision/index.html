@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -571,15 +576,15 @@ window.LS.ham();
 </i><span data-w="0.26870" style="left:2.654%;top:55.509%;font-size:4.999cqw">REVISION</span></div></div></section>
 <section class="trang" id="tr-2" data-tr="2"><div class="khung"><img src="anh/trang-2.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.02092" style="left:41.589%;top:55.095%;font-size:2.917cqw">I </span><span data-w="0.17591" style="left:43.677%;top:55.095%;font-size:2.917cqw">can answer </span><i class="nl" style="left:41.645%;top:61.325%">
 </i><span data-w="0.19557" style="left:41.645%;top:61.325%;font-size:2.917cqw">questions on </span><i class="nl" style="left:41.421%;top:67.554%">
-</i><span class="mo" data-w="0.20010" style="left:41.421%;top:67.554%;font-size:2.917cqw">fractions and </span><i class="nl" style="left:41.465%;top:73.784%">
-</i><span class="mo" data-w="0.19006" style="left:41.465%;top:73.784%;font-size:2.917cqw">percentages.</span><i class="nl" style="left:72.507%;top:55.095%">
+</i><span data-w="0.20010" style="left:41.421%;top:67.554%;font-size:2.917cqw">fractions and </span><i class="nl" style="left:41.465%;top:73.784%">
+</i><span data-w="0.19006" style="left:41.465%;top:73.784%;font-size:2.917cqw">percentages.</span><i class="nl" style="left:72.507%;top:55.095%">
 </i><span data-w="0.23589" style="left:72.507%;top:55.095%;font-size:2.917cqw">I can create my </span><i class="nl" style="left:73.325%;top:61.325%">
 </i><span data-w="0.21932" style="left:73.325%;top:61.325%;font-size:2.917cqw">own questions </span><i class="nl" style="left:73.157%;top:67.554%">
 </i><span data-w="0.22279" style="left:73.157%;top:67.554%;font-size:2.917cqw">when given an </span><i class="nl" style="left:78.250%;top:73.784%">
 </i><span data-w="0.11167" style="left:78.250%;top:73.784%;font-size:2.917cqw">answer.</span><i class="nl" style="left:5.344%;top:58.100%">
 </i><span data-w="0.26112" style="left:5.344%;top:58.100%;font-size:2.917cqw">I can recall about </span><i class="nl" style="left:8.392%;top:64.329%">
-</i><span class="mo" data-w="0.20010" style="left:8.392%;top:64.329%;font-size:2.917cqw">fractions and </span><i class="nl" style="left:8.436%;top:70.559%">
-</i><span class="mo" data-w="0.19006" style="left:8.436%;top:70.559%;font-size:2.917cqw">percentages.</span></div></div></section>
+</i><span data-w="0.20010" style="left:8.392%;top:64.329%;font-size:2.917cqw">fractions and </span><i class="nl" style="left:8.436%;top:70.559%">
+</i><span data-w="0.19006" style="left:8.436%;top:70.559%;font-size:2.917cqw">percentages.</span></div></div></section>
 <section class="trang" id="tr-3" data-tr="3"><div class="khung"><img src="anh/trang-3.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.33341" style="left:2.406%;top:2.827%;font-size:2.917cqw">Revision – Unit 5 and 6</span><i class="nl" style="left:3.974%;top:18.900%">
 </i><span data-w="0.33479" style="left:3.974%;top:18.900%;font-size:3.334cqw">Retrieval Practice</span><i class="nl" style="left:60.930%;top:63.320%">
 </i><span data-w="0.05212" style="left:60.930%;top:63.320%;font-size:2.501cqw">124</span><i class="nl" style="left:37.452%;top:67.222%">
@@ -632,15 +637,15 @@ window.LS.ham();
 <section class="trang" id="tr-9" data-tr="9"><div class="khung"><img src="anh/trang-9.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.96788" style="left:2.406%;top:2.850%;font-size:2.814cqw">WALT: To answer exam style questions on fractions and percentages.</span></div></div></section>
 <section class="trang" id="tr-10" data-tr="10"><div class="khung"><img src="anh/trang-10.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span data-w="0.02092" style="left:41.589%;top:55.095%;font-size:2.917cqw">I </span><span data-w="0.17591" style="left:43.677%;top:55.095%;font-size:2.917cqw">can answer </span><i class="nl" style="left:41.645%;top:61.325%">
 </i><span data-w="0.19557" style="left:41.645%;top:61.325%;font-size:2.917cqw">questions on </span><i class="nl" style="left:41.421%;top:67.554%">
-</i><span class="mo" data-w="0.20010" style="left:41.421%;top:67.554%;font-size:2.917cqw">fractions and </span><i class="nl" style="left:41.465%;top:73.784%">
-</i><span class="mo" data-w="0.19006" style="left:41.465%;top:73.784%;font-size:2.917cqw">percentages.</span><i class="nl" style="left:72.507%;top:55.095%">
+</i><span data-w="0.20010" style="left:41.421%;top:67.554%;font-size:2.917cqw">fractions and </span><i class="nl" style="left:41.465%;top:73.784%">
+</i><span data-w="0.19006" style="left:41.465%;top:73.784%;font-size:2.917cqw">percentages.</span><i class="nl" style="left:72.507%;top:55.095%">
 </i><span data-w="0.23589" style="left:72.507%;top:55.095%;font-size:2.917cqw">I can create my </span><i class="nl" style="left:73.325%;top:61.325%">
 </i><span data-w="0.21932" style="left:73.325%;top:61.325%;font-size:2.917cqw">own questions </span><i class="nl" style="left:73.157%;top:67.554%">
 </i><span data-w="0.22279" style="left:73.157%;top:67.554%;font-size:2.917cqw">when given an </span><i class="nl" style="left:78.250%;top:73.784%">
 </i><span data-w="0.11167" style="left:78.250%;top:73.784%;font-size:2.917cqw">answer.</span><i class="nl" style="left:5.344%;top:58.100%">
 </i><span data-w="0.26112" style="left:5.344%;top:58.100%;font-size:2.917cqw">I can recall about </span><i class="nl" style="left:8.392%;top:64.329%">
-</i><span class="mo" data-w="0.20010" style="left:8.392%;top:64.329%;font-size:2.917cqw">fractions and </span><i class="nl" style="left:8.436%;top:70.559%">
-</i><span class="mo" data-w="0.19006" style="left:8.436%;top:70.559%;font-size:2.917cqw">percentages.</span></div></div></section>
+</i><span data-w="0.20010" style="left:8.392%;top:64.329%;font-size:2.917cqw">fractions and </span><i class="nl" style="left:8.436%;top:70.559%">
+</i><span data-w="0.19006" style="left:8.436%;top:70.559%;font-size:2.917cqw">percentages.</span></div></div></section>
 
 
 <template x-if="chonDang && chonDang.kieu === 'khung'">

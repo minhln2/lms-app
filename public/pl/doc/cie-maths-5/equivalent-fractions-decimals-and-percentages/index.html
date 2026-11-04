@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -415,28 +420,28 @@ window.LS.ham();
 </i><span data-w="0.22313" style="left:1.311%;top:15.907%;font-size:2.222cqw">a multiple of 10 or 25</span><i class="nl" style="left:1.311%;top:21.443%">
 </i><span data-w="0.21434" style="left:1.311%;top:21.443%;font-size:2.956cqw">Differentiation: </span><i class="nl" style="left:1.311%;top:25.754%">
 </i><span data-w="0.40136" style="left:1.311%;top:25.754%;font-size:2.222cqw">Questions 1, 4 and 7 (Varied Fluency)</span><i class="nl" style="left:1.311%;top:27.604%">
-</i><span class="mo" data-w="0.13022" style="left:1.311%;top:27.604%;font-size:2.222cqw">Developing </span><span class="mo" data-w="0.77786" style="left:14.293%;top:27.604%;font-size:2.222cqw">Complete the statements to show understanding of equivalent fractions, </span><i class="nl" style="left:1.311%;top:29.450%">
+</i><span data-w="0.13022" style="left:1.311%;top:27.604%;font-size:2.222cqw">Developing </span><span data-w="0.77786" style="left:14.293%;top:27.604%;font-size:2.222cqw">Complete the statements to show understanding of equivalent fractions, </span><i class="nl" style="left:1.311%;top:29.450%">
 </i><span data-w="0.75089" style="left:1.311%;top:29.450%;font-size:2.222cqw">decimals and percentages. Includes half, tenths and hundredths only.</span><i class="nl" style="left:1.311%;top:31.296%">
-</i><span class="mo" data-w="0.10889" style="left:1.311%;top:31.296%;font-size:2.222cqw">Expected </span><span class="mo" data-w="0.77764" style="left:12.182%;top:31.296%;font-size:2.222cqw">Complete the statements to show understanding of equivalent fractions, </span><i class="nl" style="left:1.311%;top:33.142%">
+</i><span data-w="0.10889" style="left:1.311%;top:31.296%;font-size:2.222cqw">Expected </span><span data-w="0.77764" style="left:12.182%;top:31.296%;font-size:2.222cqw">Complete the statements to show understanding of equivalent fractions, </span><i class="nl" style="left:1.311%;top:33.142%">
 </i><span data-w="0.95022" style="left:1.311%;top:33.142%;font-size:2.222cqw">decimals and percentages. Includes half, one-quarter, one-fifth, two-fifths and four-fifths </span><i class="nl" style="left:1.311%;top:34.988%">
 </i><span data-w="0.59431" style="left:1.311%;top:34.988%;font-size:2.222cqw">and some use of denominators of a multiple of 10 or 25.</span><i class="nl" style="left:1.311%;top:36.834%">
-</i><span class="mo" data-w="0.15956" style="left:1.311%;top:36.834%;font-size:2.222cqw">Greater Depth </span><span class="mo" data-w="0.77762" style="left:17.271%;top:36.834%;font-size:2.222cqw">Complete the statements to show understanding of equivalent fractions, </span><i class="nl" style="left:1.311%;top:38.681%">
+</i><span data-w="0.15956" style="left:1.311%;top:36.834%;font-size:2.222cqw">Greater Depth </span><span data-w="0.77762" style="left:17.271%;top:36.834%;font-size:2.222cqw">Complete the statements to show understanding of equivalent fractions, </span><i class="nl" style="left:1.311%;top:38.681%">
 </i><span data-w="0.97607" style="left:1.311%;top:38.681%;font-size:2.222cqw">decimals and percentages. Includes half, quarters, fifths and denominators of a multiple of </span><i class="nl" style="left:1.311%;top:40.527%">
 </i><span data-w="0.13620" style="left:1.311%;top:40.527%;font-size:2.222cqw">5, 10 and 25.</span><i class="nl" style="left:1.311%;top:44.216%">
 </i><span data-w="0.40133" style="left:1.311%;top:44.216%;font-size:2.227cqw">Questions 2, 5 and 8 (Varied Fluency)</span><i class="nl" style="left:1.311%;top:46.068%">
-</i><span class="mo" data-w="0.13022" style="left:1.311%;top:46.068%;font-size:2.222cqw">Developing </span><span data-w="0.78523" style="left:14.293%;top:46.068%;font-size:2.222cqw">Compare fractions, decimals and percentages. Includes half, tenths and </span><i class="nl" style="left:1.311%;top:47.914%">
+</i><span data-w="0.13022" style="left:1.311%;top:46.068%;font-size:2.222cqw">Developing </span><span data-w="0.78523" style="left:14.293%;top:46.068%;font-size:2.222cqw">Compare fractions, decimals and percentages. Includes half, tenths and </span><i class="nl" style="left:1.311%;top:47.914%">
 </i><span data-w="0.17887" style="left:1.311%;top:47.914%;font-size:2.222cqw">hundredths only.</span><i class="nl" style="left:1.311%;top:49.760%">
-</i><span class="mo" data-w="0.10889" style="left:1.311%;top:49.760%;font-size:2.222cqw">Expected </span><span data-w="0.85821" style="left:12.182%;top:49.760%;font-size:2.222cqw">Compare fractions, decimals and percentages. Includes half, one-quarter, one-</span><i class="nl" style="left:1.311%;top:51.606%">
+</i><span data-w="0.10889" style="left:1.311%;top:49.760%;font-size:2.222cqw">Expected </span><span data-w="0.85821" style="left:12.182%;top:49.760%;font-size:2.222cqw">Compare fractions, decimals and percentages. Includes half, one-quarter, one-</span><i class="nl" style="left:1.311%;top:51.606%">
 </i><span data-w="0.89963" style="left:1.311%;top:51.606%;font-size:2.222cqw">fifth, two-fifths and four-fifths and some use of denominators of a multiple of 10 or 25.</span><i class="nl" style="left:1.311%;top:53.452%">
-</i><span class="mo" data-w="0.15956" style="left:1.311%;top:53.452%;font-size:2.222cqw">Greater Depth </span><span data-w="0.81967" style="left:17.271%;top:53.452%;font-size:2.222cqw">Compare fractions, decimals and percentages. Includes half, quarters, fifths </span><i class="nl" style="left:1.311%;top:55.298%">
+</i><span data-w="0.15956" style="left:1.311%;top:53.452%;font-size:2.222cqw">Greater Depth </span><span data-w="0.81967" style="left:17.271%;top:53.452%;font-size:2.222cqw">Compare fractions, decimals and percentages. Includes half, quarters, fifths </span><i class="nl" style="left:1.311%;top:55.298%">
 </i><span data-w="0.50538" style="left:1.311%;top:55.298%;font-size:2.222cqw">and denominators of a multiple of 5, 10 and 25.</span><i class="nl" style="left:1.311%;top:58.991%">
 </i><span data-w="0.57896" style="left:1.311%;top:58.991%;font-size:2.222cqw">Questions 3, 6 and 9 (Reasoning and Problem Solving)</span><i class="nl" style="left:1.311%;top:60.837%">
-</i><span class="mo" data-w="0.13022" style="left:1.311%;top:60.837%;font-size:2.222cqw">Developing </span><span class="mo" data-w="0.81840" style="left:14.293%;top:60.837%;font-size:2.222cqw">Explain errors when placing representations on a number line. Includes half, </span><i class="nl" style="left:1.311%;top:62.680%">
+</i><span data-w="0.13022" style="left:1.311%;top:60.837%;font-size:2.222cqw">Developing </span><span data-w="0.81840" style="left:14.293%;top:60.837%;font-size:2.222cqw">Explain errors when placing representations on a number line. Includes half, </span><i class="nl" style="left:1.311%;top:62.680%">
 </i><span data-w="0.29797" style="left:1.311%;top:62.680%;font-size:2.227cqw">tenths and hundredths only.</span><i class="nl" style="left:1.311%;top:64.532%">
-</i><span class="mo" data-w="0.10889" style="left:1.311%;top:64.532%;font-size:2.222cqw">Expected </span><span class="mo" data-w="0.81818" style="left:12.182%;top:64.532%;font-size:2.222cqw">Explain errors when placing representations on a number line. Includes half, </span><i class="nl" style="left:1.311%;top:66.378%">
+</i><span data-w="0.10889" style="left:1.311%;top:64.532%;font-size:2.222cqw">Expected </span><span data-w="0.81818" style="left:12.182%;top:64.532%;font-size:2.222cqw">Explain errors when placing representations on a number line. Includes half, </span><i class="nl" style="left:1.311%;top:66.378%">
 </i><span data-w="0.97544" style="left:1.311%;top:66.378%;font-size:2.222cqw">one-quarter, one-fifth, two-fifths and four-fifths and some use of denominators of a multiple </span><i class="nl" style="left:1.311%;top:68.224%">
 </i><span data-w="0.11644" style="left:1.311%;top:68.224%;font-size:2.222cqw">of 10 or 25.</span><i class="nl" style="left:1.311%;top:70.070%">
-</i><span class="mo" data-w="0.15956" style="left:1.311%;top:70.070%;font-size:2.222cqw">Greater Depth </span><span class="mo" data-w="0.81840" style="left:17.271%;top:70.070%;font-size:2.222cqw">Explain errors when placing representations on a number line. Includes half, </span><i class="nl" style="left:1.311%;top:71.916%">
+</i><span data-w="0.15956" style="left:1.311%;top:70.070%;font-size:2.222cqw">Greater Depth </span><span data-w="0.81840" style="left:17.271%;top:70.070%;font-size:2.222cqw">Explain errors when placing representations on a number line. Includes half, </span><i class="nl" style="left:1.311%;top:71.916%">
 </i><span data-w="0.65938" style="left:1.311%;top:71.916%;font-size:2.222cqw">quarters, fifths and denominators of a multiple of 5, 10 and 25.</span><i class="nl" style="left:31.019%;top:93.626%">
 </i><span class="mo" data-w="0.37977" style="left:31.019%;top:93.626%;font-size:3.333cqw">classroomsecrets.co.uk</span><i class="nl" style="left:27.280%;top:96.429%">
 </i><span class="mo" data-w="0.45418" style="left:27.280%;top:96.429%;font-size:1.956cqw">Equivalent Fractions, Decimals and Percentages</span><i class="nl" style="left:33.885%;top:98.044%">

@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -592,13 +597,13 @@ window.LS.ham();
 <section class="trang" id="tr-2" data-tr="2"><div class="khung"><img src="anh/trang-2.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:2.427%;top:3.808%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.79146" style="left:11.616%;top:3.808%;font-size:2.501cqw">Understand, with support most of the main points of short and </span><i class="nl" style="left:2.427%;top:8.609%">
 </i><span class="mo" data-w="0.19590" style="left:2.427%;top:8.609%;font-size:2.501cqw">extended texts.</span><i class="nl" style="left:25.199%;top:61.244%">
 </i><span data-w="0.23271" style="left:25.199%;top:61.244%;font-size:2.085cqw">With support, I can </span><i class="nl" style="left:32.229%;top:65.693%">
-</i><span class="mo" data-w="0.09227" style="left:32.229%;top:65.693%;font-size:2.085cqw">answer </span><i class="nl" style="left:27.454%;top:70.142%">
-</i><span class="mo" data-w="0.18768" style="left:27.454%;top:70.142%;font-size:2.085cqw">comprehension </span><i class="nl" style="left:24.694%;top:74.591%">
-</i><span class="mo" data-w="0.23557" style="left:24.694%;top:74.591%;font-size:2.085cqw">questions on a text.</span><i class="nl" style="left:58.160%;top:61.244%">
+</i><span data-w="0.09227" style="left:32.229%;top:65.693%;font-size:2.085cqw">answer </span><i class="nl" style="left:27.454%;top:70.142%">
+</i><span data-w="0.18768" style="left:27.454%;top:70.142%;font-size:2.085cqw">comprehension </span><i class="nl" style="left:24.694%;top:74.591%">
+</i><span data-w="0.23557" style="left:24.694%;top:74.591%;font-size:2.085cqw">questions on a text.</span><i class="nl" style="left:58.160%;top:61.244%">
 </i><span data-w="0.24732" style="left:58.160%;top:61.244%;font-size:2.085cqw">Independently, I can </span><i class="nl" style="left:65.923%;top:65.693%">
-</i><span class="mo" data-w="0.09227" style="left:65.923%;top:65.693%;font-size:2.085cqw">answer </span><i class="nl" style="left:61.148%;top:70.142%">
-</i><span class="mo" data-w="0.18768" style="left:61.148%;top:70.142%;font-size:2.085cqw">comprehension </span><i class="nl" style="left:58.384%;top:74.591%">
-</i><span class="mo" data-w="0.23557" style="left:58.384%;top:74.591%;font-size:2.085cqw">questions on a text.</span></div></div></section>
+</i><span data-w="0.09227" style="left:65.923%;top:65.693%;font-size:2.085cqw">answer </span><i class="nl" style="left:61.148%;top:70.142%">
+</i><span data-w="0.18768" style="left:61.148%;top:70.142%;font-size:2.085cqw">comprehension </span><i class="nl" style="left:58.384%;top:74.591%">
+</i><span data-w="0.23557" style="left:58.384%;top:74.591%;font-size:2.085cqw">questions on a text.</span></div></div></section>
 <section class="trang" id="tr-3" data-tr="3"><div class="khung"><img src="anh/trang-3.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:2.427%;top:3.808%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.79146" style="left:11.616%;top:3.808%;font-size:2.501cqw">Understand, with support most of the main points of short and </span><i class="nl" style="left:2.427%;top:8.609%">
 </i><span class="mo" data-w="0.19590" style="left:2.427%;top:8.609%;font-size:2.501cqw">extended texts.</span><i class="nl" style="left:2.430%;top:17.003%">
 </i><span data-w="0.29240" style="left:2.430%;top:17.003%;font-size:2.917cqw">Retrieval Practice</span><i class="nl" style="left:3.086%;top:92.064%">
@@ -634,13 +639,13 @@ window.LS.ham();
 <section class="trang" id="tr-10" data-tr="10"><div class="khung"><img src="anh/trang-10.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:2.427%;top:3.808%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.79146" style="left:11.616%;top:3.808%;font-size:2.501cqw">Understand, with support most of the main points of short and </span><i class="nl" style="left:2.427%;top:8.609%">
 </i><span class="mo" data-w="0.19590" style="left:2.427%;top:8.609%;font-size:2.501cqw">extended texts.</span><i class="nl" style="left:25.199%;top:61.244%">
 </i><span data-w="0.23271" style="left:25.199%;top:61.244%;font-size:2.085cqw">With support, I can </span><i class="nl" style="left:32.229%;top:65.693%">
-</i><span class="mo" data-w="0.09227" style="left:32.229%;top:65.693%;font-size:2.085cqw">answer </span><i class="nl" style="left:27.454%;top:70.142%">
-</i><span class="mo" data-w="0.18768" style="left:27.454%;top:70.142%;font-size:2.085cqw">comprehension </span><i class="nl" style="left:24.694%;top:74.591%">
-</i><span class="mo" data-w="0.23557" style="left:24.694%;top:74.591%;font-size:2.085cqw">questions on a text.</span><i class="nl" style="left:58.160%;top:61.244%">
+</i><span data-w="0.09227" style="left:32.229%;top:65.693%;font-size:2.085cqw">answer </span><i class="nl" style="left:27.454%;top:70.142%">
+</i><span data-w="0.18768" style="left:27.454%;top:70.142%;font-size:2.085cqw">comprehension </span><i class="nl" style="left:24.694%;top:74.591%">
+</i><span data-w="0.23557" style="left:24.694%;top:74.591%;font-size:2.085cqw">questions on a text.</span><i class="nl" style="left:58.160%;top:61.244%">
 </i><span data-w="0.24732" style="left:58.160%;top:61.244%;font-size:2.085cqw">Independently, I can </span><i class="nl" style="left:65.923%;top:65.693%">
-</i><span class="mo" data-w="0.09227" style="left:65.923%;top:65.693%;font-size:2.085cqw">answer </span><i class="nl" style="left:61.148%;top:70.142%">
-</i><span class="mo" data-w="0.18768" style="left:61.148%;top:70.142%;font-size:2.085cqw">comprehension </span><i class="nl" style="left:58.384%;top:74.591%">
-</i><span class="mo" data-w="0.23557" style="left:58.384%;top:74.591%;font-size:2.085cqw">questions on a text.</span></div></div></section>
+</i><span data-w="0.09227" style="left:65.923%;top:65.693%;font-size:2.085cqw">answer </span><i class="nl" style="left:61.148%;top:70.142%">
+</i><span data-w="0.18768" style="left:61.148%;top:70.142%;font-size:2.085cqw">comprehension </span><i class="nl" style="left:58.384%;top:74.591%">
+</i><span data-w="0.23557" style="left:58.384%;top:74.591%;font-size:2.085cqw">questions on a text.</span></div></div></section>
 
 
 <template x-if="chonDang && chonDang.kieu === 'khung'">

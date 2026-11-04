@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -537,15 +542,15 @@ window.LS.ham();
 <section class="trang" id="tr-2" data-tr="2"><div class="khung"><img src="anh/trang-2.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:2.427%;top:3.808%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.79534" style="left:11.616%;top:3.808%;font-size:2.501cqw">Understand, with support, most of the detail of an argument in </span><i class="nl" style="left:2.427%;top:8.609%">
 </i><span class="mo" data-w="0.30724" style="left:2.427%;top:8.609%;font-size:2.501cqw">short and extended talk.</span><i class="nl" style="left:41.161%;top:51.491%">
 </i><span data-w="0.19892" style="left:41.161%;top:51.491%;font-size:2.501cqw">I can use Wh- </span><i class="nl" style="left:37.928%;top:56.828%">
-</i><span class="mo" data-w="0.26355" style="left:37.928%;top:56.828%;font-size:2.501cqw">question words to </span><i class="nl" style="left:41.140%;top:62.164%">
-</i><span class="mo" data-w="0.19927" style="left:41.140%;top:62.164%;font-size:2.501cqw">write my own </span><i class="nl" style="left:39.259%;top:67.501%">
-</i><span class="mo" data-w="0.23694" style="left:39.259%;top:67.501%;font-size:2.501cqw">questions about </span><i class="nl" style="left:42.372%;top:72.837%">
+</i><span data-w="0.26355" style="left:37.928%;top:56.828%;font-size:2.501cqw">question words to </span><i class="nl" style="left:41.140%;top:62.164%">
+</i><span data-w="0.19927" style="left:41.140%;top:62.164%;font-size:2.501cqw">write my own </span><i class="nl" style="left:39.259%;top:67.501%">
+</i><span data-w="0.23694" style="left:39.259%;top:67.501%;font-size:2.501cqw">questions about </span><i class="nl" style="left:42.372%;top:72.837%">
 </i><span data-w="0.17469" style="left:42.372%;top:72.837%;font-size:2.501cqw">carnivorous </span><i class="nl" style="left:45.803%;top:78.174%">
 </i><span data-w="0.09736" style="left:45.803%;top:78.174%;font-size:2.501cqw">plants.</span><i class="nl" style="left:71.804%;top:56.328%">
 </i><span data-w="0.24783" style="left:71.804%;top:56.328%;font-size:2.085cqw">I can use all the Wh- </span><i class="nl" style="left:73.201%;top:60.777%">
-</i><span class="mo" data-w="0.21993" style="left:73.201%;top:60.777%;font-size:2.085cqw">question words to </span><i class="nl" style="left:75.876%;top:65.225%">
-</i><span class="mo" data-w="0.16644" style="left:75.876%;top:65.225%;font-size:2.085cqw">write my own </span><i class="nl" style="left:74.305%;top:69.674%">
-</i><span class="mo" data-w="0.19779" style="left:74.305%;top:69.674%;font-size:2.085cqw">questions about </span><i class="nl" style="left:72.475%;top:74.123%">
+</i><span data-w="0.21993" style="left:73.201%;top:60.777%;font-size:2.085cqw">question words to </span><i class="nl" style="left:75.876%;top:65.225%">
+</i><span data-w="0.16644" style="left:75.876%;top:65.225%;font-size:2.085cqw">write my own </span><i class="nl" style="left:74.305%;top:69.674%">
+</i><span data-w="0.19779" style="left:74.305%;top:69.674%;font-size:2.085cqw">questions about </span><i class="nl" style="left:72.475%;top:74.123%">
 </i><span data-w="0.22706" style="left:72.475%;top:74.123%;font-size:2.085cqw">carnivorous plants.</span><i class="nl" style="left:6.156%;top:56.828%">
 </i><span data-w="0.22513" style="left:6.156%;top:56.828%;font-size:2.501cqw">I can rearrange </span><i class="nl" style="left:4.969%;top:62.164%">
 </i><span data-w="0.24892" style="left:4.969%;top:62.164%;font-size:2.501cqw">the words in Wh- </span><i class="nl" style="left:4.104%;top:67.501%">
@@ -573,15 +578,15 @@ window.LS.ham();
 <section class="trang" id="tr-8" data-tr="8"><div class="khung"><img src="anh/trang-8.webp" width="1601" height="900" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.09196" style="left:2.427%;top:3.808%;font-size:2.501cqw">WALT: </span><span class="mo" data-w="0.79534" style="left:11.616%;top:3.808%;font-size:2.501cqw">Understand, with support, most of the detail of an argument in </span><i class="nl" style="left:2.427%;top:8.609%">
 </i><span class="mo" data-w="0.30724" style="left:2.427%;top:8.609%;font-size:2.501cqw">short and extended talk.</span><i class="nl" style="left:41.161%;top:51.491%">
 </i><span data-w="0.19892" style="left:41.161%;top:51.491%;font-size:2.501cqw">I can use Wh- </span><i class="nl" style="left:37.928%;top:56.828%">
-</i><span class="mo" data-w="0.26355" style="left:37.928%;top:56.828%;font-size:2.501cqw">question words to </span><i class="nl" style="left:41.140%;top:62.164%">
-</i><span class="mo" data-w="0.19927" style="left:41.140%;top:62.164%;font-size:2.501cqw">write my own </span><i class="nl" style="left:39.259%;top:67.501%">
-</i><span class="mo" data-w="0.23694" style="left:39.259%;top:67.501%;font-size:2.501cqw">questions about </span><i class="nl" style="left:42.372%;top:72.837%">
+</i><span data-w="0.26355" style="left:37.928%;top:56.828%;font-size:2.501cqw">question words to </span><i class="nl" style="left:41.140%;top:62.164%">
+</i><span data-w="0.19927" style="left:41.140%;top:62.164%;font-size:2.501cqw">write my own </span><i class="nl" style="left:39.259%;top:67.501%">
+</i><span data-w="0.23694" style="left:39.259%;top:67.501%;font-size:2.501cqw">questions about </span><i class="nl" style="left:42.372%;top:72.837%">
 </i><span data-w="0.17469" style="left:42.372%;top:72.837%;font-size:2.501cqw">carnivorous </span><i class="nl" style="left:45.803%;top:78.174%">
 </i><span data-w="0.09736" style="left:45.803%;top:78.174%;font-size:2.501cqw">plants.</span><i class="nl" style="left:71.804%;top:56.328%">
 </i><span data-w="0.24783" style="left:71.804%;top:56.328%;font-size:2.085cqw">I can use all the Wh- </span><i class="nl" style="left:73.201%;top:60.777%">
-</i><span class="mo" data-w="0.21993" style="left:73.201%;top:60.777%;font-size:2.085cqw">question words to </span><i class="nl" style="left:75.876%;top:65.225%">
-</i><span class="mo" data-w="0.16644" style="left:75.876%;top:65.225%;font-size:2.085cqw">write my own </span><i class="nl" style="left:74.305%;top:69.674%">
-</i><span class="mo" data-w="0.19779" style="left:74.305%;top:69.674%;font-size:2.085cqw">questions about </span><i class="nl" style="left:72.475%;top:74.123%">
+</i><span data-w="0.21993" style="left:73.201%;top:60.777%;font-size:2.085cqw">question words to </span><i class="nl" style="left:75.876%;top:65.225%">
+</i><span data-w="0.16644" style="left:75.876%;top:65.225%;font-size:2.085cqw">write my own </span><i class="nl" style="left:74.305%;top:69.674%">
+</i><span data-w="0.19779" style="left:74.305%;top:69.674%;font-size:2.085cqw">questions about </span><i class="nl" style="left:72.475%;top:74.123%">
 </i><span data-w="0.22706" style="left:72.475%;top:74.123%;font-size:2.085cqw">carnivorous plants.</span><i class="nl" style="left:6.156%;top:56.828%">
 </i><span data-w="0.22513" style="left:6.156%;top:56.828%;font-size:2.501cqw">I can rearrange </span><i class="nl" style="left:4.969%;top:62.164%">
 </i><span data-w="0.24892" style="left:4.969%;top:62.164%;font-size:2.501cqw">the words in Wh- </span><i class="nl" style="left:4.104%;top:67.501%">

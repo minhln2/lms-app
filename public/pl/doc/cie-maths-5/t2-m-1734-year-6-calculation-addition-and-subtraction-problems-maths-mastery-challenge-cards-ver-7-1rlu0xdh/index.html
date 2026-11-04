@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -470,7 +475,7 @@ window.LS.ham();
       @pointerup="chonUp($event)" @pointercancel="chonUp($event)"
       :class="(chonHoat ? 'chon-bat ' : '') + (chonHoat || chonText ? 'pb-16' : '')" class="px-4 py-4">
 
-<section class="trang" id="tr-1" data-tr="1"><div class="khung"><img src="anh/trang-1.webp" width="1404" height="993" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.18464" style="left:53.973%;top:4.222%;font-size:1.188cqw">Addition and Subtraction Problems</span><i class="nl" style="left:53.973%;top:7.610%">
+<section class="trang" id="tr-1" data-tr="1"><div class="khung"><img src="anh/trang-1.webp" width="1404" height="993" alt="" loading="lazy"><div class="chu"><span data-w="0.18464" style="left:53.973%;top:4.222%;font-size:1.188cqw">Addition and Subtraction Problems</span><i class="nl" style="left:53.973%;top:7.610%">
 </i><span data-w="0.24550" style="left:53.973%;top:7.610%;font-size:1.663cqw">Nikita has to solve this problem:</span><i class="nl" style="left:53.973%;top:10.597%">
 </i><span data-w="0.43243" style="left:53.973%;top:10.597%;font-size:1.663cqw">Mr Green drives a lorry. Last week he drove 197 miles, 232 </span><i class="nl" style="left:53.973%;top:13.452%">
 </i><span data-w="0.29083" style="left:53.973%;top:13.452%;font-size:1.663cqw">miles and 164 miles on his 3 journeys. </span><i class="nl" style="left:53.973%;top:17.735%">
@@ -482,9 +487,9 @@ window.LS.ham();
 </i><span data-w="0.30029" style="left:53.973%;top:34.867%;font-size:1.663cqw">miles for each week first. Discuss with a </span><i class="nl" style="left:53.973%;top:37.722%">
 </i><span data-w="0.28564" style="left:53.973%;top:37.722%;font-size:1.663cqw">partner why this is the case, and then </span><i class="nl" style="left:53.973%;top:40.577%">
 </i><span data-w="0.13290" style="left:53.973%;top:40.577%;font-size:1.663cqw">solve the problem.</span><i class="nl" style="left:93.427%;top:46.345%">
-</i><span class="mo" data-w="0.03323" style="left:93.427%;top:46.345%;font-size:0.713cqw">twinkl.com</span><i class="nl" style="left:3.300%;top:55.161%">
-</i><span class="mo" data-w="0.18464" style="left:3.300%;top:55.161%;font-size:1.188cqw">Addition and Subtraction Problems</span><i class="nl" style="left:53.973%;top:55.161%">
-</i><span class="mo" data-w="0.18464" style="left:53.973%;top:55.161%;font-size:1.188cqw">Addition and Subtraction Problems</span><i class="nl" style="left:3.300%;top:58.683%">
+</i><span data-w="0.03323" style="left:93.427%;top:46.345%;font-size:0.713cqw">twinkl.com</span><i class="nl" style="left:3.300%;top:55.161%">
+</i><span data-w="0.18464" style="left:3.300%;top:55.161%;font-size:1.188cqw">Addition and Subtraction Problems</span><i class="nl" style="left:53.973%;top:55.161%">
+</i><span data-w="0.18464" style="left:53.973%;top:55.161%;font-size:1.188cqw">Addition and Subtraction Problems</span><i class="nl" style="left:3.300%;top:58.683%">
 </i><span data-w="0.38242" style="left:3.300%;top:58.683%;font-size:1.663cqw">Over the weekend, Nikita spends 85 minutes on her </span><i class="nl" style="left:3.300%;top:61.538%">
 </i><span data-w="0.35801" style="left:3.300%;top:61.538%;font-size:1.663cqw">project and 45 minutes on her maths homework.</span><i class="nl" style="left:53.973%;top:58.683%">
 </i><span data-w="0.43243" style="left:53.973%;top:58.683%;font-size:1.663cqw">Pavel buys a T-shirt for £4.50, a skirt for £7.99 and a pair </span><i class="nl" style="left:53.973%;top:61.538%">
@@ -500,12 +505,12 @@ window.LS.ham();
 </i><span data-w="0.28993" style="left:53.973%;top:84.378%;font-size:1.663cqw">compare methods. Can you find a way </span><i class="nl" style="left:53.973%;top:87.233%">
 </i><span data-w="0.22240" style="left:53.973%;top:87.233%;font-size:1.663cqw">to solve this using a diagram?</span><i class="nl" style="left:53.973%;top:90.088%">
 </i><span data-w="0.20452" style="left:53.973%;top:90.088%;font-size:1.663cqw">How much were the shorts?</span><i class="nl" style="left:42.754%;top:97.283%">
-</i><span class="mo" data-w="0.03323" style="left:42.754%;top:97.283%;font-size:0.713cqw">twinkl.com</span><i class="nl" style="left:93.427%;top:97.283%">
-</i><span class="mo" data-w="0.03323" style="left:93.427%;top:97.283%;font-size:0.713cqw">twinkl.com</span><i class="nl" style="left:11.454%;top:10.571%">
+</i><span data-w="0.03323" style="left:42.754%;top:97.283%;font-size:0.713cqw">twinkl.com</span><i class="nl" style="left:93.427%;top:97.283%">
+</i><span data-w="0.03323" style="left:93.427%;top:97.283%;font-size:0.713cqw">twinkl.com</span><i class="nl" style="left:11.454%;top:10.571%">
 </i><span data-w="0.26423" style="left:11.454%;top:10.571%;font-size:3.920cqw">Maths Mastery</span><i class="nl" style="left:7.452%;top:18.929%">
-</i><span class="mo" data-w="0.34422" style="left:7.452%;top:18.929%;font-size:2.138cqw">Addition and Subtraction Problems</span><i class="nl" style="left:16.770%;top:22.932%">
+</i><span data-w="0.34422" style="left:7.452%;top:18.929%;font-size:2.138cqw">Addition and Subtraction Problems</span><i class="nl" style="left:16.770%;top:22.932%">
 </i><span data-w="0.15787" style="left:16.770%;top:22.932%;font-size:2.138cqw">Challenge Cards</span></div></div></section>
-<section class="trang" id="tr-2" data-tr="2"><div class="khung"><img src="anh/trang-2.webp" width="1404" height="993" alt="" loading="lazy"><div class="chu"><span class="mo" data-w="0.18464" style="left:3.300%;top:4.222%;font-size:1.188cqw">Addition and Subtraction Problems</span><i class="nl" style="left:3.300%;top:7.744%">
+<section class="trang" id="tr-2" data-tr="2"><div class="khung"><img src="anh/trang-2.webp" width="1404" height="993" alt="" loading="lazy"><div class="chu"><span data-w="0.18464" style="left:3.300%;top:4.222%;font-size:1.188cqw">Addition and Subtraction Problems</span><i class="nl" style="left:3.300%;top:7.744%">
 </i><span data-w="0.43243" style="left:3.300%;top:7.744%;font-size:1.663cqw">George read three books in January, which had 173 pages, </span><i class="nl" style="left:3.300%;top:10.566%">
 </i><span data-w="0.18696" style="left:3.300%;top:10.566%;font-size:1.663cqw">206 pages and 139 pages.</span><i class="nl" style="left:3.300%;top:16.208%">
 </i><span data-w="0.41624" style="left:3.300%;top:16.208%;font-size:1.663cqw">He has some books to read in February. Two books have </span><i class="nl" style="left:3.300%;top:19.030%">
@@ -516,8 +521,8 @@ window.LS.ham();
 </i><span data-w="0.30834" style="left:3.300%;top:33.137%;font-size:1.663cqw">explain how to calculate the answer, and </span><i class="nl" style="left:3.300%;top:35.959%">
 </i><span data-w="0.17066" style="left:3.300%;top:35.959%;font-size:1.663cqw">then solve the problem.</span><i class="nl" style="left:3.300%;top:41.601%">
 </i><span data-w="0.23364" style="left:3.300%;top:41.601%;font-size:1.663cqw">Explain your ideas to a partner.</span><i class="nl" style="left:3.300%;top:55.161%">
-</i><span class="mo" data-w="0.18464" style="left:3.300%;top:55.161%;font-size:1.188cqw">Addition and Subtraction Problems</span><i class="nl" style="left:53.973%;top:4.222%">
-</i><span class="mo" data-w="0.18464" style="left:53.973%;top:4.222%;font-size:1.188cqw">Addition and Subtraction Problems</span><i class="nl" style="left:53.973%;top:7.744%">
+</i><span data-w="0.18464" style="left:3.300%;top:55.161%;font-size:1.188cqw">Addition and Subtraction Problems</span><i class="nl" style="left:53.973%;top:4.222%">
+</i><span data-w="0.18464" style="left:53.973%;top:4.222%;font-size:1.188cqw">Addition and Subtraction Problems</span><i class="nl" style="left:53.973%;top:7.744%">
 </i><span data-w="0.41979" style="left:53.973%;top:7.744%;font-size:1.663cqw">Pavel has been keeping a track of the number of calories </span><i class="nl" style="left:53.973%;top:10.566%">
 </i><span data-w="0.37983" style="left:53.973%;top:10.566%;font-size:1.663cqw">he eats. On Monday he consumes 1760 calories. On </span><i class="nl" style="left:53.973%;top:13.387%">
 </i><span data-w="0.41652" style="left:53.973%;top:13.387%;font-size:1.663cqw">Tuesday he consumes thirty more than Monday, and on </span><i class="nl" style="left:53.973%;top:16.208%">
@@ -529,8 +534,8 @@ window.LS.ham();
 </i><span data-w="0.29059" style="left:53.973%;top:35.959%;font-size:1.663cqw">Work with a partner to find 2 different </span><i class="nl" style="left:53.973%;top:38.780%">
 </i><span data-w="0.26863" style="left:53.973%;top:38.780%;font-size:1.663cqw">ways of calculating the answer and </span><i class="nl" style="left:53.973%;top:41.601%">
 </i><span data-w="0.29968" style="left:53.973%;top:41.601%;font-size:1.663cqw">solve in both ways, checking the answer.</span><i class="nl" style="left:93.427%;top:46.345%">
-</i><span class="mo" data-w="0.03323" style="left:93.427%;top:46.345%;font-size:0.713cqw">twinkl.com</span><i class="nl" style="left:53.973%;top:55.161%">
-</i><span class="mo" data-w="0.18464" style="left:53.973%;top:55.161%;font-size:1.188cqw">Addition and Subtraction Problems</span><i class="nl" style="left:53.924%;top:58.534%">
+</i><span data-w="0.03323" style="left:93.427%;top:46.345%;font-size:0.713cqw">twinkl.com</span><i class="nl" style="left:53.973%;top:55.161%">
+</i><span data-w="0.18464" style="left:53.973%;top:55.161%;font-size:1.188cqw">Addition and Subtraction Problems</span><i class="nl" style="left:53.924%;top:58.534%">
 </i><span data-w="0.43366" style="left:53.924%;top:58.534%;font-size:1.900cqw">Nikita wants to travel from Doncaster to Lincoln. If </span><i class="nl" style="left:53.924%;top:62.061%">
 </i><span data-w="0.43366" style="left:53.924%;top:62.061%;font-size:1.900cqw">she gets the train at 20:27 she will arrive at Retford </span><i class="nl" style="left:53.924%;top:65.588%">
 </i><span data-w="0.43366" style="left:53.924%;top:65.588%;font-size:1.900cqw">36 minutes later. She will have a 20 minute wait </span><i class="nl" style="left:53.924%;top:69.114%">
@@ -540,8 +545,8 @@ window.LS.ham();
 </i><span data-w="0.18638" style="left:53.924%;top:81.123%;font-size:1.900cqw">to get to Lincoln first?</span><i class="nl" style="left:53.924%;top:86.078%">
 </i><span data-w="0.43366" style="left:53.924%;top:86.078%;font-size:1.900cqw">Show how you could use a timeline to explain your </span><i class="nl" style="left:53.924%;top:89.605%">
 </i><span data-w="0.33062" style="left:53.924%;top:89.605%;font-size:1.900cqw">answer. Compare yours with a partner.</span><i class="nl" style="left:93.427%;top:97.283%">
-</i><span class="mo" data-w="0.03323" style="left:93.427%;top:97.283%;font-size:0.713cqw">twinkl.com</span><i class="nl" style="left:42.754%;top:46.345%">
-</i><span class="mo" data-w="0.03323" style="left:42.754%;top:46.345%;font-size:0.713cqw">twinkl.com</span><i class="nl" style="left:18.451%;top:58.683%">
+</i><span data-w="0.03323" style="left:93.427%;top:97.283%;font-size:0.713cqw">twinkl.com</span><i class="nl" style="left:42.754%;top:46.345%">
+</i><span data-w="0.03323" style="left:42.754%;top:46.345%;font-size:0.713cqw">twinkl.com</span><i class="nl" style="left:18.451%;top:58.683%">
 </i><span data-w="0.20753" style="left:18.451%;top:58.683%;font-size:1.663cqw">George writes the following </span><i class="nl" style="left:18.451%;top:61.504%">
 </i><span data-w="0.09272" style="left:18.451%;top:61.504%;font-size:1.663cqw">calculations:</span><i class="nl" style="left:18.451%;top:64.325%">
 </i><span data-w="0.13616" style="left:18.451%;top:64.325%;font-size:1.663cqw">4518 + 949 = 5467</span><i class="nl" style="left:18.451%;top:67.147%">
@@ -552,7 +557,7 @@ window.LS.ham();
 </i><span data-w="0.05839" style="left:18.451%;top:84.076%;font-size:1.663cqw">partner.</span><i class="nl" style="left:3.300%;top:89.718%">
 </i><span data-w="0.42936" style="left:3.300%;top:89.718%;font-size:1.663cqw">Change the numbers and ask another partner to solve the </span><i class="nl" style="left:3.300%;top:92.540%">
 </i><span data-w="0.06889" style="left:3.300%;top:92.540%;font-size:1.663cqw">problem. </span><i class="nl" style="left:42.754%;top:97.283%">
-</i><span class="mo" data-w="0.03323" style="left:42.754%;top:97.283%;font-size:0.713cqw">twinkl.com</span></div></div></section>
+</i><span data-w="0.03323" style="left:42.754%;top:97.283%;font-size:0.713cqw">twinkl.com</span></div></div></section>
 <section class="trang" id="tr-3" data-tr="3"><div class="khung"><img src="anh/trang-3.webp" width="1404" height="993" alt="" loading="lazy"><div class="chu"><span data-w="0.50417" style="left:24.911%;top:2.233%;font-size:3.920cqw">Maths Mastery Addition and</span><i class="nl" style="left:22.363%;top:9.036%">
 </i><span data-w="0.55510" style="left:22.363%;top:9.036%;font-size:3.920cqw"> Subtraction Problems Answers</span><i class="nl" style="left:7.407%;top:17.260%">
 </i><span data-w="0.78704" style="left:7.407%;top:17.260%;font-size:1.900cqw">It is helpful to know in which week Mr Green did the most miles to complete the subtraction </span><i class="nl" style="left:7.407%;top:20.786%">

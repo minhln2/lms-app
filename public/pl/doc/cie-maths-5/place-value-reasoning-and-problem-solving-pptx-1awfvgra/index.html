@@ -46,6 +46,10 @@ window.LS = (function () {
     st.cuon = window.scrollY;
     history.replaceState(st, '', location.href);
   }
+  // Lượt hẹn chưa chạy phải huỷ ở `popstate`: chạy SAU nó thì ghi scrollY của màn vừa rời vào mục vừa quay về
+  // (Back trong 200 ms sau khi mở truyện → thư viện mất vị trí cuộn, `cuon` 600 → 0; tests/test_lichsu.py).
+  // KHÔNG lưu cuộn trong `di()`: trang thường cuộn về đầu TRƯỚC khi gọi LS.di → sẽ ghi 0 vào mục cũ.
+  function huyHen() { if (henCuon) { clearTimeout(henCuon); henCuon = null; } }
   function henLuu() {
     if (henCuon) return;
     henCuon = setTimeout(function () { henCuon = null; luuCuon(); }, 200);
@@ -78,6 +82,7 @@ window.LS = (function () {
     (day ? history.pushState : history.replaceState).call(history, st, '', url(tk));
   }
   addEventListener('popstate', function (e) {
+    if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
     if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
     veLai(token(), st);
@@ -637,16 +642,16 @@ window.LS.ham();
 </i><span data-w="0.01255" style="left:71.155%;top:36.129%;font-size:2.742cqw">lộ</span><i class="nl" style="left:79.001%;top:36.129%">
 </i><span data-w="0.01255" style="left:79.001%;top:36.129%;font-size:2.742cqw">9</span><i class="nl" style="left:86.220%;top:36.129%">
 </i><span data-w="0.02625" style="left:86.220%;top:36.129%;font-size:2.742cqw">10</span><i class="nl" style="left:14.636%;top:40.363%">
-</i><span class="mo" data-w="0.04565" style="left:14.636%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:22.482%;top:40.363%">
-</i><span class="mo" data-w="0.04565" style="left:22.482%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:30.300%;top:40.363%">
-</i><span class="mo" data-w="0.04565" style="left:30.300%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:38.146%;top:40.363%">
-</i><span class="mo" data-w="0.04565" style="left:38.146%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:45.991%;top:40.363%">
-</i><span class="mo" data-w="0.04565" style="left:45.991%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:53.837%;top:40.363%">
-</i><span class="mo" data-w="0.04565" style="left:53.837%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:61.655%;top:40.363%">
-</i><span class="mo" data-w="0.04565" style="left:61.655%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:69.501%;top:40.363%">
-</i><span class="mo" data-w="0.04565" style="left:69.501%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:77.347%;top:40.363%">
-</i><span class="mo" data-w="0.04565" style="left:77.347%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:85.193%;top:40.363%">
-</i><span class="mo" data-w="0.04565" style="left:85.193%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:8.474%;top:50.887%">
+</i><span data-w="0.04565" style="left:14.636%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:22.482%;top:40.363%">
+</i><span data-w="0.04565" style="left:22.482%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:30.300%;top:40.363%">
+</i><span data-w="0.04565" style="left:30.300%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:38.146%;top:40.363%">
+</i><span data-w="0.04565" style="left:38.146%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:45.991%;top:40.363%">
+</i><span data-w="0.04565" style="left:45.991%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:53.837%;top:40.363%">
+</i><span data-w="0.04565" style="left:53.837%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:61.655%;top:40.363%">
+</i><span data-w="0.04565" style="left:61.655%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:69.501%;top:40.363%">
+</i><span data-w="0.04565" style="left:69.501%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:77.347%;top:40.363%">
+</i><span data-w="0.04565" style="left:77.347%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:85.193%;top:40.363%">
+</i><span data-w="0.04565" style="left:85.193%;top:40.363%;font-size:1.855cqw">million</span><i class="nl" style="left:8.474%;top:50.887%">
 </i><span data-w="0.39401" style="left:8.474%;top:50.887%;font-size:3.306cqw">Tinu sqgus A ¡s pointing to 3,050,000</span><i class="nl" style="left:8.702%;top:57.419%">
 </i><span data-w="0.44708" style="left:8.702%;top:57.419%;font-size:3.387cqw">Expldin the mistake that Tinu has made.</span><i class="nl" style="left:8.673%;top:95.081%">
 </i><span data-w="0.30556" style="left:8.673%;top:95.081%;font-size:2.984cqw">Number line to 10,000,000</span><i class="nl" style="left:81.769%;top:95.484%">
