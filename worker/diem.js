@@ -28,6 +28,9 @@ export const DIEM = {
   ON: 1,                                 // mỗi lượt ôn tập, trong ON_LUOT lượt đầu mỗi ngày của mỗi thẻ
   ON_NHO: 2,                             // thưởng lượt nhớ / đúng đầu tiên trong ON_LUOT lượt đó
   ON_LUOT: 3,
+  // Bài tập ESL 5 (ADR 0072 mở rộng, Q10 — spec 2026-11-04-bai-tap-esl-unit-3-design.md): môn có `bt_sao: "lan_dau"` trong manifest
+  // thì lượt `b.*` ĐÚNG đầu tiên của mỗi id câu được BT_LAN_DAU (= ON + ON_NHO: điểm một lượt đúng đầu ngày theo luật ôn), MỘT lần trong đời.
+  BT_LAN_DAU: 3,
   // Ôn tập Toán 6 (worker/toan_diem.js, ADR 0070): THAY luật ôn ở trên cho môn `toan-6` — chủ dự án duyệt 2026-10-23.
   TOAN: {
     BAI: { "mo-khoa": [5, 3], "tang-toc": [10, 5], "chinh-phuc": [15, 8], "thu-thach": [20, 10] },   // theo `muc` của bài: [đủ (g 3), nửa (g 2)]; mỗi bài tối đa MỘT lần ĐỦ trong đời
@@ -194,6 +197,10 @@ export function cachGo(user, khoa, daGo) {
  * `Ôn tập · <tên môn>`, ts = lượt muộn nhất, `mon` = slug môn (từ bảng attempt theo thẻ của dòng mới nhất — thẻ lấy từ khoá của dòng đó bằng khoá chính `diem.id`, KHÔNG quay lại CTE `o` cho từng dòng nhóm; không thấy → null).
  * Ngày = đoạn thứ 3 của KHOÁ (mã thẻ không có ":"), không phải ngày của ts: dòng gỡ `huy:on:…` (ts = lúc gỡ, có thể ngày
  * khác) vào ĐÚNG nhóm của dòng gốc, bỏ tiền tố nhãn NHAN_GO để cùng nhãn — nhóm gỡ hết có tổng 0 và ẩn như dòng 0.
+ * ⭐ lần đúng đầu tiên của bài tập ESL (`bt:<slug>:<câu>`, mỗi câu một dòng sổ vì khoá UNIQUE chống cộng lại cần vậy) cũng GỘP, theo
+ * (ngày VN của ts, slug môn): một lần nộp đề 51 câu = MỘT dòng khoa `bt:<slug>:<ngày>`, diem = tổng, nhan = nhãn của sổ +
+ * ` · N câu đúng lần đầu`, ts = lượt muộn nhất, `mon` = slug (phanLoai), không `go` / `huy` (bố mẹ không gỡ riêng được). Ngày lấy từ ts
+ * của dòng sổ (khác `on:` — khoá bt: không mang ngày); dòng gỡ `huy:bt:…` (không đường nào sinh ra) hiện riêng như các dòng gỡ khác.
  * Dòng gỡ của nguồn khác (`huy:tick:…`, `huy:td:…`) hiện riêng, điểm âm. Mỗi dòng gỡ được kèm `go` (cachGo; nhóm ôn tập có
  * `mon` thì {loai: "on", mon, ngay}).
  * Mỗi dòng còn có `loai` + `mon` (phanLoai — lọc ở khu quản trị, ADR 0069; dòng ôn gộp lấy `mon` từ attempt như trên) và
@@ -203,6 +210,7 @@ export function cachGo(user, khoa, daGo) {
 export async function lichSu(env, user, n = LICH_SU, mf = null) {
   const [on0, on1] = khoang("on:");
   const [ho0, ho1] = khoang("huy:on:");
+  const [bt0, bt1] = khoang("bt:");
   const r = await env.STUDY_DB.prepare(
     `WITH o AS (
        SELECT id, diem, ts, (khoa >= ?5 AND khoa < ?6) AS h,
@@ -213,15 +221,23 @@ export async function lichSu(env, user, n = LICH_SU, mf = null) {
        SELECT substr(k, instr(substr(k, 4), ':') + 4, 10) AS ngay, nh, SUM(diem) AS diem,
               MAX(CASE WHEN h = 0 THEN ts END) AS ts, MAX(CASE WHEN h = 0 THEN id END) AS id
          FROM o GROUP BY ngay, nh HAVING SUM(diem) != 0
+     ), b AS (
+       SELECT substr(khoa, 4, instr(substr(khoa, 4), ':') - 1) AS slug, date(ts + 25200, 'unixepoch') AS ngay,
+              COUNT(*) AS so, SUM(diem) AS diem, MAX(nhan) AS nhan, MAX(ts) AS ts, MAX(id) AS id
+         FROM diem WHERE user_id = ?1 AND diem != 0 AND khoa >= ?8 AND khoa < ?9
+        GROUP BY slug, ngay HAVING SUM(diem) != 0
      ), u AS (
-       SELECT khoa, diem, nhan, ts, id, NULL AS ngay FROM diem
+       SELECT khoa, diem, nhan, ts, id, NULL AS ngay, NULL AS so FROM diem
         WHERE user_id = ?1 AND diem != 0 AND NOT (khoa >= ?3 AND khoa < ?4) AND NOT (khoa >= ?5 AND khoa < ?6)
+          AND NOT (khoa >= ?8 AND khoa < ?9)
        UNION ALL
-       SELECT 'on:' || ngay || ':' || id, diem, nh, ts, id, ngay FROM g
+       SELECT 'on:' || ngay || ':' || id, diem, nh, ts, id, ngay, NULL FROM g
+       UNION ALL
+       SELECT 'bt:' || slug || ':' || ngay, diem, nhan, ts, id, NULL, so FROM b
        ORDER BY ts DESC, id DESC LIMIT ?2
      )
-     SELECT u.khoa, u.diem, u.nhan, u.ts, u.ngay,
-            CASE WHEN u.ngay IS NULL
+     SELECT u.khoa, u.diem, u.nhan, u.ts, u.ngay, u.so,
+            CASE WHEN u.ngay IS NULL AND u.so IS NULL
                  THEN EXISTS (SELECT 1 FROM diem AS x WHERE x.user_id = ?1 AND x.khoa = 'huy:' || u.khoa) ELSE 0 END AS da_go,
             CASE WHEN u.ngay IS NULL THEN NULL
                  ELSE (SELECT a.course FROM attempt AS a
@@ -231,9 +247,13 @@ export async function lichSu(env, user, n = LICH_SU, mf = null) {
                                                      FROM diem WHERE id = u.id AND user_id = ?1) AS z)
                         ORDER BY a.ts DESC LIMIT 1) END AS mon
        FROM u ORDER BY u.ts DESC, u.id DESC`
-  ).bind(user, n, on0, on1, ho0, ho1, NHAN_GO).all();
+  ).bind(user, n, on0, on1, ho0, ho1, NHAN_GO, bt0, bt1).all();
   return (r.results || []).map((x) => {
     const d = { khoa: x.khoa, diem: x.diem, nhan: x.nhan, ts: x.ts, ...phanLoai(x.khoa, mf) };
+    if (x.so != null) {   // dòng gộp bài tập ESL (R21): chỉ nhãn thêm số câu; loai/mon đã có từ slug trong khoá; không nút (không go/huy)
+      d.nhan = `${x.nhan || "Bài tập"} · ${x.so} câu đúng lần đầu`;
+      return d;
+    }
     if (x.ngay != null) {
       d.mon = x.mon ?? null;
       if (x.mon) d.go = { loai: "on", mon: x.mon, ngay: x.ngay };
@@ -441,20 +461,58 @@ export function chonOn(rows, daCo, now, nhan = "Ôn tập") {
   return ra;
 }
 
-/** Lô lượt ôn của writeSession (`rows` đã lọc, `t` thiếu → now) → điểm vừa cộng. Môn (slug) không có trong manifest → 0. */
+/**
+ * Hàm thuần (Q10, bài tập ESL): mỗi id câu `b.*` được ⭐ ĐÚNG MỘT LẦN trong đời — ở lượt ĐÚNG đầu tiên (sai trước rồi đúng vẫn
+ * được; làm lại câu đã ⭐ thì không, hôm sau cũng không; luyện hay đề chung một id nên không cày lại được). Chỉ xét lượt `ok`
+ * có `i` bắt đầu `b.` và `c !== "de"` (dòng tổng lượt nộp đề mang `ok: 0` nhưng có dòng giả `ok` thì cũng không được tính).
+ * Duyệt theo mốc đã kẹp (cùng mốc giữ thứ tự gửi); mỗi nguồn `bt:<slug>:<i>` một lần trong lô và so với `daCo` qua `luotKe`
+ * (ADR 0063 — nguồn đã bị gỡ `huy:bt:<slug>:<i>` thì được cộng lại ở lượt #n; hiện không đường nào gỡ `bt:`, `huyDuoc` false).
+ * Khoá mang `slug` môn (R20, như `sheet:<slug>:`) để bộ lọc «Môn» của khu bố mẹ gắn dòng ⭐ này vào đúng môn (`phanLoai`).
+ * → [{khoa: NGUỒN `bt:<slug>:<i>` (ghiDiem đổi ra khoá lượt), diem: BT_LAN_DAU, nhan, ts}].
+ */
+export function chonLanDau(rows, daCo, now, slug, nhan = "Bài tập") {
+  const co = new Set(daCo);
+  const ra = [];
+  const ds = rows.map((a, i) => ({ a, i, t: kepTs(a.t, now) })).sort((p, q) => p.t - q.t || p.i - q.i);
+  for (const { a, t } of ds) {
+    if (!a.ok || a.c === "de" || !String(a.i).startsWith("b.")) continue;
+    const s = `bt:${slug}:${a.i}`;
+    const lu = luotKe(co, s);
+    if (!lu) continue;
+    co.add(lu);
+    ra.push({ khoa: s, diem: DIEM.BT_LAN_DAU, nhan, ts: t });
+  }
+  return ra;
+}
+
+/**
+ * Lô lượt ôn của writeSession (`rows` đã lọc, `t` thiếu → now) → điểm vừa cộng. Môn (slug) không có trong manifest → 0.
+ * Môn có `bt_sao === "lan_dau"` (chỉ ESL 5): lượt `b.*` (kể cả dòng tổng đề `c = "de"`, mang id `b.`) đi `chonLanDau`, còn lại
+ * (quiz `q.*`, thẻ `f.*`) vẫn đi `chonOn`. Môn khác: mọi lượt đi `chonOn` y như trước.
+ */
 export async function congOn(env, url, user, course, rows, now = giay()) {
   if (!rows.length) return 0;
   const mf = await docManifest(env, url, user);
   const mon = mf && Object.values(mf.mon).find((m) => m && m.slug === course);
   if (!mon) return 0;
-  // Mỗi tiền tố hai khoảng: khoá ôn (mọi lượt) và dòng gỡ của chúng. CROSS JOIN: json_each ở vòng ngoài, mỗi khoảng một lần
-  // quét trên chỉ mục UNIQUE (user_id, khoa).
-  const kh = tienToOn(rows, now).flatMap((t) => [khoang(t), khoang("huy:" + t)]);
-  const co = await env.STUDY_DB.prepare(
-    `SELECT d.khoa FROM json_each(?2) AS e CROSS JOIN diem AS d
-      WHERE d.user_id = ?1 AND d.khoa >= json_extract(e.value, '$[0]') AND d.khoa < json_extract(e.value, '$[1]')`
-  ).bind(user, JSON.stringify(kh)).all();
-  const moi = chonOn(rows, new Set((co.results || []).map((r) => r.khoa)), now, `Ôn tập · ${mon.ten || course}`);
+  const bt = mon.bt_sao === "lan_dau";
+  const rOn = bt ? rows.filter((a) => !a.i.startsWith("b.")) : rows;
+  const rBt = bt ? rows.filter((a) => a.i.startsWith("b.") && a.ok && a.c !== "de") : [];   // chỉ lượt chonLanDau có thể nhận
+  // Mỗi tiền tố hai khoảng: khoá ôn (mọi lượt) và dòng gỡ của chúng; mỗi nguồn `bt:<i>` hai khoảng [s, s + '$') (s, s#n) và của
+  // `huy:` + s. CROSS JOIN: json_each ở vòng ngoài, mỗi khoảng một lần quét trên chỉ mục UNIQUE (user_id, khoa).
+  const kh = [
+    ...tienToOn(rOn, now).flatMap((t) => [khoang(t), khoang("huy:" + t)]),
+    ...[...new Set(rBt.map((a) => `bt:${mon.slug}:${a.i}`))].flatMap((s) => [[s, s + "$"], ["huy:" + s, "huy:" + s + "$"]]),
+  ];
+  const co = kh.length
+    ? await env.STUDY_DB.prepare(
+        `SELECT d.khoa FROM json_each(?2) AS e CROSS JOIN diem AS d
+          WHERE d.user_id = ?1 AND d.khoa >= json_extract(e.value, '$[0]') AND d.khoa < json_extract(e.value, '$[1]')`
+      ).bind(user, JSON.stringify(kh)).all()
+    : { results: [] };
+  const daCo = new Set((co.results || []).map((r) => r.khoa));
+  const moi = chonOn(rOn, daCo, now, `Ôn tập · ${mon.ten || course}`);
+  if (bt) moi.push(...chonLanDau(rBt, daCo, now, mon.slug, `Bài tập · ${mon.ten || course}`));
   return (await ghiDiem(env, user, moi, now)).cong;
 }
 // ══ Hết Task 4 ═══════════════════════════════════════════════════════════════
@@ -670,6 +728,8 @@ export async function doiChieuKV(env, url, user) {
  *   sheet:<slug>:…             → lop, <slug>            (bảng lớp, ADR 0068)
  *   td:…                       → doc, "tap-doc"
  *   on:…                       → on, null               (lichSu điền mon của dòng ôn gộp từ attempt)
+ *   bt:<slug>:…                → on, <slug>             (bài tập ESL, chonLanDau; sổ mỗi câu một dòng nhưng lichSu GỘP theo (ngày VN, môn) — R21;
+ *                                                            bố mẹ không gỡ riêng — huyDuoc false; cả dòng gộp `bt:<slug>:<ngày>` lẫn `huy:`/`#n`)
  *   toan:…                     → on, "toan-6"           (điểm Ôn tập Toán 6: mỗi bài / mốc một dòng, không gộp)
  *   them:… · doi:…             → bo_me, null
  *   moc:… / lạ                 → null, null
@@ -685,6 +745,8 @@ export function phanLoai(khoa, mf) {
   if (m) return { loai: "lop", mon: m[1] };
   if (k.startsWith("td:")) return { loai: "doc", mon: "tap-doc" };
   if (k.startsWith("on:")) return { loai: "on", mon: null };
+  m = /^bt:([\w-]+):/.exec(k);
+  if (m) return { loai: "on", mon: m[1] };   // ⭐ lần đúng đầu tiên của bài tập ESL (chonLanDau, R20): chip "Ôn tập" + môn theo slug trong khoá
   if (k.startsWith("toan:")) return { loai: "on", mon: "toan-6" };   // điểm Ôn tập Toán 6 (worker/toan_diem.js): chip "Ôn tập" + môn Toán
   if (k.startsWith("them:") || k.startsWith("doi:")) return { loai: "bo_me", mon: null };
   return { loai: null, mon: null };

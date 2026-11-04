@@ -393,7 +393,7 @@ async function routeThuocGo(request, env) {
 }
 
 /**
- * Dòng thời gian (spec §6): gộp sổ `diem` (trừ khoá ôn on:/huy:on: — lượt ôn lấy từ attempt, gộp theo môn + ngày VN),
+ * Dòng thời gian (spec §6): gộp sổ `diem` (trừ khoá ôn on:/huy:on: và ⭐ bài tập ESL bt: — lượt ôn / lượt làm bài lấy từ attempt, gộp theo môn + ngày VN),
  * `attempt` và `lookup_hist` trong DONG_NGAY ngày, mới nhất trước, ≤ DONG_MAX dòng. `loai`/`mon` theo phanLoai (§4.7).
  */
 async function hocDong(env, url, user) {
@@ -404,6 +404,7 @@ async function hocDong(env, url, user) {
       `SELECT khoa, diem, nhan, ts FROM diem
         WHERE user_id = ?1 AND ts >= ?2 AND diem != 0
           AND NOT (khoa >= 'on:' AND khoa < 'on;') AND NOT (khoa >= 'huy:on:' AND khoa < 'huy:on;')
+          AND NOT (khoa >= 'bt:' AND khoa < 'bt;')
         ORDER BY ts DESC, id DESC LIMIT ?3`
     ).bind(user, tu, DONG_MAX),
     db.prepare(

@@ -25,6 +25,7 @@ const ID_RE = /^[\w.-]{1,64}$/;
 const MAX_ATTEMPTS = 200; // một phiên dài nhất còn hợp lý
 export const MS_CAP = 600000;    // 10 phút cho một câu là quá thừa (export: worker/cham_viet.js kẹp `ms` của dòng sổ y như SQL bên dưới)
 const DUE_CAP = 31536000; // không cho hoãn quá 1 năm
+export const MAX_DONG_BT = 10000; // readLuotBt trả tối đa ngần này dòng MỚI NHẤT (≈ 190 lượt nộp đề × 52 dòng, hay vài tháng Luyện hằng ngày); trước đây không giới hạn (review cuối M2)
 const MAX_KNOWN = 500;    // một lượt tick nhóm lớn nhất còn hợp lý
 const X_CAP = 64;         // `x` (phương án đã chọn / chữ con gõ) dài nhất
 const X_CAP_BT = 2400;    // riêng Bài tập (id nhóm tiền tố "b."): lượt `viet` là JSON có phiên bản (câu con viết + kết luận của máy, plan chấm câu viết §3),
@@ -190,6 +191,8 @@ export async function readStats(env, user, course, minN = 2, limit = 20) {
               (SUM(wrong) + 1.0) / (SUM(n) + 3.0) AS err
          FROM card
         WHERE user_id = ?1 AND course = ?2 AND n > 0
+          -- Dòng tổng lượt nộp đề của Bài tập ESL (concept_id = 'de', ok = 0) không phải khái niệm: để lọt thì 'de' luôn đứng đầu "điểm yếu".
+          AND concept_id != 'de'
         GROUP BY concept_id HAVING SUM(n) >= ?3
         ORDER BY err DESC, wrong DESC LIMIT ?4`
     ).bind(user, course, minN, limit),
@@ -205,8 +208,31 @@ export async function readStats(env, user, course, minN = 2, limit = 20) {
           -- Bài tập (id nhóm "b.…"): chose là câu con tự viết / JSON chấm câu viết, tới 2400 ký tự — không phải phương án nhiễu,
           -- và đừng để nó phình group_concat.
           AND item_id NOT LIKE 'b.%'
+          AND concept_id != 'de'
         GROUP BY concept_id ORDER BY wrong30 DESC LIMIT ?4`
     ).bind(user, course, since, limit),
   ]);
   return { weak: weak.results || [], chosen: chosen.results || [] };
+}
+
+/**
+ * Bài tập ESL 5: mọi lượt của id nhóm `b.*` trong MỘT môn, cũ → mới — trang Bài tập dựng "lần đúng đầu tiên" (g 3 cho câu chưa
+ * từng có lượt g ≤ 1), mức theo mảng và danh sách câu sai từ đây (GET /api/study/bt, CẦN mã bí mật như /api/study/stats và
+ * /api/toan: hồ sơ điểm yếu của trẻ). `x` ("Con điền", ≤ 2400 ký tự) CHỈ trả ở (1) dòng tổng lượt nộp đề (`c = 'de'`, JSON lượt nộp: điểm từng phần,
+ * câu chờ chấm) và (2) dòng câu CHẤM MUỘN (JSON khuôn viết có `"lu":` = giờ nộp lượt = `tn` trong x của dòng tổng — Gemini chấm sau, ghi thêm một dòng vì dòng tổng bất biến):
+ * trang và khu bố mẹ cộng chúng vào điểm lượt (`diemLuot`, worker/bai_tap_esl.js) ở MỌI máy. Chữ con gõ ở từng câu thường không cần cho trang và để lộ nó
+ * ra GET là thừa (mẫu `'{%"lu":%'` chỉ khớp khoá thật của JSON: chữ con gõ vào JSON luôn bị escape thành `\"lu\"`).
+ * → {rows: [[i, c, g, ts, x]]} cũ → mới. 1 câu lệnh, 3 tham số. Chỉ MAX_DONG_BT dòng mới nhất: quá số đó thì phần CŨ NHẤT bị bỏ (trang chỉ mất «lần đúng đầu tiên» / mức của câu rất cũ;
+ * sổ ⭐ nằm ở bảng `diem`, không đọc từ đây).
+ */
+export async function readLuotBt(env, user, course) {
+  const r = await env.STUDY_DB.prepare(
+    `SELECT item_id, concept_id, grade, ts, x FROM (
+       SELECT id, item_id, concept_id, grade, ts, CASE WHEN concept_id = 'de' OR chose LIKE '{%"lu":%' THEN chose END AS x
+         FROM attempt WHERE user_id = ?1 AND course = ?2 AND item_id LIKE 'b.%' ORDER BY ts DESC, id DESC LIMIT ?3
+     ) ORDER BY ts, id`
+  )
+    .bind(user, course, MAX_DONG_BT)
+    .all();
+  return { rows: (r.results || []).map((o) => [o.item_id, o.concept_id, o.grade, o.ts, o.x ?? null]) };
 }

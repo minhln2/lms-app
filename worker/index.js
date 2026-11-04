@@ -5,12 +5,14 @@
  *   /api/progress  → API tiến độ học tập (đọc/ghi Workers KV)
  *   /api/heartbeat → lần đồng bộ gần nhất + môn đang đóng băng (đọc KV)
  *   /api/study     → lịch ôn, kết quả làm bài, cờ "đã thuộc" (đọc/ghi D1)
+ *   /api/study/bt  → Bài tập ESL 5: mọi lượt `b.*` của một môn (đọc D1, cần mã bí mật)
  *   /api/toan      → Ôn tập Toán 6: lịch sử làm bài của trẻ (đọc D1, cần mã bí mật; ghi qua /api/study?course=toan-6, worker/toan.js)
  *   /api/tts       → đọc to bằng Google TTS, sinh lúc bấm, cache ở edge
  *   /api/tapdoc/*  → tập đọc: tiến độ + quiz (D1), bản thu âm (R2) — mọi đường đòi mã
  *   /api/lookup    → tra nghĩa 1 từ / dịch 1 đoạn bằng Gemini (cần mã bí mật)
  *   /api/lookup/history → từ đã tra, gộp theo từ + số lần (cần mã bí mật)
- *   /api/cham-viet → Gemini chấm câu viết của tab «Bài tập» Math 5; 3 lượt/câu/ngày + chung trần 300 với tra cứu (worker/cham_viet.js; cần mã bí mật)
+ *   /api/cham-viet → Gemini chấm câu viết của tab «Bài tập» Math 5 (và bài viết ESL 5); 3 lượt/câu/ngày + chung trần 300 với tra cứu (worker/cham_viet.js; cần mã bí mật)
+ *   /api/cham-lai  → Gemini chấm NHẸ câu viết lại của tab «Bài tập» ESL 5: 1–10 câu một lần gọi, chỉ chung trần 300 với tra cứu, không ghi sổ (worker/cham_lai.js; cần mã bí mật)
  *   /api/stt-token → mã tạm cho 🎤 (Gemini Transcribe Live, worker/stt.js; cần mã bí mật)
  *   /api/diem      → điểm thưởng: số dư + lịch sử (mã bí mật); /api/diem/doi: bố mẹ trừ (phiên quản trị)
  *   /api/quantri/phien → đổi PARENT_SECRET lấy phiên quản trị 24 giờ (worker/diem.js, ADR 0061)
@@ -39,11 +41,12 @@
  */
 
 import { readSheet, writeCell } from "./sheet.js";
-import { readCards, writeSession, writeKnown, readStats } from "./study.js";
+import { readCards, writeSession, writeKnown, readStats, readLuotBt } from "./study.js";
 import { readLuot, MON_TOAN } from "./toan.js";
 import { handleTts } from "./tts.js";
 import { handleLookup, handleLookupHistory } from "./lookup.js";
 import { handleChamViet } from "./cham_viet.js";
+import { handleChamLai } from "./cham_lai.js";
 import { handleSttToken } from "./stt.js";
 import { handleTapdoc } from "./tapdoc.js";
 import { handleDiem, doiChieuTick, doiChieuSheet, doiTrangThai, soDu, an } from "./diem.js";
@@ -262,6 +265,7 @@ export default {
     if (pathname === "/api/lookup/history") return handleLookupHistory(request, env, url);
     if (pathname === "/api/lookup") return handleLookup(request, env);
     if (pathname === "/api/cham-viet") return handleChamViet(request, env, url);
+    if (pathname === "/api/cham-lai") return handleChamLai(request, env, url);
     if (pathname === "/api/stt-token") return handleSttToken(request, env);
 
     if (pathname === "/api/study/stats") {
@@ -280,6 +284,28 @@ export default {
       }
       try {
         return json(await readStats(env, user, course));
+      } catch (e) {
+        return json({ error: String(e.message || e) }, 500);
+      }
+    }
+
+    // Bài tập ESL 5: mọi lượt `b.*` của một môn (trang Bài tập dựng "lần đúng đầu tiên", mức theo mảng, câu sai). Cần mã bí mật như
+    // /api/study/stats: hồ sơ điểm yếu của trẻ. Ghi KHÔNG ở đây — POST /api/study (cùng writeSession; điểm: congOn › chonLanDau).
+    if (pathname === "/api/study/bt") {
+      if (!env.STUDY_DB) return json({ error: "Chưa cấu hình STUDY_DB" }, 503);
+      if (request.method !== "GET") return json({ error: "Method không hỗ trợ" }, 405);
+      const secret = env.LMS_SECRET || "";
+      if (!secret) return json({ error: "Chưa cấu hình LMS_SECRET" }, 503);
+      if ((request.headers.get("x-progress-key") || "") !== secret) {
+        return json({ error: "Mã bí mật không đúng" }, 401);
+      }
+      const user = url.searchParams.get("user") || "";
+      const course = url.searchParams.get("course") || "";
+      if (!/^[\w-]{1,32}$/.test(user) || !/^[\w-]{1,64}$/.test(course)) {
+        return json({ error: "Thiếu hoặc sai 'user'/'course'" }, 400);
+      }
+      try {
+        return json(await readLuotBt(env, user, course));
       } catch (e) {
         return json({ error: String(e.message || e) }, 500);
       }
