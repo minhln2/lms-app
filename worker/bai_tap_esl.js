@@ -14,6 +14,7 @@
  *   abc        "B"                         chữ cái phương án (hoa / thường đều nhận)
  *   hoi_thoai  "E"                         chữ cái câu trong khung A–H
  *   o khung chuoi viet_lai   "does not rain"   chuỗi ô (con gõ, hoặc chọn từ khung)
+ *   mo         "We stay at home."          câu mở: chuỗi con gõ (phần sau «___» của `t`, hoặc cả câu khi không có `t`); không có danh sách chấp nhận — có chữ là «cho_may» (Gemini chấm)
  *   noi        2                           chỉ số VẾ PHẢI (trong bai.phai) đã nối cho câu (cặp); null / vắng = chưa nối; 0 là một đáp án (không phải «trống»)
  *   sua_loi    {chon: true, sua: "takes"}  cho câu (lỗi k): chon = con đã bấm ĐÚNG chữ sai của lỗi đó, sua = chữ con gõ. Chữ KHÔNG sai con bấm
  *                                          KHÔNG vào tl của câu nào: nằm ở tlBai._nham (mảng chỉ số token trong bai.tu), không chấm, không ghi sổ
@@ -21,7 +22,8 @@
  *   viet       "đoạn văn"                  không chấm bằng quy tắc (Gemini nhận xét); ở đây chỉ «trong» / «cho_may», chamDe bỏ qua (0 điểm)
  *   `tlBai` (chamBai) = {[idCâu]: tl, _nham?: number[]}  ·  `tlDe` (chamDe) = {[idCâu]: tl}.
  * Kết quả một câu: "dung" · "sai" · "trong" (chưa làm — ở Luyện không chấm, không ghi sổ; ở đề tính SAI, g 1, x "") · "cho_may" (viet_lai không khớp
- * danh sách chấp nhận, chờ Gemini; chưa có kết luận thì không cộng điểm, không vào `sai`).
+ * danh sách chấp nhận, hoặc mo có chữ, chờ Gemini; chưa có kết luận thì không cộng điểm, không vào `sai`). Kiểu `mo` chỉ ở Luyện (trong đề là lỗi kiểm lúc build);
+ * chặn trước khi nhờ Gemini (quá ngắn · quá dài · chép nguyên phần cho sẵn) là việc của `moChan`, không phải của chamCau.
  */
 import { TEN_MUC } from "./muc_ten.js";
 
@@ -91,6 +93,27 @@ export function doDaiLai(s) {
   return Array.from(s === null || s === undefined ? "" : String(s).trim()).length;
 }
 
+/**
+ * Câu của con (sau trim, đếm theo `doDaiLai`) DÀI hơn số này KHÔNG bao giờ nhờ Gemini: /api/cham-lai trả «chưa đạt» riêng, câu mở (`mo`) bị `moChan` chặn «dai». MỘT nguồn: worker/cham_lai.js
+ * re-export hằng này (giá trị 300 không đổi); src/bai_tap_esl.py giữ bản sao (LAI_TEXT_MAX) và tests/bai_tap_esl_mau.json (mo_chan) chốt hai bản khớp.
+ */
+export const LAI_TEXT_MAX = 300;
+
+/**
+ * Chặn TRƯỚC khi nhờ Gemini chấm một câu mở (không tốn lượt, không ghi sổ) — bản JS của `mo_chan` (src/bai_tap_esl.py; tests/bai_tap_esl_mau.json › mo_chan chốt hai bản):
+ *   "" (cho qua) · "ngan" (`doDaiLai` < LAI_TEXT_MIN) · "dai" (> LAI_TEXT_MAX) · "chep" (`t` — phần cho sẵn — còn chữ sau khi BỎ MỌI «___» và `chuan(text)` == `chuan(t bỏ mọi ___)`:
+ *   con chỉ chép lại phần cho sẵn). Thứ tự: ngắn, dài, chép. Bỏ «___» là XOÁ (không thay bằng dấu cách) — đúng Python `t.replace("___", "")`.
+ * KHÔNG xét lệnh (Worker lo: `nghiLenh`) và KHÔNG xét câu mẫu: con dán nguyên câu mẫu đã thấy vẫn được chấm (chủ dự án chốt, K10). `text` không phải chuỗi → "ngan"; `t` không phải chuỗi → như vắng. Không ném.
+ */
+export function moChan(text, t) {
+  if (typeof text !== "string") return "ngan";
+  const n = doDaiLai(text);
+  if (n < LAI_TEXT_MIN) return "ngan";
+  if (n > LAI_TEXT_MAX) return "dai";
+  const coSan = typeof t === "string" ? chuan(t.replaceAll("___", "")) : "";
+  return coSan && chuan(text) === coSan ? "chep" : "";
+}
+
 /** Chuỗi con gõ đã chuẩn hoá; không phải chuỗi → "". */
 const coChu = (tl) => (typeof tl === "string" ? chuan(tl) : "");
 const dsDap = (v) => (Array.isArray(v) ? v : []);
@@ -101,6 +124,7 @@ const nhanDuoc = (cau) => new Set(dsDap(cau?.dap).map(chuan));
  *   abc / hoi_thoai   so chữ cái sau chuan · o khung chuoi   so với danh sách chấp nhận sau chuan · viet_lai   như trên, không khớp → "cho_may" (trừ khi chữ gõ, sau trim, ngắn hơn LAI_TEXT_MIN: "sai")
  *   noi               tl === cau.dap (chỉ số vế phải) · sua_loi   phải chọn đúng chữ sai VÀ gõ chữ sửa; chọn mà chưa gõ = "trong"
  *   sap_xep           chỉ số trùng / ngoài khoảng → "sai" (xét TRƯỚC khi đếm mảnh thiếu); thiếu mảnh → "trong"; đủ thì ghép chữ rồi so danh sách chấp nhận
+ *   viet / mo         có chữ (sau chuan) → "cho_may", không thì "trong"; mo KHÔNG bao giờ "sai" tại trang (câu ngắn vẫn «cho_may»: `moChan` chặn, rồi trang hiện lý do)
  */
 export function chamCau(cau, tl, bai) {
   const kieu = bai?.kieu;
@@ -137,6 +161,7 @@ export function chamCau(cau, tl, bai) {
       return nhanDuoc(cau).has(chuan(tl.map((i) => manh[i]).join(" "))) ? "dung" : "sai";
     }
     case "viet":
+    case "mo":      // câu mở: không có danh sách chấp nhận, có chữ là nhờ Gemini (ngắn / dài / chép chặn ở `moChan`, không ở đây)
       return coChu(tl) ? "cho_may" : "trong";
     default:
       return "trong";
@@ -239,7 +264,7 @@ function xTho(cau, tl, bai) {
       const m = dsDap(bai?.lc).find((x) => x && x.k === k);
       return m && m.t ? `${k}. ${gon(m.t)}` : k;
     }
-    case "o": case "khung": case "chuoi": case "viet_lai": case "viet":
+    case "o": case "khung": case "chuoi": case "viet_lai": case "viet": case "mo":
       return typeof tl === "string" ? gon(tl) : "";
     case "noi": {
       if (!Number.isInteger(tl)) return "";
@@ -266,7 +291,7 @@ function xTho(cau, tl, bai) {
 
 /**
  * «Con điền» của MỘT câu (cột `x` của dòng sổ; khu bố mẹ hiện «Con điền: …»), ≤ 200 ký tự (X_CAU), không bao giờ ném.
- *   abc / hoi_thoai: «B. eats» (chữ cái + chữ phương án) · o khung chuoi viet_lai viet: chữ con gõ (gọn khoảng trắng, GIỮ nguyên hoa / nháy) ·
+ *   abc / hoi_thoai: «B. eats» (chữ cái + chữ phương án) · o khung chuoi viet_lai viet mo: chữ con gõ (gọn khoảng trắng, GIỮ nguyên hoa / nháy) ·
  *   noi: «chick → a partner for life» (ảnh: «hình a»; ảnh không nhãn: «hình 2» theo thứ tự trong bài, KHÔNG BAO GIỜ tên tệp) · sua_loi: «take→takes»; đã làm gì đó mà chưa chọn đúng chữ sai / chưa gõ chữ sửa: «(chưa tìm)» ·
  *   sap_xep: các mảnh theo thứ tự con xếp · chưa làm gì: "".
  */

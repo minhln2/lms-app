@@ -528,7 +528,7 @@ const SQL_DEM_LUOT =
   "AND CASE WHEN json_valid(chose) THEN json_extract(chose, '$.m') IS NOT NULL ELSE 0 END";
 
 /** {n, dat}: số lượt máy hôm nay của (học sinh, nhóm) và `dat` = đã có lượt đạt chưa (kết luận hiện hành: bố mẹ sửa thì theo bố mẹ). Ném lỗi khi D1 hỏng — chỗ gọi quyết cách degrade. */
-async function demLuot(env, user, i, dauNgay) {
+export async function demLuot(env, user, i, dauNgay) {
   const r = await env.STUDY_DB.prepare(SQL_DEM_LUOT).bind(user, i, dauNgay).first();
   return { n: Number(r?.n || 0), dat: Number(r?.dat || 0) > 0 };
 }
@@ -555,6 +555,7 @@ function mucDung(man, i) {
   const m = man && Object.hasOwn(man.y, i) ? man.y[i] : null;
   if (!laObj(m) || typeof m.kt !== "string" || !KT_RE.test(m.kt)) return null;
   if (m.loai === "lai") return null;   // câu VIẾT LẠI (ESL) chấm ở /api/cham-lai (worker/cham_lai.js), không có tiêu chí / 3 lượt/câu/ngày
+  if (m.loai === "mo") return null;   // câu MỞ (ESL) chấm ở /api/cham-mo (worker/cham_mo.js): tiêu chí là chữ, không có `tu_kiem`
   if (!Array.isArray(m.tu_kiem) || !m.tu_kiem.length || !m.tu_kiem.every((t) => laObj(t) && typeof t.ma === "string" && typeof t.t === "string")) return null;
   return m;
 }

@@ -22,11 +22,11 @@
  */
 import { CAP, ENDPOINT, ghiLoiGemini, goiLai, tieuThu } from "./lookup.js";   // CHUNG model / endpoint / trần ngày / bộ gọi-lại / sổ lỗi với tra cứu
 import { COURSE_RE, ID_RE, USER_RE, cat, chuan, dayAnh, docManifestViet, giauKhoa, laObj, nghiLenh } from "./cham_viet.js";
-import { LAI_TEXT_MIN, doDaiLai } from "./bai_tap_esl.js";
+import { LAI_TEXT_MAX, LAI_TEXT_MIN, doDaiLai } from "./bai_tap_esl.js";
 
 export const LAI_MAX_CAU = 10;      // số câu tối đa một lô (một lượt nộp); src/bai_tap_esl.py (kiem) chặn bài / đề có nhiều câu viết lại hơn số này
 export { LAI_TEXT_MIN };            // câu của con (sau trim) ngắn hơn thì KHÔNG chấm: kết luận riêng «chưa đạt» (nguồn duy nhất ở bai_tap_esl.js: chamCau cũng dùng, ngắn hơn là sai ngay tại trang)
-export const LAI_TEXT_MAX = 300;    // dài hơn cũng không chấm (trang cắt 300 trước khi gửi nên chỉ gặp khi gọi thẳng)
+export { LAI_TEXT_MAX };            // dài hơn cũng không chấm (trang cắt 300 trước khi gửi nên chỉ gặp khi gọi thẳng); nguồn duy nhất ở bai_tap_esl.js (moChan cũng dùng), giá trị 300 không đổi
 const LY_MAX = 200;                 // `ly` dài hơn bị cắt (kết thúc «…»)
 const DAP_TU_MIN = 3;               // đáp án mẫu ngắn hơn số từ này không dùng để bắt `ly` chép đáp án (từ thường dễ trùng)
 
@@ -87,7 +87,7 @@ const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const boDauCuoi = (s) => chuan(s).replace(/[.!?]+$/, "").trim();
 
 /** `ly` (đã `chuan`) có chứa NGUYÊN một đáp án mẫu (≥ DAP_TU_MIN từ, đứng ở biên từ) không? Bổ sung cho `dayAnh`: đáp án ngắn hơn 6 từ lọt qua dãy 6. */
-function chuaDap(lyChuan, muc) {
+export function chuaDap(lyChuan, muc) {
   return (Array.isArray(muc?.dap) ? muc.dap : []).map(boDauCuoi).filter((d) => d.split(" ").length >= DAP_TU_MIN)
     .some((d) => new RegExp(`(?<![\\p{L}\\p{N}])${esc(d)}(?![\\p{L}\\p{N}])`, "u").test(lyChuan));
 }

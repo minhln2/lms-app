@@ -13,6 +13,7 @@
  *   /api/lookup/history → từ đã tra, gộp theo từ + số lần (cần mã bí mật)
  *   /api/cham-viet → Gemini chấm câu viết của tab «Bài tập» Math 5 (và bài viết ESL 5); 3 lượt/câu/ngày + chung trần 300 với tra cứu (worker/cham_viet.js; cần mã bí mật)
  *   /api/cham-lai  → Gemini chấm NHẸ câu viết lại của tab «Bài tập» ESL 5: 1–10 câu một lần gọi, chỉ chung trần 300 với tra cứu, không ghi sổ (worker/cham_lai.js; cần mã bí mật)
+ *   /api/cham-mo   → Gemini chấm CÂU MỞ (kiểu `mo`) của tab «Bài tập» ESL 5: một câu mỗi yêu cầu, 3 lượt/câu/ngày, Worker ghi sổ + ⭐ lần đúng đầu (worker/cham_mo.js; cần mã bí mật)
  *   /api/stt-token → mã tạm cho 🎤 (Gemini Transcribe Live, worker/stt.js; cần mã bí mật)
  *   /api/diem      → điểm thưởng: số dư + lịch sử (mã bí mật); /api/diem/doi: bố mẹ trừ (phiên quản trị)
  *   /api/quantri/phien → đổi PARENT_SECRET lấy phiên quản trị 24 giờ (worker/diem.js, ADR 0061)
@@ -47,6 +48,7 @@ import { handleTts } from "./tts.js";
 import { handleLookup, handleLookupHistory } from "./lookup.js";
 import { handleChamViet } from "./cham_viet.js";
 import { handleChamLai } from "./cham_lai.js";
+import { handleChamMo } from "./cham_mo.js";
 import { handleSttToken } from "./stt.js";
 import { handleTapdoc } from "./tapdoc.js";
 import { handleDiem, doiChieuTick, doiChieuSheet, doiTrangThai, soDu, an } from "./diem.js";
@@ -266,6 +268,7 @@ export default {
     if (pathname === "/api/lookup") return handleLookup(request, env);
     if (pathname === "/api/cham-viet") return handleChamViet(request, env, url);
     if (pathname === "/api/cham-lai") return handleChamLai(request, env, url);
+    if (pathname === "/api/cham-mo") return handleChamMo(request, env, url);
     if (pathname === "/api/stt-token") return handleSttToken(request, env);
 
     if (pathname === "/api/study/stats") {

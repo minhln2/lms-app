@@ -1044,10 +1044,19 @@ window.LS.ham();
     var BE_LAI_MAX = 200;
     var BE_LY_THAY = 'Con so lại câu với yêu cầu của đề nhé.';   // = LY_LAI_THAY của worker/cham_lai.js: lời chỉ hướng chung khi câu không chấm được (lệnh / quá ngắn / quá dài)
     var BE_FM = { abc: 'Chọn A/B/C', o: 'Điền vào chỗ trống', khung: 'Chọn từ trong khung', noi: 'Nối', chuoi: 'Hoàn thành chuỗi', sua_loi: 'Sửa lỗi trong đoạn',
-                  sap_xep: 'Sắp xếp từ thành câu', hoi_thoai: 'Hội thoại A–H', viet_lai: 'Viết lại câu', viet: 'Viết đoạn văn' };
-    var BE_CON = { abc: 'câu chưa chọn', noi: 'cặp chưa nối', sua_loi: 'lỗi chưa tìm hoặc chưa sửa', sap_xep: 'câu chưa xếp đủ', viet: 'bài chưa viết' };   // mặc định: «ô trống»
+                  sap_xep: 'Sắp xếp từ thành câu', hoi_thoai: 'Hội thoại A–H', viet_lai: 'Viết lại câu', viet: 'Viết đoạn văn', mo: 'Tự viết câu' };
+    var BE_CON = { abc: 'câu chưa chọn', noi: 'cặp chưa nối', sua_loi: 'lỗi chưa tìm hoặc chưa sửa', sap_xep: 'câu chưa xếp đủ', viet: 'bài chưa viết', mo: 'câu chưa viết' };   // mặc định: «ô trống»
     var BE_LY_TU = ['nghi_lenh', 'het_cau', 'het_ngay', 'khong_co', 'loi'];
     var BE_LY_THOANG = ['loi', 'ngoai_tuyen'];     // lùi về tự kiểm vì lỗi THOÁNG QUA (cùng BT_LY_THOANG của Math): con sửa chữ thì «Gửi nhờ nhận xét» gọi máy lại
+    // Câu mở (`mo`, đợt 3): lời chỉ hướng của câu bị CHẶN TRƯỚC — chép NGUYÊN VĂN `LY_MO_CHAN` của worker/cham_mo.js (tests/test_bai_tap_esl_mo_ui.py U1 so từng chữ).
+    var BE_MO_CHAN = {
+      ngan: 'Câu của con ngắn quá, con viết thành một câu đầy đủ nhé.',
+      dai: 'Câu của con dài quá, con viết gọn lại trong một câu nhé.',
+      chep: 'Con mới chép lại phần cho sẵn, con viết thêm phần còn thiếu nhé.',
+      lenh: 'Con viết câu trả lời bằng tiếng Anh theo yêu cầu của bài nhé.',
+    };
+    var BE_MO_HET = ['het_cau', 'het_ngay', 'khong_co'];   // tự kiểm KHÔNG thoáng qua: câu đó không gửi máy nữa trong phiên (tới «Làm lại»)
+    var BE_MO0 = Object.freeze({ text: '', tt: null, dat: false, ly: '', ma: '', con: null, gui: '' });
     var BE_V0 = Object.freeze({ text: '', gui: '', tt: null, kq: null, luot: 0, ly: '', dat: false, con: null, tick: [], tuKq: null, daGhi: false });
 
     // Hạt giống cố định theo chuỗi `s` (cùng bài → cùng thứ tự xáo, không đổi giữa các lần mở).
@@ -1078,6 +1087,7 @@ window.LS.ham();
         beSo: [], beRows: [], beLuuCanh: '',       // lượt từ GET /api/study/bt · lượt ghi trong phiên này
         beMucMap: {}, beTien: {}, beSaiDe: [],
         beTL: {}, beKq: {}, beLyMay: {}, beNham: {}, beFb: {}, beChip: {}, beNoiSel: {}, beBan: {}, beV: {},
+        beMoS: {},                  // câu mở ở ②: {idCâu: {text, tt: null|'cho'|'may'|'tu'|'chan', dat, ly, ma, con, gui}} — RIÊNG, không qua beKq / beLaiHoi / chamDe (K6)
 
         // ── Nạp + khởi tạo ─────────────────────────────────────────────────────────────────────────────────────────────────
         async beNap() {
@@ -1160,6 +1170,9 @@ window.LS.ham();
         beUnits() { return BE.doc ? BE.doc.unit : []; },
         beUnitNow() { return BE.doc ? (BE.doc.unit[this.beU] || BE.doc.unit[0]) : { mang: [] }; },
         beMangs() { return this.beUnitNow().mang || []; },
+        // Đề GỐC của Unit đang xem — MỘT chỗ định nghĩa «Unit có đề»: dòng Bước 2, câu dẫn đầu ① và `[data-be-buoc2]` đều đọc từ đây (Unit `de: []` → trống → không nhắc tới đề).
+        beDeGoc() { return (this.beUnitNow().de || []).filter(d => d.loai === 'goc'); },
+        beCoDe() { return this.beDeGoc().length > 0; },
         beMangNow() { return BE.mang.get(this.beKt) || {}; },
         beMangCua(c, bai) { return BE.mang.get((c && c.kt) || (bai && bai.kt)) || null; },
         beDatUnit(i) { if (i >= 0 && i < this.beUnits().length) { this.beU = i; this.beScr = 'tong'; } },
@@ -1429,6 +1442,7 @@ window.LS.ham();
         },
         async beKiem(bai, ids) {
           if (this.beBan[bai.id]) return;
+          if (bai.kieu === 'mo') return this.beMoKiem(bai, ids);
           const E = window.baiTapEsl, cs = this.beCauHien({ bai, ids }), rows = [], cho = [];
           let trong = 0;
           for (const c of cs) {
@@ -1461,7 +1475,7 @@ window.LS.ham();
         },
         beLamLai(bai, ids) {
           if (this.beBan[bai.id]) return;
-          for (const c of this.beCauHien({ bai, ids })) { delete this.beTL[c.id]; delete this.beKq[c.id]; delete this.beLyMay[c.id]; delete this.beV[c.id]; }
+          for (const c of this.beCauHien({ bai, ids })) { delete this.beTL[c.id]; delete this.beKq[c.id]; delete this.beLyMay[c.id]; delete this.beV[c.id]; delete this.beMoS[c.id]; }
           delete this.beNham[bai.id]; delete this.beFb[bai.id]; delete this.beChip[bai.id]; delete this.beNoiSel[bai.id];
           BE.t0.delete(bai.id);
         },
@@ -1515,6 +1529,93 @@ window.LS.ham();
             rows.push(this.beDong(bai, c, k.dat, window.baiTap.goiX({ v: 1, t: text, l: 1, m: { d: k.dat ? 1 : 0, k: {}, q: {}, c: {}, s: [], n: k.ly || '' } })));
           }
           this.beLuu(rows);
+        },
+
+        // ── Câu mở `mo` (đợt 3, Task 6): Gemini chấm NGAY từng câu qua POST /api/cham-mo; câu mẫu hiện sau lượt chấm đầu; tự kiểm khi hết lượt / lỗi ─────────────
+        // Trạng thái `beMoS[idCâu]` (BE_MO0). Worker đếm lượt + ghi sổ + ⭐; trang chỉ đẩy `row` khi Worker báo ghi hỏng (`ghi: false`).
+        beMoV(c) { if (!this.beMoS[c.id]) this.beMoS[c.id] = { ...BE_MO0 }; return this.beMoS[c.id]; },
+        beMoR(c) { return this.beMoS[c.id] || BE_MO0; },
+        beMoKhoa(c) { const S = this.beMoR(c); return S.tt === 'cho' || (S.tt === 'may' && S.dat); },
+        beMoNhap(bai, c, v) { if (this.beMoKhoa(c)) return; this.beVao(bai); this.beMoV(c).text = v; },
+        // Đã có lượt chấm: dòng của câu trong sổ ∪ đệm ∪ phiên, hoặc máy vừa kết luận → câu mẫu hiện (cả sau khi tải lại trang: Review Focus 3).
+        beMoDaCham(c) { return this.beMoR(c).tt === 'may' || this.beLuot().some(a => a.i === c.id); },
+        beMoHienMau(c) { return this.beMoDaCham(c) || this.beMoR(c).tt === 'tu'; },
+        beMoTuTit(c) {
+          const ly = this.beMoR(c).ly;
+          return ly === 'het_cau' ? 'Hôm nay máy đã chấm câu này đủ lượt — con tự kiểm theo các ý dưới đây nhé'
+            : ly === 'het_ngay' ? 'Hôm nay máy chấm đã hết lượt — con tự kiểm theo các ý dưới đây nhé'
+            : ly === 'ngoai_tuyen' || ly === 'khoa' ? 'Chưa kết nối được máy chấm — con tự kiểm theo các ý dưới đây nhé'
+            : 'Máy chấm đang bận — con tự kiểm theo các ý dưới đây nhé';
+        },
+        beClsMoKq(c) {
+          const S = this.beMoR(c);
+          return S.tt === 'may' ? (S.dat ? 'border-emerald-300 bg-emerald-50 text-emerald-900' : 'border-rose-300 bg-rose-50 text-rose-900')
+            : S.tt === 'chan' ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-slate-200 bg-slate-50 text-slate-700';
+        },
+        // «Kiểm tra» của bài `mo`: câu có chữ → chặn tại trang (moChan) HOẶC gửi máy song song; câu đã đạt / chữ không đổi / hết lượt thì để nguyên.
+        async beMoKiem(bai, ids) {
+          const E = window.baiTapEsl, cs = this.beCauHien({ bai, ids }), gui = [];
+          let trong = 0;
+          for (const c of cs) {
+            const S = this.beMoR(c), text = String(S.text || '').trim();
+            if (E.chamCau(c, text, bai) === 'trong') { trong++; continue; }          // ô trống: không chấm, không ghi
+            if (S.tt === 'cho' || (S.tt === 'may' && S.dat)) continue;                // đang chờ / đã đạt (khoá tới «Làm lại»)
+            if (S.tt === 'tu' && BE_MO_HET.includes(S.ly)) continue;                  // hết lượt câu / hết ngày / máy không có câu: tự kiểm cả phiên
+            if (S.tt && S.tt !== 'tu' && text === S.gui) continue;                   // chữ không đổi: kết luận cũ còn nguyên (không gọi lại, không ghi lại); `tu` (loi / khoa / ngoai_tuyen — mã hết lượt đã lọc ở trên) thì bấm lại là gọi lại
+            const V = this.beMoV(c);
+            V.gui = text; V.dat = false; V.ma = '';
+            const ma = E.moChan(text, c.t);                                           // chặn TRƯỚC (một nguồn với Worker): chamCau trả cho_may cả câu ngắn
+            if (ma) { V.tt = 'chan'; V.ma = ma; V.ly = BE_MO_CHAN[ma] || BE_LY_THAY; continue; }
+            if (!this.secret || !this.online || navigator.onLine === false) { V.tt = 'tu'; V.ly = !this.online || navigator.onLine === false ? 'ngoai_tuyen' : 'khoa'; continue; }
+            if (V.con === 0) { V.tt = 'tu'; V.ly = 'het_cau'; continue; }             // máy đã báo hết lượt hôm nay: khỏi gọi
+            V.tt = 'cho'; V.ly = '';
+            gui.push(c);
+          }
+          if (gui.length) {
+            this.beBan[bai.id] = true;
+            this.beFb[bai.id] = null;
+            try { await Promise.all(gui.map(c => this.beMoGui(bai, c))); } finally { delete this.beBan[bai.id]; }
+          }
+          this.beMoTongKet(bai, cs, trong);
+        },
+        async beMoGui(bai, c) {
+          const V = this.beMoV(c), text = Array.from(V.gui).slice(0, 300).join(''), ac = new AbortController(), han = setTimeout(() => ac.abort(), BE_CHO_MS);
+          let r = null, d = null;
+          try {
+            r = await fetch('/api/cham-mo', {
+              method: 'POST', signal: ac.signal,
+              headers: { 'content-type': 'application/json', 'x-progress-key': this.secret },
+              body: JSON.stringify({ user: this.user, course: this.course, i: c.id, text }),
+            });
+            d = await r.json().catch(() => null);
+          } catch (e) { d = null; } finally { clearTimeout(han); }
+          if (r && r.status === 401) {                                               // như beGuiThang: khoá sai thì xoá + báo (ô nhập mã hiện lại)
+            this.secret = ''; localStorage.removeItem('lms_key'); window.dispatchEvent(new Event('lms-key'));
+            V.tt = 'tu'; V.ly = 'khoa'; return;
+          }
+          if (r && r.ok && d && d.loai === 'may' && typeof d.dat === 'boolean') {
+            V.tt = 'may'; V.dat = d.dat; V.ly = String(d.ly || '').slice(0, 200);
+            V.con = Number.isInteger(d.con) ? d.con : null;
+            const g = Number.isInteger(d.g) && d.g >= 0 && d.g <= 3 ? d.g : window.baiTapEsl.gCau(d.dat, this.beTungSai(c.id));
+            if (d.ghi === false && d.row && typeof d.row === 'object') this.beLuu([d.row]);   // Worker ghi hỏng: trang tự đẩy qua /api/study (đúng MỘT lần: chữ không đổi thì không gửi lại)
+            else { this.beRows.push({ i: c.id, c: c.kt || bai.kt, g, ts: Math.floor(Date.now() / 1000) }); this.beTinh(); }
+            if (Number(d.cong) > 0 && window.baoDiem) window.baoDiem(Number(d.cong));
+            return;
+          }
+          if (r && r.ok && d && d.loai === 'chan') { V.tt = 'chan'; V.ma = String(d.ma || ''); V.ly = BE_MO_CHAN[d.ma] || BE_LY_THAY; return; }   // Worker chặn (vd lệnh): như chặn tại trang
+          V.tt = 'tu'; V.ly = d && d.loai === 'tu' && BE_LY_TU.includes(d.ly) ? d.ly : 'loi';      // het_cau · het_ngay · khong_co · loi; mạng / quá hạn / lạ → loi (thoáng qua)
+          if (d && d.ly === 'het_cau') V.con = 0;
+        },
+        // Lời nhắc cấp bài: chỉ câu MÁY đã kết luận đếm vào «Đúng d/n»; chặn / tự kiểm / chờ thì không.
+        beMoTongKet(bai, cs, trong) {
+          const may = cs.filter(c => this.beMoR(c).tt === 'may'), dung = may.filter(c => this.beMoR(c).dat).length;
+          const khac = cs.filter(c => ['tu', 'chan'].includes(this.beMoR(c).tt)).length;
+          const con = trong ? 'Còn ' + trong + ' ' + BE_CON.mo + ' — viết rồi bấm Kiểm tra tiếp.' : '';
+          const xem = khac ? 'Xem lời nhắc dưới từng câu.' : '';
+          if (!may.length) { this.beFb[bai.id] = { loai: 'warn', tin: [xem, con].filter(Boolean).join(' ') || 'Con chưa viết gì — viết rồi bấm Kiểm tra.' }; return; }
+          if (dung === may.length && may.length === cs.length) { this.beFb[bai.id] = { loai: 'ok', tin: '✓ Đúng hết rồi!' }; return; }
+          const sai = may.length - dung;
+          this.beFb[bai.id] = { loai: sai ? 'bad' : 'warn', tin: ['Đúng ' + dung + '/' + may.length + '.', sai ? 'Câu chưa đạt: đọc lời nhắc, sửa rồi bấm Kiểm tra lại.' : '', xem, con].filter(Boolean).join(' ') };
         },
 
         // ── Bài viết (Gemini nhận xét; lỗi → con tự kiểm theo tiêu chí) ───────────────────────────────────────────────────
@@ -1705,8 +1806,7 @@ window.LS.ham();
         // ① Bước 2: mỗi đề GỐC một dòng + ô «🔄 Đề mới cùng cấu trúc» (khoá tới khi đề gốc đã nộp ≥ 1 lần).
         beBuoc2() {
           const ra = [];
-          for (const de of this.beUnitNow().de || []) {
-            if (de.loai !== 'goc') continue;
+          for (const de of this.beDeGoc()) {
             const L = this.beDeLuot(de), dang = this.beDeDang(de), moi = this.beDeMoiKe(de);
             ra.push({ de, n_phan: (de.phan || []).length, co_viet: (de.phan || []).some(p => p && p.bai && p.bai.kieu === 'viet'), lan: L.n, diem: L.diem, dang,
                       co_kq: !!this.beDoc(this.beKyKq(de)), nut: dang ? 'Làm tiếp' : L.n ? 'Làm lại' : 'Bắt đầu', moi: { de: moi.de, mo: L.n > 0, n: moi.n } });
@@ -6734,14 +6834,6 @@ registerProcessor('thu-16k',T);`;
                 :class="btVi ? 'border-cyan-600 bg-cyan-600 text-white' : 'border-slate-300 bg-white text-slate-600'"
                 class="min-h-8 shrink-0 rounded-full border px-3 text-xs font-semibold">VI</button>
       </div>
-      <template x-if="btMucs().length > 1">
-        <div class="flex flex-wrap gap-1.5">
-          <template x-for="(m, mi) in btMucs()" :key="mi">
-            <button type="button" data-bt-chon-muc :data-mi="mi" @click="btDatBai(mi)" :class="btMuc === mi ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 bg-white text-slate-700'"
-                    class="min-h-8 rounded-full border px-3 text-xs font-medium" x-text="m.ten"></button>
-          </template>
-        </div>
-      </template>
       <div data-bt-muc class="grid grid-cols-3 gap-1.5">
         <template x-for="t in btTiers()" :key="t.k">
           <button type="button" :data-tier="t.k" @click="btDatMuc(t.k)"
@@ -7508,9 +7600,9 @@ registerProcessor('thu-16k',T);`;
   <div data-be-tong class="space-y-3">
     <div>
       <h2 class="text-xl font-bold leading-snug text-slate-900"><span x-html="beUnitNow().ten_html"></span> · Bài tập</h2>
-      <p class="text-[13.5px] text-slate-500">Luyện từng mảng kiến thức trước, rồi làm trọn đề như trên lớp.</p>
+      <p data-be-tong-dan class="text-[13.5px] text-slate-500" x-text="beCoDe() ? 'Luyện từng mảng kiến thức trước, rồi làm trọn đề như trên lớp.' : 'Luyện từng mảng kiến thức.'"></p>
     </div>
-    <p class="pt-2 text-xs font-bold uppercase tracking-wide text-slate-500">Bước 1 · Luyện theo mảng kiến thức</p>
+    <p data-be-buoc1 class="pt-2 text-xs font-bold uppercase tracking-wide text-slate-500" x-text="beCoDe() ? 'Bước 1 · Luyện theo mảng kiến thức' : 'Luyện theo mảng kiến thức'">Luyện theo mảng kiến thức</p>
     <template x-for="m in beMangs()" :key="m.id">
       <div data-be-mang :data-kt="m.id" class="rounded-[14px] border border-slate-200 bg-white px-3 py-2.5">
         <div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
@@ -7536,7 +7628,7 @@ registerProcessor('thu-16k',T);`;
       </div>
     </template>
     
-    <div data-be-buoc2 class="space-y-2">
+    <div data-be-buoc2 x-show="beCoDe()" class="space-y-2">
       <p class="pt-3 text-xs font-bold uppercase tracking-wide text-slate-500">Bước 2 · Làm trọn đề</p>
       <template x-for="r in beBuoc2()" :key="r.de.ma">
         <div class="rounded-[14px] border border-slate-200 bg-white px-3 py-2.5">
@@ -7609,14 +7701,15 @@ registerProcessor('thu-16k',T);`;
           </button>
         </template>
 
+        <template x-if="e.bai.bai_doc">
+          <div data-be-bai-doc class="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[15px]">
+            <p class="font-semibold" x-html="e.bai.bai_doc.tieu_de_html || ''"></p>
+            <p class="whitespace-pre-line" x-html="e.bai.bai_doc.chu_html || ''"></p>
+          </div>
+        </template>
+
         <template x-if="e.bai.kieu === 'abc'">
         <div>
-          <template x-if="e.bai.bai_doc">
-            <div class="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[15px]">
-              <p class="font-semibold" x-html="e.bai.bai_doc.tieu_de_html || ''"></p>
-              <p class="whitespace-pre-line" x-html="e.bai.bai_doc.chu_html || ''"></p>
-            </div>
-          </template>
           <template x-for="c in beCauHien(e)" :key="c.id">
             <div data-be-cau :data-cau="c.id" :class="beClsCau(e, c)" class="mt-3">
               <template x-if="c.bao"><div class="mx-auto my-2 max-w-[420px] whitespace-pre-line rounded-lg border-2 border-slate-900 bg-white px-3 py-2 text-center font-bold" x-html="c.bao_html || ''"></div></template>
@@ -8364,6 +8457,46 @@ registerProcessor('thu-16k',T);`;
   </div>
 </template>
 
+            </div>
+          </template>
+        </div>
+        </template>
+
+        
+        <template x-if="e.bai.kieu === 'mo'">
+        <div>
+          <template x-for="c in beCauHien(e)" :key="c.id">
+            <div data-be-cau :data-cau="c.id" :class="beClsCau(e, c)" class="mt-3">
+              <template x-if="c.t_html"><p class="text-[15.5px]" x-html="c.t_html"></p></template>
+              <textarea data-be-mo :data-cau="c.id" rows="2" maxlength="300" autocapitalize="off" spellcheck="false" placeholder="Viết cả câu…" aria-label="Câu con viết"
+                        :value="beMoR(c).text" :disabled="beMoKhoa(c)" @input="beMoNhap(e.bai, c, $event.target.value)"
+                        :class="beMoR(c).tt === 'may' ? (beMoR(c).dat ? 'border-emerald-500 bg-emerald-50' : 'border-rose-500 bg-rose-50') : 'border-slate-400 bg-slate-50'"
+                        class="mt-1.5 block w-full rounded-lg border-[1.5px] px-2.5 py-2 text-[15.5px] text-slate-900 disabled:opacity-100"></textarea>
+              <template x-if="beMoR(c).tt">
+                <div data-be-mo-kq :data-cau="c.id" :data-tt="beMoR(c).tt" :class="beClsMoKq(c)" class="mt-1.5 rounded-lg border px-3 py-1.5 text-[14px]" role="status">
+                  <template x-if="beMoR(c).tt === 'cho'"><p>🤖 Máy đang chấm…</p></template>
+                  <template x-if="beMoR(c).tt === 'may' && beMoR(c).dat"><p class="font-semibold">✓ Đạt</p></template>
+                  <template x-if="beMoR(c).tt === 'may' && !beMoR(c).dat"><p class="font-semibold">✗ Chưa đạt</p></template>
+                  <template x-if="(beMoR(c).tt === 'may' || beMoR(c).tt === 'chan') && beMoR(c).ly"><p data-be-mo-ly x-text="beMoR(c).ly"></p></template>
+                  <template x-if="beMoR(c).tt === 'may' && !beMoR(c).dat && beMoR(c).con !== null"><p data-be-mo-con class="mt-0.5 text-xs text-slate-500" x-text="'🤖 Máy chấm (Gemini) · còn ' + beMoR(c).con + ' lượt hôm nay'"></p></template>
+                  <template x-if="beMoR(c).tt === 'tu'"><p class="font-semibold" x-text="beMoTuTit(c)"></p></template>
+                </div>
+              </template>
+              <template x-if="beMoR(c).tt === 'tu'">
+                <div data-be-mo-tu :data-cau="c.id" class="mt-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-[14px]">
+                  <ul class="list-disc space-y-0.5 pl-5"><template x-for="(m, mi) in (c.tieu_chi_html || [])" :key="mi"><li x-html="m"></li></template></ul>
+                  <div data-be-mo-mau :data-cau="c.id" class="mt-2 border-t border-dashed border-slate-200 pt-1.5">
+                    <p><span class="font-semibold">Một cách viết: </span><span x-html="(c.mau_html || []).join(' · ')"></span></p>
+                    <p class="text-xs text-slate-500">Đây chỉ là một cách — câu khác vẫn có thể đúng.</p>
+                  </div>
+                </div>
+              </template>
+              <template x-if="beMoHienMau(c) && beMoR(c).tt !== 'tu'">
+                <div data-be-mo-mau :data-cau="c.id" class="mt-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-[14px] text-slate-700">
+                  <p><span class="font-semibold">Một cách viết: </span><span x-html="(c.mau_html || []).join(' · ')"></span></p>
+                  <p class="text-xs text-slate-500">Đây chỉ là một cách — câu khác vẫn có thể đúng.</p>
+                </div>
+              </template>
             </div>
           </template>
         </div>
@@ -8520,14 +8653,15 @@ registerProcessor('thu-16k',T);`;
           </button>
         </template>
 
+        <template x-if="e.bai.bai_doc">
+          <div data-be-bai-doc class="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[15px]">
+            <p class="font-semibold" x-html="e.bai.bai_doc.tieu_de_html || ''"></p>
+            <p class="whitespace-pre-line" x-html="e.bai.bai_doc.chu_html || ''"></p>
+          </div>
+        </template>
+
         <template x-if="e.bai.kieu === 'abc'">
         <div>
-          <template x-if="e.bai.bai_doc">
-            <div class="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[15px]">
-              <p class="font-semibold" x-html="e.bai.bai_doc.tieu_de_html || ''"></p>
-              <p class="whitespace-pre-line" x-html="e.bai.bai_doc.chu_html || ''"></p>
-            </div>
-          </template>
           <template x-for="c in beCauHien(e)" :key="c.id">
             <div data-be-cau :data-cau="c.id" :class="beClsCau(e, c)" class="mt-3">
               <template x-if="c.bao"><div class="mx-auto my-2 max-w-[420px] whitespace-pre-line rounded-lg border-2 border-slate-900 bg-white px-3 py-2 text-center font-bold" x-html="c.bao_html || ''"></div></template>
@@ -9275,6 +9409,46 @@ registerProcessor('thu-16k',T);`;
   </div>
 </template>
 
+            </div>
+          </template>
+        </div>
+        </template>
+
+        
+        <template x-if="e.bai.kieu === 'mo'">
+        <div>
+          <template x-for="c in beCauHien(e)" :key="c.id">
+            <div data-be-cau :data-cau="c.id" :class="beClsCau(e, c)" class="mt-3">
+              <template x-if="c.t_html"><p class="text-[15.5px]" x-html="c.t_html"></p></template>
+              <textarea data-be-mo :data-cau="c.id" rows="2" maxlength="300" autocapitalize="off" spellcheck="false" placeholder="Viết cả câu…" aria-label="Câu con viết"
+                        :value="beMoR(c).text" :disabled="beMoKhoa(c)" @input="beMoNhap(e.bai, c, $event.target.value)"
+                        :class="beMoR(c).tt === 'may' ? (beMoR(c).dat ? 'border-emerald-500 bg-emerald-50' : 'border-rose-500 bg-rose-50') : 'border-slate-400 bg-slate-50'"
+                        class="mt-1.5 block w-full rounded-lg border-[1.5px] px-2.5 py-2 text-[15.5px] text-slate-900 disabled:opacity-100"></textarea>
+              <template x-if="beMoR(c).tt">
+                <div data-be-mo-kq :data-cau="c.id" :data-tt="beMoR(c).tt" :class="beClsMoKq(c)" class="mt-1.5 rounded-lg border px-3 py-1.5 text-[14px]" role="status">
+                  <template x-if="beMoR(c).tt === 'cho'"><p>🤖 Máy đang chấm…</p></template>
+                  <template x-if="beMoR(c).tt === 'may' && beMoR(c).dat"><p class="font-semibold">✓ Đạt</p></template>
+                  <template x-if="beMoR(c).tt === 'may' && !beMoR(c).dat"><p class="font-semibold">✗ Chưa đạt</p></template>
+                  <template x-if="(beMoR(c).tt === 'may' || beMoR(c).tt === 'chan') && beMoR(c).ly"><p data-be-mo-ly x-text="beMoR(c).ly"></p></template>
+                  <template x-if="beMoR(c).tt === 'may' && !beMoR(c).dat && beMoR(c).con !== null"><p data-be-mo-con class="mt-0.5 text-xs text-slate-500" x-text="'🤖 Máy chấm (Gemini) · còn ' + beMoR(c).con + ' lượt hôm nay'"></p></template>
+                  <template x-if="beMoR(c).tt === 'tu'"><p class="font-semibold" x-text="beMoTuTit(c)"></p></template>
+                </div>
+              </template>
+              <template x-if="beMoR(c).tt === 'tu'">
+                <div data-be-mo-tu :data-cau="c.id" class="mt-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-[14px]">
+                  <ul class="list-disc space-y-0.5 pl-5"><template x-for="(m, mi) in (c.tieu_chi_html || [])" :key="mi"><li x-html="m"></li></template></ul>
+                  <div data-be-mo-mau :data-cau="c.id" class="mt-2 border-t border-dashed border-slate-200 pt-1.5">
+                    <p><span class="font-semibold">Một cách viết: </span><span x-html="(c.mau_html || []).join(' · ')"></span></p>
+                    <p class="text-xs text-slate-500">Đây chỉ là một cách — câu khác vẫn có thể đúng.</p>
+                  </div>
+                </div>
+              </template>
+              <template x-if="beMoHienMau(c) && beMoR(c).tt !== 'tu'">
+                <div data-be-mo-mau :data-cau="c.id" class="mt-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-[14px] text-slate-700">
+                  <p><span class="font-semibold">Một cách viết: </span><span x-html="(c.mau_html || []).join(' · ')"></span></p>
+                  <p class="text-xs text-slate-500">Đây chỉ là một cách — câu khác vẫn có thể đúng.</p>
+                </div>
+              </template>
             </div>
           </template>
         </div>
@@ -9467,14 +9641,15 @@ registerProcessor('thu-16k',T);`;
           </button>
         </template>
 
+        <template x-if="e.bai.bai_doc">
+          <div data-be-bai-doc class="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[15px]">
+            <p class="font-semibold" x-html="e.bai.bai_doc.tieu_de_html || ''"></p>
+            <p class="whitespace-pre-line" x-html="e.bai.bai_doc.chu_html || ''"></p>
+          </div>
+        </template>
+
         <template x-if="e.bai.kieu === 'abc'">
         <div>
-          <template x-if="e.bai.bai_doc">
-            <div class="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[15px]">
-              <p class="font-semibold" x-html="e.bai.bai_doc.tieu_de_html || ''"></p>
-              <p class="whitespace-pre-line" x-html="e.bai.bai_doc.chu_html || ''"></p>
-            </div>
-          </template>
           <template x-for="c in beCauHien(e)" :key="c.id">
             <div data-be-cau :data-cau="c.id" :class="beClsCau(e, c)" class="mt-3">
               <template x-if="c.bao"><div class="mx-auto my-2 max-w-[420px] whitespace-pre-line rounded-lg border-2 border-slate-900 bg-white px-3 py-2 text-center font-bold" x-html="c.bao_html || ''"></div></template>
@@ -10222,6 +10397,46 @@ registerProcessor('thu-16k',T);`;
   </div>
 </template>
 
+            </div>
+          </template>
+        </div>
+        </template>
+
+        
+        <template x-if="e.bai.kieu === 'mo'">
+        <div>
+          <template x-for="c in beCauHien(e)" :key="c.id">
+            <div data-be-cau :data-cau="c.id" :class="beClsCau(e, c)" class="mt-3">
+              <template x-if="c.t_html"><p class="text-[15.5px]" x-html="c.t_html"></p></template>
+              <textarea data-be-mo :data-cau="c.id" rows="2" maxlength="300" autocapitalize="off" spellcheck="false" placeholder="Viết cả câu…" aria-label="Câu con viết"
+                        :value="beMoR(c).text" :disabled="beMoKhoa(c)" @input="beMoNhap(e.bai, c, $event.target.value)"
+                        :class="beMoR(c).tt === 'may' ? (beMoR(c).dat ? 'border-emerald-500 bg-emerald-50' : 'border-rose-500 bg-rose-50') : 'border-slate-400 bg-slate-50'"
+                        class="mt-1.5 block w-full rounded-lg border-[1.5px] px-2.5 py-2 text-[15.5px] text-slate-900 disabled:opacity-100"></textarea>
+              <template x-if="beMoR(c).tt">
+                <div data-be-mo-kq :data-cau="c.id" :data-tt="beMoR(c).tt" :class="beClsMoKq(c)" class="mt-1.5 rounded-lg border px-3 py-1.5 text-[14px]" role="status">
+                  <template x-if="beMoR(c).tt === 'cho'"><p>🤖 Máy đang chấm…</p></template>
+                  <template x-if="beMoR(c).tt === 'may' && beMoR(c).dat"><p class="font-semibold">✓ Đạt</p></template>
+                  <template x-if="beMoR(c).tt === 'may' && !beMoR(c).dat"><p class="font-semibold">✗ Chưa đạt</p></template>
+                  <template x-if="(beMoR(c).tt === 'may' || beMoR(c).tt === 'chan') && beMoR(c).ly"><p data-be-mo-ly x-text="beMoR(c).ly"></p></template>
+                  <template x-if="beMoR(c).tt === 'may' && !beMoR(c).dat && beMoR(c).con !== null"><p data-be-mo-con class="mt-0.5 text-xs text-slate-500" x-text="'🤖 Máy chấm (Gemini) · còn ' + beMoR(c).con + ' lượt hôm nay'"></p></template>
+                  <template x-if="beMoR(c).tt === 'tu'"><p class="font-semibold" x-text="beMoTuTit(c)"></p></template>
+                </div>
+              </template>
+              <template x-if="beMoR(c).tt === 'tu'">
+                <div data-be-mo-tu :data-cau="c.id" class="mt-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-[14px]">
+                  <ul class="list-disc space-y-0.5 pl-5"><template x-for="(m, mi) in (c.tieu_chi_html || [])" :key="mi"><li x-html="m"></li></template></ul>
+                  <div data-be-mo-mau :data-cau="c.id" class="mt-2 border-t border-dashed border-slate-200 pt-1.5">
+                    <p><span class="font-semibold">Một cách viết: </span><span x-html="(c.mau_html || []).join(' · ')"></span></p>
+                    <p class="text-xs text-slate-500">Đây chỉ là một cách — câu khác vẫn có thể đúng.</p>
+                  </div>
+                </div>
+              </template>
+              <template x-if="beMoHienMau(c) && beMoR(c).tt !== 'tu'">
+                <div data-be-mo-mau :data-cau="c.id" class="mt-1.5 rounded-lg bg-slate-100 px-3 py-1.5 text-[14px] text-slate-700">
+                  <p><span class="font-semibold">Một cách viết: </span><span x-html="(c.mau_html || []).join(' · ')"></span></p>
+                  <p class="text-xs text-slate-500">Đây chỉ là một cách — câu khác vẫn có thể đúng.</p>
+                </div>
+              </template>
             </div>
           </template>
         </div>

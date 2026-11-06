@@ -204,7 +204,7 @@ window.LS.ham();
     const TOAN_MUC = "../../assets/toan_muc.cf56682c.js";
     const BAI_TAP = [];   // slug các môn có ../study/<slug>.bai-tap.json
     const BAI_TAP_JS = "../../assets/bai_tap.423394c8.js";
-    const BAI_TAP_ESL_JS = "../../assets/bai_tap_esl.c55f123d.js";   // chấm / «Con điền» của ESL 5 (chỉ nạp khi có môn ESL)
+    const BAI_TAP_ESL_JS = "../../assets/bai_tap_esl.0907fc14.js";   // chấm / «Con điền» của ESL 5 (chỉ nạp khi có môn ESL)
     // Năm mức của dạng (spec 2026-10-21 §6). Class là literal (Tailwind quét HTML đã render).
     const MUC_TOAN = [
       { icon: '⚪', ten: 'Chưa học', lop: 'bg-slate-100 text-slate-700' },
@@ -416,8 +416,8 @@ window.LS.ham();
     //   Lượt sổ: mỗi CÂU một dòng (i = id câu, c = mảng), mỗi lần nộp đề thêm MỘT dòng tổng (i = id đề, c = 'de', x = JSON {tn, lan, diem: [[d, tối đa]…], cho: [id câu chờ máy]}).
     //   Unit   MỖI Unit của doc.unit[] một NHÓM (tiêu đề = `ten` của Unit; mảng riêng, đề riêng) — không nơi nào giả định unit[0]; tiến độ ① GỘP mọi Unit (một dải ba chỉ số, đủ đọc ở 390 px).
     //   mảng   mức = M.mucKt(lượt câu, E.cacCau(doc)) — CÙNG hàm trang con; «đúng x/y câu» = câu từng đúng / câu đã làm; bấm mở các câu đã làm (mới trước).
-    //   câu    sai (g ≤ 1): «Con điền» (x của dòng; nối có tranh → ảnh nhỏ) + «đúng là …» (suy từ đáp án của tài liệu bằng chính E.xCau); câu MÁY CHẤM (viết lại, bài viết: x JSON loại may / tu)
-    //          → `luot` như Math (chip, 🤖, nhận xét, nút sửa ngược chip → bt/sua).
+    //   câu    sai (g ≤ 1): «Con điền» (x của dòng; nối có tranh → ảnh nhỏ) + «đúng là …» (suy từ đáp án của tài liệu bằng chính E.xCau); câu MÁY CHẤM (viết lại, bài viết, câu mở `mo`: x JSON loại may / tu)
+    //          → `luot` như Math (chip, 🤖, nhận xét, nút sửa ngược chip → bt/sua). Câu mở KHÔNG có «đúng là …» (nhiều cách đúng); chữ nền = `t` (hoặc yêu cầu của bài khi không có `t`).
     //   lượt đề  tên đề · d/M — d TÍNH LẠI = E.diemLuotBm (dòng tổng + câu chấm muộn `lu` == giờ nộp + chênh lệch do bố mẹ sửa kết luận câu viết lại đã chấm LÚC nộp; dòng tổng bất biến:
     //          câu m.d 0 → bố mẹ đánh đạt thì +1; m.d 1 → chưa đạt thì −1; câu chấm muộn tự đúng vì bt/sua đổi g). CÙNG hàm với trang con (R46): con và bố mẹ thấy một điểm. Câu của lượt = dòng cùng ts với dòng tổng (hoặc `tn`); bài viết do Worker ghi
     //          (ts riêng, sau giờ nộp) gán cho lượt gần nhất của đề có tn ≤ ts.
@@ -455,10 +455,12 @@ window.LS.ham();
       // Chữ / ảnh của một câu
       const nhanCau = (b, ci) => (b.tach ? 'câu ' + (ci + 1) : (b.cau || []).length < 2 ? '' : (b.kieu === 'sua_loi' ? 'lỗi ' : b.kieu === 'noi' ? 'cặp ' : 'ô ') + (ci + 1));
       const tieuCau = (inf) => { const n = nhanCau(inf.b, inf.ci); return (inf.b.nguon || inf.b.id) + (n ? ' · ' + n : ''); };
-      const canhCau = (inf) => {   // câu hỏi rút gọn để bố mẹ biết con đang điền vào đâu (chỉ kiểu có chữ nền: điền ô / khung, viết lại)
+      const canhCau = (inf) => {   // câu hỏi rút gọn để bố mẹ biết con đang điền vào đâu (chỉ kiểu có chữ nền: điền ô / khung, viết lại, câu mở)
         const { c, b } = inf;
         if ((b.kieu === 'o' || b.kieu === 'khung') && Array.isArray(c.manh)) return thuanHtml(c.manh.map((p) => (p && p.o !== undefined ? ' ___ ' : (p && p.html) || '')).join(''));
         if (b.kieu === 'viet_lai' && typeof c.t === 'string') return gonX(c.t);
+        // Câu mở: phần cho sẵn (`t`, con viết tiếp ở `___`); câu không có `t` thì chữ nền là YÊU CẦU của bài (con đọc yêu cầu rồi tự viết cả câu)
+        if (b.kieu === 'mo') return typeof c.t === 'string' && c.t.trim() ? gonX(c.t) : typeof b.yeu_cau === 'string' ? gonX(b.yeu_cau) : '';
         return '';
       };
       const veSeg = (v, b) => (v && v.anh && v.anh_url ? { anh: '../' + v.anh_url, alt: E.chuVe(v, b) } : { t: E.chuVe(v, b) });
@@ -480,6 +482,7 @@ window.LS.ham();
           case 'o': case 'khung': case 'chuoi': case 'viet_lai': return d.length ? E.xCau(c, d[0], b) : '';
           case 'sua_loi': return d.length ? E.xCau(c, { chon: true, sua: d[0] }, b) : '';
           case 'sap_xep': return d.length ? gonX(d[0]) : '';
+          case 'mo': return '';   // câu mở: nhiều cách đúng, không có «đúng là …» (câu mẫu chỉ là MỘT cách viết, và con đã thấy nó ở trang con)
           default: return '';
         }
       };
