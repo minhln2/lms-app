@@ -155,6 +155,8 @@ export const HE_ESL = [
   "Chấm TỪNG tiêu chí đã cho, đúng mã của nó, không thêm tiêu chí mới. Tiêu chí đạt khi bài viết THẬT SỰ làm đúng điều tiêu chí nói.",
   "Tiêu chí đạt thì `trich` là đoạn chép NGUYÊN VĂN từ bài viết của học sinh chứng minh điều đó (được dùng … để nối hai đoạn); chưa đạt thì `trich` rỗng và `ghi` ngắn, chỉ hướng con nhìn lại chỗ nào — KHÔNG chép lại nội dung tiêu chí (luật lời nhắc bên dưới).",
   "`so_sai`: chỉ ghi lỗi RÕ RÀNG liên quan tới tiêu chí — sai dữ kiện so với thẻ dữ kiện của đề, hoặc lỗi ngữ pháp thuộc đúng chủ điểm mà tiêu chí kiểm (vd chia sai động từ). `trich` là đoạn nguyên văn chứa lỗi, `goi_y` chỉ cách kiểm lại. Không bắt lỗi chính tả vặt, dấu câu hay chữ hoa.",
+  "Chủ ngữ là collective noun (a colony / a pod / a herd / a flock / a school / a swarm / a pack / a pride / a gaggle … of + danh từ số nhiều) đi với động từ SỐ ÍT là ĐÚNG (vd «A colony of penguins has many birds», «A pod of whales swims»): KHÔNG báo lỗi subject-verb agreement cho dạng này. Chỉ báo lỗi subject-verb agreement khi chủ ngữ thật và động từ lệch số (vd «Sperm whales is», «They eats»). Không chắc là lỗi thì không ghi vào `so_sai`.",
+  "Mỗi mục `so_sai` có `loai`: `sv` = lỗi subject-verb agreement (chủ ngữ và động từ lệch số); `du_kien` = sai dữ kiện so với thẻ dữ kiện của đề — kể cả khi câu đúng ngữ pháp (vd bài viết nói loài ăn thịt ăn cỏ) và kể cả khi chủ ngữ là collective noun; `khac` = mọi lỗi còn lại. Không chắc thì chọn `khac`; chỉ chọn `sv` khi chắc chắn lỗi nằm ở chỗ chủ ngữ và động từ lệch số.",
   "`nhan_xet`: 1–2 câu tiếng Việt, khích lệ, chỉ hướng sửa. KHÔNG viết hộ bất kỳ câu tiếng Anh nào: không sửa câu của học sinh thành câu đúng, không đưa câu mẫu, không đưa ví dụ tiếng Anh dài hơn năm từ. Tiếng Anh trong lời nhắc chỉ là đoạn trích ngắn từ bài của học sinh hoặc thuật ngữ.",
   "Giữ nguyên thuật ngữ tiếng Anh ở mọi trường, không dịch sang tiếng Việt: mọi từ trong dòng THUẬT NGỮ của đề, và mọi thuật ngữ ngữ pháp tiếng Anh có trong đề / tiêu chí (collective noun, present simple, passive, relative pronoun, …).",
   "Lời nhắc (`ghi` của tiêu chí chưa đạt, `goi_y`, `nhan_xet`) chỉ CHỈ HƯỚNG con nhìn lại chỗ nào, KHÔNG nói ra nội dung ý đúng hay câu đúng — con phải tự tìm ra.",
@@ -238,8 +240,12 @@ export function dungPrompt(muc, cau) {
   return { he: HE, nguoi };
 }
 
+/** Loại lỗi của một mục `so_sai` mục ESL (enum trong `luocDo`; HE_ESL giải thích): `sv` lỗi subject-verb agreement · `du_kien` sai dữ kiện so với thẻ · `khac` còn lại. Chỉ `sv` mới có thể bị `svTapHopDung` lọc. */
+export const LOAI_SO_SAI = ["sv", "du_kien", "khac"];
+
 /** `responseSchema` của Gemini: mỗi tiêu chí một mục với `ma` ràng bằng `enum` (đúng các mã của `muc.tu_kiem` theo thứ tự soạn, TRỪ tiêu chí độ dài do máy quyết — `maDai`). */
 export function luocDo(muc) {
+  const esl = muc?.mon === "esl";
   const dai = maDai(muc);
   const ma = (muc.tu_kiem || []).map((t) => t.ma).filter((m) => !dai.has(m));
   return {
@@ -256,12 +262,19 @@ export function luocDo(muc) {
       },
       so_sai: {
         type: "ARRAY",
-        items: {
-          type: "OBJECT",
-          properties: { trich: { type: "STRING" }, goi_y: { type: "STRING" } },
-          required: ["trich", "goi_y"],
-          propertyOrdering: ["trich", "goi_y"],
-        },
+        items: esl
+          ? {   // ESL: thêm `loai` (enum) để chốt máy S–V chỉ lọc mục Gemini tự nhận là lỗi S–V — không lọc nhầm lỗi sai dữ kiện có hình dạng «A pride of lions eats grass»
+            type: "OBJECT",
+            properties: { trich: { type: "STRING" }, loai: { type: "STRING", enum: LOAI_SO_SAI }, goi_y: { type: "STRING" } },
+            required: ["trich", "loai", "goi_y"],
+            propertyOrdering: ["trich", "loai", "goi_y"],
+          }
+          : {
+            type: "OBJECT",
+            properties: { trich: { type: "STRING" }, goi_y: { type: "STRING" } },
+            required: ["trich", "goi_y"],
+            propertyOrdering: ["trich", "goi_y"],
+          },
       },
       nhan_xet: { type: "STRING" },
     },
@@ -390,6 +403,47 @@ export function dayAnh(s, n = ANH_DAY) {
   return false;
 }
 
+// ── Lỗi S–V GIẢ của collective noun (B8: bài tốt 180 từ bị `so_sai` oan «A colony of penguins has many birds» → kết luận sai). Collective noun + of + danh từ số nhiều đi với động từ SỐ ÍT là ĐÚNG
+// (chính mảng Unit 3 dạy: «a + collective noun + of + plural noun → singular verb»). Prompt đã dặn Gemini (HE_ESL); đây là chốt MÁY, vì Gemini không tin được ở chỗ này.
+/** Danh từ tập hợp của Unit 3 (study/pl/cie-esl-5.json: «a pod / herd / flock / pack / colony … of …» + các từ của bảng «collective noun»). MỘT chỗ; thêm từ ở đây. KHÔNG có «number» / «lot» / «pair»
+ * («a number of penguins are…» đi với động từ số nhiều). */
+export const TAP_HOP = new Set([
+  "army", "band", "bloat", "brood", "bunch", "cast", "choir", "class", "clowder", "colony", "crew", "crowd", "family", "fleet", "flight", "flock", "gaggle", "gang", "group", "herd", "hive",
+  "litter", "murmuration", "pack", "parliament", "pod", "pride", "prickle", "school", "shoal", "staff", "swarm", "team", "troop", "waddle",
+]);
+const MAO_TU = new Set(["a", "an", "the", "this", "that", "one", "each", "every", "another", "my", "our", "their", "its"]);   // đứng trước tập hợp (chủ ngữ)
+const BE_HAVE = /^(?:is|was|has|does|goes)$/;
+const KHONG_PHAI_DONG_TU = new Set(["this", "his", "its", "as", "us", "yes", "always", "sometimes", "perhaps", "thus", "plus", "across", "less", "unless", "towards", "afterwards", "besides"]);
+const SO_NHIEU_BAT_QUY = new Set(["geese", "sheep", "fish", "people", "children", "men", "women", "mice", "teeth", "feet", "oxen", "deer", "cattle", "police"]);
+const DAI_TU_SO_NHIEU = new Set(["they", "we", "you", "i"]);
+const laSoIt = (w) => BE_HAVE.test(w) || (/[a-z]s$/.test(w) && !/(?:ss|us)$/.test(w) && !KHONG_PHAI_DONG_TU.has(w));   // is / was / has / does / goes, hoặc động từ chia -s
+const laSoNhieu = (w) => SO_NHIEU_BAT_QUY.has(w) || (/[a-z]s$/.test(w) && !/(?:ss|us)$/.test(w) && !KHONG_PHAI_DONG_TU.has(w));
+
+/**
+ * `trich` (đoạn Gemini báo là lỗi S–V) có phải đúng dạng «[a / the …] [tính từ] <collective noun> of <danh từ số nhiều> <động từ SỐ ÍT> …» — tức là S–V ĐÚNG, không phải lỗi? → true.
+ * Luật đo chắc: chỉ true khi trích là MỘT mệnh đề (không dấu câu giữa, không and / but / which / that…, ≤ 12 từ), tập hợp là chủ ngữ ở đầu trích, và phần sau động từ không có cặp
+ * chủ-vị lệch số nào khác (they eats · whales is). Động từ SỐ NHIỀU sau tập hợp («A pod of whales swim» — lỗi thật của bài này), chủ ngữ khác, nhiều mệnh đề, không chắc → false (GIỮ lỗi).
+ */
+export function svTapHopDung(trich) {
+  if (typeof trich !== "string") return false;
+  const s = chuan(trich).replace(/^["'\s]+/, "").replace(/[\s.!?"']+$/, "");
+  if (!s || /[.!?;:,"]/.test(s) || /\b(?:and|but|or|because|so|while|which|that|who|when|if|then)\b/.test(s)) return false;
+  const w = s.match(/[a-z]+(?:'[a-z]+)?/g) || [];
+  if (w.length < 4 || w.length > 12) return false;
+  let k = -1;
+  for (let i = 0; i <= Math.min(2, w.length - 2); i++) if (TAP_HOP.has(w[i]) && w[i + 1] === "of") { k = i; break; }
+  if (k < 0) return false;
+  if (k >= 1 && !MAO_TU.has(w[0])) return false;                                          // chủ ngữ mở đầu bằng mạo từ; «Penguins form a colony of…» thì tập hợp không phải chủ ngữ
+  if (k === 2 && (/s$/.test(w[1]) || BE_HAVE.test(w[1]) || TAP_HOP.has(w[1]))) return false;   // «a large colony of»: tính từ ở giữa không được là động từ / danh từ số nhiều
+  let p = -1;
+  for (let i = k + 3; i <= Math.min(k + 5, w.length - 1); i++) if (laSoIt(w[i]) && laSoNhieu(w[i - 1])) { p = i; break; }   // N (1–3 từ) rồi động từ số ít
+  if (p < 0) return false;
+  for (let i = p + 1; i + 1 < w.length; i++) {                                              // phần còn lại có cặp chủ-vị lệch số khác → không chắc, giữ lỗi
+    if ((DAI_TU_SO_NHIEU.has(w[i]) && laSoIt(w[i + 1])) || (laSoNhieu(w[i]) && BE_HAVE.test(w[i + 1]))) return false;
+  }
+  return true;
+}
+
 /**
  * Kiểm lại kết quả Gemini `d` ({tieu_chi, so_sai, nhan_xet}) cho ý `muc`, câu `cau`; `camVi` = `cam_vi` của `.cham-viet.json`.
  * Trả {dat, tc: [{ma, dat, trich, ghi}], so_sai: [{trich, goi_y}], nx} hoặc null khi `d` không đúng hình dạng (Worker coi là `loi`).
@@ -401,6 +455,8 @@ export function dayAnh(s, n = ANH_DAY) {
  *   Chữ số trong tên tập (Group 3, Week 6) coi như đã hiện trên đề.
  *   Mục ESL (`muc.mon === "esl"`): thêm một luật — nx / goi_y / ghi có DÃY ≥ 6 từ tiếng Anh liền (`dayAnh`: Gemini viết hộ câu) → chữ cố định (NX_THAY / GOI_Y_THAY /
  *           GHI_THIEU; `ghi` của tiêu chí ĐẠT → rỗng). Trích (`trich`) là chữ của con, đã kiểm bằng `coTrich`, không qua luật này. Mục Math: không đổi.
+ *           `so_sai` mục ESL bỏ lỗi S–V GIẢ của collective noun trước khi cắt còn 2 mục: chỉ mục Gemini gắn `loai: "sv"` mà trích khớp `svTapHopDung` («A colony of penguins has many birds» đúng, không phải lỗi);
+ *           `loai` khác / thiếu / lạ → GIỮ (kể cả lỗi sai dữ kiện có hình dạng tập hợp: «A pride of lions eats grass»). Mục Math không đổi (không có `loai`).
  *   Mục ESL có tiêu chí ĐỘ DÀI do máy quyết (`doDaiMay`): tiêu chí đó lấy `dat` từ số từ MÁY đếm (n ∈ [min, max]), bỏ qua mọi thứ Gemini nói về nó; đạt → `trich` "" và `ghi` ""; chưa đạt → `ghi` = `ghiDai`.
  *   dat = mọi tiêu chí đạt VÀ không có so_sai (và ý có ít nhất một tiêu chí — mục không có `tu_kiem` không bao giờ "đạt" suông).
  */
@@ -444,6 +500,7 @@ export function kiemKetQua(d, muc, cau, camVi = []) {
 
   const so_sai = (Array.isArray(d.so_sai) ? d.so_sai : [])
     .filter((x) => laObj(x) && coTrich(cau, x.trich))
+    .filter((x) => !(esl && x.loai === "sv" && svTapHopDung(x.trich)))   // ESL: lỗi S–V GIẢ của collective noun («A colony of penguins has…») — CHỈ khi Gemini tự nhận mục là lỗi S–V (`loai === "sv"`) VÀ trích khớp mẫu; thiếu / lạ `loai` → GIỮ (lỗi sai dữ kiện «A pride of lions eats grass» có cùng hình dạng chữ). Lọc TRƯỚC khi cắt còn SO_SAI_MAX để nó không chiếm chỗ lỗi thật; `dat` bên dưới tính lại
     .slice(0, SO_SAI_MAX)
     .map((x) => ({ trich: cat(x.trich.trim(), SS_TRICH_MAX), goi_y: cat(loc(x.goi_y, GOI_Y_THAY), GOI_Y_MAX) }));
 

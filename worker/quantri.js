@@ -409,7 +409,10 @@ async function hocDong(env, url, user) {
     ).bind(user, tu, DONG_MAX),
     db.prepare(
       `SELECT course, date(ts + 25200, 'unixepoch') AS ngay, COUNT(*) AS so, SUM(correct) AS dung, MAX(ts) AS ts
-         FROM attempt WHERE user_id = ?1 AND ts >= ?2 GROUP BY course, ngay ORDER BY ts DESC LIMIT ?3`
+         FROM attempt WHERE user_id = ?1 AND ts >= ?2
+          -- Dòng TỔNG lượt nộp đề của Bài tập ESL (concept_id = 'de', ok = 0) không phải một lượt ôn: để lọt thì «Ôn tập: N lượt» thừa 1 mỗi lần nộp đề và tỉ lệ đúng tụt (như readStats, worker/study.js)
+          AND concept_id != 'de'
+          GROUP BY course, ngay ORDER BY ts DESC LIMIT ?3`
     ).bind(user, tu, DONG_MAX),
     db.prepare(
       `SELECT course, term, tu, last_ts FROM lookup_hist WHERE user_id = ?1 AND last_ts >= ?2 ORDER BY last_ts DESC LIMIT ?3`

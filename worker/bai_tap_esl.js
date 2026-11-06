@@ -1,7 +1,7 @@
 /**
  * Bài tập ESL 5 — chấm, «Con điền» và danh sách Luyện (kế hoạch 2026-11-04-bai-tap-esl-A, Task A3). MỘT bản cho trang ôn tập (nạp bằng
- * import động, builder chép sang dist/assets/ với tên có hash — ADR 0048), khu bố mẹ và Worker. Hàm thuần: KHÔNG import gì, KHÔNG đụng DOM,
- * không đọc đồng hồ (mức theo mảng do `mucKt` của worker/bai_tap.js tính — ở đây chỉ cấp `cacCau` làm đầu vào và `nhanMuc` đặt nhãn).
+ * import động, builder chép sang dist/assets/ với tên có hash — ADR 0048), khu bố mẹ và Worker. Hàm thuần: chỉ MỘT import (`./muc_ten.js` — bộ nhãn năm mức CHUNG mọi môn; builder viết lại
+ * đường import thành tên có hash), KHÔNG đụng DOM, không đọc đồng hồ (mức theo mảng do `mucKt` của worker/bai_tap.js tính — ở đây chỉ cấp `cacCau` làm đầu vào và `nhanMuc` đặt nhãn).
  *
  * Hai bản chuẩn hoá + chấm (Python lúc build `src/bai_tap_esl.py`, JS lúc chấm) chốt bằng tệp mẫu chung `tests/bai_tap_esl_mau.json`
  * (tests/test_bai_tap_esl.py và tests/test_bai_tap_esl_js.mjs cùng đọc) và bằng đối chiếu ngẫu nhiên trong bài JS. Sửa một bản mà quên bản kia
@@ -23,6 +23,7 @@
  * Kết quả một câu: "dung" · "sai" · "trong" (chưa làm — ở Luyện không chấm, không ghi sổ; ở đề tính SAI, g 1, x "") · "cho_may" (viet_lai không khớp
  * danh sách chấp nhận, chờ Gemini; chưa có kết luận thì không cộng điểm, không vào `sai`).
  */
+import { TEN_MUC } from "./muc_ten.js";
 
 // ═══════════════════════════ Đếm từ ═══════════════════════════
 
@@ -82,6 +83,14 @@ export function chuan(s) {
  */
 export const LAI_TEXT_MIN = 3;
 
+/**
+ * Độ dài câu viết lại để so với LAI_TEXT_MIN / LAI_TEXT_MAX: số CODE POINT sau `trim()` (khoảng trắng của ECMAScript — đúng tập `_KHOANG_CHARS` của src/bai_tap_esl.py, `do_dai_lai`).
+ * Không dùng `.length` (đơn vị UTF-16: một emoji = 2) — Python `len` đếm code point, hai bản phải ra cùng con số. null / undefined → 0.
+ */
+export function doDaiLai(s) {
+  return Array.from(s === null || s === undefined ? "" : String(s).trim()).length;
+}
+
 /** Chuỗi con gõ đã chuẩn hoá; không phải chuỗi → "". */
 const coChu = (tl) => (typeof tl === "string" ? chuan(tl) : "");
 const dsDap = (v) => (Array.isArray(v) ? v : []);
@@ -109,7 +118,7 @@ export function chamCau(cau, tl, bai) {
       if (!t) return "trong";
       if (nhanDuoc(cau).has(t)) return "dung";
       if (kieu !== "viet_lai") return "sai";
-      return String(tl).trim().length < LAI_TEXT_MIN ? "sai" : "cho_may";     // quá ngắn: không thể là một câu, khỏi nhờ máy
+      return doDaiLai(tl) < LAI_TEXT_MIN ? "sai" : "cho_may";     // quá ngắn: không thể là một câu, khỏi nhờ máy
     }
     case "noi":
       if (!Number.isInteger(tl)) return "trong";
@@ -286,6 +295,13 @@ const docX = (x) => {
  */
 export function chamMuon(tong, dong) {
   const ra = new Map();
+  for (const r of dongMuon(tong, dong)) ra.set(r.i, ra.get(r.i) === true || (typeof r.g === "number" && r.g >= 2));
+  return ra;
+}
+
+/** Các dòng của `dong` là câu chấm muộn CỦA LƯỢT `tong`: id ∈ `cho` của dòng tổng và `x.lu` == giờ nộp (tn, không có thì t). → [{i, g, x: đã parse}]; một bộ lọc cho chamMuon và lyMuon. */
+function dongMuon(tong, dong) {
+  const ra = [];
   const tx = docX(tong?.x);
   if (!tx || !Array.isArray(tx.cho)) return ra;
   const tn = tx.tn === undefined || tx.tn === null || tx.tn === "" ? NaN : Number(tx.tn);
@@ -296,7 +312,21 @@ export function chamMuon(tong, dong) {
     if (!r || !cho.has(r.i)) continue;
     const x = docX(r.x);
     if (!x || Number(x.lu) !== t) continue;
-    ra.set(r.i, ra.get(r.i) === true || (typeof r.g === "number" && r.g >= 2));
+    ra.push({ i: r.i, g: r.g, x });
+  }
+  return ra;
+}
+
+/**
+ * Lời của MÁY (Gemini) ở câu chấm muộn SAI: dòng muộn ghi lý do vào `x.m.n` (cùng chữ máy con thấy lúc chấm). → Map<idCâu, lời> chỉ cho câu KẾT LUẬN là sai (`chamMuon` = false) và có lời không rỗng;
+ * ④ ở máy khác nhận kết luận từ sổ thì nhận cả lời này (không thì hiện lời mẫu của `ly_html`, N3 review A8). Nhiều dòng cùng id: lấy lời không rỗng đầu tiên. Không bao giờ ném.
+ */
+export function lyMuon(tong, dong) {
+  const rs = dongMuon(tong, dong), dung = chamMuon(tong, dong), ra = new Map();
+  for (const r of rs) {
+    if (dung.get(r.i) !== false || ra.has(r.i)) continue;
+    const n = r.x?.m?.n;
+    if (typeof n === "string" && n.trim()) ra.set(r.i, n.trim());
   }
   return ra;
 }
@@ -315,11 +345,62 @@ export function diemLuot(tong, dong) {
   return { d: d + muon, toi, muon };
 }
 
+/**
+ * Chênh lệch điểm của MỘT câu viết lại chấm LÚC nộp sau khi bố mẹ sửa kết luận (`bt/sua` ghi `x.bm {d, g0}`; dòng tổng của lượt thì bất biến, ADR 0061):
+ * kết luận hiện hành (`bm.d`) − kết luận máy lúc nộp (`m.d`; dòng cũ không có `m` thì `g0` ≥ 2). → +1 (máy bác, bố mẹ đánh đạt) · −1 (ngược lại) · 0. `x` không có `bm` / chữ trần / null → 0.
+ */
+export function chenhBm(x) {
+  const o = docX(x);
+  if (!o || !o.bm || typeof o.bm !== "object") return 0;
+  const goc = o.m && (o.m.d === 1 || o.m.d === 0) ? o.m.d === 1 : Number(o.bm.g0) >= 2;
+  return (o.bm.d === 1 ? 1 : 0) - (goc ? 1 : 0);
+}
+
+/**
+ * Chênh lệch do bố mẹ sửa của các câu viết lại CHẤM LÚC NỘP của lượt `tong` = {t, x}. `dong` = [{i, ts, x}] (mọi dòng câu có x JSON), `vietLai` = Set id câu viết lại CỦA ĐỀ.
+ * Dòng của lượt = id ∈ `vietLai`, `ts` == `tong.t` hoặc == `tong.x.tn` (D1 kẹp ts nhưng câu và dòng tổng cùng lô nên cùng ts), KHÔNG có `lu` (câu chấm muộn: `bt/sua` đổi `g` của nó nên `diemLuot` đã đọc đúng).
+ * Một câu nhiều dòng → dòng SAU thắng. → Map<idCâu, ±1> chỉ câu có chênh lệch.
+ */
+export function bmNop(tong, dong, vietLai) {
+  const ra = new Map();
+  const tx = docX(tong?.x);
+  if (!tx || !(vietLai instanceof Set)) return ra;
+  const tn = tx.tn === undefined || tx.tn === null || tx.tn === "" ? NaN : Number(tx.tn);
+  const ts = [Number(tong?.t), tn].filter(Number.isFinite);
+  if (!ts.length) return ra;
+  const cuoi = new Map();
+  for (const r of dong || []) {
+    if (!r || !vietLai.has(r.i) || !ts.includes(Number(r.ts))) continue;
+    const x = docX(r.x);
+    if (!x || x.lu !== undefined) continue;
+    cuoi.set(r.i, x);
+  }
+  for (const [i, x] of cuoi) { const d = chenhBm(x); if (d) ra.set(i, d); }
+  return ra;
+}
+
+/**
+ * Điểm của MỘT lượt CÓ ÁP SỬA CỦA BỐ MẸ (R46) = `diemLuot` + `bmNop`. MỘT phép tính cho trang con (① Bước 2 «lần N: d/M», ④ tổng) và khu bố mẹ (qtBtEsl) — con và bố mẹ không bao giờ thấy hai điểm khác nhau.
+ * ⭐ KHÔNG đổi (sổ `diem` chỉ thêm). → {d, toi, muon, bm, bmCau: Map<idCâu, ±1>} hoặc null khi dòng tổng không có `diem`. `dong` = [{i, g, ts, x}] vừa câu chấm muộn vừa câu chấm lúc nộp.
+ * Trên MÁY ĐÃ NỘP, trang con không dùng hàm này cho điểm cục bộ mà chấm lại đề (`chamDe`) với kết luận của máy phủ ĐÚNG hai phép `chamMuon` + `bmNop` (templates/_bt_esl.html `beMayPhu`) — cùng đầu vào, cùng số.
+ */
+export function diemLuotBm(tong, dong, vietLai) {
+  const dl = diemLuot(tong, dong);
+  if (!dl) return null;
+  const bmCau = bmNop(tong, dong, vietLai);
+  let bm = 0;
+  for (const d of bmCau.values()) bm += d;
+  return { ...dl, d: dl.d + bm, bm, bmCau };
+}
+
 // ═══════════════════════════ Mức theo mảng ═══════════════════════════
 
-/** Nhãn 3 bậc từ mức 0..4 của `mucKt` (spec 11.9): 0 → Mới · 1–2 → Đang học · 3–4 → Vững. */
+/**
+ * Nhãn của mức 0..4 từ `mucKt` — bộ NĂM nhãn CHUNG mọi môn (worker/muc_ten.js, A9): Chưa học · Đang học · Làm được · Thành thạo · Học bá.
+ * Ngoài 0..4 / vắng / không phải số nguyên → «Chưa học».
+ */
 export function nhanMuc(m) {
-  return !(m > 0) ? "Mới" : m <= 2 ? "Đang học" : "Vững";
+  return TEN_MUC[Number.isInteger(m) && m >= 0 && m < TEN_MUC.length ? m : 0];
 }
 
 const donVi = (doc) => (Array.isArray(doc?.unit) ? doc.unit : doc && (doc.luyen || doc.de) ? [doc] : []);

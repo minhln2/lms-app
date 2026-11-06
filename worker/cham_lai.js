@@ -17,11 +17,12 @@
  *   - Câu của con là DỮ LIỆU: mỗi câu nằm giữa `<<<CAU>>>` … `<<<HET>>>`, `<<<` / `>>>` trong câu bị đổi; câu dạng lệnh (`nghiLenh`) KHÔNG gửi Gemini;
  *   - Câu KHÔNG THỂ chấm (ngắn hơn LAI_TEXT_MIN sau trim, dài quá LAI_TEXT_MAX, dạng lệnh) nhận kết luận RIÊNG `{i, dat: false, ly: LY_LAI_THAY}` ngay tại Worker, không tới Gemini và
  *     KHÔNG làm hỏng cả lô: những câu hợp lệ cùng lô vẫn được chấm. Nếu để 400 cả lô thì ở đề các câu đó «chờ máy» mãi (review cuối I1). 400 chỉ dành cho yêu cầu sai hình dạng;
+ *     Gemini lỗi thì kết luận riêng đó vẫn được trả (200 + `cho`, xem handleChamLai) — không để một lô lỗi làm mất chúng (D1);
  *   - Prompt không có id học sinh / tên môn.
  */
 import { CAP, ENDPOINT, ghiLoiGemini, goiLai, tieuThu } from "./lookup.js";   // CHUNG model / endpoint / trần ngày / bộ gọi-lại / sổ lỗi với tra cứu
 import { COURSE_RE, ID_RE, USER_RE, cat, chuan, dayAnh, docManifestViet, giauKhoa, laObj, nghiLenh } from "./cham_viet.js";
-import { LAI_TEXT_MIN } from "./bai_tap_esl.js";
+import { LAI_TEXT_MIN, doDaiLai } from "./bai_tap_esl.js";
 
 export const LAI_MAX_CAU = 10;      // số câu tối đa một lô (một lượt nộp); src/bai_tap_esl.py (kiem) chặn bài / đề có nhiều câu viết lại hơn số này
 export { LAI_TEXT_MIN };            // câu của con (sau trim) ngắn hơn thì KHÔNG chấm: kết luận riêng «chưa đạt» (nguồn duy nhất ở bai_tap_esl.js: chamCau cũng dùng, ngắn hơn là sai ngay tại trang)
@@ -139,7 +140,9 @@ function mucLai(man, i) {
 /**
  * POST /api/cham-lai — body {user, course, cau: [{i, text}]} (1–10 câu, `i` khác nhau, `text` là chuỗi), header `x-progress-key`.
  * Phản hồi 200 {kq: [{i, dat, ly}]} theo thứ tự gửi — MỘT kết luận cho MỖI câu: câu hợp lệ do Gemini (qua `kiemLai`); câu không chấm được (`text` sau trim ngắn hơn LAI_TEXT_MIN
- * hoặc dài hơn LAI_TEXT_MAX, hoặc dạng lệnh `nghiLenh`) do Worker, `{i, dat: false, ly: LY_LAI_THAY}`, không tới Gemini. 404/429/502 = {loai: "tu", ly} (`khong_co` · `het_ngay` · `loi`).
+ * hoặc dài hơn LAI_TEXT_MAX — đếm theo CODE POINT, `doDaiLai` — hoặc dạng lệnh `nghiLenh`) do Worker, `{i, dat: false, ly: LY_LAI_THAY}`, không tới Gemini. 404/429/502 = {loai: "tu", ly} (`khong_co` · `het_ngay` · `loi`).
+ * Gemini không dùng được (hết trần · đếm trần hỏng · gọi lỗi · sai hình dạng) mà lô có câu Worker ĐÃ kết luận riêng thì KHÔNG mất kết luận đó: 200 {kq: [chỉ các câu đã kết luận], cho: [id câu chưa],
+ * loai: "tu", ly} (`loiMay`) — trang đọc `kq` như mọi 200 (hợp đồng cũ), câu thiếu vẫn «chờ máy» để ③ ④ hỏi lại sau. Lô không có câu nào đã kết luận: 429 / 502 như trên.
  * Thứ tự hàng rào là LUẬT: 405 → 503 → 401 → 400 → 404 → 429 → Gemini; Gemini chỉ bị gọi (và trần chung chỉ bị ăn, ĐÚNG MỘT LẦN cho cả lô) sau khi mọi hàng rào rẻ hơn đã qua.
  * Cả lô không có câu nào chấm được thì không có gì để hỏi: 200 ngay, không ăn trần. Gemini lỗi / cụt / sai hình dạng → 502 `loi`, không ghi gì (route này không ghi sổ).
  */
@@ -166,7 +169,8 @@ export async function handleChamLai(request, env, url) {
     if (daCo.has(c.i)) return json({ error: "'i' bị lặp trong 'cau'" }, 400);
     daCo.add(c.i);
     const text = c.text.trim();
-    caus.push({ i: c.i, text, chamDuoc: text.length >= LAI_TEXT_MIN && text.length <= LAI_TEXT_MAX });   // quá ngắn / quá dài: kết luận riêng ở dưới, KHÔNG hỏng cả lô
+    const dai = doDaiLai(text);   // code point sau trim — cùng đơn vị với chamCau (bai_tap_esl.js) và cham_cau (Python)
+    caus.push({ i: c.i, text, chamDuoc: dai >= LAI_TEXT_MIN && dai <= LAI_TEXT_MAX });   // quá ngắn / quá dài: kết luận riêng ở dưới, KHÔNG hỏng cả lô
   }
 
   // Manifest do MÁY dựng lúc build; trình duyệt chỉ gửi id + câu của con nên không chèn được gì vào prompt. Một `i` lạ / không phải `lai` → cả lô 404.
@@ -180,6 +184,13 @@ export async function handleChamLai(request, env, url) {
   const gui = caus.map((c, k) => k).filter((k) => !kq[k]);
   if (!gui.length) return json({ kq });
   const causGui = gui.map((k) => caus[k]), mucsGui = gui.map((k) => mucs[k]);
+  // Gemini KHÔNG dùng được (đếm trần hỏng · hết trần · gọi lỗi · trả sai hình dạng) mà trong lô có câu Worker ĐÃ kết luận riêng (quá ngắn / quá dài / lệnh): kết luận đó không được mất theo.
+  // → 200 {kq: [chỉ các câu đã kết luận, đúng thứ tự gửi], cho: [id câu chưa kết luận], loai: "tu", ly} — trang đọc `kq` như mọi 200 và để câu thiếu «chờ máy» (③ ④ hỏi lại sau).
+  // Không có câu nào đã kết luận thì như cũ: `{loai: "tu", ly}` với mã lỗi (429 / 502) — không có gì để giữ.
+  const loiMay = (ly, st) => {
+    const ra = kq.filter(Boolean);
+    return ra.length ? json({ kq: ra, cho: causGui.map((c) => c.i), loai: "tu", ly }) : tu(ly, st);
+  };
 
   const now = Math.floor(Date.now() / 1000);
   const day = new Date(now * 1000).toISOString().slice(0, 10);   // trần chung theo ngày UTC, như tra cứu
@@ -188,9 +199,9 @@ export async function handleChamLai(request, env, url) {
     dung = await tieuThu(env, day);   // MỘT lần cho cả lô; tăng TRƯỚC khi gọi Gemini (xem tieuThu)
   } catch (e) {
     console.warn("cham-lai: đếm trần hỏng:", giauKhoa(e?.message || e, key));   // không đếm được thì không gọi: trần là thứ chặn hoá đơn
-    return tu("loi", 502);
+    return loiMay("loi", 502);
   }
-  if (dung > CAP) return tu("het_ngay", 429);
+  if (dung > CAP) return loiMay("het_ngay", 429);
 
   const { he, nguoi } = dungPromptLai(mucsGui, causGui);
   const colo = (request.cf && request.cf.colo) || "?";
@@ -211,13 +222,13 @@ export async function handleChamLai(request, env, url) {
     const ly = giauKhoa(e?.message || e, key);
     console.warn(`cham-lai: không gọi được Gemini @colo=${colo}: ${ly.slice(0, 200)}`);
     await ghiLoiGemini(env, day, colo, 0, ly);   // ma 0 = không tới được Google
-    return tu("loi", 502);
+    return loiMay("loi", 502);
   }
   if (!res.ok) {
     const t = giauKhoa(await res.text().catch(() => ""), key);
     console.warn(`cham-lai: Gemini ${res.status} @colo=${colo}: ${t.slice(0, 400)}`);
     await ghiLoiGemini(env, day, colo, res.status, t);
-    return tu("loi", 502);   // KHÔNG kèm chữ lỗi: trang chỉ cần biết «lùi về đáp án mẫu»
+    return loiMay("loi", 502);   // KHÔNG kèm chữ lỗi: trang chỉ cần biết «lùi về đáp án mẫu»
   }
 
   let ra = null, fr = "?", loiDoc = "";
@@ -235,7 +246,7 @@ export async function handleChamLai(request, env, url) {
     const ly = giauKhoa(`finishReason=${fr}` + (loiDoc ? ` · ${loiDoc}` : " · sai hình dạng"), key);
     console.warn(`cham-lai: Gemini trả về không đọc được @colo=${colo}: ${ly.slice(0, 300)}`);
     await ghiLoiGemini(env, day, colo, 200, ly);
-    return tu("loi", 502);
+    return loiMay("loi", 502);
   }
   gui.forEach((k, j) => { kq[k] = ra[j]; });
   return json({ kq });

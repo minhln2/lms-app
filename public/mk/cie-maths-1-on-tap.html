@@ -120,7 +120,7 @@ window.LS.ham();
   <title>Ôn tập · CIE Maths 1</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.f5f575e9.css">
+  <link rel="stylesheet" href="../assets/tw.d66e17eb.css">
   
   <script type="module">
     import { sched, phatLai } from "../assets/lich_on.ebee479f.js";
@@ -1071,6 +1071,7 @@ window.LS.ham();
         beDeXn: false, beDeBan: false, beDeLoi: '',   // dải xác nhận «Còn N ô trống» · đang nộp (chờ máy) · lỗi bất ngờ lúc nộp
         beNhamDe: {},               // ③ sửa lỗi: {idBài (d:): {chỉ số chữ: chữ con gõ}} — chữ KHÔNG sai con đã chạm (không chấm, không ghi sổ)
         beKd: null, beKdBan: false, // ④: mô hình hiển thị · đang hỏi máy câu chờ
+        beKdXn: false,              // ④: dải «Đề gốc đang có bài làm dở» (hỏi trước khi «Làm lại đề gốc» xoá bài dở)
         beChiSai: false,            // ④: công tắc «Chỉ xem câu sai» (ẩn câu đúng + phần không có câu sai)
         beKqTrong: {},              // ④: {id `k:` câu: true} nếu con để TRỐNG câu đó (phản hồi nói «Bỏ trống», không «Chưa đúng»)
         beDs: [],                   // danh sách mục của ②: [{key, bai, ids (null = cả bài), de (từ đề), dau (mục đầu của phần «sai trong đề»)}]
@@ -1119,7 +1120,14 @@ window.LS.ham();
           for (const a of this.beRows) them(a);
           return ra;
         },
-        async beNapLuot() {
+        // `BE.soCho` = lượt nạp sổ gần nhất, `BE.soXong` = nó đã xong (thành công hay không) — beVe chờ sổ trước khi khoá đề mới theo lượt đề gốc.
+        beNapLuot() {
+          const p = this.beNapLuotSo();
+          BE.soCho = p; BE.soXong = false;
+          p.finally(() => { if (BE.soCho === p) BE.soXong = true; });
+          return p;
+        },
+        async beNapLuotSo() {
           if (!this.beCo || !this.online || !this.secret) return;
           try {
             const r = await fetch('/api/study/bt?user=' + encodeURIComponent(this.user) + '&course=' + encodeURIComponent(this.course),
@@ -1165,7 +1173,7 @@ window.LS.ham();
           }
           return ra;
         },
-        // {[kt]: nhãn Mới / Đang học / Vững} cho mọi mảng có câu mang kt đó (mức 0..4 của mucKt → 3 nhãn: spec 11.9).
+        // {[kt]: nhãn mức} cho mọi mảng có câu mang kt đó (mức 0..4 của mucKt → bộ NĂM nhãn chung worker/muc_ten.js, A9).
         beMuc() { const ra = {}; for (const k of Object.keys(this.beMucMap)) ra[k] = window.baiTapEsl.nhanMuc(this.beMucMap[k]); return ra; },
         beMucNhan(kt) { const m = this.beMucMap[kt]; return m === undefined ? '' : window.baiTapEsl.nhanMuc(m); },
         beClsMuc(kt) { const m = this.beMucMap[kt]; return !(m > 0) ? 'bg-slate-100 text-slate-600' : m <= 2 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'; },
@@ -1179,10 +1187,30 @@ window.LS.ham();
           if (this.beScr === 'kq' && this.beMa) return 'bai-tap/kq/' + this.beMa;
           return 'bai-tap';
         },
-        beVe(tk) {
+        async beVe(tk) {
           const p = String(tk).split('/');
           if (p[1] === 'luyen' && BE.mang.has(p[2])) { this.beMo(p[2]); return; }
-          if (p[1] === 'de' && p[2] && this.beMoDe(p[2])) return;
+          if (p[1] === 'de' && p[2]) {
+            // Đề MỚI chỉ mở khi đề gốc đã nộp ≥ 1 lần (cùng khoá «🔒 Chưa mở» của ①): gõ / dán link thẳng không vượt được. Sổ chưa về (tải trang ngay tại hash, máy khác) thì chờ sổ ≤ 3 s trước khi quyết.
+            const de = this.beDeTheoMa(p[2]);
+            if (de && this.beDeKhoa(de) && BE.soCho && !BE.soXong) {
+              // `ve()` KHÔNG await hàm này nên lúc chờ trang vẫn tương tác được và mọi chuyển màn của con vào lịch sử như thường. Sổ về (hoặc quá 3 s) mà màn hình đã khác lúc bắt đầu chờ
+              // thì con đã đi nơi khác → bỏ, không ghi đè (Back / hash mới tự gọi `ve()` lại với sổ mới).
+              // Hai dấu hiệu: màn hình khác lúc bắt đầu chờ (thao tác của con) HOẶC đã có `ve()` khác chạy (`veN` đổi: Back/Forward/hash — kể cả Back về ĐÚNG màn cũ, token trùng t0 nhưng ý định đã khác).
+              const t0 = this.tokenCua(), n0 = this.veN;
+              let hen;
+              await Promise.race([BE.soCho, new Promise(r => { hen = setTimeout(r, 3000); })]);
+              clearTimeout(hen);
+              if (this.tokenCua() !== t0 || this.veN !== n0) return;
+            }
+            if (de && this.beDeKhoa(de)) {
+              this.beScr = 'tong';
+              try { history.replaceState({ ...(history.state || {}), token: 'bai-tap' }, '', '#bai-tap'); } catch (e) { /* trang nhúng / hạn chế: giữ hash */ }   // THAY mục hiện tại (ADR 0067), không đẩy mục mới
+              window.scrollTo(0, 0);
+              return;
+            }
+            if (this.beMoDe(p[2])) return;
+          }
           if (p[1] === 'kq' && p[2] && this.beKdMo(p[2], false)) return;
           this.beScr = 'tong';
         },
@@ -1390,6 +1418,10 @@ window.LS.ham();
           if (!this.online || !this.secret) return false;
           try {
             const r = await fetch(`/api/study?user=${this.user}&course=${this.course}`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-progress-key': this.secret }, body: JSON.stringify({ attempts: rows }) });
+            if (r.status === 401) {                                              // như flushOnce: khoá sai thì xoá + báo (ô nhập mã hiện lại) — không để «bộ nhớ đầy» là lời nhắc duy nhất
+              this.secret = ''; localStorage.removeItem('lms_key'); window.dispatchEvent(new Event('lms-key'));
+              return false;
+            }
             const d = r.ok ? await r.json().catch(() => null) : null, cong = Number(d && d.cong) || 0;
             if (cong > 0 && window.baoDiem) window.baoDiem(cong);                // như flushOnce: «+N ⭐» vẫn hiện
             return r.ok;
@@ -1448,7 +1480,7 @@ window.LS.ham();
           const E = window.baiTapEsl, kho = this.beLaiKho(), ket = {}, hoi = [];
           for (const it of items) {
             const text = String(it.text || ''), khoa = it.id + '|' + E.chuan(text);
-            if (text.trim().length < E.LAI_TEXT_MIN) ket[it.id] = { dat: false, ly: '' };           // quá ngắn không thể là câu: «chưa đạt» ngay, KHÔNG hỏi máy (chamCau đã chấm sai; đây là lượt chờ cũ còn sót)
+            if (E.doDaiLai(text) < E.LAI_TEXT_MIN) ket[it.id] = { dat: false, ly: '' };           // quá ngắn không thể là câu: «chưa đạt» ngay, KHÔNG hỏi máy (chamCau đã chấm sai; đây là lượt chờ cũ còn sót)
             else if (kho[khoa] && typeof kho[khoa].dat === 'boolean') ket[it.id] = kho[khoa]; else hoi.push({ id: it.id, text, khoa });
           }
           if (hoi.length && this.online && this.secret && navigator.onLine !== false) {
@@ -1457,7 +1489,7 @@ window.LS.ham();
               const r = await fetch('/api/cham-lai', {
                 method: 'POST', signal: ac.signal,
                 headers: { 'content-type': 'application/json', 'x-progress-key': this.secret },
-                body: JSON.stringify({ user: this.user, course: this.course, cau: hoi.map(h => ({ i: h.id, text: h.text.trim().slice(0, 300) })) }),
+                body: JSON.stringify({ user: this.user, course: this.course, cau: hoi.map(h => ({ i: h.id, text: Array.from(h.text.trim()).slice(0, 300).join('') })) }),
               });
               const d = r.ok ? await r.json() : null;
               for (const k of (d && Array.isArray(d.kq) ? d.kq : [])) {
@@ -1613,22 +1645,48 @@ window.LS.ham();
           for (const a of this.beRows) them(a);
           return ra.sort((p, q) => p.ts - q.ts || ((p.x && p.x.lan) || 0) - ((q.x && q.x.lan) || 0));
         },
-        // Dòng có thể là câu CHẤM MUỘN (x JSON có "lu") từ sổ (GET /api/study/bt trả x cho chúng) + đệm + phiên → [{i, g, x}] — đầu vào của diemLuot.
+        // Dòng có thể là câu CHẤM MUỘN (x JSON có "lu") hoặc câu BỐ MẸ ĐÃ SỬA kết luận (x có "bm", `bt/sua`) từ sổ (GET /api/study/bt trả x cho đúng hai loại) + đệm + phiên → [{i, g, ts, x}] — đầu vào của diemLuotBm / chamMuon.
+        // Một dòng muộn (id câu + `lu`) có ở SỔ thì SỔ thắng bản trong đệm / phiên: bản đó là kết luận của MÁY lúc ghi, còn sổ có thể đã được bố mẹ sửa (g đổi, thêm `bm`) — hai dòng cùng id mà đều giữ
+        // thì chamMuon (OR theo id) cho bản cũ thắng khi bố mẹ HẠ kết luận (R46). Chưa có ở sổ (chưa gửi / sổ chưa nạp lại) thì dùng bản cục bộ.
         beDongMuon() {
-          const ra = [];
-          for (const ds of [this.beSo, this.buf(), this.beRows]) for (const a of ds) if (a && typeof a.x === 'string' && a.x.indexOf('"lu":') >= 0) ra.push({ i: a.i, g: a.g, x: a.x });
+          const ra = [], soCo = new Set();
+          const lu = (a) => { const m = /"lu":\s*(\d+)/.exec(a.x); return m ? a.i + '|' + m[1] : null; };
+          [this.beSo, this.buf(), this.beRows].forEach((ds, nguon) => {
+            for (const a of ds) {
+              if (!(a && typeof a.x === 'string' && (a.x.indexOf('"lu":') >= 0 || a.x.indexOf('"bm":') >= 0))) continue;
+              const k = lu(a);
+              if (k) { if (nguon === 0) soCo.add(k); else if (soCo.has(k)) continue; }
+              ra.push({ i: a.i, g: a.g, ts: Number(a.ts !== undefined ? a.ts : a.t) || 0, x: a.x });
+            }
+          });
           return ra;
         },
-        // Điểm của một lượt (dòng `r` của beDeRows) = dòng tổng (bất biến) + câu chấm muộn có lu == tn của lượt (tn ghi trong x của dòng tổng; dòng cũ không có tn thì == ts), ở MỌI máy (diemLuot, worker/bai_tap_esl.js).
-        beDeDiem(r) { return r ? window.baiTapEsl.diemLuot({ t: r.ts, x: r.x }, this.beDongMuon()) : null; },
+        // Kết luận từng câu của lượt `L` (lms_be_kq) để CHẤM LẠI lúc hiện, phủ theo thứ tự: kết luận của MÁY ghi cục bộ (L.may) → câu chấm MUỘN ở sổ / đệm / phiên (chamMuon trên dòng tổng của lượt;
+        // gồm cả khi bố mẹ đã sửa `g` của dòng muộn) → câu chấm LÚC nộp mà bố mẹ đã sửa (bmNop). Hai phép phủ rời nhau (bmNop bỏ dòng có `lu`). Dùng chung ① (beDeLuot) và ④ (beKdDung) để trên MÁY ĐÃ NỘP
+        // điểm lượt = khu bố mẹ (diemLuotBm) sau mọi lần bố mẹ sửa, cả hai chiều. KHÔNG ghi lms_be_kq (còn nguyên kết luận của máy ⇒ không cộng đôi).
+        beMayPhu(de, L) {
+          const E = window.baiTapEsl, tong = this.beTongCua(de, L.ts), dong = this.beDongMuon(), may = { ...(L.may || {}) };
+          for (const [id, dung] of E.chamMuon(tong, dong)) may[id] = dung;
+          for (const [id, dl] of E.bmNop(tong, dong, this.beVietLaiDe(de))) may[id] = dl > 0;
+          return may;
+        },
+        // Id các câu VIẾT LẠI của đề (máy Gemini chấm lúc nộp): chỗ bố mẹ có thể sửa kết luận → đổi điểm lượt (không đổi ⭐).
+        beVietLaiDe(de) { return new Set((de.phan || []).filter(p => p && p.bai && p.bai.kieu === 'viet_lai').flatMap(p => (p.bai.cau || []).map(c => c.id))); },
+        // Điểm của một lượt (dòng `r` của beDeRows) = dòng tổng (bất biến) + câu chấm muộn có lu == tn của lượt (tn ghi trong x của dòng tổng; dòng cũ không có tn thì == ts) + chênh lệch do BỐ MẸ sửa kết luận
+        // câu viết lại (R46) — ở MỌI máy, CÙNG hàm với khu bố mẹ (diemLuotBm, worker/bai_tap_esl.js). → {d, toi, muon, bm, bmCau} | null.
+        beDeDiem(r, de) { return r ? window.baiTapEsl.diemLuotBm({ t: r.ts, x: r.x }, this.beDongMuon(), this.beVietLaiDe(de)) : null; },
+        // Dòng tổng của lượt có giờ nộp `tn` (ts đã kẹp ở D1 có thể ≠ tn); không thấy trong sổ thì giả dòng {t: tn, x: {tn}}.
+        beTongCua(de, tn) { const r = this.beDeRows(de).find(q => this.beTn(q) === tn); return r ? { t: r.ts, x: r.x } : { t: tn, x: { tn } }; },
         // {n: số lượt, diem: {d, toi} của lượt gần nhất}. Điểm tính từ sổ (cộng câu chấm muộn); kết quả cục bộ (đã gồm câu máy chấm muộn) thắng khi mới hơn dòng sổ, hoặc cùng lượt mà cao hơn.
         beDeLuot(de) {
           const rs = this.beDeRows(de), cuoi = rs[rs.length - 1], loc = this.beDoc(this.beKyKq(de));
-          let n = rs.length, diem = this.beDeDiem(cuoi);
+          let n = rs.length, diem = this.beDeDiem(cuoi, de);
           const tCuoi = this.beTn(cuoi);                                      // giờ NỘP của lượt cuối ở sổ (tn), không phải ts D1 đã kẹp: so với loc.ts (= tsNop nguyên) mới đúng
           if (loc && loc.kq && (!cuoi || Number(loc.ts) >= tCuoi)) {
             n = Math.max(n, Number(loc.lan) || 0);
-            const cb = { d: loc.kq.tong, toi: loc.kq.toi_da };
+            // Điểm cục bộ = chấm lại đề với kết luận của máy ĐÃ PHỦ câu chấm muộn + sửa của bố mẹ (beMayPhu, như ④) — không lấy `loc.kq.tong` (kết luận của máy, bất động) cộng `diem.bm`: bố mẹ HẠ một
+            // câu chấm muộn thì số cũ vẫn cao hơn sổ và `max` giữ nó (R46). Rồi mới so với điểm sổ: máy khác chấm muộn thêm câu thì sổ cao hơn.
+            const cb = { d: window.baiTapEsl.chamDe(de, loc.tl || {}, this.beMayPhu(de, loc)).tong, toi: loc.kq.toi_da };
             diem = diem && cuoi && Number(loc.ts) === tCuoi ? { d: Math.max(cb.d, diem.d), toi: cb.toi } : cb;
           }
           return { n, diem };
@@ -1642,6 +1700,8 @@ window.LS.ham();
           return { de: window.baiTapEsl.deMoiKe(BE.doc, g.ma, n), n };
         },
         beDeGocCua(de) { return de.loai === 'moi' ? (BE.de.get(de.khuon) || de) : de; },
+        // Đề MỚI đang khoá = đề gốc của khuôn chưa có lượt nộp nào (sổ · đệm · phiên · lms_be_kq) VÀ con chưa bắt đầu đề mới này (lms_be_do) — đã bắt đầu tức là từng được mở (tải lại giữa chừng không bị đẩy về ①).
+        beDeKhoa(de) { return de.loai === 'moi' && this.beDeLuot(this.beDeGocCua(de)).n === 0 && !this.beDeDang(de); },
         // ① Bước 2: mỗi đề GỐC một dòng + ô «🔄 Đề mới cùng cấu trúc» (khoá tới khi đề gốc đã nộp ≥ 1 lần).
         beBuoc2() {
           const ra = [];
@@ -1850,7 +1910,7 @@ window.LS.ham();
           const de = this.beDeTheoMa(ma), L = de && this.beDoc(this.beKyKq(de));
           if (!de || !L || !L.tl) return false;
           this.beMa = ma;
-          this.beChiSai = false;
+          this.beChiSai = false; this.beKdXn = false;
           this.beKdGop(de, L);
           this.beKdDung(de, L);
           this.beScr = 'kq';
@@ -1861,10 +1921,14 @@ window.LS.ham();
         // Câu chờ máy mà SỔ đã có kết luận (máy khác / phiên trước chấm muộn: dòng mang lu == ts lượt, chamMuon) → nhận kết luận ngay: điểm ④ khớp ①, khỏi hỏi máy và khỏi ghi lần hai.
         beKdGop(de, L) {
           if (!(L.cho || []).length) return;
-          const E = window.baiTapEsl, ket = E.chamMuon({ t: L.ts, x: { cho: L.cho, tn: L.ts } }, this.beDongMuon());   // L.ts = tsNop nguyên = `lu` của dòng muộn (không phụ thuộc ts đã kẹp ở D1)
+          const E = window.baiTapEsl, tong = { t: L.ts, x: { cho: L.cho, tn: L.ts } }, dong = this.beDongMuon();   // L.ts = tsNop nguyên = `lu` của dòng muộn (không phụ thuộc ts đã kẹp ở D1)
+          const ket = E.chamMuon(tong, dong), lyM = E.lyMuon(tong, dong);
           if (!ket.size) return;
-          L.may = L.may || {};
-          for (const [id, dung] of ket) L.may[id] = dung;
+          L.may = L.may || {}; L.ly = L.ly || {};
+          for (const [id, dung] of ket) {
+            L.may[id] = dung;
+            if (!dung && lyM.has(id) && !L.ly[id]) L.ly[id] = lyM.get(id);              // lời của MÁY ở dòng muộn (x.m.n) đi theo kết luận: ④ ở máy khác không hiện lời mẫu thay lời máy (N3)
+          }
           const kq = E.chamDe(de, L.tl || {}, L.may);
           L.kq = kq; L.cho = kq.cho;
           this.beGhiLs(this.beKyKq(de), L);
@@ -1878,7 +1942,9 @@ window.LS.ham();
         // ④ dựng lại MỌI LẦN lượt nộp đổi (mở, chấm muộn xong): chấm cả đề bằng chamDe rồi đặt trạng thái từng câu theo id `k:` — beKq 'dung' | 'sai' | 'cho', beTL = chữ con đã điền,
         // beLyMay = lý do Gemini (chỉ khi chưa đạt), beKqTrong = con để trống. Giao diện vẽ CẢ ĐỀ bằng `noi_dung_bai()` như ③ (mọi điều khiển khoá vì beKq có giá trị).
         beKdDung(de, L) {
-          const E = window.baiTapEsl, tl = L.tl || {}, may = L.may || {}, ly = L.ly || {};
+          const E = window.baiTapEsl, tl = L.tl || {}, ly = L.ly || {};
+          // Kết luận của MÁY (L.may, lưu cục bộ, không đổi) phủ thêm câu chấm muộn + kết luận BỐ MẸ đã sửa ở sổ (R46, beMayPhu): ④ tổng khớp ① và khu bố mẹ.
+          const may = this.beMayPhu(de, L);
           const kq = E.chamDe(de, tl, may), sai = new Set(kq.sai), cho = new Set(kq.cho);
           const phan = [], ds = [], choDs = [], viet = [];
           (de.phan || []).forEach((p, pi) => {
@@ -1974,7 +2040,14 @@ window.LS.ham();
         beVietLai(bai, c) { const V = this.beVV(c); V.gui = ''; V.tt = null; V.ly = ''; V.tuKq = null; return this.beVietGui(bai, c); },
         beKdLuyen(kt) { if (BE.mang.has(kt)) this.beMo(kt); },
         beKdMangTen(kt) { const m = BE.mang.get(kt); return m ? m.ten : kt; },
-        beKdLamLai() { const g = this.beDeGocCua(this.beKd.de); this.beMoDe(g.ma, true); },
+        // «Làm lại đề gốc» xoá bài dở của đề gốc (beMoDe(…, true)): đang có bài dở thì HỎI tại chỗ (dải, không confirm() của trình duyệt, không mục lịch sử) — «Làm tiếp bài dở» giữ nó, «Xoá, làm lại từ đầu» như cũ (#7 review A8).
+        beKdLamLai() {
+          const g = this.beDeGocCua(this.beKd.de);
+          if (this.beDeDang(g)) { this.beKdXn = true; this.$nextTick(() => { const e = document.querySelector('[data-be-kq-xn]'); if (e) e.scrollIntoView({ block: 'nearest' }); }); return; }
+          this.beMoDe(g.ma, true);
+        },
+        beKdLamTiep() { const g = this.beDeGocCua(this.beKd.de); this.beKdXn = false; this.beMoDe(g.ma); },
+        beKdXoaLamLai() { const g = this.beDeGocCua(this.beKd.de); this.beKdXn = false; this.beMoDe(g.ma, true); },
         beKdMoi() { const g = this.beDeGocCua(this.beKd.de), n = this.beDeMoiKe(g); if (n.de) this.beMoDe(n.de.ma, false); },
         beKdMoiCo() { return !!this.beKd && !!this.beDeMoiKe(this.beDeGocCua(this.beKd.de)).de; },
       };
@@ -2022,7 +2095,9 @@ window.LS.ham();
         queue: [], at: 0, picked: null, answered: false, wrongAgain: 0,
         log: [], shownAt: 0,
         dangVe: false,
+        veN: 0,         // số lần ve() đã chạy (Back/Forward/hash): beVe đang chờ sổ bỏ quyết định cũ nếu số này đã đổi — token giống lúc bắt đầu chờ chưa chắc là cùng một lần điều hướng
         tokenCua() {
+          if (this.zoom && this.zoomRong && this.mode === 'bt' && this.beOk) return 'anh';
           if (this.locMo) return 'loc';
           if (this.navOpen) return 'menu';
           const m = this.mode, s = this.screen;
@@ -2034,17 +2109,31 @@ window.LS.ham();
           if (m === 'quiz') return s === 'quiz' ? 'trac-nghiem/lam' : 'trac-nghiem';
           return 'tom-tat';
         },
-        laLopPhu(t) { return t === 'loc' || t === 'menu'; },
+        laLopPhu(t) { return t === 'loc' || t === 'menu' || t === 'anh'; },
         async ve(tk) {
+          this.veN++;
           this.dangVe = true;
           try {
+            if (tk === 'anh') {
+              // Lớp phủ ảnh không dựng lại được từ token (Forward / tải trang tại #anh: không còn biết ảnh nào) → thay mục này bằng màn hình đang hiện, không đẩy mục mới
+              if (!this.zoom) { const t = this.tokenCua(); try { history.replaceState({ ...(history.state || {}), token: t }, '', '#' + encodeURI(t)); } catch (e) { /* file:// */ } }
+              return;
+            }
+            // Chỉ lớp phủ ảnh của tab Bài tập (`zoomRong`, vào lịch sử bằng token `anh`) đóng khi Back/Forward tới màn khác. Ảnh phóng ở các tab khác (Tóm tắt, Thẻ, Trắc nghiệm…) KHÔNG vào lịch sử,
+            // `ve()` không đụng tới nó — như trước 2de258b6 (Back chỉ lùi một màn hình).
+            if (this.zoomRong) this.zoom = '';
             if (tk === 'loc') { this.locMo = true; this.navOpen = false; return; }
             if (tk === 'menu') { this.navOpen = true; this.locMo = false; return; }
             this.locMo = false; this.navOpen = false;
             if (tk === 'xong') { this.screen = 'done'; return; }
             if (tk === 'tu-tra') { this.go('hist'); return; }
             // Tab Bài tập ESL: 'bai-tap' (①) · 'bai-tap/luyen/<kt>' (②) · 'bai-tap/de/<ma>' (③) · 'bai-tap/kq/<ma>' (④) — beVe chọn màn; thiếu dữ liệu thì rơi xuống dưới (Tóm tắt)
-            if ((tk === 'bai-tap' || tk.startsWith('bai-tap/')) && this.beOk) { this.go('bt'); this.beVe(tk); return; }
+            if ((tk === 'bai-tap' || tk.startsWith('bai-tap/')) && this.beOk) {
+              if (this.mode === 'bt' && tk === this.beToken()) return;   // đã ở đúng màn hình này (vừa đóng lớp phủ ảnh / menu): dựng lại sẽ cuộn về đầu trang và đặt lại ③
+              // KHÔNG await: beVe có thể chờ sổ ≤ 3 s (đề mới nghi khoá); giữ `ve()` / `dangVe` / `LS.dang` suốt lúc đó thì chuyển màn của con trong 3 s ấy không vào lịch sử và bị beVe ghi đè về sau.
+              // Phần đồng bộ của beVe vẫn chạy trong `dangVe` như cũ; phần sau lúc chờ tự kiểm lại màn hình (beVe).
+              this.go('bt'); this.beVe(tk).catch((e) => console.error(e)); return;
+            }
             if (tk === 'bai-tap') { this.go(this.btOk ? 'bt' : 'summary'); return; }
             if (tk === 'the') { this.go('cards'); return; }
             if (tk === 'the/hoc') { this.go('cards'); this.startLearn(); return; }
@@ -2109,6 +2198,8 @@ window.LS.ham();
           this.chonGan();
           if (location.hash === '#bai-tap') await btNap;   // mở thẳng #bai-tap: phải có dữ liệu trước khi LS vẽ lại màn hình
           if (location.hash.startsWith('#bai-tap')) await beNap;   // … và #bai-tap/luyen/<kt> của môn ESL
+          // Lớp phủ ảnh đóng (bằng cách nào cũng được) thì quay về kiểu phóng thường cho các chỗ dùng `zoom` khác.
+          this.$watch('zoom', (v) => { if (!v) this.zoomRong = false; });
           // Back/hash (ADR 0067). Đăng ký SAU khi có dữ liệu để ve() đặt đúng mode.
           this.$watch(() => this.tokenCua(), (moi, cu) => {
             if (this.dangVe) return;
@@ -2297,6 +2388,10 @@ window.LS.ham();
         // Ảnh đang phóng to (tên file trong study/img/). Rỗng = không phóng.
         // Bấm ảnh để phóng, bấm lần nữa (hoặc Esc) để bỏ.
         zoom: '',
+        // Tab Bài tập ESL: hình cả bài (ô chữ 940 px) phóng ở KÍCH THƯỚC GỐC trong khung cuộn được — `max-w-full` của lớp phủ thường bóp nó còn ~358 px ở 390 px, không to hơn ảnh ở trang.
+        // Lớp phủ này vào lịch sử (token `anh`, ADR 0067) CHỈ ở tab Bài tập: các chỗ khác dùng `zoom` như cũ (không đổi lịch sử).
+        zoomRong: false,
+        zoomAnh(u) { this.zoomRong = true; this.zoom = u; },
         // Ô tìm theo từ khoá trong phần tóm tắt. Lọc TỪNG MẨU nội dung, không
         // lọc cả mục: gõ "oxygen" thì chỉ những từ vựng / ý / hàng bảng có chữ
         // đó còn lại, mục nào không còn gì thì tự ẩn.
@@ -7507,7 +7602,7 @@ registerProcessor('thu-16k',T);`;
           </div>
         </template>
         <template x-if="e.bai.anh_url">
-          <button type="button" data-be-anh @click.stop="zoom = e.bai.anh_url" aria-label="Phóng to hình" class="my-2 block w-full cursor-zoom-in overflow-hidden rounded-lg border border-slate-200 bg-white p-0">
+          <button type="button" data-be-anh @click.stop="zoomAnh(e.bai.anh_url)" aria-label="Phóng to hình" class="my-2 block w-full cursor-zoom-in overflow-hidden rounded-lg border border-slate-200 bg-white p-0">
             <img :src="e.bai.anh_url" alt="Hình của bài tập" loading="lazy" class="block h-auto w-full">
           </button>
         </template>
@@ -7549,13 +7644,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -7613,13 +7708,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -7672,13 +7767,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -7746,13 +7841,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -7806,13 +7901,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -7893,13 +7988,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -7971,13 +8066,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -8031,13 +8126,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -8101,13 +8196,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -8177,13 +8272,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -8238,13 +8333,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -8418,7 +8513,7 @@ registerProcessor('thu-16k',T);`;
           </div>
         </template>
         <template x-if="e.bai.anh_url">
-          <button type="button" data-be-anh @click.stop="zoom = e.bai.anh_url" aria-label="Phóng to hình" class="my-2 block w-full cursor-zoom-in overflow-hidden rounded-lg border border-slate-200 bg-white p-0">
+          <button type="button" data-be-anh @click.stop="zoomAnh(e.bai.anh_url)" aria-label="Phóng to hình" class="my-2 block w-full cursor-zoom-in overflow-hidden rounded-lg border border-slate-200 bg-white p-0">
             <img :src="e.bai.anh_url" alt="Hình của bài tập" loading="lazy" class="block h-auto w-full">
           </button>
         </template>
@@ -8460,13 +8555,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -8524,13 +8619,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -8583,13 +8678,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -8657,13 +8752,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -8717,13 +8812,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -8804,13 +8899,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -8882,13 +8977,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -8942,13 +9037,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -9012,13 +9107,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -9088,13 +9183,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -9149,13 +9244,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -9365,7 +9460,7 @@ registerProcessor('thu-16k',T);`;
           </div>
         </template>
         <template x-if="e.bai.anh_url">
-          <button type="button" data-be-anh @click.stop="zoom = e.bai.anh_url" aria-label="Phóng to hình" class="my-2 block w-full cursor-zoom-in overflow-hidden rounded-lg border border-slate-200 bg-white p-0">
+          <button type="button" data-be-anh @click.stop="zoomAnh(e.bai.anh_url)" aria-label="Phóng to hình" class="my-2 block w-full cursor-zoom-in overflow-hidden rounded-lg border border-slate-200 bg-white p-0">
             <img :src="e.bai.anh_url" alt="Hình của bài tập" loading="lazy" class="block h-auto w-full">
           </button>
         </template>
@@ -9407,13 +9502,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -9471,13 +9566,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -9530,13 +9625,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -9604,13 +9699,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -9664,13 +9759,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -9751,13 +9846,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -9829,13 +9924,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -9889,13 +9984,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -9959,13 +10054,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -10035,13 +10130,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -10096,13 +10191,13 @@ registerProcessor('thu-16k',T);`;
         <p>Đáp án: <b data-be-dap>
           <template x-if="e.bai.kieu === 'noi'"><span class="inline-flex flex-wrap items-center gap-1.5 align-middle">
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).trai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).trai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && beNoiVe(e.bai, c, c.dap).trai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).trai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).trai && !beNoiVe(e.bai, c, c.dap).trai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).trai, e.bai)"></span></template>
 </span>
 <span>→</span>
 <span class="inline-flex items-center gap-1 align-middle">
-  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" class="h-10 w-10 shrink-0 rounded border border-slate-200 bg-white object-cover"></template>
+  <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.anh_url"><img data-be-hinh :src="beNoiVe(e.bai, c, c.dap).phai.anh_url" :alt="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)" loading="lazy" @click.stop="zoomAnh(beNoiVe(e.bai, c, c.dap).phai.anh_url)" class="h-10 w-10 shrink-0 cursor-zoom-in rounded border border-slate-200 bg-white object-cover"></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && beNoiVe(e.bai, c, c.dap).phai.nhan"><b x-text="beNoiVe(e.bai, c, c.dap).phai.nhan + '.'"></b></template>
   <template x-if="beNoiVe(e.bai, c, c.dap).phai && !beNoiVe(e.bai, c, c.dap).phai.anh_url"><span x-text="beVeChu(beNoiVe(e.bai, c, c.dap).phai, e.bai)"></span></template>
 </span>
@@ -10235,9 +10330,18 @@ registerProcessor('thu-16k',T);`;
       </template>
     </div>
 
-    <div class="flex flex-wrap items-center gap-2 border-t border-slate-200 pb-16 pt-3">
-      <button type="button" data-be-kq-lam-lai @click="beKdLamLai()" class="min-h-10 rounded-[10px] border border-indigo-600 bg-white px-4 text-[15px] font-semibold text-indigo-700">Làm lại đề gốc</button>
-      <template x-if="beKdMoiCo()"><button type="button" data-be-kq-moi @click="beKdMoi()" class="min-h-10 rounded-[10px] border border-indigo-600 bg-indigo-600 px-4 text-[15px] font-semibold text-white">🔄 Đề mới cùng cấu trúc</button></template>
+    <div class="border-t border-slate-200 pb-16 pt-3">
+      <template x-if="beKdXn">
+        <div data-be-kq-xn class="mb-2 flex flex-wrap items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-[14px] text-amber-900">
+          <span class="grow font-semibold">Đề gốc đang có bài làm dở</span>
+          <button type="button" data-be-kq-tiep @click="beKdLamTiep()" class="min-h-9 rounded-[10px] border border-indigo-600 bg-indigo-600 px-3 text-sm font-semibold text-white">Làm tiếp bài dở</button>
+          <button type="button" data-be-kq-xoa @click="beKdXoaLamLai()" class="min-h-9 rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-700">Xoá, làm lại từ đầu</button>
+        </div>
+      </template>
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button" data-be-kq-lam-lai @click="beKdLamLai()" class="min-h-10 rounded-[10px] border border-indigo-600 bg-white px-4 text-[15px] font-semibold text-indigo-700">Làm lại đề gốc</button>
+        <template x-if="beKdMoiCo()"><button type="button" data-be-kq-moi @click="beKdMoi()" class="min-h-10 rounded-[10px] border border-indigo-600 bg-indigo-600 px-4 text-[15px] font-semibold text-white">🔄 Đề mới cùng cấu trúc</button></template>
+      </div>
     </div>
   </div>
   </template>
@@ -10557,15 +10661,19 @@ registerProcessor('thu-16k',T);`;
        không đủ to để nhìn rõ, mà lại đẩy cả trang nhảy chỗ.
        x-if chứ không x-show: :src vẫn bind khi ẩn → tải "study/img/" (404). -->
   <template x-if="zoom">
-    <div @click="zoom = ''" @keydown.escape.window="zoom = ''"
-         class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 p-4 cursor-zoom-out">
+    <div data-zoom-lop @click="zoom = ''" @keydown.escape.window="zoom = ''"
+         :class="zoomRong ? 'overflow-auto' : 'items-center justify-center'"
+         class="fixed inset-0 z-50 flex bg-slate-900/80 p-4 cursor-zoom-out">
       <!-- `zoom` giữ NGUYÊN đường dẫn của ảnh vừa bấm, không phải tên file: mỗi
            chỗ vẽ ảnh tự dựng src theo cách của nó, ghép tiền tố lần nữa ở đây là
            ra "study/img/study/img/…" và ảnh 404 mà lớp phủ vẫn hiện. -->
+      <!-- zoomRong: ảnh ở KÍCH THƯỚC GỐC (`max-w-none shrink-0`), khung ngoài cuộn / kéo được; `m-auto` thay `justify-center` để ảnh hẹp vẫn ở giữa mà ảnh rộng không bị cụt cạnh trái. -->
       <img :src="zoom" alt=""
-           class="max-h-[88vh] max-w-full rounded-lg bg-white shadow-2xl object-contain">
+           :class="zoomRong ? 'm-auto h-auto w-auto max-w-none shrink-0' : 'max-h-[88vh] max-w-full object-contain'"
+           class="rounded-lg bg-white shadow-2xl">
       <button @click.stop="zoom = ''" type="button" title="Đóng"
-              class="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/90 text-slate-700 text-xl leading-none hover:bg-white">✕</button>
+              class="fixed top-3 right-3 w-10 h-10 rounded-full bg-white/90 text-slate-700 text-xl leading-none hover:bg-white">✕</button>
+      <span x-show="zoomRong" class="pointer-events-none fixed bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-slate-900/70 px-3 py-1 text-xs text-white">Kéo để xem · chạm để đóng</span>
     </div>
   </template>
   <!-- Chiều cao khối dính ĐO bằng ResizeObserver, không viết cứng: tên môn dài

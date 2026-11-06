@@ -41,7 +41,8 @@
  */
 import { cham, docSo } from "./toan_cham.8b68da1a.js";
 
-export const TEN_MUC = ["Chưa làm", "Đang học", "Làm được", "Thành thạo", "Vững"];
+// Nhãn năm mức: bộ CHUNG mọi môn (worker/muc_ten.js). Re-export để trang con ôn tập + khu bố mẹ vẫn lấy `TEN_MUC` từ mô-đun này.
+export { TEN_MUC } from "./muc_ten.1e257d96.js";
 
 // ═══════════════════════════ Số hữu tỉ chính xác ═══════════════════════════
 
@@ -882,10 +883,10 @@ const soSanhId = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
  *           thuộc `cacY` (bài đã sửa / gỡ khỏi nội dung) bị bỏ.
  *   cacY  = [{id, kt, tier}] — các NHÓM (item ghi sổ), kể cả nhóm của biến thể: `cacNhom(doc)`.
  *   now   = epoch giây.
- *   0 Chưa làm: chưa có lượt · 1 Đang học: có lượt ·
+ *   0 Chưa học: chưa có lượt · 1 Đang học: có lượt ·
  *   2 Làm được: ≥ 3 lượt g = 3 trong 5 lượt GẦN NHẤT của kiến thức, và các lượt g = 3 đó thuộc ≥ 2 item khác nhau ·
  *   3 Thành thạo: mức 2, có g = 3 (bất kỳ lúc nào) ở một item practice hoặc challenge, và ở một item challenge nếu kiến thức có item challenge ·
- *   4 Vững: mức 3, có g = 3 ở hai ngày (lịch giờ VN) cách nhau ≥ 7 ngày.
+ *   4 Học bá: mức 3, có g = 3 ở hai ngày (lịch giờ VN) cách nhau ≥ 7 ngày.
  * Mọi kiến thức xuất hiện trong `cacY` đều có mặt trong kết quả.
  */
 export function mucKt(luot, cacY, now) {

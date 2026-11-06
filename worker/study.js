@@ -220,15 +220,16 @@ export async function readStats(env, user, course, minN = 2, limit = 20) {
  * từng có lượt g ≤ 1), mức theo mảng và danh sách câu sai từ đây (GET /api/study/bt, CẦN mã bí mật như /api/study/stats và
  * /api/toan: hồ sơ điểm yếu của trẻ). `x` ("Con điền", ≤ 2400 ký tự) CHỈ trả ở (1) dòng tổng lượt nộp đề (`c = 'de'`, JSON lượt nộp: điểm từng phần,
  * câu chờ chấm) và (2) dòng câu CHẤM MUỘN (JSON khuôn viết có `"lu":` = giờ nộp lượt = `tn` trong x của dòng tổng — Gemini chấm sau, ghi thêm một dòng vì dòng tổng bất biến):
- * trang và khu bố mẹ cộng chúng vào điểm lượt (`diemLuot`, worker/bai_tap_esl.js) ở MỌI máy. Chữ con gõ ở từng câu thường không cần cho trang và để lộ nó
- * ra GET là thừa (mẫu `'{%"lu":%'` chỉ khớp khoá thật của JSON: chữ con gõ vào JSON luôn bị escape thành `\"lu\"`).
+ * trang và khu bố mẹ cộng chúng vào điểm lượt (`diemLuot`, worker/bai_tap_esl.js) ở MỌI máy; và (3) dòng câu BỐ MẸ ĐÃ SỬA kết luận (JSON có khoá `"bm":`, `bt/sua`) — trang con áp cùng chênh lệch
+ * như khu bố mẹ (`diemLuotBm`, R46; chỉ vài dòng). Chữ con gõ ở từng câu thường không cần cho trang và để lộ nó
+ * ra GET là thừa (mẫu `'{%"lu":%'` / `'{%"bm":%'` chỉ khớp khoá thật của JSON: chữ con gõ vào JSON luôn bị escape thành `\"lu\"`).
  * → {rows: [[i, c, g, ts, x]]} cũ → mới. 1 câu lệnh, 3 tham số. Chỉ MAX_DONG_BT dòng mới nhất: quá số đó thì phần CŨ NHẤT bị bỏ (trang chỉ mất «lần đúng đầu tiên» / mức của câu rất cũ;
  * sổ ⭐ nằm ở bảng `diem`, không đọc từ đây).
  */
 export async function readLuotBt(env, user, course) {
   const r = await env.STUDY_DB.prepare(
     `SELECT item_id, concept_id, grade, ts, x FROM (
-       SELECT id, item_id, concept_id, grade, ts, CASE WHEN concept_id = 'de' OR chose LIKE '{%"lu":%' THEN chose END AS x
+       SELECT id, item_id, concept_id, grade, ts, CASE WHEN concept_id = 'de' OR chose LIKE '{%"lu":%' OR chose LIKE '{%"bm":%' THEN chose END AS x
          FROM attempt WHERE user_id = ?1 AND course = ?2 AND item_id LIKE 'b.%' ORDER BY ts DESC, id DESC LIMIT ?3
      ) ORDER BY ts, id`
   )
