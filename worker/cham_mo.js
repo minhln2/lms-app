@@ -1,7 +1,7 @@
 /**
  * Chấm CÂU MỞ (kiểu `mo`) của tab «Bài tập» ESL 5 bằng Gemini — plan 2026-11-06-bai-tap-esl-cau-mo, Task 4 (K3–K5, K10).
  *
- * MỘT câu mỗi yêu cầu (trang gửi song song các câu «cần chấm» của bài). Khác `cham_lai` (lô, không đếm, không ghi sổ), câu mở theo khuôn `cham_viet`:
+ * MỘT câu trả lời mỗi yêu cầu (trang gửi song song các câu «cần chấm» của bài). Khác `cham_lai` (lô, không đếm, không ghi sổ), câu mở theo khuôn `cham_viet`:
  * trần 3 lượt / câu / ngày VN (`LUOT_CAU`, đếm ở D1 `attempt` bằng `demLuot` — Worker tự ghi dòng nên sổ = bộ đếm), Worker ghi sổ bằng `writeSession`
  * (⭐ lần đúng đầu tiên qua `congOn` › `chonLanDau`), mỗi lượt Gemini ăn đúng 1 của trần chung 300/ngày (`tieuThu`, chung tra cứu + cham_viet + cham_lai).
  *
@@ -34,7 +34,7 @@ export const LY_MO_THAY = "Con đọc lại yêu cầu và các tiêu chí của
 /** Lời chỉ hướng của câu bị chặn trước (không tới Gemini, không tính lượt, không ghi sổ) — theo mã của `moChanMay`. Không chứa câu mẫu. */
 export const LY_MO_CHAN = {
   ngan: "Câu của con ngắn quá, con viết thành một câu đầy đủ nhé.",
-  dai: "Câu của con dài quá, con viết gọn lại trong một câu nhé.",
+  dai: "Câu của con dài quá, con viết gọn lại nhé.",
   chep: "Con mới chép lại phần cho sẵn, con viết thêm phần còn thiếu nhé.",
   lenh: "Con viết câu trả lời bằng tiếng Anh theo yêu cầu của bài nhé.",
 };
@@ -42,11 +42,11 @@ export const LY_MO_CHAN = {
 // ═══════════════════════════ Prompt + schema ═══════════════════════════
 
 export const HE_MO = [
-  "Bạn chấm MỘT câu tiếng Anh do một học sinh lớp 5 người Việt (trình độ A2–B1) TỰ VIẾT. Đầu vào có YÊU CẦU của bài, PHẦN CHO SẴN (có thể không có; «___» là chỗ học sinh viết), có thể có BÀI ĐỌC, các TIÊU CHÍ, MỘT CÁCH VIẾT ĐÚNG, và câu của học sinh nằm giữa <<<CAU>>> và <<<HET>>>.",
-  "Trả `dat` và `ly`. `dat` = true chỉ khi câu của học sinh: (1) làm ĐÚNG việc YÊU CẦU và các TIÊU CHÍ đòi (đúng cấu trúc đề đòi, có modal khi đề đòi, dùng đúng động từ cho sẵn); (2) đúng ngữ pháp và là một câu hoàn chỉnh; (3) hợp nghĩa với PHẦN CHO SẴN và BÀI ĐỌC (nếu có).",
+  "Bạn chấm CÂU TRẢ LỜI tiếng Anh do một học sinh lớp 5 người Việt (trình độ A2–B1) TỰ VIẾT — thường là một câu, có thể vài câu khi YÊU CẦU hay TIÊU CHÍ đòi. Đầu vào có YÊU CẦU của bài, PHẦN CHO SẴN (có thể không có; «___» là chỗ học sinh viết), có thể có BÀI ĐỌC, các TIÊU CHÍ, MỘT CÁCH VIẾT ĐÚNG, và câu trả lời của học sinh nằm giữa <<<CAU>>> và <<<HET>>>.",
+  "Trả `dat` và `ly`. `dat` = true chỉ khi câu trả lời của học sinh: (1) làm ĐÚNG việc YÊU CẦU và các TIÊU CHÍ đòi (đúng cấu trúc đề đòi, có modal khi đề đòi, dùng đúng động từ cho sẵn, đủ số câu TIÊU CHÍ đòi); (2) đúng ngữ pháp; mỗi câu hoàn chỉnh, trừ khi TIÊU CHÍ cho phép trả lời ngắn (cụm từ) — khi đó cụm ngắn đúng ý vẫn đạt; (3) hợp nghĩa với PHẦN CHO SẴN và BÀI ĐỌC (nếu có).",
   "Khác câu mẫu không có nghĩa là sai: MỘT CÁCH VIẾT ĐÚNG chỉ là một ví dụ, câu khác mà thoả cả ba điều trên vẫn đúng. Không bắt câu của học sinh giống nó.",
   "Học sinh có thể chỉ viết phần còn thiếu (chỗ «___») hoặc viết lại cả câu: khi chỉ viết phần còn thiếu thì chấm câu GHÉP phần đó vào PHẦN CHO SẴN.",
-  "Có BÀI ĐỌC thì câu trả lời phải dựa vào BÀI ĐỌC: trả lời sai với bài, hoặc nêu ý bài không có, thì dat = false dù câu đúng ngữ pháp.",
+  "Có BÀI ĐỌC thì câu trả lời phải dựa vào BÀI ĐỌC: trả lời sai với bài, hoặc nêu ý bài không có, thì dat = false dù câu đúng ngữ pháp — trừ khi TIÊU CHÍ nói đây là câu hỏi về chính học sinh (không cần dựa vào bài đọc): khi đó chỉ xét theo TIÊU CHÍ.",
   "`ly`: MỘT câu tiếng Việt ngắn (dưới 100 ký tự), xưng «con», chỉ hướng chỗ cần xem lại (phần nào của yêu cầu / tiêu chí). KHÔNG viết câu tiếng Anh nào, KHÔNG nói ra hay sửa hộ câu đúng, không chép câu mẫu. Nếu dat = true thì `ly` rỗng hoặc một lời khen ngắn.",
   "Giữ nguyên thuật ngữ tiếng Anh, không dịch sang tiếng Việt (modal verb, passive, present perfect, past simple, relative pronoun, …): không viết «câu bị động», «thì quá khứ đơn».",
   "Ví dụ — SAI: «Con thiếu will, phải viết we will stay at home.» (viết hộ câu). ĐÚNG: «Con xem lại modal verb mà đề yêu cầu nhé.»",
