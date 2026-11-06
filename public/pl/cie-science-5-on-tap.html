@@ -120,7 +120,7 @@ window.LS.ham();
   <title>Ôn tập · CIE Science 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.a1f4951b.css">
+  <link rel="stylesheet" href="../assets/tw.f5f575e9.css">
   
   <script type="module">
     import { sched, phatLai } from "../assets/lich_on.ebee479f.js";
@@ -1981,6 +1981,7 @@ window.LS.ham();
     }
 
 
+    const UNIT_CUA = new WeakMap();   // unitCua(): this.data → Map(id concept → id Unit)
     function studyStore(user, course) {
       return {
         ...baiTapStore(),
@@ -2758,12 +2759,10 @@ timMo: false,
         // (theo thứ tự dữ liệu, không theo phạm vi hay bộ lọc) — để số không đổi khi chọn mục khác.
         // Không dùng ①②… nữa: chủ dự án thấy khó đọc (ADR 0071, 2026-10-30).
         soThe(tp) {
-          const D = this.data || {}, U = new Set(this.units.map(u => u.id));
-          const by = new Map((D.concepts || []).map(c => [c.id, c]));
-          const unitOf = (id) => { let c = by.get(id); while (c && !U.has(c.id)) c = c.parent ? by.get(c.parent) : null; return c ? c.id : ''; };
+          const D = this.data || {};
           const dem = {};
           for (const s of (D.summary || [])) {
-            const k = unitOf(s.concept);
+            const k = this.unitCua(s.concept);
             for (const t of (s.topics || [])) {
               if (!t.rule) continue;
               dem[k] = (dem[k] || 0) + 1;
@@ -2771,6 +2770,35 @@ timMo: false,
             }
           }
           return '';
+        },
+        // Unit (tầng `units`) chứa khái niệm `id` — '' nếu không thuộc Unit nào.
+        // Bảng tra id → Unit dựng MỘT lần cho mỗi bản dữ liệu (WeakMap NGOÀI Alpine: ghi vào state phản ứng giữa lượt vẽ sẽ kích vẽ lại).
+        unitCua(id) {
+          const D = this.data || {};
+          let m = UNIT_CUA.get(D);
+          if (!m) {
+            const U = new Set(this.units.map(u => u.id)), by = new Map((D.concepts || []).map(c => [c.id, c]));
+            m = new Map();
+            for (const c0 of (D.concepts || [])) {
+              let c = c0;
+              while (c && !U.has(c.id)) c = c.parent ? by.get(c.parent) : null;
+              m.set(c0.id, c ? c.id : '');
+            }
+            UNIT_CUA.set(D, m);
+          }
+          return m.get(id) || '';
+        },
+        // Khối «🎯 … what you need to know» là của CẢ UNIT (dữ liệu khai ở `can_biet` của một mục bất kỳ trong Unit — nay ở mục đầu).
+        // Vẽ MỘT lần, ngay TRÊN mục đầu tiên đang hiện của Unit đó: chọn phạm vi 3.2… khối vẫn còn (trước đây nằm trong thẻ 3.1 nên mất).
+        // Ẩn khi đang lọc / tìm (đích có thể đang bị lọc); bấm dòng thì toiKhoi() bỏ lọc.
+        cbTruoc(sec) {
+          if (this.filtering) return null;
+          const u = this.unitCua(sec.concept);
+          if (!u) return sec.can_biet || null;
+          const dau = this.shownSummary.find(x => this.unitCua(x.concept) === u);
+          if (dau !== sec) return null;
+          const co = (this.data?.summary || []).find(x => x.can_biet && this.unitCua(x.concept) === u);
+          return co ? co.can_biet : null;
         },
         theId(tp) { return 'tp-' + String(tp.concept || '').replaceAll('.', '-'); },
         // Số thẻ học / câu hỏi gắn ĐÚNG khái niệm của thẻ — chỉ để quyết định có HIỆN link 🃏 / 📝 ở chân thẻ (0 thì ẩn).
@@ -5723,6 +5751,36 @@ registerProcessor('thu-16k',T);`;
       </p>
 
       <template x-for="sec in shownSummary" :key="sec.concept">
+        <div>
+        <!-- ── 🎯 «… what you need to know» (ESL 5 Unit 3): khối ĐIỀU HƯỚNG của CẢ UNIT, đứng riêng TRÊN mục đầu đang hiện (cbTruoc) — không có
+             ô «đã thuộc» (không có gì để thuộc: mỗi dòng là lối tắt tới khung / thẻ từ, tick ở đích). -->
+        <template x-for="cb in [cbTruoc(sec)].filter(Boolean)" :key="'cbu'">
+          <div data-can-biet class="no-print mb-5">
+            <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 px-4 py-3">
+              <p class="text-[13px] font-bold tracking-wide text-indigo-900" x-text="cb.title"></p>
+              <template x-for="(nh, ni) in (cb.nhom || [])" :key="'cb' + ni">
+                <div class="mt-2">
+                  <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500" x-text="nh.ten"></p>
+                  <ul>
+                    <template x-for="(dg, di) in (nh.dong || [])" :key="di">
+                      <li>
+                        <template x-if="dg.toi">
+                          <button type="button" data-can-biet-dong @click="toiKhoi(dg.toi)"
+                                  class="flex min-h-8 w-full items-center justify-between gap-2 py-1 text-left text-sm font-medium text-indigo-800 hover:underline">
+                            <span x-text="dg.t"></span><span class="shrink-0 text-indigo-400" aria-hidden="true">›</span>
+                          </button>
+                        </template>
+                        <template x-if="!dg.toi">
+                          <p class="py-1 text-sm text-slate-800" x-text="dg.t"></p>
+                        </template>
+                      </li>
+                    </template>
+                  </ul>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
         <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           <div class="px-5 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center gap-2.5">
             <!-- Ô của mục KHÔNG có trạng thái riêng: luôn suy từ các từ bên trong
@@ -5739,36 +5797,6 @@ registerProcessor('thu-16k',T);`;
             <h3 class="text-lg font-bold text-indigo-900" x-html="hl(conceptName(sec.concept))"></h3>
             <p x-show="codesOf(sec.concept).length" class="mt-1 flex flex-wrap gap-1"><template x-for="cd in codesOf(sec.concept)" :key="cd"><span class="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-500" x-text="cd"></span></template></p>
           </div>
-
-          <!-- ── 🎯 «Con cần biết» (ESL 5 Unit 3): khối ĐIỀU HƯỚNG ở mục đầu của Unit — không có ô «đã thuộc» (không có gì để thuộc: mỗi
-               dòng là lối tắt tới khung / thẻ từ, tick ở đích). Ẩn khi đang lọc / tìm (đích có thể đang bị lọc); bấm dòng thì toiKhoi() bỏ lọc. -->
-          <template x-if="sec.can_biet && !filtering">
-            <div data-can-biet class="no-print px-5 pt-4">
-              <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 px-4 py-3">
-                <p class="text-[13px] font-bold tracking-wide text-indigo-900" x-text="sec.can_biet.title"></p>
-                <template x-for="(nh, ni) in (sec.can_biet.nhom || [])" :key="'cb' + ni">
-                  <div class="mt-2">
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500" x-text="nh.ten"></p>
-                    <ul>
-                      <template x-for="(dg, di) in (nh.dong || [])" :key="di">
-                        <li>
-                          <template x-if="dg.toi">
-                            <button type="button" data-can-biet-dong @click="toiKhoi(dg.toi)"
-                                    class="flex min-h-8 w-full items-center justify-between gap-2 py-1 text-left text-sm font-medium text-indigo-800 hover:underline">
-                              <span x-text="dg.t"></span><span class="shrink-0 text-indigo-400" aria-hidden="true">›</span>
-                            </button>
-                          </template>
-                          <template x-if="!dg.toi">
-                            <p class="py-1 text-sm text-slate-800" x-text="dg.t"></p>
-                          </template>
-                        </li>
-                      </template>
-                    </ul>
-                  </div>
-                </template>
-              </div>
-            </div>
-          </template>
 
           <!-- Ý lớn: một câu, chữ to, để nhớ được cả mục -->
           <div x-show="sec.big_en && (!qq || hit(sec.big_en))" x-cloak class="px-5 py-4">
@@ -6574,6 +6602,7 @@ registerProcessor('thu-16k',T);`;
             </template>
           </div>
         </section>
+        </div>
       </template>
     </div>
     </template>
