@@ -331,8 +331,9 @@ export const cacSo = (s, hai = false, daThay = null) => (String(s ?? "").match(S
   const z = (x) => x.replace(/^0+(?=\d)/, "");
   return g ? [(g[1] ? z(g[1]) + " " : "") + z(g[2]) + "/" + z(g[3])] : docSo(t, hai, daThay);
 });
-/** `cacSo` + các số thành phần của phân số / hỗn số (con đã THẤY «3» và «5» khi đề có {3/5}). Dùng cho phía «đã hiện cho con». */
-const cacSoVaPhan = (s, hai = false) => cacSo(s, hai).flatMap((n) => (n.includes("/") ? [n, ...n.split(/[\s/]+/)] : [n]));
+/** `cacSo` + các số thành phần của phân số / hỗn số (con đã THẤY «3» và «5» khi đề có {3/5}). Dùng cho phía «đã hiện cho con». `daThay` như ở `cacSo`
+ * (số con đã thấy trên đề: «5,807» con nhắc lại từ đề chỉ còn cách đọc 5807). */
+const cacSoVaPhan = (s, hai = false, daThay = null) => cacSo(s, hai, daThay).flatMap((n) => (n.includes("/") ? [n, ...n.split(/[\s/]+/)] : [n]));
 
 /** Giá trị MÁY TÍNH (đáp số): tong mean median mode range tong_can che của mọi tập + `dap_so` của mục (đáp số máy tính lúc build cho bài không
  * thống kê — Unit 8: đáp của ô anh em, số trong bài mẫu mà đề chưa cho). */
@@ -480,8 +481,9 @@ export function kiemKetQua(d, muc, cau, camVi = []) {
   const soLieu = Array.isArray(muc?.so_lieu) ? muc.so_lieu : [];
   const may = giaTriMay(soLieu, muc?.dap_so);
   const theoKhoa = giaTriTheoKhoa(soLieu);
-  const cauSo = new Set(cacSoVaPhan(cau, true));   // chữ của con: «5,807» có thể là 5807 hoặc 5.807 → cả hai cách đọc
-  const ngoai = new Set([...cauSo, ...cacSoVaPhan(muc?.de)]);   // đã hiện cho con: câu con, đề (đề là tiếng Anh: «5,807» = 5807)
+  const soDe = new Set(cacSoVaPhan(muc?.de));   // số trên đề (tiếng Anh: «5,807» = 5807, MỘT cách đọc)
+  const cauSo = new Set(cacSoVaPhan(cau, true, soDe));   // chữ của con: «5,807» có thể là 5807 hoặc 5.807 → cả hai cách đọc, trừ khi 5807 đã in trên đề (con nhắc lại số đề: không kéo 5.807 vào «đã hiện»)
+  const ngoai = new Set([...cauSo, ...soDe]);   // đã hiện cho con: câu con, đề
   for (const s of soLieu) {
     for (const x of Array.isArray(s.so) ? s.so : []) cacSoVaPhan(x).forEach((n) => ngoai.add(n));
     cacSoVaPhan(s.ten).forEach((n) => ngoai.add(n));

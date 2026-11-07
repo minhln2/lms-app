@@ -120,7 +120,7 @@ window.LS.ham();
   <title>Ôn tập · CIE Science 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.b29a5bd8.css">
+  <link rel="stylesheet" href="../assets/tw.ec605ff6.css">
   
   <script type="module">
     import { sched, phatLai } from "../assets/lich_on.ebee479f.js";
@@ -428,6 +428,8 @@ window.LS.ham();
           if (K && K.cells && id in K.cells) delete K.cells[id];
         },
         btNone(y, id) { this.btNhapO(y, id, this.btTL[y.id][id] === 'none' ? '' : 'none'); },
+        // Ô CHỮ là <textarea rows=1> tự giãn: đặt chiều cao theo nội dung (scrollHeight + viền). Đang ẩn (tab khác) thì scrollHeight = 0 → để `auto` (min-h-10 giữ một dòng).
+        btFit(el) { if (!el || !el.isConnected) return; el.style.height = 'auto'; const h = el.scrollHeight + el.offsetHeight - el.clientHeight; if (h > 0) el.style.height = h + 'px'; },
         btCls(y, id) {   // viền + nền ô số theo kết quả
           const kq = ((this.btKq[y.id] || {}).cells || {})[id], tat = this.btTL[y.id][id] === 'none';
           if (kq === 'dung') return 'border-emerald-500 bg-emerald-50';
@@ -6930,11 +6932,11 @@ registerProcessor('thu-16k',T);`;
           <!-- Các ý -->
           <div class="mt-3 space-y-3">
           <template x-for="(y, yi) in e.b.y" :key="y.id">
-            <!-- Mỗi ý một khối: ý thứ hai trở đi có vạch ngăn phía trên; chữ cái của ý (a, b, c) là huy hiệu tròn riêng (kiểu số bước của thẻ tóm tắt),
+            <!-- Mỗi ý một khối: ý thứ hai trở đi có vạch ngăn phía trên; chữ cái của ý (a, b, c) là huy hiệu tròn riêng (kiểu số bước của thẻ tóm tắt; nhãn dài «c(ii)» thì co giãn thành viên thuốc `min-w-6 px-1.5`, CC-02),
                  KHÔNG dính vào chữ của đề. Ý `the` thứ hai trở đi không vẽ gì (cả nhóm dùng chung một hàng thẻ) nên ẩn hẳn, khỏi để lại vạch + khoảng trống. -->
             <div data-bt-y :data-kieu="y.kieu" x-show="btYHien(e.b, y)" :class="yi > 0 ? 'border-t border-slate-200 pt-3' : ''">
               <div x-show="y.kieu !== 'the' && (y.en_html || (y.nhan && e.b.y.length > 1))" class="flex items-start gap-2.5">
-                <span data-bt-nhan x-show="y.nhan" class="mt-px grid h-6 w-6 shrink-0 place-items-center rounded-full bg-indigo-600 text-sm font-bold leading-none text-white" x-text="y.nhan"></span>
+                <span data-bt-nhan x-show="y.nhan" class="mt-px grid h-6 min-w-6 shrink-0 place-items-center whitespace-nowrap rounded-full bg-indigo-600 px-1.5 text-sm font-bold leading-none text-white" x-text="y.nhan"></span>
                 <div class="min-w-0 flex-1">
                   <p data-bt-y-de class="whitespace-pre-line text-[15.5px]" x-html="y.en_html || ''"></p>
                   <p x-show="btVi && y.vi_html" class="whitespace-pre-line text-[13.5px] italic text-slate-500" x-html="y.vi_html || ''"></p>
@@ -6960,18 +6962,26 @@ registerProcessor('thu-16k',T);`;
                     <div :data-bt-goi-y="d.gy ? 'dong' : null" :class="d.gy ? 'rounded-lg border border-dashed border-amber-300 bg-amber-50 px-2 py-1.5' : ''" class="flex flex-wrap items-center gap-1.5 text-[17px]">
                       <span x-show="d.dau" data-bt-goi-y-nhan class="w-full text-[11px] font-bold uppercase tracking-wider text-amber-700">💡 Gợi ý</span>
                       <template x-for="(p, pi) in d.ln" :key="pi">
-                        <span class="inline-flex items-center gap-1.5">
+                        <span :class="p.o && btCell(y, p.o).dap_chu ? 'min-w-[16rem] flex-1' : ''" class="inline-flex items-center gap-1.5">
                           <template x-if="p.html !== undefined"><span x-html="p.html"></span></template>
                           <template x-if="p.o">
-                            <span class="inline-flex flex-wrap items-center gap-1.5">
+                            <span :class="btCell(y, p.o).dap_chu ? 'min-w-0 flex-1' : ''" class="inline-flex flex-wrap items-center gap-1.5">
                               <!-- ý có đáp số phân số (Unit 8): bàn phím chữ để gõ được "/" và dấu cách (3/4, 1 3/20) — bàn phím decimal của iPad không có; xét theo CẢ Ý để không lộ ô nào là phân số.
-                                   Ô phép tính (`bt` "= …": 20.478, 1 19/20) rộng hơn. Ô CHỮ (`dap_chu`, `[[= chu(x)]]`: «fifty-six point zero eight two»): bàn phím chữ + ô rộng 16rem (≤ 257 px).
+                                   Ô phép tính (`bt` "= …": 20.478, 1 19/20) rộng hơn. Ô CHỮ (`dap_chu`, `[[= chu(x)]]`: «fifty-six point zero eight two») là <textarea rows=1> TỰ GIÃN, rộng hết phần còn lại của dòng (`flex-1`, tối thiểu 16rem): word form dài («eight hundred and thirteen thousand, five hundred and ninety-three point zero zero eight», ~865 px ở 17 px) xuống dòng thay vì cuộn ngang trong ô 256 px; Enter không xuống dòng mà bỏ focus (đáp án một dòng).
                                    Ý có ô `am` (số âm): bàn phím chữ cho cả ý (`btYAm`). Ô nhiều giá trị (`uoc_chung`…): bàn phím chữ + placeholder «cách nhau dấu phẩy» + ô rộng 12rem, chữ gợi ý nhỏ hơn chữ gõ để vừa ô (`btNhieuGt`). -->
-                              <input type="text" :inputmode="btYPhanSo(y) || btYAm(y) || btCell(y, p.o).dap_chu || btNhieuGt(y, btCell(y, p.o)) ? 'text' : 'decimal'" autocomplete="off" autocapitalize="off" spellcheck="false" data-bt-o :data-o="p.o"
+                              <template x-if="btCell(y, p.o).dap_chu">
+                                <textarea rows="1" inputmode="text" enterkeyhint="done" autocomplete="off" autocapitalize="off" spellcheck="false" data-bt-o :data-o="p.o"
+                                          x-init="$nextTick(() => btFit($el))" @resize.window="btFit($el)" @keydown.enter.prevent="$el.blur()"
+                                          :value="btO(y, p.o)" @input="btNhapO(y, p.o, $event.target.value); btFit($el)" :aria-label="'Ô ' + p.o" :class="btCls(y, p.o)"
+                                          class="block min-h-10 w-full resize-none overflow-hidden rounded-lg border-[1.5px] px-2 py-[7px] text-left text-[17px] font-semibold leading-snug"></textarea>
+                              </template>
+                              <template x-if="!btCell(y, p.o).dap_chu">
+                              <input type="text" :inputmode="btYPhanSo(y) || btYAm(y) || btNhieuGt(y, btCell(y, p.o)) ? 'text' : 'decimal'" autocomplete="off" autocapitalize="off" spellcheck="false" data-bt-o :data-o="p.o"
                                      :value="btO(y, p.o)" @input="btNhapO(y, p.o, $event.target.value)" :disabled="btTL[y.id][p.o] === 'none'"
                                      :placeholder="btNhieuGt(y, btCell(y, p.o)) ? 'cách nhau dấu phẩy' : btCell(y, p.o).don_vi ? 'số + đv' : ''" :aria-label="'Ô ' + p.o"
-                                     :class="btCls(y, p.o) + (btCell(y, p.o).dap_chu ? ' w-64 max-w-full' : btNhieuGt(y, btCell(y, p.o)) ? ' w-48 placeholder:text-sm placeholder:font-normal' : btCell(y, p.o).don_vi || String(btCell(y, p.o).bt || '').startsWith('=') ? ' w-24' : ' w-14')"
+                                     :class="btCls(y, p.o) + (btNhieuGt(y, btCell(y, p.o)) ? ' w-48 placeholder:text-sm placeholder:font-normal' : btCell(y, p.o).don_vi || String(btCell(y, p.o).bt || '').startsWith('=') ? ' w-24' : ' w-14')"
                                      class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+                              </template>
                               <button type="button" x-show="btLaMode(y, btCell(y, p.o))" data-bt-nomode @click="btNone(y, p.o)"
                                       :class="btTL[y.id][p.o] === 'none' ? 'border-slate-700 bg-slate-700 text-white' : 'border-dashed border-slate-400 bg-white text-slate-700'"
                                       class="min-h-8 rounded-lg border px-2 text-xs">no mode</button>
@@ -7095,7 +7105,7 @@ registerProcessor('thu-16k',T);`;
                       <button type="button" :data-zi="zi" @click="btTheChon(e.b, zi)"
                               :class="btTheY(e.b).id === z.id ? 'border-indigo-600 bg-indigo-50 font-semibold' : 'border-slate-300 bg-white'"
                               class="min-h-10 rounded-[10px] border-[1.5px] px-2.5 py-1.5 text-left text-[14.5px]">
-                        <span data-bt-nhan x-show="z.nhan" class="mr-1.5 inline-grid h-6 w-6 place-items-center rounded-full bg-indigo-600 align-middle text-sm font-bold leading-none text-white" x-text="z.nhan"></span><span x-html="z.en_html || ''"></span>
+                        <span data-bt-nhan x-show="z.nhan" class="mr-1.5 inline-grid h-6 min-w-6 place-items-center whitespace-nowrap rounded-full bg-indigo-600 px-1.5 align-middle text-sm font-bold leading-none text-white" x-text="z.nhan"></span><span x-html="z.en_html || ''"></span>
                         <span x-show="btYDung(z) === true" class="font-bold text-emerald-600"> ✓</span><span x-show="btYDung(z) === false" class="font-bold text-rose-600"> ✗</span>
                       </button>
                     </template>
@@ -7566,7 +7576,7 @@ registerProcessor('thu-16k',T);`;
               <p class="mb-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">Lời giải</p>
               <template x-for="(y, yi) in e.b.y" :key="y.id">
                 <div class="mb-2 last:mb-0">
-                  <p x-show="e.b.y.length > 1" class="flex items-center gap-2 text-sm font-semibold text-slate-700"><span data-bt-nhan class="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-indigo-600 text-sm font-bold leading-none text-white" x-text="y.nhan || (yi + 1)"></span></p>
+                  <p x-show="e.b.y.length > 1" class="flex items-center gap-2 text-sm font-semibold text-slate-700"><span data-bt-nhan class="grid h-6 min-w-6 shrink-0 place-items-center whitespace-nowrap rounded-full bg-indigo-600 px-1.5 text-sm font-bold leading-none text-white" x-text="y.nhan || (yi + 1)"></span></p>
                   <div class="ml-1 mt-1 border-l-[3px] border-indigo-200 pl-3">
                     <template x-for="(st, si) in (y.giai || [])" :key="si">
                       <div data-bt-buoc class="grid grid-cols-[22px_1fr] items-start gap-2 border-b border-dashed border-slate-200 py-1.5 text-[15px] last:border-b-0">
