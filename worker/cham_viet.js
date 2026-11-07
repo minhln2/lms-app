@@ -309,15 +309,30 @@ function chuanSo(t) {
   if (s.includes(".")) s = s.replace(/0+$/, "").replace(/\.$/, "");
   return s.replace(/^0+(?=\d)/, "");
 }
-const SO_RE = /\d+\s+\d+\s*\/\s*\d+|\d+\s*\/\s*\d+|\d+(?:[.,]\d+)?/g;   // hỗn số «1 7/10» · phân số «39/40» · số «8.35» (tiền «£8.35» → 8.35)
-/** Số trong chữ (cùng luật `bai_tap._cac_so`): phân số / hỗn số là MỘT số («39/40», không tách 39 và 40), bỏ khoảng trắng thừa, không rút gọn. */
-export const cacSo = (s) => (String(s ?? "").match(SO_RE) || []).map((t) => {
+// Ngăn nghìn kiểu Anh (Ruling R7: đề in từ 4 chữ số): nhóm đầu 1–3 chữ số KHÔNG bắt đầu bằng 0, rồi ≥ 1 nhóm «,ddd» đúng 3 chữ số, tuỳ chọn «.dd»
+// («5,807» · «1,030,000» · «2,354.76») là MỘT số. «0,700» · «1,5» · «1,0000» không thuộc dạng này: dấu phẩy vẫn là thập phân như cũ.
+const NGHIN_RE = /^[1-9]\d{0,2}(?:,\d{3})+(?:\.\d+)?$/;
+const SO_RE = /\d+\s+\d+\s*\/\s*\d+|\d+\s*\/\s*\d+|[1-9]\d{0,2}(?:,\d{3})+(?:\.\d+)?(?!\d)|\d+(?:[.,]\d+)?/g;   // hỗn số «1 7/10» · phân số «39/40» · số có ngăn nghìn «5,807» · số «8.35» (tiền «£8.35» → 8.35)
+/**
+ * Một số đã tách (không phải phân số) → các cách đọc. «5,807» có HAI cách (ngăn nghìn 5807 hoặc thập phân kiểu phẩy 5.807) khi chỉ có MỘT nhóm phẩy và
+ * không có «.»; «1,030,000» · «2,354.76» chỉ có cách ngăn nghìn. Chữ ĐỀ (tiếng Anh, R7) là ngăn nghìn: `hai` = false → một cách đọc. Chữ của CON / của Gemini
+ * (có thể viết «5,807» kiểu phẩy thập phân) thì `hai` = true → cả hai cách, trừ khi cách ngăn nghìn đã nằm trong `daThay` (con đã thấy «5,807» trên đề: Gemini nhắc lại
+ * đúng số đó, không phải đáp số 5.807).
+ */
+function docSo(t, hai, daThay) {
+  if (!NGHIN_RE.test(t)) return [chuanSo(t)];
+  const nghin = chuanSo(t.replace(/,/g, ""));
+  if (!hai || t.includes(".") || t.split(",").length !== 2 || daThay?.has(nghin)) return [nghin];
+  return [nghin, chuanSo(t)];
+}
+/** Số trong chữ (cùng luật `bai_tap._cac_so`): phân số / hỗn số là MỘT số («39/40», không tách 39 và 40), bỏ khoảng trắng thừa, không rút gọn; «5,807» xem `docSo`. */
+export const cacSo = (s, hai = false, daThay = null) => (String(s ?? "").match(SO_RE) || []).flatMap((t) => {
   const g = /^(?:(\d+)\s+)?(\d+)\s*\/\s*(\d+)$/.exec(t);
   const z = (x) => x.replace(/^0+(?=\d)/, "");
-  return g ? (g[1] ? z(g[1]) + " " : "") + z(g[2]) + "/" + z(g[3]) : chuanSo(t);
+  return g ? [(g[1] ? z(g[1]) + " " : "") + z(g[2]) + "/" + z(g[3])] : docSo(t, hai, daThay);
 });
 /** `cacSo` + các số thành phần của phân số / hỗn số (con đã THẤY «3» và «5» khi đề có {3/5}). Dùng cho phía «đã hiện cho con». */
-const cacSoVaPhan = (s) => cacSo(s).flatMap((n) => (n.includes("/") ? [n, ...n.split(/[\s/]+/)] : [n]));
+const cacSoVaPhan = (s, hai = false) => cacSo(s, hai).flatMap((n) => (n.includes("/") ? [n, ...n.split(/[\s/]+/)] : [n]));
 
 /** Giá trị MÁY TÍNH (đáp số): tong mean median mode range tong_can che của mọi tập + `dap_so` của mục (đáp số máy tính lúc build cho bài không
  * thống kê — Unit 8: đáp của ô anh em, số trong bài mẫu mà đề chưa cho). */
@@ -342,7 +357,7 @@ const TU_KHOA = new Map([
   ["range", "range"], ["khoảng biến thiên", "range"],
   ["total", "tong"], ["sum", "tong"], ["tổng", "tong"],
 ]);
-const TU_VA_SO = /\d+(?:[.,]\d+)?|\p{L}+(?:['’]\p{L}+)*/gu;   // số (cùng dạng `cacSo`) hoặc từ
+const TU_VA_SO = /[1-9]\d{0,2}(?:,\d{3})+(?:\.\d+)?(?!\d)|\d+(?:[.,]\d+)?|\p{L}+(?:['’]\p{L}+)*/gu;   // số (cùng dạng `cacSo`, kể cả ngăn nghìn «5,807») hoặc từ
 
 /** Giá trị máy tính theo từng khoá thuật ngữ: {mean, median, mode, range, tong} → Set số đã chuẩn hoá. */
 function giaTriTheoKhoa(soLieu) {
@@ -370,7 +385,7 @@ function cacCap(s) {
       const a = i, b = i + len - 1;
       for (let j = Math.max(0, a - CAP_TU); j <= Math.min(tok.length - 1, b + CAP_TU); j++) {
         if (j >= a && j <= b) continue;
-        if (/^\d/.test(tok[j])) ra.push({ khoa, n: chuanSo(tok[j]) });
+        if (/^\d/.test(tok[j])) for (const n of docSo(tok[j], true)) ra.push({ khoa, n });   // chữ của Gemini: cả hai cách đọc «5,807»
       }
       break;
     }
@@ -465,8 +480,8 @@ export function kiemKetQua(d, muc, cau, camVi = []) {
   const soLieu = Array.isArray(muc?.so_lieu) ? muc.so_lieu : [];
   const may = giaTriMay(soLieu, muc?.dap_so);
   const theoKhoa = giaTriTheoKhoa(soLieu);
-  const cauSo = new Set(cacSoVaPhan(cau));
-  const ngoai = new Set([...cacSoVaPhan(cau), ...cacSoVaPhan(muc?.de)]);   // đã hiện cho con: câu con, đề
+  const cauSo = new Set(cacSoVaPhan(cau, true));   // chữ của con: «5,807» có thể là 5807 hoặc 5.807 → cả hai cách đọc
+  const ngoai = new Set([...cauSo, ...cacSoVaPhan(muc?.de)]);   // đã hiện cho con: câu con, đề (đề là tiếng Anh: «5,807» = 5807)
   for (const s of soLieu) {
     for (const x of Array.isArray(s.so) ? s.so : []) cacSoVaPhan(x).forEach((n) => ngoai.add(n));
     cacSoVaPhan(s.ten).forEach((n) => ngoai.add(n));
@@ -475,7 +490,7 @@ export function kiemKetQua(d, muc, cau, camVi = []) {
     .map((c) => new RegExp(`(?:^|[^\\p{L}])${esc(c)}(?![\\p{L}])`, "iu"));
   const mauTu = cumTu(muc?.bai_mau ?? "");
   const conTu = mauTu.size ? cumTu(cau) : null;
-  const hong = (s) => cacSo(s).some((n) => may.has(n) && !ngoai.has(n))   // lộ đáp số (số lạ)
+  const hong = (s) => cacSo(s, true, ngoai).some((n) => may.has(n) && !ngoai.has(n))   // lộ đáp số (số lạ; chữ Gemini đọc «5,807» cả hai cách, trừ khi 5807 con đã thấy)
     || cacCap(s).some(({ khoa, n }) => theoKhoa[khoa].has(n) && !cauSo.has(n))   // lộ đáp số (cặp thuật ngữ + số của nó)
     || reCam.some((re) => re.test(chuan(s)))                               // dịch thuật ngữ
     || [...cumTu(s)].some((g) => mauTu.has(g) && !conTu.has(g));          // chép bài mẫu

@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <title>Lịch sử học tập — Quản trị — MK</title>
-  <link rel="stylesheet" href="../../assets/tw.ce3bca48.css">
+  <link rel="stylesheet" href="../../assets/tw.b29a5bd8.css">
 <script>
 window.LS = (function () {
   var ve = null, goc = '', dang = 0, henCuon = null, cho = null;
@@ -203,7 +203,7 @@ window.LS.ham();
     const TAB = ['dong', 'mon', 'tapdoc', 'on', 'tu'];
     const TOAN_MUC = "../../assets/toan_muc.cf56682c.js";
     const BAI_TAP = [];   // slug các môn có ../study/<slug>.bai-tap.json
-    const BAI_TAP_JS = "../../assets/bai_tap.423394c8.js";
+    const BAI_TAP_JS = "../../assets/bai_tap.49056bc1.js";
     const BAI_TAP_ESL_JS = "../../assets/bai_tap_esl.0907fc14.js";   // chấm / «Con điền» của ESL 5 (chỉ nạp khi có môn ESL)
     // Năm mức của dạng (spec 2026-10-21 §6). Class là literal (Tailwind quét HTML đã render).
     const MUC_TOAN = [
@@ -359,7 +359,7 @@ window.LS.ham();
       const duyet = (b, bt) => {
         const ids = [];
         for (const y of b.y || []) {
-          ys.push({ nguon: b.nguon || '', nhan: y.nhan || '', kieu: y.kieu, tier: b.tier, bt, nhom: y.nhom || [],
+          ys.push({ nguon: b.nguon || '', nhan: y.nhan || '', kieu: y.kieu, tier: b.tier, bt, nhom: y.nhom || [], co_x: M.coXDien(y),
                     tu_kiem: Array.isArray(y.tu_kiem) ? y.tu_kiem : [], tu_kiem_ma: Array.isArray(y.tu_kiem_ma) ? y.tu_kiem_ma : [] });
           for (const n of y.nhom || []) ids.push(n.id);
         }
@@ -395,9 +395,9 @@ window.LS.ham();
           const kq = KQ_BT[cuoi.g] || ['g = ' + cuoi.g, 'text-slate-500'];
           const luotViet = yy.kieu === 'viet' ? qtVietLuot(M, ls, yy) : [];
           if (luotViet.length) viet++;
-          // Kiểu ý ĐIỀU KIỆN (cot · o_dk · the_o · noi_nhom): `x` của sổ = phép tính con đã điền (chữ thường, không phải JSON chấm câu viết).
-          // Vẽ ở `dien` (một mảnh chữ), cạnh `luot`; KHÔNG qua qtVietLuot / docXViet và KHÔNG cộng vào `viet` («N câu tự viết»).
-          const co = (M.KIEU_DIEN || []).includes(yy.kieu) ? ls.filter((a) => typeof a.x === 'string' && a.x.trim()) : [];
+          // Kiểu ý ĐIỀU KIỆN (cot · o_dk · the_o · noi_nhom) và ý `o` / `bang` thuộc `M.coXDien` (ô số ÂM `am` · ô CHỮ `dap_chu` · ô liệt kê không-mode; Unit 1/2/4/6): `x` của sổ = chữ con đã điền
+          // (phép tính, «−4», «8, 4, 2, 1», chữ thường — không phải JSON chấm câu viết; dấu trừ U+2212 do trang con đã đổi). Vẽ ở `dien` (một mảnh chữ), cạnh `luot`; KHÔNG qua qtVietLuot / docXViet và KHÔNG cộng vào `viet` («N câu tự viết»).
+          const co = (M.KIEU_DIEN || []).includes(yy.kieu) || yy.co_x ? ls.filter((a) => typeof a.x === 'string' && a.x.trim()) : [];
           const dien = co.length ? co[co.length - 1].x : '';
           y.push({ id: n.id, tieu: yy.nguon + (yy.nhan ? ' (' + yy.nhan + ')' : ''), phu: yy.bt ? 'bài tương tự' : '', canh: '',
                    tit_luot: yy.nguon + (yy.nhan ? ' · ý ' + yy.nhan : ''), so_lan: ls.length, ts: cuoi.ts, g: cuoi.g, kq: kq[0], kq_lop: kq[1], cho: false,

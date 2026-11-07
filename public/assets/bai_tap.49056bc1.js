@@ -6,11 +6,12 @@
  *
  * Số học là HỮU TỈ CHÍNH XÁC bằng BigInt ({n, d} tối giản, d > 0), không bao giờ so số thực: mean / trung vị của số thập phân (12.7…)
  * ra đúng chuỗi mà `src/bai_tap.py` ra. Hai bản (Python lúc build, JS lúc chấm) chốt bằng tệp mẫu chung `tests/bai_tap_mau.json`
- * (tests/test_bai_tap.py và tests/test_bai_tap_js.mjs cùng đọc).
+ * (thống kê) và `tests/bai_tap_mau_o.json` (chấm ô: số âm, ô nhiều giá trị, ngăn nghìn) — tests/test_bai_tap.py và tests/test_bai_tap_js.mjs cùng đọc.
  *
  * Tài liệu đầu vào là tài liệu DỰNG (`dist/<hs>/study/<slug>.bai-tap.json`, do `src/bai_tap.py › dung()` sinh). Hình dạng từng ý `y`:
- *   o        y.o[]   = {id "o0".., dap, don_vi?, don_vi_in?, kt, goi_y?}   goi_y: true = ô của dòng GỢI Ý (y.goi_y_manh): chamY bỏ qua, chamGoiY chấm
- *   bang     y.o[]   = {id "r0c1".., dap, don_vi?, don_vi_in?, kt, hang, cot}   (don_vi_in = đơn vị in sẵn cạnh ô: xem chamO)
+ *   o        y.o[]   = {id "o0".., dap, don_vi?, don_vi_in?, kt, goi_y?, am?, dap_chu?}   dap_chu: [...] = ô CHỮ (`[[= chu(x)]]`, word form: các dạng chữ chấp nhận, `chamChu`) · goi_y: true = ô của dòng GỢI Ý (y.goi_y_manh): chamY bỏ qua, chamGoiY chấm
+ *   bang     y.o[]   = {id "r0c1".., dap, don_vi?, don_vi_in?, kt, hang, cot, am?}   (don_vi_in = đơn vị in sẵn cạnh ô: xem chamO)
+ *            am: true = ô của ý có số ÂM (khoá `am` của ý, chỉ kiểu o / bang): đáp số có thể là "−4" (U+2212), chamO chấm `-4` · `−4` · `–4`
  *   noi      y.trai[] = {t, kt} · y.phai[] = {t} · y.ghep = [[chỉ số trái, chỉ số phải]]
  *   chon     y.dap · y.ly_do? = {lua_chon, dap}
  *   tick     y.cau[] = {t, dung}          dung_sai  y.cau[] = {t, dung, kt}
@@ -39,7 +40,7 @@
  *   noi_nhom  {hop: number[][], go: string}    hop[k] = chỉ số các túi (trong y.trai) con đặt vào hộp k (đúng moi_nhom túi, mỗi túi dùng một lần); go = số con ghi lên hộp cuối (null trong y.phai)
  * Chưa trả lời → "sai", không bao giờ ném lỗi. Kết quả: {[idNhom]: "dung" | "sai" | "cach_viet"}.
  */
-import { cham, docSo } from "./toan_cham.8b68da1a.js";
+import { cham, docSo } from "./toan_cham.9352f008.js";
 
 // Nhãn năm mức: bộ CHUNG mọi môn (worker/muc_ten.js). Re-export để trang con ôn tập + khu bố mẹ vẫn lấy `TEN_MUC` từ mô-đun này.
 export { TEN_MUC } from "./muc_ten.1e257d96.js";
@@ -178,7 +179,8 @@ function boDonViNhieu(g, dv, tienTo) {
 
 /**
  * Chấm MỘT ô số. `o` = {dap, don_vi?, don_vi_in?} (ô của ý `o` / `bang`); `go` = chữ con gõ → {kq, ly?}:
- *   kq "dung" · "sai" · "cach_viet" (chưa đúng cách viết — KHÔNG tính là sai). `ly` (chỉ khi cach_viet): "thieu_don_vi" · "so_kem_chu" · "khac".
+ *   kq "dung" · "sai" · "cach_viet" (chưa đúng cách viết — KHÔNG tính là sai). `ly` (khi cach_viet): "thieu_don_vi" · "so_kem_chu" · "khac"; ô CHỮ (`dap_chu`) gõ chữ số: "sai" kèm
+ *   `ly: "viet_bang_chu"` (xem `chamChu`).
  *   Ô có `toi_gian` (đề đòi simplest form, Unit 8): đúng giá trị mà còn rút gọn được (18/20 cho 9/10) vẫn là "dung" — KHÔNG trừ g (chủ dự án chốt
  *   2026-11-03) — kèm `ly: "chua_toi_gian"` để trang nhắc. Phân số không thực sự (39/20) và hỗn số (1 19/20) cùng giá trị đều đúng.
  * Bọc `cham({dap, kieu: "so", don_vi}, go)` của toan_cham.js: `5,5` = `5.5`; `9kg` = `9 kg`; số 9 mà ô đòi đơn vị (`o.don_vi`) thì
@@ -186,6 +188,13 @@ function boDonViNhieu(g, dv, tienTo) {
  * `o.don_vi_in` (đơn vị ĐÃ IN cạnh ô, chỉ có khi ô không có `don_vi`) là TUỲ CHỌN: nhận số đứng một mình HOẶC kèm đúng đơn vị đó, đơn vị khác
  * là "cach_viet". Hậu tố (`cm` `kg` `s` `°C` `years` `puppies`…): `5` · `5 cm` · `5cm` · `5 CM`, giống toan_cham. Tiền tố (`$` `£` `€`, in TRƯỚC ô):
  * `61` · `$61` · `$ 61`; ký hiệu tiền khác (`£61` ở ô `$`) là "cach_viet".
+ * `o.am` (true): ô của ý có số âm — đáp số được âm ("−4", U+2212) và con gõ `-4` · `−4` · `–4` (kể cả `-4 °C` hay `-1,000`) đều là số âm; con gõ `4` cho "−4"
+ * là "sai". Ô KHÔNG có cờ `am` thì `-4` là "cach_viet" dù đáp số là gì (hành vi cũ, Toán 6 không đổi).
+ * Dấu CHẤM luôn là dấu thập phân (`cham_thap_phan` của toan_cham.js, bật cho MỌI ô số của Math 5): `7.200` = 7.2 — đúng cho đáp số 7.2, SAI cho 7200 (đọc là 7200 thì lỗi «thêm số 0
+ * vào sau» 7.2 × 1000 được chấm đúng; soát Unit 1 QD-01/QD-02). Ngăn nghìn chỉ bằng dấu PHẨY (`7,200`) hoặc dấu cách (`7 200`); `1.000.000` là "cach_viet".
+ * Ô MỘT giá trị còn đọc thêm số kiểu Anh có dấu phẩy ngăn nghìn ở đầu chữ (`2,354.76` · `73,298` · `-1,000` · `2,354.76 m`; `boPhayNghin`): MỘT trong hai cách đọc (phẩy là dấu
+ * thập phân như cũ / phẩy là dấu ngăn nghìn) khớp là "dung"; không cách nào khớp mà cách cũ không đọc được thì "sai" (vì chữ đó đọc được theo kiểu Anh), không phải "cach_viet".
+ * Ô CHỮ (`o.dap_chu` là mảng các dạng chữ): `chamO` rẽ sang `chamChu` — chữ, không đọc số, không đơn vị, không `cach_viet`.
  * Chưa gõ gì → "sai". `dap` = "none" (không có mốt): chỉ chữ `none` mới đúng (nút "không có mốt" đặt "none"; KHÔNG bao giờ nhận đơn vị); gõ số vào ô đó,
  * hay "none" vào ô có mốt → "sai".
  * `dap` nhiều mốt ("4; 5"): gõ cách nhau `;` hoặc `,` hoặc dấu cách hoặc `and` / `&`, thứ tự tuỳ ý (`5, 4` = `4 and 5` = `4; 5`). Có `;` thì dấu `,` vẫn là
@@ -195,6 +204,7 @@ function boDonViNhieu(g, dv, tienTo) {
  * đọc được (vd `1,2,1,8`) thì "cach_viet" — không tính sai một đáp số có thể đúng.
  */
 export function chamO(o, go) {
+  if (o.dap_chu !== undefined) return chamChu(o, go);   // ô CHỮ (`chu(x)`, word form): so chữ, không đọc số
   const dap = String(o.dap);
   const g = typeof go === "string" ? go.trim() : typeof go === "number" ? String(go) : "";
   if (!g) return { kq: "sai" };
@@ -205,7 +215,8 @@ export function chamO(o, go) {
   const dvBat = o.don_vi || null;                                                    // đơn vị BẮT BUỘC con phải gõ
   const dvIn = !dvBat && typeof o.don_vi_in === "string" && o.don_vi_in ? o.don_vi_in : null;   // đơn vị đã in: gõ hay không đều được
   const tienTo = dvIn !== null && TIEN_TO.includes(dvIn);
-  const bai = { dap: cac, kieu: "so", toi_gian: !!o.toi_gian };
+  const am = o.am === true;   // chỉ cờ `true` thật; cùng cờ cho cả hai lần gọi `cham` (có / không đơn vị)
+  const bai = { dap: cac, kieu: "so", toi_gian: !!o.toi_gian, am, cham_thap_phan: true };   // Math 5: dấu CHẤM luôn là dấu thập phân (`7.200` = 7.2, không phải 7200; QD-01/02), dấu PHẨY nghìn vẫn nhận
   let kqs, coDv = false;
   if (cac.length > 1) {
     let chu = g;
@@ -216,15 +227,61 @@ export function chamO(o, go) {
     if (tienTo) chu = g.replace(new RegExp("^" + esc(dvIn) + "\\s*"), "");
     else if (dvBat || dvIn) bai.don_vi = dvBat || dvIn;
     kqs = [{ nhap: chu, r: cham(bai, chu) }];
+    const bo = boPhayNghin(chu);   // `2,354.76` / `1,000` / `-1,000 m`: đọc thêm theo kiểu Anh (phẩy là dấu ngăn nghìn); MỘT cách đọc khớp là đúng
+    if (bo !== chu) {
+      const r2 = cham(bai, bo);
+      if (r2.kq !== "cach_viet") kqs = kqs[0].r.kq === "cach_viet" ? [{ nhap: bo, r: r2 }] : kqs.concat({ nhap: bo, r: r2 });   // cách đọc cũ không đọc được thì bỏ: `2,354.7` sai chứ không phải «cách viết»
+    }
   }
   const dung = kqs.find((x) => x.r.kq === "dung") || kqs.find((x) => x.r.kq === "chua_toi_gian");
   if (dung) {
-    if (dvBat && (cac.length > 1 ? !coDv : cham({ dap: cac, kieu: "so" }, dung.nhap).kq === "dung")) return { kq: "cach_viet", ly: "thieu_don_vi" };   // đúng số, chưa ghi đơn vị
+    if (dvBat && (cac.length > 1 ? !coDv : cham({ dap: cac, kieu: "so", am, cham_thap_phan: true }, dung.nhap).kq === "dung")) return { kq: "cach_viet", ly: "thieu_don_vi" };   // đúng số, chưa ghi đơn vị
     return dung.r.kq === "chua_toi_gian" ? { kq: "dung", ly: "chua_toi_gian" } : { kq: "dung" };
   }
   if (kqs.every((x) => x.r.kq === "sai")) return { kq: "sai" };
   const hong = kqs.find((x) => x.r.kq === "cach_viet") || kqs[0];
   return hong.r.ly ? { kq: hong.r.kq, ly: hong.r.ly } : { kq: hong.r.kq };
+}
+
+/**
+ * Chuẩn hoá chữ của ô CHỮ (word form) để so: thường hoá, mọi dấu gạch nối (`-` `‐`…`―` `−`) thành dấu cách, BỎ MỌI dấu câu (`, . ; : ! ?` nháy, ngoặc — thành dấu cách, nên
+ * «thousand,three» vẫn tách được), gộp khoảng trắng, «a» đứng ngay trước «hundred» / «thousand» thành «one» («a hundred» = «one hundred»), «nought» / «oh» SAU «point» thành «zero»
+ * («zero point nought five» = «zero point oh five» = «zero point zero five»; «nought» ở phần nguyên 0 đã là một dạng riêng của `dap_chu`, «oh» ở phần nguyên không được nhận — chỉ phần SAU «point»; QD-05), rồi bỏ «and» đứng GIỮA (không phải từ đầu / từ cuối):
+ * «two thousand, three hundred and fifty-four» = «two thousand three hundred fifty four». Dùng cho CẢ chữ con gõ lẫn mỗi dạng `dap_chu`, nên dạng khai có hay không «and» / phẩy /
+ * gạch nối đều không đổi nghĩa.
+ */
+function chuanChu(t) {
+  const tu = String(t).normalize("NFKC").toLowerCase()
+    .replace(/[-\u2010-\u2015\u2212]/g, " ")
+    .replace(/[.,;:!?'"`\u2018\u2019\u201c\u201d()[\]{}]/g, " ")
+    .split(/\s+/).filter(Boolean);
+  const diem = tu.indexOf("point");
+  const w2 = tu.map((w, i) => (w === "a" && (tu[i + 1] === "hundred" || tu[i + 1] === "thousand") ? "one"       // «a hundred» = «one hundred», «a thousand» = «one thousand»
+    : (w === "nought" || w === "oh") && diem !== -1 && i > diem ? "zero"                                       // «nought» / «oh» thay chữ số 0 SAU «point» (phần nguyên 0 đã có dạng «nought» riêng trong dap_chu; «oh» ở phần nguyên không đổi)
+    : w));
+  return w2.filter((w, i) => w !== "and" || i === 0 || i === w2.length - 1).join(" ");
+}
+
+/**
+ * Chấm ô CHỮ: `o` = {dap_chu: [các dạng chấp nhận]}; `go` = chữ con gõ → {kq: "dung" | "sai", ly?}. Đúng khi chữ gõ, sau `chuanChu`, bằng đúng MỘT dạng (sau `chuanChu`).
+ * Sai một chữ là sai — không «gần đúng»; để trống cũng "sai". Gõ CHỮ SỐ vào ô ("56.082", "fifty-6 point…") cũng "sai" (không phải cach_viet) nhưng kèm `ly: "viet_bang_chu"` để
+ * trang nhắc «Viết số bằng chữ» (KHÔNG đổi kq, không ghi sổ khác đi). Không bao giờ ném (`dap_chu` hỏng thì "sai").
+ */
+export function chamChu(o, go) {
+  const chuGo = typeof go === "string" ? go : "";
+  const g = chuanChu(chuGo);
+  const cac = Array.isArray(o?.dap_chu) ? o.dap_chu.filter((t) => typeof t === "string").map(chuanChu).filter(Boolean) : [];
+  if (g && cac.includes(g)) return { kq: "dung" };
+  return /\d/.test(chuGo) ? { kq: "sai", ly: "viet_bang_chu" } : { kq: "sai" };   // gõ chữ số vào ô chữ: vẫn "sai" (không cach_viet) kèm lý do để trang nhắc «Viết số bằng chữ»
+}
+
+/** Số kiểu Anh ở ĐẦU chữ con gõ: dấu âm tuỳ chọn, 1–3 chữ số, các nhóm `,ddd`, phần thập phân tuỳ chọn (`2,354.76` · `1,000` · `-1,000`), và sau đó KHÔNG còn chữ số / dấu `.` `,` dính liền. */
+const NGHIN_ANH = /^([-\u2212\u2013]?\d{1,3}(?:,\d{3})+(?:\.\d+)?)(?![\d.,])/;
+
+/** Chữ con gõ cho ô MỘT giá trị → cùng chữ bỏ dấu phẩy ngăn nghìn của số đứng đầu (`2,354.76 m` → `2354.76 m`); không có số kiểu Anh thì trả đúng `g`. Chỉ để thử THÊM một cách đọc (xem `chamO`). */
+function boPhayNghin(g) {
+  const m = NGHIN_ANH.exec(g);
+  return m ? m[1].replace(/,/g, "") + g.slice(m[1].length) : g;
 }
 
 /**
@@ -736,10 +793,28 @@ export function khoaCach(y, traLoi) {
   }
 }
 
+/** Ô mode (hai mode «4; 5» ở đáp số): khai `bt: "mode"` hoặc nằm ở cột `f: "mode"` của ý `bang`. Khớp `btLaMode` ở templates/study.html. */
+function laOMode(y, c) {
+  return !!c && (c.bt === "mode" || (c.cot !== undefined && ((y?.cot || [])[c.cot] || {}).f === "mode"));
+}
+
+/**
+ * Ý `o` / `bang` có ô mà «Con điền» (cột `x` của sổ) được ghi cho bố mẹ đọc (Ruling R10 + R12): ô số ÂM (`am: true`) · ô CHỮ (`dap_chu`) · ô NHIỀU GIÁ TRỊ không phải mode
+ * (đáp số có «;» — `uoc_chung` · `boi_chung`; cùng luật với gợi ý «cách nhau dấu phẩy» `btNhieuGt` ở templates/study.html). Ô gợi ý (`goi_y`) không kể. Ô số thường của Unit 3 / 8 và ô mode → false
+ * (không ghi `x`, sổ giữ như cũ). Trang con dùng nó để quyết định có ghi `x`; khu bố mẹ để quyết định có đọc `x`; `xDien` để biết có trả chữ.
+ */
+export function coXDien(y) {
+  if ((y?.kieu !== "o" && y?.kieu !== "bang") || !Array.isArray(y.o)) return false;
+  return y.o.some((c) => !c.goi_y && (c.am === true || c.dap_chu !== undefined || (String(c.dap ?? "").includes(";") && !laOMode(y, c))));
+}
+
 /**
  * Phép tính con đã điền, dạng chữ để ghi vào cột `x` của sổ (≤ 200 ký tự), ví dụ "9.37 − 5.687 = 3.683" (cot) · "0.345 + 0.215 + 0.44 = 1" · "3/5 + 1/10 = 7/10" (o_dk)
  * · "0.003 + 0.007 = 0.01; 0.006 + 0.004 = 0.01" (the_o: thẻ hiện ĐÚNG chữ in) · "4.1: 2.7 + 1.4; …; ?: 2.9 + 4.8 = 7.7" (noi_nhom: túi hiện ĐÚNG chữ in, theo thứ tự hộp;
- * số con ghi lên hộp cuối giữ nguyên chữ con gõ). Ô chưa điền giữ `?`. Kiểu khác → "".
+ * số con ghi lên hộp cuối giữ nguyên chữ con gõ). Ô chưa điền giữ `?`.
+ * Ý `o` / `bang` mà `coXDien(y)`: chữ con gõ trong các ô (trừ ô gợi ý), cắt đầu cuối, cách nhau «; », ô trống «?» — «Con điền: −4» · «Con điền: 8, 4, 2, 1» · «Con điền: fifty six point zero eight two».
+ * Chỉ ý có ô `am` (đáp số âm) mới đổi dấu trừ đầu số (`-` `–`) sang U+2212; ô chữ / ô liệt kê giữ nguyên chữ con gõ. Ý `o` / `bang` KHÔNG thuộc `coXDien` (ô số thường Unit 3 / 8, ô mode)
+ * → "" (sổ không ghi `x` cho chúng, như trước). Kiểu khác → "".
  */
 export function xDien(y, traLoi) {
   switch (y?.kieu) {
@@ -760,6 +835,17 @@ export function xDien(y, traLoi) {
       return y.phai.map((nh, k) => {
         const tui = Array.from({ length: y.moi_nhom }, (_, j) => (hop[k][j] !== undefined ? y.trai[hop[k][j]] : "?")).join(" + ");
         return nh === null ? `?: ${tui} = ${go || "?"}` : `${nh}: ${tui}`;
+      }).join("; ").slice(0, 200);
+    }
+    case "o":
+    case "bang": {
+      // Ý thuộc `coXDien` (ô âm · ô chữ · ô liệt kê): ghi chữ con gõ để khu bố mẹ hiện «Con điền: …». Ý khác (Unit 3 / 8) vẫn "" — sổ không ghi `x` cho chúng.
+      if (!coXDien(y)) return "";
+      const os = y.o.filter((c) => !c.goi_y), doiTru = os.some((c) => c.am === true), tl = dict(traLoi);
+      return os.map((c) => {
+        const g = typeof tl[c.id] === "string" ? tl[c.id].trim() : typeof tl[c.id] === "number" ? String(tl[c.id]) : "";
+        if (!g) return "?";
+        return doiTru ? g.replace(/(^|[\s;,(])[-\u2013](?=\d)/g, "$1\u2212") : g;   // chỉ ý có ô am: dấu trừ ĐẦU SỐ (ASCII - hay –) → U+2212; gạch nối giữa hai số (10-5) giữ nguyên
       }).join("; ").slice(0, 200);
     }
     default:

@@ -9,18 +9,25 @@
  *
  * Dạng đọc được (sau khi gộp khoảng trắng, bỏ dấu cách quanh `/`): số nguyên `12` · thập phân `0,75` hoặc `0.75` · phân số `3/4` hoặc `3 / 4` (mẫu ≠ 0) ·
  * hỗn số `2 1/3` · tỉ số `1:2` (CHỈ khi đáp số của bài là phân số — CCN-10: đề hỏi tỉ số, con quen viết `1:2`). Không nhận số âm, `%`,
- * chữ, số mũ. Gõ không đọc được → "cach_viet" (chưa đúng cách viết — KHÔNG tính là sai). Mọi loại gạch (`-` `−` `–`) được coi như một
+ * chữ, số mũ — TRỪ khi bài có `am: true` (ý số âm của bài tập Math 5, khoá `am` trong study/SPEC.md): một dấu gạch SÁT ĐẦU chuỗi là dấu âm
+ * (`-3`, `−3`, `–3`; `- 3` và `--3` không đọc được). Không có cờ `am` thì `-3` vẫn là "cach_viet" như trước (Toán 6 không đổi).
+ * Gõ không đọc được → "cach_viet" (chưa đúng cách viết — KHÔNG tính là sai). Mọi loại gạch (`-` `−` `–`) được coi như một
  * (CCN-01: công thức hiển thị dấu trừ `−`, con có thể chép đúng ký tự ấy).
  *
  * Dấu ngăn hàng nghìn (chỉ `cham` đọc, `docSo` thì không): `1.000`, `1,000`, `12.500`, `1.000.000` (phần nguyên 1–3 chữ số, không
  * mở đầu bằng 0, rồi một hay nhiều nhóm `.` hoặc `,` + đúng 3 chữ số, CÙNG một dấu) và `1 000`, `12 500`, `1 000 000` (nhóm cách
  * ra bằng dấu cách, không có `/`) là MƠ HỒ — con có thể đang viết 1 (thập phân) hoặc 1000 (ngăn nghìn). Chấm `dung` nếu MỘT trong
  * hai cách đọc khớp đáp số, không thì `sai` (đã cân: chấm sai một đáp số đúng tệ hơn tha một đáp số tình cờ khớp).
+ *
+ * `cham_thap_phan: true` (bài tập Math 5; mặc định false → Toán 6 không đổi): dấu CHẤM luôn là dấu thập phân (sách Cambridge) — `7.200` là 7,2 chứ KHÔNG còn là 7200
+ * (đọc là 7200 thì «thêm số 0 vào sau» 7.2 × 1000 được chấm đúng — đúng lỗi bài học dạy tránh; soát Unit 1 QD-01/QD-02). Dấu PHẨY nghìn (`7,200`) và dấu cách (`7 200`) vẫn
+ * đọc hai cách như trên; `1.000.000` (nhiều nhóm chấm) không còn cách đọc nào → "cach_viet".
  */
 
 const TOI_DA = 200;   // dài hơn thì không phải một con số — chặn sớm trước khi dựng BigInt
 
 const gcd = (a, b) => { while (b) [a, b] = [b, a % b]; return a; };
+const doiDau = (v) => ({ n: -v.n, d: v.d });   // (đừng rutGon số âm: gcd của BigInt âm ra dấu sai)
 
 function rutGon(n, d) {
   const g = gcd(n, d);
@@ -62,19 +69,24 @@ function phanTich(t, tySo = false) {
 /**
  * Cách đọc NGĂN HÀNG NGHÌN của `t` (đã chuẩn hoá) → {n, d: 1n} | null. Phần nguyên 1–3 chữ số không mở đầu bằng 0 (`0,500` không
  * phải 500), rồi các nhóm đúng 3 chữ số ngăn bằng cùng một dấu `.` / `,` (trộn `1,000.000` thì không đọc), hoặc bằng dấu cách.
+ * `chamThapPhan` (bài có `cham_thap_phan: true`): dấu `.` không bao giờ là dấu ngăn — chỉ còn dấu `,` và dấu cách.
  */
-function nghin(t) {
+function nghin(t, chamThapPhan = false) {
   let m = /^([1-9][0-9]{0,2})((?:\.[0-9]{3})+|(?:,[0-9]{3})+)$/.exec(t);
-  if (m) return { n: BigInt(m[1] + m[2].replace(/[.,]/g, "")), d: 1n };
+  if (m && !(chamThapPhan && m[2][0] === ".")) return { n: BigInt(m[1] + m[2].replace(/[.,]/g, "")), d: 1n };
   if (/^[1-9][0-9]{0,2}(?: [0-9]{3})+$/.test(t)) return { n: BigInt(t.replace(/ /g, "")), d: 1n };
   return null;
 }
 
 /** Mọi cách đọc của một đáp số con (`t` đã chuẩn hoá) → {cach: [{n, d}], chuaGian} | null nếu không cách nào đọc được. */
-function cachDoc(t, tySo = false) {
+function cachDoc(t, tySo = false, am = false, chamThapPhan = false) {
+  if (am && t.startsWith("-")) {   // số âm: dấu sát đầu, rồi MỌI cách đọc của phần còn lại (kể cả ngăn nghìn `-1,000`) đổi dấu
+    const r = cachDoc(t.slice(1), tySo, false, chamThapPhan);
+    return r && { cach: r.cach.map(doiDau), chuaGian: r.chuaGian };
+  }
   const p = phanTich(t, tySo);
   const cach = p ? [p.v] : [];
-  const k = t.length > TOI_DA ? null : nghin(t);
+  const k = t.length > TOI_DA ? null : nghin(t, chamThapPhan);
   if (k) cach.push(k);
   return cach.length ? { cach, chuaGian: p ? p.chuaGian : false } : null;
 }
@@ -138,16 +150,28 @@ function boDonVi(t, chap) {
   return chap.includes(chuanDonVi(t.slice(i))) ? t.slice(0, i).trim() : t;
 }
 
-/** Vì sao một đáp số con gõ không đọc được: "so_kem_chu" = có phần số đọc được rồi tới chữ lạ ("60 viên bi") — page nhắc "chỉ cần ghi số"; "khac" = còn lại. */
-function lyDo(t, tySo) {
-  const i = t.search(/[^0-9.,/: ]/);
-  return i > 0 && cachDoc(t.slice(0, i).trim(), tySo) ? "so_kem_chu" : "khac";
+/** Bỏ đơn vị cuối của đáp số có thể mang dấu âm sát đầu (`-4 °C` → `-4`, khi `am`): dấu đứng ngoài, đơn vị chỉ xét trên phần số. */
+function boDonViAm(t, chap, am) {
+  return am && /^-[0-9]/.test(t) ? "-" + boDonVi(t.slice(1), chap) : boDonVi(t, chap);
 }
 
-/** Một con số con gõ → {n: bigint, d: bigint} (tối giản, d > 0), hoặc null nếu không đọc được. Không nhận đơn vị. Chỉ đọc THẬP PHÂN (`1.000` = 1), như `doc_so` của Python. `tySo` = đọc cả `a:b` như phân số (bài có đáp số là phân số). */
-export function docSo(s, tySo = false) {
+/** Vì sao một đáp số con gõ không đọc được: "so_kem_chu" = có phần số đọc được rồi tới chữ lạ ("60 viên bi") — page nhắc "chỉ cần ghi số"; "khac" = còn lại. */
+function lyDo(t, tySo, am = false, chamThapPhan = false) {
+  const dau = am && /^-[0-9]/.test(t) ? "-" : "";
+  if (dau) t = t.slice(1);
+  const i = t.search(/[^0-9.,/: ]/);
+  return i > 0 && cachDoc(dau + t.slice(0, i).trim(), tySo, am, chamThapPhan) ? "so_kem_chu" : "khac";
+}
+
+/** Một con số con gõ → {n: bigint, d: bigint} (tối giản, d > 0; n < 0 chỉ khi `am`), hoặc null nếu không đọc được. Không nhận đơn vị. Chỉ đọc THẬP PHÂN (`1.000` = 1), như `doc_so` của Python. `tySo` = đọc cả `a:b` như phân số (bài có đáp số là phân số). `am` = nhận số âm (một dấu gạch sát đầu); mặc định false: `-3` là null. */
+export function docSo(s, tySo = false, am = false) {
   if (typeof s !== "string") return null;
-  const p = phanTich(chuanHoa(s), tySo);
+  const t = chuanHoa(s);
+  if (am && t.startsWith("-")) {
+    const p = phanTich(t.slice(1), tySo);
+    return p ? doiDau(p.v) : null;
+  }
+  const p = phanTich(t, tySo);
   return p ? p.v : null;
 }
 
@@ -157,13 +181,16 @@ const gionNhau = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]
 const khopDS = (a, b, thuTu) => (thuTu ? gionNhau(a, b) : gionNhau([...a].sort(), [...b].sort()));
 
 /**
- * Chấm một lần nộp. `bai` = {dap: string | string[], kieu: "so" | "chon", don_vi?: string | string[], toi_gian?, thu_tu?}; `go` = chữ con gõ
+ * Chấm một lần nộp. `bai` = {dap: string | string[], kieu: "so" | "chon", don_vi?: string | string[], toi_gian?, thu_tu?, am?, cham_thap_phan?}; `go` = chữ con gõ
  * (hoặc id phương án đã chọn). Trả {kq, go, ly?}:
  *   kq = "dung" · "sai" · "cach_viet" (không đọc được — không tính sai) · "chua_toi_gian" (đúng giá trị nhưng bài đòi
  *        tối giản mà con còn để phân số rút gọn được);
  *   go = chữ con gõ đã chuẩn hoá — chuỗi này ghi vào sổ làm đáp số con gõ;
  *   ly = (chỉ khi kq = "cach_viet", bài kieu "so") "so_kem_chu" nếu có phần số đọc được kèm chữ lạ ("60 viên bi"), không thì "khac" (CCN-09).
  * Số có dấu ngăn hàng nghìn (`1.000`, `1 000`…) là mơ hồ — xem đầu file: một trong hai cách đọc khớp là `dung`.
+ * `cham_thap_phan: true` (mặc định false): dấu chấm là dấu thập phân DUY NHẤT — `7.200` không còn đọc là 7200 (xem đầu file); `7,200` vẫn đọc cả hai cách.
+ * `am: true` (mặc định false): đáp số và đáp số con gõ được là số ÂM (`-4` · `−4` · `–4`, kể cả kèm đơn vị `-4 °C` hay ngăn nghìn `-1,000`); con gõ `4` cho đáp số
+ * `−4` là `sai`. Không có cờ thì `-4` là "cach_viet" dù đáp số là gì.
  * Nhiều đáp số: tách theo ";" rồi so như ĐA TẬP (trừ khi `thu_tu`: so từng vị trí). Có `don_vi`: mỗi đáp số được kèm đơn vị
  * đó ở cuối (cách hay liền đều được), không kèm cũng được; đơn vị khác thì "cach_viet".
  * `kieu: "chon"`: so ĐÚNG chữ (id phương án), không đọc số.
@@ -179,13 +206,15 @@ export function cham(bai, go) {
   }
 
   const chap = donViChap(bai.don_vi);
+  const am = bai.am === true;   // chỉ cờ `true` thật (ý số âm); "true" / 1 / undefined là không
+  const ctp = bai.cham_thap_phan === true;   // chỉ cờ `true` thật (bài tập Math 5): dấu chấm không bao giờ là dấu ngăn nghìn
   const tySo = dap.some((x) => String(x).includes("/"));   // đáp số là phân số → nhận cả tỉ số `a:b` (CCN-10)
-  const ps = cac.map((t) => cachDoc(boDonVi(t, chap), tySo));
+  const ps = cac.map((t) => cachDoc(boDonViAm(t, chap, am), tySo, am, ctp));
   const hong = ps.findIndex((p) => p === null);
-  if (hong >= 0) return { kq: "cach_viet", go: goChuan, ly: lyDo(cac[hong], tySo) };
+  if (hong >= 0) return { kq: "cach_viet", go: goChuan, ly: lyDo(cac[hong], tySo, am, ctp) };
 
   // Đáp số của chính bài không đọc được (lỗi nội dung — máy kiểm bên Python chặn trước): không có gì để khớp.
-  const chuan = dap.map((x) => docSo(String(x)));
+  const chuan = dap.map((x) => docSo(String(x), false, am));
   if (chuan.some((v) => v === null) || ps.length !== chuan.length) return ra("sai");
 
   if (!ghep(ps.map((p) => p.cach.map(khoa)), chuan.map(khoa), bai.thu_tu)) return ra("sai");
