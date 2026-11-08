@@ -121,7 +121,7 @@ window.LS.ham();
   <title>Ôn tập · CIE Science 1</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.a18c182a.css">
+  <link rel="stylesheet" href="../assets/tw.4097fe7f.css">
   
   <script type="module">
     import { sched, phatLai } from "../assets/lich_on.ebee479f.js";
@@ -263,7 +263,7 @@ window.LS.ham();
             case 'the': return [];
             case 'day': return '';
             case 'viet': return { tick: (y.tu_kiem || []).map(() => false), text: '' };
-            case 'the_o': return Array(y.so_o || 0).fill(null);                         // ô → chỉ số thẻ
+            case 'the_o': case 'thu_tu': return Array(y.so_o || 0).fill(null);          // ô / vị trí → chỉ số thẻ
             case 'noi_nhom': return { hop: (y.phai || []).map(() => []), go: '' };      // hộp → chỉ số túi; go = số ghi lên hộp cuối
             default: return {};     // o · bang · noi · chon · cot · o_dk
           }
@@ -414,7 +414,8 @@ window.LS.ham();
           }
           return g;
         },
-        btYPhanSo(y) { return (y.o || []).some(c => String(c.dap || '').includes('/')); },
+        // Ý có ô ép DẠNG fraction (`dang: 'phan_so'`, Unit 6): đáp số có thể là số nguyên («2») mà con vẫn phải gõ được «/» → bàn phím chữ như ý có đáp số phân số.
+        btYPhanSo(y) { return (y.o || []).some(c => String(c.dap || '').includes('/') || c.dang === 'phan_so'); },
         // Ý có ô số ÂM (`am: true`, Unit 1/2/4/6): bàn phím SỐ (`decimal` / `numeric`) của iPhone / iPad KHÔNG có dấu trừ → cả ý dùng bàn phím chữ (`inputmode="text"`: «-» luôn gõ được).
         // Xét theo CẢ Ý như `btYPhanSo` — ô nào âm không lộ qua kiểu bàn phím. Không dùng `pattern`: nó chỉ kiểm hợp lệ form, không đổi bàn phím.
         btYAm(y) { return (y.o || []).some(c => c.am === true); },
@@ -548,6 +549,40 @@ window.LS.ham();
             default: return 'Con làm cho xong ý này rồi bấm Kiểm tra nhé.';
           }
         },
+        // Số ví dụ trong lời nhắc (CC-01 / CC-07 / CC-11): lấy trong `pool` số đầu tiên KHÔNG phải đáp số của ô nào trong ý — kể cả đáp số đổi dạng (0.25 ↔ 25 ↔ 1/4) — để ví dụ không lộ đáp số.
+        btSoViDu(y, pool) {
+          const loai = new Set();
+          for (const c of y.o || []) {
+            for (const m of String(c.dap == null ? '' : c.dap).matchAll(/(\d+)\s+(\d+)\/(\d+)|(\d+)\/(\d+)|\d+(?:\.\d+)?/g)) {
+              const v = m[1] !== undefined ? +m[1] + m[2] / m[3] : m[4] !== undefined ? m[4] / m[5] : +m[0];
+              for (const x of [v, v * 100, v / 100]) loai.add(+x.toFixed(6));
+            }
+          }
+          const ra = pool.find(n => !loai.has(n));
+          if (ra !== undefined) return ra;
+          let n = pool[0]; while (loai.has(n)) n++;
+          return n;
+        },
+        // Lời nhắc «thiếu đơn vị» (`{kq: 'cach_viet', ly: 'thieu_don_vi'}`): lấy đơn vị CỦA Ô làm ví dụ — ô % → «Thêm dấu % (ví dụ 44%).», ô kg → «… (ví dụ 9 kg)» — không phải «9 kg» cho mọi ô.
+        btNhacDonVi(y, ids) {
+          const dvs = [...new Set(ids.map(id => this.btCell(y, id).don_vi).filter(Boolean))];
+          if (dvs.length && dvs.every(d => d === '%')) return 'Thêm dấu % (ví dụ ' + this.btSoViDu(y, [44, 25, 35, 15, 55, 65, 85, 95]) + '%).';
+          const so = this.btSoViDu(y, [9, 7, 12, 6, 8, 14, 5, 11]);
+          return 'Thiếu đơn vị — viết cả số và đơn vị (ví dụ ' + (dvs.length ? dvs.slice(0, 2) : ['kg']).map(d => so + (/^[%°]/.test(d) ? '' : ' ') + d).join(' / ') + ').';
+        },
+        // Lời nhắc «sai dạng» (`{kq: 'cach_viet', ly: 'sai_dang'}` của ô có `dang`, Unit 6): giá trị đúng rồi, chỉ cần viết lại ở dạng đề đòi. MỘT câu cho cả ý, nêu dạng của CÁC Ô sai dạng (decimal / percentage / fraction — giữ thuật ngữ
+        // tiếng Anh, cùng nhãn với `terms`; theo thứ tự ô, mỗi dạng một lần). Cách viết nói bằng CHỮ, chỉ riêng ô % có ví dụ số (CC-01) — số ví dụ luôn khác đáp số (`btSoViDu`).
+        //   decimal: «(dấu chấm)» chỉ khi có ô đáp số KHÔNG nguyên · percentage: «có dấu %, như 44%» (ô con tự gõ %; máy cấm `dang` trên ô có % in sẵn `don_vi_in`, CC-06, nên không có nhánh «% in sẵn»).
+        btNhacDang(y, ids) {
+          const oo = ids.map(id => this.btCell(y, id));
+          const nhan = {
+            thap_phan: cs => cs.some(c => !/^[-−+]?\d+$/.test(String(c.dap == null ? '' : c.dap).trim())) ? 'decimal (dấu chấm)' : 'decimal',
+            phan_tram: () => 'percentage (có dấu %, như ' + this.btSoViDu(y, [44, 25, 35, 15, 55, 65, 85, 95]) + '%)',
+            phan_so: () => 'fraction (a/b)',
+          };
+          const ten = [...new Set(oo.map(c => c.dang).filter(d => nhan[d]))].map(d => nhan[d](oo.filter(c => c.dang === d)));
+          return 'Đúng giá trị rồi — viết dạng ' + (ten.length ? ten.join(' / ') : 'đề đòi') + ' nhé.';
+        },
         // Viền + nền ô gõ: sai → CHỈ ô vi phạm (`chiTiet().o`) đỏ; đúng → mọi ô xanh; `cot` sai thì KHÔNG tô ô nào.
         btClsDien(y, id) {
           const c = this.btCT(y);
@@ -644,6 +679,33 @@ window.LS.ham();
           return chon ? 'border-dashed border-indigo-600 bg-slate-50 ring-[3px] ring-indigo-200' : 'border-dashed border-slate-400 bg-slate-50';
         },
 
+        // thu_tu (Unit 6 · 6.3): xếp thẻ phân số / thập phân / % theo thứ tự. `btTL[y.id]` = mảng dài `so_o` (vị trí → chỉ số thẻ trong `y.the`, null = trống), CÙNG hình dạng `the_o` nên đặt / gỡ dùng `datThe`.
+        // Hai hàng: hàng ĐÃ XẾP ở trên (nhãn «Smallest → largest» / «Largest → smallest» theo `chieu`, `so_o` ô đánh số 1…n) và hàng thẻ ĐÃ XÁO ở dưới. Chạm một thẻ ở hàng dưới → vào ô trống ĐẦU TIÊN của hàng trên
+        // (thẻ đã xếp mờ đi, giữ chỗ); chạm thẻ ở hàng trên → về hàng dưới (ô đó trống lại); «↺» = xếp lại từ đầu. KHÔNG có bước «chọn thẻ rồi chạm ô» như `the_o`: thứ tự chỉ là một dãy, thêm lần lượt là đủ.
+        btTtOTrong(y) { return (this.btTL[y.id] || []).findIndex(v => v === null || v === undefined); },
+        btTtDat(y, vi) {
+          const o = this.btTtOTrong(y);
+          if (o < 0 || this.btTheDung(y, vi)) return;      // đủ thẻ rồi / thẻ này đã xếp: muốn lấy lại thì chạm thẻ ở hàng trên
+          this.btTL[y.id] = window.baiTap.datThe(this.btTL[y.id], o, vi, y.so_o);
+          this.btClr(y);
+        },
+        btTtGo(y, p) {
+          if (this.btTtThe(y, p) === null) return;
+          this.btTL[y.id] = window.baiTap.datThe(this.btTL[y.id], p, null, y.so_o);
+          this.btClr(y);
+        },
+        btTtLai(y) { this.btTL[y.id] = this.btTLMoi(y); this.btClr(y); },
+        btTtThe(y, p) { const i = (this.btTL[y.id] || [])[p]; return i === null || i === undefined ? null : y.the[i]; },      // thẻ đang ở vị trí p (null = trống)
+        btTtCoBang(y) { const g = (y.the || []).map(c => c.gt); return new Set(g).size < g.length; },      // có hai thẻ BẰNG giá trị (`gt` chuẩn): đổi chỗ cho nhau vẫn đúng
+        btTtNhan(y) { return y.chieu === 'giam' ? 'Largest → smallest' : 'Smallest → largest'; },
+        btTtCap(y) { const c = this.btCT(y); return c && c.cap ? c.cap : []; },       // [p, p + 1] của cặp kề nhau đầu tiên sai chiều (chỉ sau lần Kiểm tra sai; KHÔNG nói thẻ nào lớn hơn)
+        btTtClsO(y, p) {
+          if (this.btYDung(y) === true) return 'border-emerald-500 bg-emerald-50';
+          if (this.btTtCap(y).includes(p)) return 'border-rose-500 bg-rose-50';
+          return this.btTtThe(y, p) !== null ? 'border-indigo-600 bg-indigo-50' : 'border-dashed border-slate-400 bg-slate-50';
+        },
+        btTtClsThe(y, vi) { return this.btTheDung(y, vi) ? 'border-dashed border-slate-400 bg-white text-slate-900 opacity-30' : 'border-slate-600 bg-white text-slate-900'; },
+
         // noi_nhom: chạm túi rồi chạm hộp. `btSelThe[y.id]` = túi đang chọn; hộp cuối (nhãn null) có ô gõ tổng — chạm vào ô đó không đặt túi.
         btKem(y, v) { const dv = y.don_vi; return !dv ? v : BT_DV_TRUOC.includes(dv) ? dv + v : v + ' ' + dv; },
         btDvTruoc(y) { return !!y.don_vi && BT_DV_TRUOC.includes(y.don_vi); },
@@ -727,6 +789,10 @@ window.LS.ham();
           if ((this.btB[b.id] || {}).gyHien) (y.goi_y_manh || []).forEach((ln, i) => ra.push({ ln, gy: true, dau: i === 0 }));
           return ra;
         },
+        // Ý `o` vừa có `dong` vừa có bảng `luoi`: dòng chính ở TRÊN bảng, dòng gợi ý (💡) ở DƯỚI bảng — gợi ý là giàn giáo của cả ý, không chen giữa đề và bảng (M6b; trước đó gợi ý nằm giữa).
+        // Ý không có `luoi`: hai nhóm liền nhau, thứ tự không đổi.
+        btDongChinh(b, y) { return this.btDongHien(b, y).filter(d => !d.gy); },
+        btDongGy(b, y) { return this.btDongHien(b, y).filter(d => d.gy); },
         btNN(n) { if (!this.btN[n.id]) this.btN[n.id] = { first: null, dung: false, tung: false, out: false, ever: false }; return this.btN[n.id]; },
         // Ý đã được làm (có gì để chấm)? Ý bỏ trống không chấm và không ghi sổ — khỏi phạt cái con chưa đụng tới.
         btDaLam(y, tl) {
@@ -741,7 +807,7 @@ window.LS.ham();
             case 'day': return typeof tl === 'string' && tl.trim() !== '';
             case 'viet': return !!(tl && String(tl.text || '').trim());
             case 'cot': case 'o_dk': return Object.values(tl || {}).some(v => String(v == null ? '' : v).trim() !== '');
-            case 'the_o': return Array.isArray(tl) && tl.some(v => v !== null && v !== undefined);
+            case 'the_o': case 'thu_tu': return Array.isArray(tl) && tl.some(v => v !== null && v !== undefined);
             case 'noi_nhom': return !!tl && ((tl.hop || []).some(h => h.length > 0) || String(tl.go || '').trim() !== '');
             default: return false;
           }
@@ -858,7 +924,8 @@ window.LS.ham();
               N.dung = dung;
               if (!dung) { sai = true; if (dien) saiDien = true; }
             }
-            for (const v of Object.values(K.ly || {})) goiy.add(v === 'thieu_don_vi' ? 'Thiếu đơn vị — viết cả số và đơn vị (ví dụ 9 kg).'
+            for (const v of Object.values(K.ly || {})) goiy.add(v === 'thieu_don_vi' ? this.btNhacDonVi(y, Object.keys(K.ly).filter(id => K.ly[id] === 'thieu_don_vi'))      // CC-07/11: ví dụ theo đơn vị CỦA Ô (ô % → «Thêm dấu % (ví dụ 44%)»), số ví dụ khác đáp số
+              : v === 'sai_dang' ? this.btNhacDang(y, Object.keys(K.ly).filter(id => K.ly[id] === 'sai_dang'))      // Unit 6: ô ÉP DẠNG (`dang`): giá trị đúng nhưng viết sai dạng — vàng, không ghi sổ, MỘT câu nhắc theo `dang` của các ô sai dạng
               : v === 'viet_bang_chu' ? 'Viết số bằng chữ — gõ từng từ tiếng Anh, không gõ chữ số (ví dụ 305 → three hundred and five).'      // ô CHỮ (`chu(x)`) con gõ chữ số: vẫn «sai» (không ghi khác), chỉ nhắc cách làm
               : v === 'cau' ? 'Chưa đọc được câu — viết bằng chữ cái, số và + − × ÷, có dấu ngoặc nếu cần; câu số thì có đúng một dấu =. Nhân viết 2 × x, không viết 2x; không có phím × thì gõ dấu * (2 * x), đừng gõ chữ x để nhân.'      // ô CÂU SỐ (`cau`): không đọc được là chưa sai — nhắc cách viết, không ghi sổ. CC-02: nói rõ cách gõ dấu nhân (bàn phím chữ của iPad không có ×; máy nhận `*` như ×)
               : v === 'so' ? 'Câu của con đúng về giá trị, nhưng hãy viết bằng đúng các số của đề (hay của hình): không gộp, không tách, không thêm số nào.'      // ô CÂU SỐ (`cau`, CC-11): tương đương mẫu mà sai luật SỐ — vẫn sai (g / sổ không đổi), chỉ nói rõ vì sao
@@ -5076,6 +5143,7 @@ registerProcessor('thu-16k',T);`;
 .mlgsvg{display:block;width:204px;max-width:100%;height:auto;margin:0 auto}
 .mcvsvg{display:block;max-width:100%;height:auto;margin:0 auto}
 .mtcsvg{display:block;width:100%;max-width:304px;height:auto;margin:0 auto}
+.mhosvg,.mbcsvg,.mvnsvg{display:block;width:100%;max-width:304px;height:auto;margin:0 auto}
 .mnho,.mnho>.mstat,.mnho>.mpies,.mnho .mpie{display:flex;align-items:center;justify-content:center;width:100%;height:100%;margin:0}
 .mnho svg{display:block;width:100%;height:100%;max-width:100%;max-height:100%;margin:0}
 .mnsvg{display:block}
@@ -6992,11 +7060,12 @@ registerProcessor('thu-16k',T);`;
                       <template x-for="k in (y.dem_tat_ca - (y.so || []).length)" :key="'h' + k"><span class="bt-an inline-flex h-14 w-11 items-center justify-center rounded-lg border-2 border-slate-600 text-xl font-bold">?</span></template>
                     </div>
                   </template>
-                  <template x-for="(d, li) in btDongHien(e.b, y)" :key="li">
-                    <div :data-bt-goi-y="d.gy ? 'dong' : null" :class="d.gy ? 'rounded-lg border border-dashed border-amber-300 bg-amber-50 px-2 py-1.5' : ''" class="flex flex-wrap items-center gap-1.5 text-[17px]">
-                      <span x-show="d.dau" data-bt-goi-y-nhan class="w-full text-[11px] font-bold uppercase tracking-wider text-amber-700">💡 Gợi ý</span>
-                      <template x-for="(p, pi) in d.ln" :key="pi">
-                        
+                  
+<template x-for="(d, li) in btDongChinh(e.b, y)" :key="li">
+  <div :data-bt-goi-y="d.gy ? 'dong' : null" :class="d.gy ? 'rounded-lg border border-dashed border-amber-300 bg-amber-50 px-2 py-1.5' : ''" class="flex flex-wrap items-center gap-1.5 text-[17px]">
+    <span x-show="d.dau" data-bt-goi-y-nhan class="w-full text-[11px] font-bold uppercase tracking-wider text-amber-700">💡 Gợi ý</span>
+    <template x-for="(p, pi) in d.ln" :key="pi">
+      
 <span :class="p.o && btOChu(btCell(y, p.o)) ? 'min-w-[16rem] flex-1' : ''" class="inline-flex items-center gap-1.5">
   <template x-if="p.html !== undefined"><span x-html="p.html"></span></template>
   <template x-if="p.o">
@@ -7024,19 +7093,63 @@ registerProcessor('thu-16k',T);`;
   </template>
 </span>
 
-                      </template>
-                    </div>
-                  </template>
+    </template>
+  </div>
+</template>
+
                   <!-- Bảng có ô trống (`luoi`, M4b): hàng × ô, ô nhập nằm TRONG ô bảng (cột thẳng, có viền); bảng rộng thì cuộn ngang trong khung bảng, không tràn trang.
                        `luoi_dau`: hàng đầu là hàng tiêu đề. Ô nhập dùng cùng markup với `dong` (macro `phan_o` ở `_bt_o_nhap.html`), ô chữ chỉ tối thiểu 11rem. Đánh số ô tiếp sau ô của `dong`. -->
                   <template x-if="(y.luoi_manh || []).length">
                     <div data-bt-luoi class="max-w-full overflow-x-auto">
                       <table class="border-collapse text-[15px]">
+                        <!-- `luoi_dau`: hàng đầu là hàng TIÊU ĐỀ thật (<thead> + <th scope="col">, trình đọc màn hình biết đó là tiêu đề cột); các hàng còn lại là <td> trong <tbody> (M6b) -->
+                        <template x-if="y.luoi_dau">
+                          <thead>
+                            <tr>
+                              <template x-for="(ce, ci) in y.luoi_manh[0]" :key="ci">
+                                <th scope="col" class="border border-slate-300 bg-slate-100 px-2 py-1 text-center align-middle font-semibold">
+                                  <span class="inline-flex flex-wrap items-center justify-center gap-1.5">
+                                    <template x-for="(p, pi) in ce" :key="pi">
+                                      
+<span :class="p.o && btOChu(btCell(y, p.o)) ? 'min-w-[11rem]' : ''" class="inline-flex items-center gap-1.5">
+  <template x-if="p.html !== undefined"><span x-html="p.html"></span></template>
+  <template x-if="p.o">
+    <span :class="btOChu(btCell(y, p.o)) ? 'min-w-0' : ''" class="inline-flex flex-wrap items-center gap-1.5">
+      <!-- ý có đáp số phân số (Unit 8): bàn phím chữ để gõ được "/" và dấu cách (3/4, 1 3/20) — bàn phím decimal của iPad không có; xét theo CẢ Ý để không lộ ô nào là phân số.
+           Ô phép tính (`bt` "= …": 20.478, 1 19/20) rộng hơn (w-24); TRONG bảng `luoi` mà mọi đáp số ngắn (≤ 4 ký tự, `btLuoiHep`, CC-13) thì w-14 để bảng 9–10 cột không tràn khung ở iPad. Ô CHỮ (`dap_chu`, `[[= chu(x)]]`: «fifty-six point zero eight two») là <textarea rows=1> TỰ GIÃN, rộng hết phần còn lại của dòng (`flex-1`, tối thiểu 16rem): word form dài («eight hundred and thirteen thousand, five hundred and ninety-three point zero zero eight», ~865 px ở 17 px) xuống dòng thay vì cuộn ngang trong ô 256 px; Enter không xuống dòng mà bỏ focus (đáp án một dòng).
+           Ý có ô `am` (số âm): bàn phím chữ cho cả ý (`btYAm`). Ô nhiều giá trị (`uoc_chung`…): bàn phím chữ + placeholder «cách nhau dấu phẩy» + ô rộng 12rem, chữ gợi ý nhỏ hơn chữ gõ để vừa ô (`btNhieuGt`). -->
+      <template x-if="btOChu(btCell(y, p.o))">
+        <textarea rows="1" inputmode="text" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-bt-o :data-o="p.o"
+                  x-init="$nextTick(() => btFitTheoDoi($el))" @keydown.enter.prevent="$el.blur()"
+                  :value="btO(y, p.o)" @input="btNhapO(y, p.o, $event.target.value); btFit($el)" :aria-label="'Ô ' + p.o" :class="btCls(y, p.o)"
+                  class="block min-h-10 w-full resize-none overflow-hidden rounded-lg border-[1.5px] px-2 py-[7px] text-left text-[17px] font-semibold leading-snug"></textarea>
+      </template>
+      <template x-if="!btOChu(btCell(y, p.o))">
+      <input type="text" :inputmode="btYPhanSo(y) || btYAm(y) || btNhieuGt(y, btCell(y, p.o)) ? 'text' : 'decimal'" autocomplete="off" autocapitalize="off" spellcheck="false" data-bt-o :data-o="p.o"
+             :value="btO(y, p.o)" @input="btNhapO(y, p.o, $event.target.value)" :disabled="btTL[y.id][p.o] === 'none'"
+             :placeholder="btNhieuGt(y, btCell(y, p.o)) ? 'cách nhau dấu phẩy' : btCell(y, p.o).don_vi ? 'số + đv' : ''" :aria-label="'Ô ' + p.o"
+             :class="btCls(y, p.o) + (btNhieuGt(y, btCell(y, p.o)) ? ' w-48 placeholder:text-sm placeholder:font-normal' : btCell(y, p.o).don_vi ? ' w-24' : String(btCell(y, p.o).bt || '').startsWith('=') ? (btLuoiHep(y) ? ' w-14' : ' w-24') : ' w-14')"
+             class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+      </template>
+      <button type="button" x-show="btLaMode(y, btCell(y, p.o))" data-bt-nomode @click="btNone(y, p.o)"
+              :class="btTL[y.id][p.o] === 'none' ? 'border-slate-700 bg-slate-700 text-white' : 'border-dashed border-slate-400 bg-white text-slate-700'"
+              class="min-h-8 rounded-lg border px-2 text-xs">no mode</button>
+    </span>
+  </template>
+</span>
+
+                                    </template>
+                                  </span>
+                                </th>
+                              </template>
+                            </tr>
+                          </thead>
+                        </template>
                         <tbody>
-                          <template x-for="(hang, ri) in y.luoi_manh" :key="ri">
+                          <template x-for="(hang, ri) in (y.luoi_dau ? y.luoi_manh.slice(1) : y.luoi_manh)" :key="ri">
                             <tr>
                               <template x-for="(ce, ci) in hang" :key="ci">
-                                <td :class="y.luoi_dau && ri === 0 ? 'bg-slate-100 font-semibold' : ''" class="border border-slate-300 px-2 py-1 text-center align-middle">
+                                <td class="border border-slate-300 px-2 py-1 text-center align-middle">
                                   <span class="inline-flex flex-wrap items-center justify-center gap-1.5">
                                     <template x-for="(p, pi) in ce" :key="pi">
                                       
@@ -7077,6 +7190,43 @@ registerProcessor('thu-16k',T);`;
                       </table>
                     </div>
                   </template>
+                  
+<template x-for="(d, li) in btDongGy(e.b, y)" :key="li">
+  <div :data-bt-goi-y="d.gy ? 'dong' : null" :class="d.gy ? 'rounded-lg border border-dashed border-amber-300 bg-amber-50 px-2 py-1.5' : ''" class="flex flex-wrap items-center gap-1.5 text-[17px]">
+    <span x-show="d.dau" data-bt-goi-y-nhan class="w-full text-[11px] font-bold uppercase tracking-wider text-amber-700">💡 Gợi ý</span>
+    <template x-for="(p, pi) in d.ln" :key="pi">
+      
+<span :class="p.o && btOChu(btCell(y, p.o)) ? 'min-w-[16rem] flex-1' : ''" class="inline-flex items-center gap-1.5">
+  <template x-if="p.html !== undefined"><span x-html="p.html"></span></template>
+  <template x-if="p.o">
+    <span :class="btOChu(btCell(y, p.o)) ? 'min-w-0 flex-1' : ''" class="inline-flex flex-wrap items-center gap-1.5">
+      <!-- ý có đáp số phân số (Unit 8): bàn phím chữ để gõ được "/" và dấu cách (3/4, 1 3/20) — bàn phím decimal của iPad không có; xét theo CẢ Ý để không lộ ô nào là phân số.
+           Ô phép tính (`bt` "= …": 20.478, 1 19/20) rộng hơn (w-24); TRONG bảng `luoi` mà mọi đáp số ngắn (≤ 4 ký tự, `btLuoiHep`, CC-13) thì w-14 để bảng 9–10 cột không tràn khung ở iPad. Ô CHỮ (`dap_chu`, `[[= chu(x)]]`: «fifty-six point zero eight two») là <textarea rows=1> TỰ GIÃN, rộng hết phần còn lại của dòng (`flex-1`, tối thiểu 16rem): word form dài («eight hundred and thirteen thousand, five hundred and ninety-three point zero zero eight», ~865 px ở 17 px) xuống dòng thay vì cuộn ngang trong ô 256 px; Enter không xuống dòng mà bỏ focus (đáp án một dòng).
+           Ý có ô `am` (số âm): bàn phím chữ cho cả ý (`btYAm`). Ô nhiều giá trị (`uoc_chung`…): bàn phím chữ + placeholder «cách nhau dấu phẩy» + ô rộng 12rem, chữ gợi ý nhỏ hơn chữ gõ để vừa ô (`btNhieuGt`). -->
+      <template x-if="btOChu(btCell(y, p.o))">
+        <textarea rows="1" inputmode="text" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-bt-o :data-o="p.o"
+                  x-init="$nextTick(() => btFitTheoDoi($el))" @keydown.enter.prevent="$el.blur()"
+                  :value="btO(y, p.o)" @input="btNhapO(y, p.o, $event.target.value); btFit($el)" :aria-label="'Ô ' + p.o" :class="btCls(y, p.o)"
+                  class="block min-h-10 w-full resize-none overflow-hidden rounded-lg border-[1.5px] px-2 py-[7px] text-left text-[17px] font-semibold leading-snug"></textarea>
+      </template>
+      <template x-if="!btOChu(btCell(y, p.o))">
+      <input type="text" :inputmode="btYPhanSo(y) || btYAm(y) || btNhieuGt(y, btCell(y, p.o)) ? 'text' : 'decimal'" autocomplete="off" autocapitalize="off" spellcheck="false" data-bt-o :data-o="p.o"
+             :value="btO(y, p.o)" @input="btNhapO(y, p.o, $event.target.value)" :disabled="btTL[y.id][p.o] === 'none'"
+             :placeholder="btNhieuGt(y, btCell(y, p.o)) ? 'cách nhau dấu phẩy' : btCell(y, p.o).don_vi ? 'số + đv' : ''" :aria-label="'Ô ' + p.o"
+             :class="btCls(y, p.o) + (btNhieuGt(y, btCell(y, p.o)) ? ' w-48 placeholder:text-sm placeholder:font-normal' : btCell(y, p.o).don_vi || String(btCell(y, p.o).bt || '').startsWith('=') ? ' w-24' : ' w-14')"
+             class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+      </template>
+      <button type="button" x-show="btLaMode(y, btCell(y, p.o))" data-bt-nomode @click="btNone(y, p.o)"
+              :class="btTL[y.id][p.o] === 'none' ? 'border-slate-700 bg-slate-700 text-white' : 'border-dashed border-slate-400 bg-white text-slate-700'"
+              class="min-h-8 rounded-lg border px-2 text-xs">no mode</button>
+    </span>
+  </template>
+</span>
+
+    </template>
+  </div>
+</template>
+
                 </div>
               </template>
 
@@ -7733,6 +7883,35 @@ registerProcessor('thu-16k',T);`;
   </div>
 </template>
 
+<!-- thu_tu (Unit 6): xếp thẻ phân số / thập phân / % theo thứ tự. Hàng ĐÃ XẾP ở trên (nhãn theo `chieu`, `so_o` ô đánh số), hàng thẻ ĐÃ XÁO ở dưới; chạm thẻ dưới → vào ô trống đầu tiên, chạm thẻ trên → về hàng dưới, ↺ = xếp lại.
+     Thẻ in `t_html` (phân số xếp chồng như chữ đề; khoá *_html mới được x-html); sai → tô ĐỎ hai thẻ kề nhau của `chiTiet().cap` (không nói thẻ nào lớn hơn), dòng chữ ở khung phản hồi chung bên dưới. -->
+<template x-if="y.kieu === 'thu_tu'">
+  <div data-bt-tt class="mt-1.5">
+    <div class="flex items-center justify-between gap-2">
+      <p data-bt-tt-nhan class="text-[13px] font-bold text-slate-600" x-text="btTtNhan(y)"></p>
+      <button type="button" data-bt-tt-lai @click="btTtLai(y)" aria-label="Xếp lại từ đầu" title="Xếp lại từ đầu"
+              class="min-h-8 min-w-8 rounded-lg border border-slate-300 bg-white px-2 text-base leading-none text-slate-700">↺</button>
+    </div>
+    <div data-bt-tt-hang class="my-1.5 flex flex-wrap gap-2">
+      <template x-for="(vi, p) in (btTL[y.id] || [])" :key="'o' + p">
+        <button type="button" data-bt-tt-o :data-p="p" :data-co="String(btTtThe(y, p) !== null)" @click="btTtGo(y, p)"
+                :aria-label="'Vị trí ' + (p + 1) + (btTtThe(y, p) !== null ? ': ' + btTtThe(y, p).chu_tho + ' (chạm để gỡ)' : ' (trống)')"
+                :class="btTtClsO(y, p)" class="inline-flex h-12 min-w-[56px] items-center justify-center rounded-lg border-2 px-2 text-[17px] font-bold text-slate-900">
+          <template x-if="btTtThe(y, p) !== null"><span x-html="btTtThe(y, p).t_html"></span></template>
+          <template x-if="btTtThe(y, p) === null"><span class="text-[15px] font-semibold text-slate-400" x-text="p + 1"></span></template>
+        </button>
+      </template>
+    </div>
+    <div data-bt-tt-the class="my-2 flex flex-wrap gap-2">
+      <template x-for="(c, vi) in y.the" :key="'t' + vi">
+        <button type="button" data-bt-tt-card :data-vi="vi" :data-used="String(btTheDung(y, vi))" :aria-disabled="String(btTheDung(y, vi))" @click="btTtDat(y, vi)"
+                :aria-label="c.chu_tho + (btTheDung(y, vi) ? ' (đã xếp)' : '')"
+                :class="btTtClsThe(y, vi)" class="inline-flex h-12 min-w-[56px] items-center justify-center rounded-lg border-2 px-2 text-[17px] font-bold"><span x-html="c.t_html"></span></button>
+      </template>
+    </div>
+  </div>
+</template>
+
 <!-- noi_nhom: chạm túi rồi chạm hộp; màu theo HỘP; hộp cuối (nhãn null) có ô gõ tổng -->
 <template x-if="y.kieu === 'noi_nhom'">
   <div data-bt-nn class="mt-1.5">
@@ -7860,7 +8039,14 @@ registerProcessor('thu-16k',T);`;
                       <p data-bt-mau-khoa class="py-1.5 text-[13.5px] text-slate-500">Lời giải (bài mẫu) mở sau khi máy chấm xong</p>
                     </template>
                     
-<template x-if="btLaDien(y)">
+
+<template x-if="y.kieu === 'thu_tu'">
+  <div data-bt-mau-khoi class="py-1.5 text-[15px]">
+    <p data-bt-mau><b>Thứ tự đúng:</b> <span x-html="y.mau_html || ''"></span></p>
+    <p data-bt-khac x-show="btTtCoBang(y)" class="mt-1.5 rounded-lg bg-indigo-50 px-2 py-1 text-sm text-indigo-800">Hai thẻ bằng giá trị thì đứng cạnh nhau theo thứ tự nào cũng đúng.</p>
+  </div>
+</template>
+<template x-if="btLaDien(y) && y.kieu !== 'thu_tu'">
   <div data-bt-mau-khoi class="py-1.5 text-[15px]">
     <p data-bt-mau><b>Một cách đúng:</b> <span x-html="(y.mau_html || [])[0] || ''"></span></p>
     <p data-bt-khac class="mt-1.5 rounded-lg bg-indigo-50 px-2 py-1 text-sm text-indigo-800"

@@ -9,7 +9,7 @@
  * (thống kê) và `tests/bai_tap_mau_o.json` (chấm ô: số âm, ô nhiều giá trị, ngăn nghìn) — tests/test_bai_tap.py và tests/test_bai_tap_js.mjs cùng đọc.
  *
  * Tài liệu đầu vào là tài liệu DỰNG (`dist/<hs>/study/<slug>.bai-tap.json`, do `src/bai_tap.py › dung()` sinh). Hình dạng từng ý `y`:
- *   o        y.o[]   = {id "o0".., dap, don_vi?, don_vi_in?, kt, goi_y?, am?, dau_cong?, dap_chu?, cau?}   dap_chu: [...] = ô CHỮ (`[[= chu(x)]]`, word form: các dạng chữ chấp nhận, `chamChu`) · cau: "x + 2 = y" = ô CÂU SỐ / BIỂU THỨC CÓ CHỮ (`[[= cau("x + 2 = y")]]`: con gõ câu của mình, chấm theo TƯƠNG ĐƯƠNG, `chamCauSo`) · goi_y: true = ô của dòng GỢI Ý (y.goi_y_manh): chamY bỏ qua, chamGoiY chấm
+ *   o        y.o[]   = {id "o0".., dap, don_vi?, don_vi_in?, kt, goi_y?, am?, dau_cong?, toi_gian?, ep_toi_gian?, dap_chu?, cau?}   dap_chu: [...] = ô CHỮ (`[[= chu(x)]]`, word form: các dạng chữ chấp nhận, `chamChu`) · cau: "x + 2 = y" = ô CÂU SỐ / BIỂU THỨC CÓ CHỮ (`[[= cau("x + 2 = y")]]`: con gõ câu của mình, chấm theo TƯƠNG ĐƯƠNG, `chamCauSo`) · goi_y: true = ô của dòng GỢI Ý (y.goi_y_manh): chamY bỏ qua, chamGoiY chấm
  *   bang     y.o[]   = {id "r0c1".., dap, don_vi?, don_vi_in?, kt, hang, cot, am?}   (don_vi_in = đơn vị in sẵn cạnh ô: xem chamO)
  *            am: true = ô của ý có số ÂM (khoá `am` của ý, chỉ kiểu o / bang): đáp số có thể là "−4" (U+2212), chamO chấm `-4` · `−4` · `–4`
  *   noi      y.trai[] = {t, kt} · y.phai[] = {t} · y.ghep = [[chỉ số trái, chỉ số phải]]
@@ -21,6 +21,7 @@
  *            · y.so_nghiem · y.nhieu_cach          (kiểu ĐIỀU KIỆN — xem `KIEU_DIEN` và phần «Kiểu ý điều kiện» bên dưới)
  *   o_dk     y.cay {trai, phai} (HANG = {dau, tu, mau?}, NT = {so} | {o}) · y.o[] = {id: tên, kieu "nguyen" | "tp"} · y.so_le? {"3": 2, "2": 1} · y.doi_cho · y.mau · y.so_nghiem
  *   the_o    y.the_so[] (chữ in) · y.the_gt[] (giá trị chuẩn) · y.hang_cay[] (ô đánh số chung 0..so_o-1) · y.so_o · y.mau · y.so_nghiem
+ *   thu_tu  y.the[] = {t, t_html, chu_tho, gt} (đã xáo; gt = giá trị chuẩn) · y.chieu "tang" | "giam" · y.so_o (= số thẻ) · y.mau (chỉ số thẻ theo thứ tự đúng) · y.mau_html      (M6a, Unit 6 — xem phần «thu_tu» bên dưới)
  *   noi_nhom y.trai[] (chữ in: giá trị các túi) · y.phai[] (chữ in nhãn hộp; null = hộp cuối con tự ghi tổng) · y.moi_nhom (số túi mỗi hộp) · y.don_vi? · y.mau · y.so_nghiem
  *   Mọi ý có y.nhom = [{id, kt}] — mỗi nhóm là MỘT item ghi sổ (id "b.xxxxxxxx").
  *
@@ -37,6 +38,7 @@
  *   cot       {[oId]: string}                  đúng MỘT chữ số 0–9 trong mỗi ô (khoảng trắng hai đầu bỏ qua; số nguyên 0–9 cũng nhận)
  *   o_dk      {[tên]: string}                  số con gõ ("0,345", "6/2"), đọc bằng docSo của toan_cham; chỉ nhận CHUỖI. Đúng khi thoả bang · so_le · khác 0 · nguyên (xem chiTiet)
  *   the_o     (number | null)[]                dài so_o: ô → chỉ số thẻ trong y.the_so; thẻ nào cũng dùng đúng MỘT lần
+ *   thu_tu    (number | null)[]                dài so_o: vị trí → chỉ số thẻ trong y.the (cùng hình dạng the_o); thẻ nào cũng dùng đúng MỘT lần
  *   noi_nhom  {hop: number[][], go: string}    hop[k] = chỉ số các túi (trong y.trai) con đặt vào hộp k (đúng moi_nhom túi, mỗi túi dùng một lần); go = số con ghi lên hộp cuối (null trong y.phai)
  * Chưa trả lời → "sai", không bao giờ ném lỗi. Kết quả: {[idNhom]: "dung" | "sai" | "cach_viet"}.
  */
@@ -183,6 +185,8 @@ function boDonViNhieu(g, dv, tienTo) {
  *   `ly: "viet_bang_chu"` (xem `chamChu`).
  *   Ô có `toi_gian` (đề đòi simplest form, Unit 8): đúng giá trị mà còn rút gọn được (18/20 cho 9/10) vẫn là "dung" — KHÔNG trừ g (chủ dự án chốt
  *   2026-11-03) — kèm `ly: "chua_toi_gian"` để trang nhắc. Phân số không thực sự (39/20) và hỗn số (1 19/20) cùng giá trị đều đúng.
+ *   Ô có thêm `ep_toi_gian: true` (kiến thức `fp.toi_gian` — rút gọn là việc DUY NHẤT của ý, Unit 6; QD-04 B): chưa tối giản (gõ lại đúng phân số đề) → `{kq: "cach_viet", ly: "chua_toi_gian"}`:
+ *   NHẮC, không ghi sổ, không ⭐, không chấm `dung` (như `sai_dang`). Tối giản / hỗn số cùng giá trị / decimal (đã có `dang`) giữ như trên.
  * Bọc `cham({dap, kieu: "so", don_vi}, go)` của toan_cham.js: `5,5` = `5.5`; `9kg` = `9 kg`; số 9 mà ô đòi đơn vị (`o.don_vi`) thì
  * "cach_viet"/"thieu_don_vi" (toan_cham tự nó cho qua khi thiếu đơn vị — ở đây ô đòi đơn vị thì phải có; số SAI mà thiếu đơn vị vẫn là "sai").
  * `o.don_vi_in` (đơn vị ĐÃ IN cạnh ô, chỉ có khi ô không có `don_vi`) là TUỲ CHỌN: nhận số đứng một mình HOẶC kèm đúng đơn vị đó, đơn vị khác
@@ -206,7 +210,7 @@ function boDonViNhieu(g, dv, tienTo) {
  * (`1,2, 1,8` = `1,2 1,8` = `1.2, 1.8` = `1,2; 1,8` cho 1.2 và 1.8). Không cách nào khớp: nếu mọi cách đọc đều đọc được thì "sai", còn có cách không
  * đọc được (vd `1,2,1,8`) thì "cach_viet" — không tính sai một đáp số có thể đúng.
  */
-export function chamO(o, go) {
+function chamOGoc(o, go) {
   if (o.dap_chu !== undefined) return chamChu(o, go);   // ô CHỮ (`chu(x)`, word form): so chữ, không đọc số
   if (o.cau !== undefined) return chamCauSo(o, go);       // ô CÂU SỐ (`cau("x + 2 = y")`): chấm theo tương đương, không đọc số
   const dap = String(o.dap);
@@ -241,11 +245,61 @@ export function chamO(o, go) {
   const dung = kqs.find((x) => x.r.kq === "dung") || kqs.find((x) => x.r.kq === "chua_toi_gian");
   if (dung) {
     if (dvBat && (cac.length > 1 ? !coDv : cham({ dap: cac, kieu: "so", am, cham_thap_phan: true }, dung.nhap).kq === "dung")) return { kq: "cach_viet", ly: "thieu_don_vi" };   // đúng số, chưa ghi đơn vị
-    return dung.r.kq === "chua_toi_gian" ? { kq: "dung", ly: "chua_toi_gian" } : { kq: "dung" };
+    if (dung.r.kq !== "chua_toi_gian") return { kq: "dung" };
+    return o.ep_toi_gian === true ? { kq: "cach_viet", ly: "chua_toi_gian" } : { kq: "dung", ly: "chua_toi_gian" };   // QD-04 B: ô `ep_toi_gian` (kt `fp.toi_gian`, Unit 6) → NHẮC, không ghi sổ, không ⭐; ô `toi_gian` thường (Unit 8) giữ luật 2026-11-03 (đúng + nhắc)
   }
   if (kqs.every((x) => x.r.kq === "sai")) return { kq: "sai" };
   const hong = kqs.find((x) => x.r.kq === "cach_viet") || kqs[0];
   return hong.r.ly ? { kq: hong.r.kq, ly: hong.r.ly } : { kq: hong.r.kq };
+}
+
+// ── Ô chấm theo DẠNG đáp số (`o.dang`, M6a — Unit 6: bảng chuyển phân số ↔ thập phân ↔ phần trăm) ──────────────────────────────────────────
+const DANG_HOP_LE = ["thap_phan", "phan_so", "phan_tram"];
+
+/**
+ * Dạng con đã GÕ → {loai, v} hoặc null (không đọc được thành MỘT số, không ném). `loai`: "phan_tram" (kết thúc bằng `%`; `v` = số đứng trước `%` chia 100) · "phan_so" (có `/`: `3/5`, `1 1/5`)
+ * · "thap_phan" (có dấu `.` hoặc `,` đọc được như thập phân: `0.6`, `0,6`) · "nguyen" (chỉ chữ số). `v` = GIÁ TRỊ thật của đại lượng ({n, d}): `60%` → 3/5.
+ */
+function dangGo(g, am) {
+  const m = /^(.+?)\s*%$/.exec(g);
+  if (m) {
+    const v = docSo(m[1], false, am);
+    return v ? { loai: "phan_tram", v: { n: v.n, d: v.d * 100n } } : null;
+  }
+  const v = docSo(g, false, am);
+  if (!v) return null;
+  return { loai: g.includes("/") ? "phan_so" : /[.,]/.test(g) ? "thap_phan" : "nguyen", v };
+}
+
+/**
+ * Áp luật `dang` lên kết quả gốc `r` của ô: con gõ ĐÚNG giá trị nhưng SAI dạng (ô thập phân gõ «3/5» hay «60%»; ô phân số gõ «0.6» hay «60%»; ô % gõ «3/5» hay «0.6») → `cach_viet` kèm
+ * `ly: "sai_dang"` (KHÔNG tính sai, không tính đúng — trang nhắc «Viết dạng decimal / fraction / percentage» theo `o.dang`). Sai giá trị → sai như cũ. Dạng "nguyen" hợp lệ ở mọi ô (3 là số thập
+ * phân, là phân số 3/1, và — gõ vào ô % — đọc như phần trăm), trừ khi ô % chấm SAI mà giá trị thật khớp (đáp 100, gõ «1»: chắc chắn đang viết 100% dạng thập phân); ô % thiếu đơn vị bắt buộc (`thieu_don_vi`) giữ nguyên.
+ * Ô % đáp `dap` là SỐ phần trăm («60» cho 60%); giá trị thật = dap / 100.
+ */
+function chamDang(o, go, r) {
+  const d = o.dang, am = o.am === true;
+  const g = typeof go === "string" ? go.trim() : typeof go === "number" ? String(go) : "";
+  if (!g || o.dap_chu !== undefined || o.cau !== undefined) return r;
+  const dap = docSo(String(o.dap), false, am);
+  const t = dap ? dangGo(g, am) : null;
+  if (!t) return r;
+  const that = d === "phan_tram" ? { n: dap.n, d: dap.d * 100n } : dap;   // giá trị thật của đáp số
+  const saiDang = d === "thap_phan" ? t.loai === "phan_so" || t.loai === "phan_tram"
+    : d === "phan_so" ? t.loai === "thap_phan" || t.loai === "phan_tram"
+      : t.loai === "phan_so" || (r.kq === "sai" && (t.loai === "thap_phan" || t.loai === "nguyen"));
+  if (!saiDang) return r;
+  if (r.kq === "dung" || bang(t.v, that)) return { kq: "cach_viet", ly: "sai_dang" };   // đúng giá trị, sai dạng
+  return r.kq === "cach_viet" ? { kq: "sai" } : r;                                     // sai giá trị (kể cả «70%» ở ô thập phân: đọc được rồi, chỉ là sai)
+}
+
+/**
+ * Chấm MỘT ô số (xem `chamOGoc` ngay trên: số âm, đơn vị, ngăn nghìn, nhiều giá trị…). Ô có `dang` (một trong `thap_phan` · `phan_so` · `phan_tram`) thì thêm luật DẠNG — xem `chamDang`;
+ * ô KHÔNG khai `dang` (hoặc dạng lạ) giữ hành vi cũ TUYỆT ĐỐI (Unit 1 / 2 / 3 / 4 / 8 không đổi).
+ */
+export function chamO(o, go) {
+  const r = chamOGoc(o, go);
+  return DANG_HOP_LE.includes(o.dang) ? chamDang(o, go, r) : r;
 }
 
 /**
@@ -540,8 +594,8 @@ export function noiCap(traLoi, trai, phai) {
 // không biết con sai ô nào). Bài chưa làm xong thì trang chỉ NHẮC (`chuaXong`), không chấm, không ghi sổ. Đã có `cot` · `o_dk` · `the_o` · `noi_nhom`
 // (mỗi hàm một `switch (y.kieu)`).
 
-/** Các kiểu ý điều kiện — trang dùng để biết ý nào cần `chuaXong` / `chiTiet` / `xDien` / «↻ Tìm cách khác». */
-export const KIEU_DIEN = ["cot", "o_dk", "the_o", "noi_nhom"];
+/** Các kiểu ý điều kiện — trang dùng để biết ý nào cần `chuaXong` / `chiTiet` / `xDien` (và, nếu `nhieu_cach`, «↻ Tìm cách khác» — `thu_tu` không có: MỘT đáp án). */
+export const KIEU_DIEN = ["cot", "o_dk", "the_o", "noi_nhom", "thu_tu"];
 
 // Tên cột theo mũ 10 (+3): bảng 7 tên đầu CÙNG với Python (`_TEN_COT`); số con tính ra có thể dài hơn số đề (9999 + 9999) nên thêm một tên.
 const TEN_COT = ["thousandths", "hundredths", "tenths", "ones", "tens", "hundreds", "thousands", "ten thousands"];
@@ -663,10 +717,13 @@ function inFr(v, phan = false) {
 }
 const coPhanSo = (cay) => [...cay.trai, ...cay.phai].some((h) => h.mau);
 const coO = (ds) => ds.some((h) => h.tu.o !== undefined || (h.mau && h.mau.o !== undefined));
-/** Một vế đã điền: `0.345 + 0.215 + 0.44` · `3/5 + 1/10` (dấu trừ U+2212); `chuO(ô)` cho chữ của từng ô. Giống `_ve_chu`. */
+/** Một vế đã điền: `0.345 + 0.215 + 0.44` · `3/5 + 1/10` (dấu trừ U+2212); `chuO(ô)` cho chữ của từng ô. Số ÂM (chữ bắt đầu «−», thẻ `the_o` + `am`) đứng SAU một toán tử (hay sau dấu trừ của cây
+ *  ở đầu vế) được bọc ngoặc như sách: `7 − (−4)` · `7 + (−4)` · `−(−4)`; số âm đứng đầu vế (`−4 + 7`) không bọc. Giống `_ve_chu`. */
 const veChu = (ds, chuO) => ds.map((h, i) => {
   const nt = (x) => (x.so !== undefined ? x.so : chuO(x.o));
-  return (i === 0 ? (h.dau === "-" ? "−" : "") : h.dau === "-" ? " − " : " + ") + nt(h.tu) + (h.mau ? "/" + nt(h.mau) : "");
+  const t = nt(h.tu) + (h.mau ? "/" + nt(h.mau) : "");
+  const bocNgoac = t.startsWith("−") && (i > 0 || h.dau === "-");
+  return (i === 0 ? (h.dau === "-" ? "−" : "") : h.dau === "-" ? " − " : " + ") + (bocNgoac ? `(${t})` : t);
 }).join("");
 /** Chữ của vế phải ở dòng «… chưa bằng …»: vế không có ô thì là GIÁ TRỊ; một số hạng là ô thì chính số đã điền; còn lại «phép đã điền = giá trị». */
 function veDich(cay, chuO, giaTri, phan) {
@@ -737,6 +794,31 @@ function danhGiaTheO(y, tl) {
   return { cards, gts, hang, ok: hang.every((h) => h.khop) };
 }
 const okTheO = (y, tl) => danhGiaTheO(y, tl)?.ok === true;
+
+// ── thu_tu (M6a, Unit 6): xếp thẻ theo thứ tự ──
+// `y.the[]` = {t, t_html, chu_tho, gt} (ĐÃ XÁO lúc build; `gt` = giá trị chuẩn, chuỗi thập phân hay «n/d»; JS KHÔNG đọc `t`), `y.chieu` "tang" (nhỏ đến lớn) | "giam", `y.so_o` = số thẻ = số vị trí.
+// `traLoi` cùng hình dạng the_o: mảng (vị trí → chỉ số thẻ trong `y.the`, null = trống); thẻ nào cũng dùng đúng MỘT lần. Đúng ⇔ dãy giá trị ĐƠN ĐIỆU theo `chieu` — thẻ bằng giá trị đổi chỗ vẫn đúng.
+/** `tl` (mảng: vị trí → chỉ số thẻ) → mảng độ dài `so_o`: chỉ số thẻ hợp lệ, hoặc -1 (vị trí trống / không phải số nguyên trong khoảng / thẻ đã dùng ở vị trí trước). Không ném. Cùng `_the_o_chuan` của Python. */
+function thuTuChuan(y, tl) {
+  const m = (y.the || []).length, soO = Number.isInteger(y.so_o) && y.so_o >= 0 ? y.so_o : m, dung = new Set(), ra = [];
+  for (let o = 0; o < soO; o++) {
+    const v = Array.isArray(tl) ? tl[o] : undefined, ok = Number.isInteger(v) && v >= 0 && v < m && !dung.has(v);
+    ra.push(ok ? v : -1);
+    if (ok) dung.add(v);
+  }
+  return ra;
+}
+/** Giá trị chuẩn của thẻ `i` → {n, d} (`gt` của tệp dựng: «0.75» · «1/3»); không đọc được → 0 (lỗi nội dung, Python chặn trước). */
+const gtThe = (y, i) => docSo(String(y.the[i].gt)) ?? fr(0n);
+/** Cặp ĐẦU TIÊN (từ vị trí 0) hai thẻ đứng kề nhau mà sai chiều → [vị trí p, p + 1]; không có → null. `cards` đã chuẩn (mọi phần tử ≥ 0). */
+function capSaiThuTu(y, cards) {
+  for (let p = 0; p + 1 < cards.length; p++) {
+    const c = cmp(gtThe(y, cards[p]), gtThe(y, cards[p + 1]));
+    if (y.chieu === "giam" ? c < 0 : c > 0) return [p, p + 1];
+  }
+  return null;
+}
+const okThuTu = (y, tl) => { const cards = thuTuChuan(y, tl); return !cards.some((c) => c < 0) && capSaiThuTu(y, cards) === null; };
 /** Khuôn của một hàng: cây với mọi ô thay bằng `#` (hằng giữ nguyên) — hai hàng CÙNG khuôn đổi chỗ cho nhau không phải cách mới. Giống `_khuon_cay` (chỉ cần cùng quan hệ bằng nhau). */
 function khuonCay(cay) {
   const nt = (x) => (x.o !== undefined ? "#" : x.so);
@@ -844,7 +926,7 @@ export function datTui(tl, hop, tui, moi) {
  * Ý điều kiện con CHƯA làm xong? → null (xong, chấm được) hoặc {ly, con?}. Trang chỉ NHẮC, không chấm, không ghi sổ (như `chuaDuThe`). `ly`:
  *   "dien_du"   còn ô trống; `con` = số ô trống           "mot_chu_so"  ô cột không phải đúng một chữ số 0–9 (kiểm SAU "dien_du")
  *   "doc_so"    ô o_dk không đọc được thành số (kiểm SAU "dien_du"; «0» đọc được và bị CHẤM SAI, không nhắc)
- *   "dat_du"    còn ô the_o chưa có thẻ hợp lệ; `con` = số ô (thẻ trùng / chỉ số lạ cũng tính là trống)
+ *   "dat_du"    còn ô the_o / vị trí thu_tu chưa có thẻ hợp lệ; `con` = số ô (thẻ trùng / chỉ số lạ cũng tính là trống)
  *   "du_tui"    noi_nhom: có hộp chưa đủ `moi_nhom` túi hợp lệ (túi trùng / chỉ số lạ / túi thừa bị bỏ)     "go_tong"  hộp cuối (null) chưa ghi số (kiểm SAU "du_tui")
  * Không bao giờ ném với câu trả lời của con. Kiểu ý khác (kiểu cũ) → null.
  */
@@ -868,6 +950,10 @@ export function chuaXong(y, traLoi) {
       const con = theOChuan(y, traLoi).filter((c) => c < 0).length;
       return con ? { ly: "dat_du", con } : null;
     }
+    case "thu_tu": {
+      const con = thuTuChuan(y, traLoi).filter((c) => c < 0).length;
+      return con ? { ly: "dat_du", con } : null;
+    }
     case "noi_nhom": {
       if (hopChuan(y, traLoi).some((h) => h.length < y.moi_nhom)) return { ly: "du_tui" };
       if (y.phai.includes(null) && trongO(goNoiNhom(traLoi))) return { ly: "go_tong" };   // ghi gì cũng được (kể cả chữ lạ): không đọc được là cach_viet, không phải chưa xong
@@ -888,6 +974,8 @@ export function chuaXong(y, traLoi) {
  *   — dòng ok true là điều kiện ĐÃ đạt, ok false là điều kiện chưa đạt (ý đúng khi mọi dòng ok). `o` = {[tên]: "sai"} chỉ gồm ô vi phạm (bằng 0, không nguyên, ngoài khoảng, số decimal places không thuộc
  *   lớp nào); chưa xong → {dong: [], o: {}}.
  * `the_o`: mỗi hàng một dòng «Hàng k đúng.» / «Hàng k: … = …, không bằng ….»; `hang` = boolean[] theo hàng; chưa xong → {dong: [], hang: []}.
+ * `thu_tu` (M6a): sai → MỘT dòng «Xem lại {thẻ A} và {thẻ B} — hai thẻ này chưa đứng đúng thứ tự.» (ok false; A, B = hai thẻ ĐỨNG KỀ NHAU đầu tiên mà sai chiều, chữ thô `chu_tho`; KHÔNG nói thẻ nào lớn hơn, không lộ thứ tự đúng),
+ *   đúng → «Thứ tự đúng rồi.» (ok true); `cap` = [vị trí p, p + 1] của cặp đó (null khi đúng / chưa xong). Chưa xong → {dong: [], cap: null}.
  * `noi_nhom`: theo thứ tự hộp — hộp có nhãn SAI: «Hộp {c} {dv}: các túi của con nặng {s} {dv}, chưa bằng {c} {dv}.» (hộp đúng không có dòng riêng); hộp cuối: «Hộp cuối: {s} {dv}
  *   đúng bằng các túi con đặt vào.» (ok true) / «Hộp cuối: con ghi {go} {dv} — chưa bằng tổng các túi trong hộp.» (ok false; không in tổng đúng); `go` không đọc được (cach_viet) thì KHÔNG có dòng riêng cho hộp cuối.
  *   Mọi hộp đúng mà chưa có dòng nào (đề không hộp cuối) → «Mọi hộp đều đúng.». `{dv}` đứng sau số, riêng $ £ € đứng trước. `hop` = boolean[] theo hộp; chưa xong → {dong: [], hop: []}.
@@ -938,6 +1026,13 @@ export function chiTiet(y, traLoi) {
           : { ok: false, t: `Hàng ${i + 1}: ${veChu(h.cay.trai, chuO)} = ${inFr(h.trai, phan)}, không bằng ${veDich(h.cay, chuO, h.phai, phan)}.` };
       });
       return { dong, hang: g.hang.map((h) => h.khop) };
+    }
+    case "thu_tu": {
+      if (chuaXong(y, traLoi) !== null) return { dong: [], cap: null };
+      const cards = thuTuChuan(y, traLoi), cap = capSaiThuTu(y, cards);
+      if (cap === null) return { dong: [{ ok: true, t: "Thứ tự đúng rồi." }], cap: null };
+      // KHÔNG nêu thẻ nào lớn hơn / thứ tự đúng — chỉ chỉ ra cặp kề nhau đầu tiên chưa đứng đúng chỗ
+      return { dong: [{ ok: false, t: `Xem lại ${y.the[cards[cap[0]]].chu_tho} và ${y.the[cards[cap[1]]].chu_tho} — hai thẻ này chưa đứng đúng thứ tự.` }], cap };
     }
     case "noi_nhom": {
       if (chuaXong(y, traLoi) !== null) return { dong: [], hop: [] };
@@ -1002,13 +1097,13 @@ function laOMode(y, c) {
 }
 
 /**
- * Ý `o` / `bang` có ô mà «Con điền» (cột `x` của sổ) được ghi cho bố mẹ đọc (Ruling R10 + R12): ô số ÂM (`am: true`) · ô CHỮ (`dap_chu`) · ô CÂU SỐ (`cau`, M4a) · ô NHIỀU GIÁ TRỊ không phải mode
+ * Ý `o` / `bang` có ô mà «Con điền» (cột `x` của sổ) được ghi cho bố mẹ đọc (Ruling R10 + R12): ô số ÂM (`am: true`) · ô CHỮ (`dap_chu`) · ô CÂU SỐ (`cau`, M4a) · ô ÉP DẠNG (`dang`, M6b: bố mẹ cần thấy con viết «3/5», «0.6» hay «60%») · ô NHIỀU GIÁ TRỊ không phải mode
  * (đáp số có «;» — `uoc_chung` · `boi_chung`; cùng luật với gợi ý «cách nhau dấu phẩy» `btNhieuGt` ở templates/study.html). Ô gợi ý (`goi_y`) không kể. Ô số thường của Unit 3 / 8 và ô mode → false
  * (không ghi `x`, sổ giữ như cũ). Trang con dùng nó để quyết định có ghi `x`; khu bố mẹ để quyết định có đọc `x`; `xDien` để biết có trả chữ.
  */
 export function coXDien(y) {
   if ((y?.kieu !== "o" && y?.kieu !== "bang") || !Array.isArray(y.o)) return false;
-  return y.o.some((c) => !c.goi_y && (c.am === true || c.dap_chu !== undefined || c.cau !== undefined || (String(c.dap ?? "").includes(";") && !laOMode(y, c))));
+  return y.o.some((c) => !c.goi_y && (c.am === true || c.dap_chu !== undefined || c.cau !== undefined || c.dang !== undefined || (String(c.dap ?? "").includes(";") && !laOMode(y, c))));
 }
 
 /**
@@ -1032,6 +1127,10 @@ export function xDien(y, traLoi) {
     case "the_o": {
       const cards = theOChuan(y, traLoi), chuO = (o) => (cards[o] >= 0 ? y.the_so[cards[o]] : "?");
       return y.hang_cay.map((cay) => `${veChu(cay.trai, chuO)} = ${veChu(cay.phai, chuO)}`).join("; ").slice(0, 200);
+    }
+    case "thu_tu": {
+      const cards = thuTuChuan(y, traLoi);
+      return cards.map((c) => (c >= 0 ? y.the[c].chu_tho : "?")).join("; ").slice(0, 200);   // «0.2; 1/4; 0.3; 70%; 3/4» theo thứ tự con xếp (chữ thô, ô trống «?»)
     }
     case "noi_nhom": {
       const hop = hopChuan(y, traLoi), go = goNoiNhom(traLoi).trim();
@@ -1101,6 +1200,8 @@ function mucCham(y, tl, bai) {
       return [{ kt: y.kt, kq: okODk(y, tl) ? "dung" : "sai" }];   // chưa xong → "sai" (trang gọi `chuaXong` trước để chỉ nhắc)
     case "the_o":
       return [{ kt: y.kt, kq: okTheO(y, tl) ? "dung" : "sai" }];
+    case "thu_tu":
+      return [{ kt: y.kt, kq: okThuTu(y, tl) ? "dung" : "sai" }];   // chưa xong → "sai" (trang gọi `chuaXong` trước để chỉ nhắc)
     case "noi_nhom": {
       // chưa đủ túi → sai (trang gọi `chuaXong` trước để chỉ nhắc). Mỗi hộp một mục: hộp cuối có thể "cach_viet" (số không đọc được) — như ô của ý `o`, cach_viet đứng trước sai
       const g = danhGiaNoiNhom(y, tl);
