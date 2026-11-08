@@ -1091,14 +1091,14 @@ export function khoaCach(y, traLoi) {
   }
 }
 
-/** Ô mode (hai mode «4; 5» ở đáp số): khai `bt: "mode"` hoặc nằm ở cột `f: "mode"` của ý `bang`. Khớp `btLaMode` ở templates/study.html. */
+/** Ô mode (hai mode «4; 5» ở đáp số): khai `bt: "mode"` hoặc nằm ở cột `f: "mode"` của ý `bang`. Khớp `btLaMode` ở templates/_bt_math.html. */
 function laOMode(y, c) {
   return !!c && (c.bt === "mode" || (c.cot !== undefined && ((y?.cot || [])[c.cot] || {}).f === "mode"));
 }
 
 /**
  * Ý `o` / `bang` có ô mà «Con điền» (cột `x` của sổ) được ghi cho bố mẹ đọc (Ruling R10 + R12): ô số ÂM (`am: true`) · ô CHỮ (`dap_chu`) · ô CÂU SỐ (`cau`, M4a) · ô ÉP DẠNG (`dang`, M6b: bố mẹ cần thấy con viết «3/5», «0.6» hay «60%») · ô NHIỀU GIÁ TRỊ không phải mode
- * (đáp số có «;» — `uoc_chung` · `boi_chung`; cùng luật với gợi ý «cách nhau dấu phẩy» `btNhieuGt` ở templates/study.html). Ô gợi ý (`goi_y`) không kể. Ô số thường của Unit 3 / 8 và ô mode → false
+ * (đáp số có «;» — `uoc_chung` · `boi_chung`; cùng luật với gợi ý «cách nhau dấu phẩy» `btNhieuGt` ở templates/_bt_math.html). Ô gợi ý (`goi_y`) không kể. Ô số thường của Unit 3 / 8 và ô mode → false
  * (không ghi `x`, sổ giữ như cũ). Trang con dùng nó để quyết định có ghi `x`; khu bố mẹ để quyết định có đọc `x`; `xDien` để biết có trả chữ.
  */
 export function coXDien(y) {
