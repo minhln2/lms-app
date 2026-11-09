@@ -357,17 +357,24 @@ export function lyMuon(tong, dong) {
 }
 
 /**
- * Điểm của MỘT lượt = Σ `x.diem` của dòng tổng (BẤT BIẾN — sổ chỉ thêm, ADR 0061) + số câu chấm muộn ĐÚNG (`chamMuon`; mỗi câu 1 điểm, mỗi id một lần).
- * Dùng chung: ① Bước 2 · ④ · khu bố mẹ. → {d, toi, muon} hoặc null khi dòng tổng không có `diem`.
+ * Điểm của MỘT lượt = Σ `x.diem` của dòng tổng (BẤT BIẾN — sổ chỉ thêm, ADR 0061) + điểm các câu chấm muộn ĐÚNG (`chamMuon`; mỗi id một lần). Mỗi câu muộn đúng +1 (ESL), trừ khi dòng tổng
+ * có trọng số `x.cd` (Math: điểm của ý viết; `cd[k]` là điểm của câu `x.cho[k]`) — khi đó +`cd[k]`; `cd` vắng / ngắn hơn `cho` / phần tử không phải số hữu hạn → +1.
+ * Dùng chung: ① Bước 2 · ④ · khu bố mẹ. → {d, toi, muon} (`muon` = SỐ câu chấm muộn đúng) hoặc null khi dòng tổng không có `diem`.
  */
 export function diemLuot(tong, dong) {
   const tx = docX(tong?.x);
   if (!tx || !Array.isArray(tx.diem)) return null;
   let d = 0, toi = 0;
   for (const p of tx.diem) { d += Number(p && p[0]) || 0; toi += Number(p && p[1]) || 0; }
+  const cho = Array.isArray(tx.cho) ? tx.cho : [], cd = Array.isArray(tx.cd) ? tx.cd : [];
   let muon = 0;
-  for (const dung of chamMuon(tong, dong).values()) if (dung) muon++;
-  return { d: d + muon, toi, muon };
+  for (const [i, dung] of chamMuon(tong, dong)) {
+    if (!dung) continue;
+    muon++;
+    const w = cd[cho.indexOf(i)];
+    d += typeof w === "number" && Number.isFinite(w) ? w : 1;
+  }
+  return { d, toi, muon };
 }
 
 /**

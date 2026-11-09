@@ -584,7 +584,9 @@ function tranCau(m) {
 }
 
 /**
- * POST /api/cham-viet — body {user, course, i, text, lan, ms, xem_mau, goi_y}, header `x-progress-key`. Hợp đồng phản hồi: plan §5.
+ * POST /api/cham-viet — body {user, course, i, text, lan, ms, xem_mau, goi_y, tn?}, header `x-progress-key`. Hợp đồng phản hồi: plan §5.
+ * `tn` (tuỳ chọn; số nguyên dương, giờ NỘP của lượt làm trọn đề — plan 2026-11-08-math5-lam-de): có thì `x` của dòng sổ mang `lu: tn` để trang nối câu chấm muộn với đúng lần nộp
+ * (`x.lu == tn`). Sai dạng (không phải số nguyên dương an toàn) → bỏ qua như không gửi, KHÔNG 400. Không đổi trần 3 lượt / câu / ngày và không đổi phản hồi.
  * Thứ tự dưới đây là LUẬT: mỗi bước hỏng thì trả ngay, KHÔNG đi tiếp. Gemini chỉ bị gọi (và trần chung chỉ bị ăn) sau khi mọi hàng rào
  * rẻ hơn đã qua: cấu hình, mã bí mật, thân yêu cầu, manifest, câu dạng lệnh, ba lượt/câu/ngày, trần ngày.
  * `het_cau` (429) kèm `co_dat`: hôm nay câu đó đã có ≥ 1 lượt máy ĐẠT chưa — trang tải lại giữa chừng mất trí nhớ «đã có lượt chưa đạt», và cần nó để
@@ -612,6 +614,7 @@ export async function handleChamViet(request, env, url) {
   const lan = Number.isSafeInteger(b.lan) && b.lan >= 1 ? b.lan : 1;
   const ms = Math.min(Math.max(Number(b.ms) || 0, 0), MS_CAP);   // kẹp như SQL của writeSession
   const xemMau = b.xem_mau === true, goiY = b.goi_y === true;
+  const tn = Number.isSafeInteger(b.tn) && b.tn > 0 ? b.tn : null;   // giờ nộp đề (làm trọn đề); sai dạng → null, bỏ qua (không 400)
 
   // Manifest: tiêu chí + số liệu do MÁY dựng lúc build; trình duyệt chỉ gửi id nhóm + câu của con, nên không chèn được gì vào prompt.
   const man = await docManifestViet(env, url, user, course);
@@ -707,7 +710,7 @@ export async function handleChamViet(request, env, url) {
   }
   const row = {
     i, c: muc.kt, ok: g >= 2 ? 1 : 0, g, ms, t: now,
-    x: goiX({ v: 1, t: text, l: lanThat, m: { d: kq.dat ? 1 : 0, k, q, c, s: kq.so_sai.map((e) => ({ q: e.trich, h: e.goi_y })), n: kq.nx } }),
+    x: goiX({ v: 1, t: text, l: lanThat, m: { d: kq.dat ? 1 : 0, k, q, c, s: kq.so_sai.map((e) => ({ q: e.trich, h: e.goi_y })), n: kq.nx }, ...(tn ? { lu: tn } : {}) }),
   };
 
   let ghi = false, cong = 0;

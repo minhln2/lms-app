@@ -203,8 +203,8 @@ window.LS.ham();
     const TAB = ['dong', 'mon', 'tapdoc', 'on', 'tu', 'toan', 'bt'];
     const TOAN_MUC = "../../assets/toan_muc.cf56682c.js";
     const BAI_TAP = ["cie-maths-5", "cie-esl-5"];   // slug các môn có ../study/<slug>.bai-tap.json
-    const BAI_TAP_JS = "../../assets/bai_tap.1ca249a3.js";
-    const BAI_TAP_ESL_JS = "../../assets/bai_tap_esl.0907fc14.js";   // chấm / «Con điền» của ESL 5 (chỉ nạp khi có môn ESL)
+    const BAI_TAP_JS = "../../assets/bai_tap.b4363ef8.js";
+    const BAI_TAP_ESL_JS = "../../assets/bai_tap_esl.d064ead7.js";   // chấm / «Con điền» của ESL 5 (chỉ nạp khi có môn ESL hoặc đề Math)
     // Năm mức của dạng (spec 2026-10-21 §6). Class là literal (Tailwind quét HTML đã render).
     const MUC_TOAN = [
       { icon: '⚪', ten: 'Chưa học', lop: 'bg-slate-100 text-slate-700' },
@@ -331,15 +331,15 @@ window.LS.ham();
     // Mỗi môn một BỘ CHUYỂN dựng MỘT hình dữ liệu; template vẽ chung, KHÔNG rẽ nhánh theo môn. Chọn bộ chuyển theo `doc.loai_tep` ("esl" → qtBtEsl; còn lại → qtBtMath).
     // Thêm môn sau = thêm một bộ chuyển + một nhánh ở qtBaiTap (Toán 6 sẽ cắm vào `kt[].con`).
     //   THẺ MÔN  {slug, tien_do, chu_giai, nhom} — hoặc {slug, loi, tai_trang} khi bộ chuyển / mô-đun của môn không dựng được (lỗi nằm TRONG thẻ đó, thẻ khác vẫn vẽ)
-    //   nhom     [{id, ten, kt, hang, de}]        nhóm dòng dưới MỘT tiêu đề `ten` (ESL: mỗi Unit một nhóm — «Unit 3 — Living things»; Math: MỘT nhóm, `ten` rỗng = không tiêu đề)
-    //   tien_do  [{id, ten, xong, tong, don_vi}]  thanh tiến độ (Math: Focus · Practice · Challenge «x/y bài»; ESL: Đề gốc · Đề mới «x/y đề», Luyện «x/y câu»)
+    //   nhom     [{id, ten, kt, hang, de}]        nhóm dòng dưới MỘT tiêu đề `ten` (ESL: mỗi Unit một nhóm — «Unit 3 — Living things»; Math có `doc.unit`: mỗi Unit một nhóm — «Averages 1»; Math cũ không có Unit: MỘT nhóm, `ten` rỗng = không tiêu đề)
+    //   tien_do  [{id, ten, xong, tong, don_vi}]  thanh tiến độ (Math: Focus · Practice · Challenge «x/y bài», có đề thì thêm Đề gốc · Đề mới «x/y đề»; ESL: Đề gốc · Đề mới «x/y đề», Luyện «x/y câu»)
     //   chu_giai [{ten, cham}]                    năm mức = bộ nhãn CHUNG mọi môn (worker/muc_ten.js, `M.TEN_MUC`) kèm số chấm
     //   kt       [{id, ten, muc, ten_muc, cham, dung, da_lam, dv, tong, ghi, yeu, y: [Y], con?: [kt]}]   (trong nhóm) dòng kiến thức (Math: kiến thức; ESL: mảng); `dv` = đơn vị sau «đúng x/y»
     //            (' câu' ở ESL, rỗng ở Math). `con` (nhiều tầng) CHƯA ai dùng — chỗ cắm Toán 6 (mảng → chuyên đề → dạng); `hang` = kt trải phẳng kèm `cap` (độ sâu) — template vẽ `hang`
     //   Y        {id, tieu, phu, canh, tit_luot, so_lan, ts, g, kq, kq_lop, cho, luot: [LUOT], dien: [SEG], dap: [SEG]}   một ý (Math) / một câu (ESL) đã làm
     //   SEG      {t} | {anh, alt}                 mảnh chữ, hoặc ẢNH NHỎ (câu có tranh — thay chữ «hình N»)
     //   LUOT     như qtVietLuot: {ts, l, g, dat, loai, tc, doan, nx, bm, dan, nut: [{chu, dat}]} — `nut` do bộ chuyển khai; template chỉ vẽ nút rồi gọi suaViet(mon, y, l, dat)
-    //   de       [{key, ma, tieu, ts, lan, phu: [chữ], phan: [{ten, diem}], y: [Y]}]   (trong nhóm) lượt làm đề của nhóm, mới trước (Math: rỗng)
+    //   de       [{key, ma, tieu, ts, lan, phu: [chữ], phan: [{ten, diem}], y: [Y]}]   (trong nhóm) lượt làm đề của nhóm, mới trước (Math cũ không đề: rỗng). Dựng bằng `qtLuotDe` — MỘT hàm cho cả hai môn; đề ở nhiều Unit (Math) hiện ở mọi Unit đó, khoá `key` thêm đuôi Unit để mở một lượt không mở lượt kia
     // Dùng chung của hai bộ chuyển: lượt trùng hệt chỉ đếm một; «đúng» = TỪNG có lượt g ≥ 2 (không phải lượt cuối); mức = M.mucKt (CÙNG hàm trang con); ghi chú «chưa làm» / «⚠ yếu» (đã làm, mức ≤ 1).
     const dungRoi = (ls) => (ls || []).some((a) => a.g >= 2);
     const nhomTheo = (luot, khoa) => {   // → Map khoá → các lượt, cũ trước mới sau
@@ -349,25 +349,39 @@ window.LS.ham();
     };
     const traiPhang = (ds, cap = 0) => ds.flatMap((k) => { k.cap = cap; return [k, ...traiPhang(k.con || [], cap + 1)]; });
 
-    // ── Bộ chuyển MATH (= qtBaiTap cũ, HÀNH VI GIỮ NGUYÊN): M = bai_tap.js; doc = tài liệu dựng Math ({muc, kien_thuc}); luotTat = lượt "b.%" của học sinh (mọi môn); now = epoch giây.
+    // ── Bộ chuyển MATH: M = bai_tap.js; E = bai_tap_esl.js (CHỈ để tính điểm lượt đề; null khi không nạp được → mất riêng phần đề); doc = tài liệu dựng Math ({muc, kien_thuc, unit?, de?}); luotTat = lượt "b.%" của học sinh (mọi môn); now = epoch giây.
     //   bài xong (tiến độ) = MỌI nhóm của MỌI ý trong bài có ít nhất một lượt g ≥ 2; biến thể "bài tương tự" không tính vào tổng bài.
     //   đúng / đã làm = số NHÓM có lượt g ≥ 2 / số nhóm có lượt (kể cả nhóm của biến thể); lượt trùng hệt (ts, i, g) chỉ đếm một.
-    function qtBtMath(M, slug, doc, luotTat, now) {
+    //   `doc.unit` VẮNG (tài liệu cũ, chưa có đề) → hành vi CŨ: MỘT nhóm `m` không tiêu đề, ba chỉ số Focus · Practice · Challenge, không lượt đề.
+    //   `doc.unit` CÓ (đợt «Làm trọn đề», plan 2026-11-08):
+    //     Unit   mỗi Unit một nhóm (thứ tự = doc.unit); `kt` của nhóm = kiến thức có bài trong các mục của Unit (thứ tự doc.kien_thuc); kiến thức KHÔNG có bài ở mục nào (chỉ ở đề, vd ft.*) vào Unit ĐẦU của đề đầu tiên
+    //            có nó (`de.unit[0]`); không đề nào có thì vào Unit đầu. Dòng kiến thức chỉ có ở đề, mức 0 thì hiện «Chưa học · chưa làm» như mọi dòng.
+    //     nhóm của ĐỀ tính vào đúng / đã làm và danh sách ý của kiến thức như câu của đề ở ESL (mức đã gồm chúng: M.cacNhom(doc) có đề) — bài Focus/Practice/Challenge «x/y bài» chỉ đếm bài của mục Luyện.
+    //     lượt đề  `qtLuotDe` (CÙNG khối với ESL): mỗi Ý một dòng «Con điền … → đúng là …» (nhóm cùng ý gộp một dòng), ý viết qua qtVietLuot (chip · 🤖 · nút bt/sua). Cần E: thiếu E thì không lượt đề, không hai chỉ số Đề.
+    function qtBtMath(M, E, slug, doc, luotTat, now) {
+      const theoUnit = Array.isArray(doc.unit) && doc.unit.length > 0;
+      const deList = theoUnit && Array.isArray(doc.de) ? doc.de.filter((d) => d && d.id) : [];
       const ys = [];   // mỗi ý: {nguon, nhan, kieu, tier, bt (biến thể), nhom: [{id, kt}]}
       const tienDo = Object.fromEntries(TIER_BT.map(([t]) => [t, { tong: 0, xong: 0 }]));
       const baiGoc = [];   // [tier, [id nhóm…]]
-      const duyet = (b, bt) => {
+      const deNhom = new Set();   // id nhóm của bài GỐC trong đề (bài tương tự của đề chỉ làm ở Luyện: không vào lượt đề)
+      const duyet = (b, bt, trongDe) => {
         const ids = [];
         for (const y of b.y || []) {
-          ys.push({ nguon: b.nguon || '', nhan: y.nhan || '', kieu: y.kieu, tier: b.tier, bt, nhom: y.nhom || [], co_x: M.coXDien(y),
+          // Ý trong đề: `x` của dòng sổ là «Con điền» của MỌI kiểu (xY), không chỉ kiểu điều kiện — trừ ý viết (JSON chấm câu viết)
+          ys.push({ nguon: b.nguon || '', nhan: y.nhan || '', kieu: y.kieu, tier: b.tier, bt, nhom: y.nhom || [], co_x: trongDe ? y.kieu !== 'viet' : M.coXDien(y),
                     tu_kiem: Array.isArray(y.tu_kiem) ? y.tu_kiem : [], tu_kiem_ma: Array.isArray(y.tu_kiem_ma) ? y.tu_kiem_ma : [] });
-          for (const n of y.nhom || []) ids.push(n.id);
+          for (const n of y.nhom || []) { ids.push(n.id); if (trongDe && !bt) deNhom.add(n.id); }
         }
         return ids;
       };
       for (const m of doc.muc) for (const b of m.bai || []) {
-        baiGoc.push([b.tier, duyet(b, false)]);
-        for (const v of b.bien_the || []) duyet(v, true);
+        baiGoc.push([b.tier, duyet(b, false, false)]);
+        for (const v of b.bien_the || []) duyet(v, true, false);
+      }
+      for (const d of deList) for (const p of d.phan || []) for (const b of p.bai || []) {
+        duyet(b, false, true);
+        for (const v of b.bien_the || []) duyet(v, true, true);
       }
       const nhomKt = new Map();   // id nhóm → kiến thức
       for (const y of ys) for (const n of y.nhom) nhomKt.set(n.id, n.kt);
@@ -382,7 +396,7 @@ window.LS.ham();
         if (ids.length && ids.every((id) => dungRoi(theoNhom.get(id)))) tienDo[tier].xong++;
       }
       const mucCua = M.mucKt(luot, M.cacNhom(doc), now);
-      const kt = (doc.kien_thuc || []).map((k) => {
+      const dongKt = (k) => {
         const ids = [...nhomKt].filter(([, c]) => c === k.id).map(([id]) => id);
         const lam = ids.filter((id) => theoNhom.has(id));
         const dung = lam.filter((id) => dungRoi(theoNhom.get(id))).length;
@@ -407,9 +421,68 @@ window.LS.ham();
         const ghi = [!lam.length ? 'chưa làm' : muc <= 1 ? '⚠ yếu' : '', viet ? viet + ' câu tự viết' : ''].filter(Boolean).join(' · ');
         return { id: k.id, ten: k.ten || k.id, muc, ten_muc: M.TEN_MUC[muc] || '', cham: muc, dung, da_lam: lam.length, dv: '',
                  tong: ids.length, ghi, yeu: !!lam.length && muc <= 1, y };
+      };
+      const tienDoThe = TIER_BT.map(([t, ten]) => ({ id: t, ten, ...tienDo[t], don_vi: 'bài' }));
+      const chuGiai = M.TEN_MUC.map((ten, cham) => ({ ten, cham }));
+      if (!theoUnit) return { slug, tien_do: tienDoThe, chu_giai: chuGiai, nhom: [{ id: 'm', ten: '', kt: (doc.kien_thuc || []).map(dongKt), de: [] }] };
+
+      // Kiến thức của từng Unit (xem khối chú thích ở đầu hàm)
+      const units = doc.unit;
+      const mucTheo = new Map(doc.muc.map((m) => [m.concept, m]));
+      const ktUnit = units.map((u) => {
+        const s = new Set();
+        for (const c of u.muc || []) for (const b of (mucTheo.get(c) || {}).bai || []) for (const v of [b, ...(b.bien_the || [])]) for (const y of v.y || []) for (const n of y.nhom || []) s.add(n.kt);
+        return s;
       });
-      return { slug, tien_do: TIER_BT.map(([t, ten]) => ({ id: t, ten, ...tienDo[t], don_vi: 'bài' })),
-               chu_giai: M.TEN_MUC.map((ten, cham) => ({ ten, cham })), nhom: [{ id: 'm', ten: '', kt, de: [] }] };
+      const coBai = new Set(ktUnit.flatMap((s) => [...s]));
+      const chiSoUnit = (d) => (d.unit || []).map((c) => units.findIndex((u) => u.concept === c)).find((i) => i >= 0);
+      const unitDauDe = new Map();   // kiến thức chỉ có ở đề → chỉ số Unit đầu của đề đầu tiên có nó
+      for (const d of deList) for (const p of d.phan || []) for (const b of p.bai || []) for (const y of b.y || []) for (const n of y.nhom || []) {
+        const i = chiSoUnit(d);
+        if (!coBai.has(n.kt) && !unitDauDe.has(n.kt) && i !== undefined) unitDauDe.set(n.kt, i);
+      }
+      for (const k of doc.kien_thuc || []) if (!coBai.has(k.id)) ktUnit[unitDauDe.has(k.id) ? unitDauDe.get(k.id) : 0].add(k.id);
+
+      // Lượt làm đề: dòng sổ của nhóm đề + dòng tổng (mỗi lần nộp một dòng, c = 'de'); lượt trùng hệt (cả x) chỉ đếm một
+      let lanDe = [], nopDe = null;
+      if (E && deList.length) {
+        const deMap = new Map(deList.map((d) => [d.id, d]));
+        const thayDe = new Set();
+        const rs = luotTat.filter((a) => a && a.course === slug && a.ts <= now && (deNhom.has(a.i) || (a.c === 'de' && deMap.has(a.i))))
+          .filter((a) => { const k = a.ts + '/' + a.i + '/' + a.g + '/' + (a.x == null ? '' : a.x); if (thayDe.has(k)) return false; thayDe.add(k); return true; })
+          .sort((p, q) => p.ts - q.ts);
+        const rMuc = rs.filter((a) => deNhom.has(a.i));
+        const gocY = (m) => ({ id: m.ids[0], tieu: (m.b.nguon || '') + (m.y.nhan ? ' (' + m.y.nhan + ')' : ''), phu: '', canh: '', tit_luot: (m.b.nguon || '') + (m.y.nhan ? ' · ý ' + m.y.nhan : '') });
+        const ra = qtLuotDe(E, {
+          slug, deMap, rTong: rs.filter((a) => a.c === 'de' && deMap.has(a.i)), rMuc, theoMuc: nhomTheo(rMuc, (a) => a.i), laMay: (a) => laMayDong(M, a), vietTheoLu: true,
+          // mục của đề = MỘT Ý (nhóm cùng ý gộp một dòng; ý không nhóm thì bỏ)
+          cacMuc: (d) => (d.phan || []).flatMap((p, pi) => (p.bai || []).flatMap((b) => (b.y || []).filter((y) => (y.nhom || []).length)
+            .map((y) => ({ ids: y.nhom.map((n) => n.id), pi, viet: y.kieu === 'viet', y, b })))),
+          vietLai: () => new Set(),
+          tenPhan: (d, pi) => ({ ten: (d.phan[pi] && d.phan[pi].ten) || 'Phần ' + (pi + 1), viet: false }),
+          yCho: (m, ts) => ({ ...gocY(m), so_lan: 0, ts, g: -1, kq: '⏳ Đang chờ máy chấm — chưa tính điểm', kq_lop: 'text-amber-700', cho: true, luot: [], dien: [], dap: [] }),
+          yDong: (m, rows) => {
+            if (m.viet) {   // ý viết: MỌI lượt có chữ qua qtVietLuot như ở Luyện (chip · 🤖 · bài mẫu · nút bt/sua); dòng cuối = kết luận hiện hành
+              const cuoi = rows[rows.length - 1], kq = KQ_BT[cuoi.g] || ['g = ' + cuoi.g, 'text-slate-500'];
+              return { ...gocY(m), so_lan: rows.length, ts: cuoi.ts, g: cuoi.g, kq: kq[0], kq_lop: kq[1], cho: false, luot: qtVietLuot(M, rows, m.y), dien: [], dap: [] };
+            }
+            const r = rows.find((a) => a.g <= 1) || rows[0], kq = KQ_BT[r.g] || ['g = ' + r.g, 'text-slate-500'];
+            const thuong = !xJson(r.x);   // dòng sổ của ý đề là chữ con đã điền (xY), không phải JSON máy chấm
+            const chu = thuong && r.x != null ? gonX(r.x) : '';
+            const dien = thuong ? (chu === '' ? (r.g <= 1 ? [{ t: '(bỏ trống)' }] : []) : [{ t: chu }]) : [];
+            const dung = r.g <= 1 ? M.dapY(m.y, m.b) : '';
+            return { ...gocY(m), so_lan: 1, ts: r.ts, g: r.g, kq: kq[0], kq_lop: kq[1], cho: false, luot: [], dien, dap: dung ? [{ t: dung }] : [] };
+          },
+        });
+        lanDe = ra.de;
+        nopDe = ra.nop;
+      }
+      const deLoai = (goc) => deList.filter((d) => (d.loai === 'goc') === goc);
+      const tienDeThe = nopDe ? [{ id: 'goc', ten: 'Đề gốc', xong: deLoai(true).filter((d) => nopDe(d.id)).length, tong: deLoai(true).length, don_vi: 'đề' },
+                                 { id: 'moi', ten: 'Đề mới', xong: deLoai(false).filter((d) => nopDe(d.id)).length, tong: deLoai(false).length, don_vi: 'đề' }] : [];
+      return { slug, tien_do: [...tienDoThe, ...tienDeThe], chu_giai: chuGiai,
+               nhom: units.map((u, ui) => ({ id: u.concept, ten: u.ten || u.concept, kt: (doc.kien_thuc || []).filter((k) => ktUnit[ui].has(k.id)).map(dongKt),
+                                             de: lanDe.filter((l) => (deList.find((d) => d.id === l.deId).unit || []).includes(u.concept)).map((l) => ({ ...l, key: l.key + '/' + u.concept })) })) };
     }
 
     // ── Bộ chuyển ESL: M = bai_tap.js (mucKt, docXViet…), E = bai_tap_esl.js (cacCau, diemLuot, chamMuon, xCau, chuVe…); doc = tài liệu dựng ESL ({unit: [{mang, luyen, de}]}).
@@ -428,6 +501,82 @@ window.LS.ham();
       if (typeof x !== 'string' || x.charAt(0) !== '{') return null;
       try { const o = JSON.parse(x); return o && typeof o === 'object' && !Array.isArray(o) && o.v === 1 ? o : null; } catch (e) { return null; }
     };
+    const laMayDong = (M, a) => { if (!xJson(a.x)) return false; const k = M.docXViet(a.x).loai; return k === 'may' || k === 'tu'; };   // dòng sổ là kết luận của MÁY (Gemini) hoặc tự kiểm
+
+    // ── LƯỢT LÀM ĐỀ — MỘT khối cho cả hai môn (qtBtEsl · qtBtMath): điểm TÍNH LẠI + câu sai / câu chờ máy của từng lượt nộp.
+    //   E  = bai_tap_esl.js (diemLuotBm · chamMuon — CÙNG hàm với trang con, R46: con và bố mẹ thấy một điểm).
+    //   o  = phần khác nhau giữa các môn:
+    //     slug, deMap (id đề → đề {id, ma, ten, phan}), rTong (dòng tổng của đề, cũ→mới), rMuc (dòng của từng MỤC — câu ESL / nhóm Math —, cũ→mới), theoMuc (Map id → dòng, cũ→mới)
+    //     cacMuc(d) → [{ids: [id dòng sổ…], pi (chỉ số phần), viet: bool, …}] theo thứ tự hiện của đề — MỤC = đơn vị hiện ra một dòng (ESL: một câu; Math: một Ý, các nhóm của ý gộp lại)
+    //     vietLai(d) → Set id câu viết lại (bố mẹ sửa kết luận lúc nộp) · tenPhan(d, pi) → {ten, viet} (viet: phần chỉ có bài viết → «bài viết» khi tối đa 0)
+    //     yDong(mục, các dòng) → Y của mục có dòng (sai / máy chấm / viết) · yCho(mục, ts) → Y của mục chờ máy · laMay(dòng) → dòng là kết luận máy
+    //     vietTheoLu (tuỳ chọn): dòng của mục viết có `x.lu` thuộc ĐÚNG lượt có tn = lu (Math: Worker ghi `lu: tn`); Math: dòng KHÔNG có `lu` là bài viết từ LUYỆN (cùng id nhóm, không gửi tn) → BỎ, không thuộc lượt đề nào.
+    //       Không bật (ESL): dòng không có `lu` gán lượt gần nhất tn ≤ ts (bài viết do Worker ghi sau giờ nộp).
+    //   → {de: [lượt, mới trước], nop(idĐề) → số lượt}; lượt = {key, ma, deId, tieu, ts, lan, phu, phan, y}. Lọc theo Unit là việc của bộ chuyển (đề ESL ở một Unit, đề Math có thể ở nhiều Unit).
+    function qtLuotDe(E, o) {
+      const { slug, deMap, rTong, rMuc, theoMuc } = o;
+      // Đầu vào của E.diemLuotBm / chamMuon: câu chấm MUỘN (x có "lu") và câu bố mẹ đã sửa (x có "bm") — cùng bộ lọc với trang con (GET /api/study/bt trả x cho đúng hai loại dòng này)
+      const dongMuon = rMuc.filter((a) => typeof a.x === 'string' && (a.x.indexOf('"lu":') >= 0 || a.x.indexOf('"bm":') >= 0)).map((a) => ({ i: a.i, g: a.g, ts: a.ts, x: a.x }));
+      const tnCua = (t, tx) => (tx.tn === undefined || tx.tn === null || tx.tn === '' || !Number.isFinite(Number(tx.tn)) ? t.ts : Number(tx.tn));
+      const luotDe = rTong.map((t, k) => { const tx = xJson(t.x) || {}; return { t, tx, d: deMap.get(t.i), tn: tnCua(t, tx), k }; });
+      const cuaDe = nhomTheo(luotDe, (l) => l.d.id);
+      const nop = (id) => (cuaDe.get(id) || []).length;
+      const mucDe = new Map();   // đề → cacMuc(đề), dựng một lần
+      const mucCua = (d) => { if (!mucDe.has(d)) mucDe.set(d, o.cacMuc(d)); return mucDe.get(d); };
+      const vietCua = new Map();   // luotDe → các dòng bài viết (Worker ghi ts riêng, SAU giờ nộp) của đề đó
+      for (const [id, ds] of cuaDe) {
+        ds.sort((p, q) => p.tn - q.tn);
+        const vid = mucCua(deMap.get(id)).filter((m) => m.viet).flatMap((m) => m.ids);
+        for (const v of vid) for (const r of theoMuc.get(v) || []) {
+          // Hai ca biên đã biết (điểm KHÔNG ảnh hưởng vì bài viết 0 điểm — chỉ bài viết hiện ở lượt khác): (1) hai lượt nộp cùng giây → bài viết vào lượt sau; (2) con nộp lại đề rồi tự kiểm bài viết của lượt
+          // CŨ → gán lượt gần nhất (không có cận trên của tn). Muốn chặt hơn thì Worker phải ghi `tn` vào dòng bài viết — Math đã có (`lu`, xem vietTheoLu).
+          const x = o.vietTheoLu ? xJson(r.x) : null, lu = x && x.lu !== undefined && x.lu !== null && x.lu !== '' ? Number(x.lu) : NaN;
+          const chu = Number.isFinite(lu) ? ds.find((l) => l.tn === lu) : o.vietTheoLu ? null : [...ds].reverse().find((l) => l.tn <= r.ts + 2);
+          if (chu) { if (!vietCua.has(chu)) vietCua.set(chu, []); vietCua.get(chu).push(r); }
+        }
+        ds.forEach((l, i) => { l.lan = Number.isInteger(l.tx.lan) && l.tx.lan > 0 ? l.tx.lan : i + 1; });
+      }
+      const de = luotDe.map((l) => {
+        const { t, tx, d, tn } = l, cho = Array.isArray(tx.cho) ? tx.cho : [], cd = Array.isArray(tx.cd) ? tx.cd : [];
+        const cac = mucCua(d), thuoc = new Map();   // id dòng sổ → mục chứa nó (chỉ mục của ĐỀ này)
+        for (const m of cac) for (const id of m.ids) thuoc.set(id, m);
+        const tong = { t: t.ts, x: t.x };
+        const dm = E.diemLuotBm(tong, dongMuon, o.vietLai(d)), muon = E.chamMuon(tong, dongMuon);   // điểm lượt: MỘT hàm với trang con (R46)
+        const atNop = new Map(), muonR = new Map();
+        for (const r of rMuc) {
+          if (!thuoc.has(r.i)) continue;
+          const x = xJson(r.x);
+          if (x && Number(x.lu) === tn && cho.includes(r.i)) muonR.set(r.i, r);
+          else if ((r.ts === t.ts || r.ts === tn) && !(x && x.lu !== undefined)) atNop.set(r.i, r);
+        }
+        // Bố mẹ sửa kết luận câu viết lại đã chấm LÚC nộp: dòng tổng không đổi; chênh lệch (dm.bmCau) đã nằm trong dm.d, ở đây chỉ chia về từng phần cho bảng điểm
+        const dPhan = (d.phan || []).map(() => 0);
+        if (dm) for (const [id, dd] of dm.bmCau) dPhan[thuoc.get(id).pi] += dd;
+        // Câu chấm muộn đúng cộng về phần của nó: +1 mỗi câu (ESL), hoặc trọng số `cd[k]` của dòng tổng (Math: điểm của ý viết) — CÙNG luật với E.diemLuot
+        for (const [id, dung] of muon) if (dung && thuoc.has(id)) { const w = cd[cho.indexOf(id)]; dPhan[thuoc.get(id).pi] += typeof w === 'number' && Number.isFinite(w) ? w : 1; }
+        const viet = vietCua.get(l) || [];
+        const daSua = new Set([...atNop.values(), ...muonR.values(), ...viet].filter((r) => { const x = xJson(r.x); return x && x.bm; }).map((r) => r.i));
+        const choNua = cho.filter((id) => !muon.has(id));
+        const ys = [];
+        for (const m of cac) {
+          if (m.viet) { const rs = viet.filter((r) => m.ids.includes(r.i)); if (rs.length) ys.push(o.yDong(m, rs)); continue; }
+          const rs = m.ids.map((id) => muonR.get(id) || atNop.get(id)).filter(Boolean);
+          if (!rs.length) { if (m.ids.some((id) => choNua.includes(id))) ys.push(o.yCho(m, tn)); continue; }
+          if (rs.some((r) => r.g <= 1 || o.laMay(r))) ys.push(o.yDong(m, rs));
+        }
+        const phu = [];
+        if (choNua.length) phu.push('⏳ ' + choNua.length + ' câu chờ máy chấm');
+        if (daSua.size) phu.push('👪 đã sửa ' + daSua.size);
+        const dd = dm ? { d: dm.d, toi: dm.toi } : null;
+        const phan = (d.phan || []).map((p, pi) => {
+          const ox = dm && Array.isArray(tx.diem) && Array.isArray(tx.diem[pi]) ? tx.diem[pi] : null, tp = o.tenPhan(d, pi);
+          const toi = ox ? Number(ox[1]) || 0 : 0;
+          return { ten: tp.ten, diem: !ox ? '—' : toi === 0 && tp.viet ? 'bài viết' : ((Number(ox[0]) || 0) + dPhan[pi]) + '/' + toi };
+        });
+        return { key: slug + '/de/' + d.id + '/' + tn + '/' + l.lan, ma: d.ma, deId: d.id, tieu: (d.ten || d.ma) + ' · ' + (dd ? dd.d + '/' + dd.toi : '—'), ts: tn, lan: l.lan, phu, phan, y: ys };
+      }).sort((p, q) => q.ts - p.ts || q.lan - p.lan);
+      return { de, nop };
+    }
     function qtBtEsl(M, E, slug, doc, luotTat, now) {
       const cau = new Map();    // id câu → {c, b, ci, kt, u (chỉ số Unit), de (đề chứa | null), pi (chỉ số phần)}
       const deMap = new Map(), deUnit = new Map();  // id đề → đề · id đề → chỉ số Unit
@@ -449,8 +598,6 @@ window.LS.ham();
       // Mức tính theo id mảng trên CẢ tài liệu (mọi câu của mọi Unit), như trang con; số câu thì tách theo Unit (ktUnit lọc `i.u`). An toàn vì id mảng duy nhất trên mọi Unit: tiền tố Unit (`u3.*`)
       // và luật kiem của src/bai_tap_esl.py (hai Unit chung id mảng → LỖI) — nên hai Unit không bao giờ gộp mức của nhau.
       const mucCua = M.mucKt(rCau, E.cacCau(doc), now);
-      // Đầu vào của E.diemLuotBm / chamMuon: câu chấm MUỘN (x có "lu") và câu bố mẹ đã sửa (x có "bm") — cùng bộ lọc với trang con (GET /api/study/bt trả x cho đúng hai loại dòng này)
-      const dongMuon = rCau.filter((a) => typeof a.x === 'string' && (a.x.indexOf('"lu":') >= 0 || a.x.indexOf('"bm":') >= 0)).map((a) => ({ i: a.i, g: a.g, ts: a.ts, x: a.x }));
 
       // Chữ / ảnh của một câu
       const nhanCau = (b, ci) => (b.tach ? 'câu ' + (ci + 1) : (b.cau || []).length < 2 ? '' : (b.kieu === 'sua_loi' ? 'lỗi ' : b.kieu === 'noi' ? 'cặp ' : 'ô ') + (ci + 1));
@@ -486,7 +633,7 @@ window.LS.ham();
           default: return '';
         }
       };
-      const laMay = (a) => { if (!xJson(a.x)) return false; const k = M.docXViet(a.x).loai; return k === 'may' || k === 'tu'; };
+      const laMay = (a) => laMayDong(M, a);
       // Một câu từ các lượt `ls` (cũ trước mới sau)
       const yCau = (inf, ls) => {
         const cuoi = ls[ls.length - 1], kq = KQ_BT[cuoi.g] || ['g = ' + cuoi.g, 'text-slate-500'];
@@ -512,66 +659,16 @@ window.LS.ham();
                  tong: ids.length, ghi: !lam.length ? 'chưa làm' : muc <= 1 ? '⚠ yếu' : '', yeu: !!lam.length && muc <= 1, y };
       });
 
-      // Lượt làm đề
-      const tnCua = (t, tx) => (tx.tn === undefined || tx.tn === null || tx.tn === '' || !Number.isFinite(Number(tx.tn)) ? t.ts : Number(tx.tn));
-      const luotDe = rTong.map((t, k) => { const tx = xJson(t.x) || {}; return { t, tx, d: deMap.get(t.i), tn: tnCua(t, tx), k }; });
-      const cuaDe = nhomTheo(luotDe, (l) => l.d.id);
-      const nopMoi = (id) => (cuaDe.get(id) || []).length;
-      const vietCua = new Map();   // luotDe → các dòng bài viết (Worker ghi ts riêng, SAU giờ nộp) của đề đó
-      for (const [id, ds] of cuaDe) {
-        ds.sort((p, q) => p.tn - q.tn);
-        const vid = (deMap.get(id).phan || []).map((p) => p && p.bai).filter((b) => b && b.kieu === 'viet').flatMap((b) => (b.cau || []).map((c) => c.id));
-        for (const v of vid) for (const r of theoCau.get(v) || []) {
-          // Hai ca biên đã biết (điểm KHÔNG ảnh hưởng vì bài viết 0 điểm — chỉ bài viết hiện ở lượt khác): (1) hai lượt nộp cùng giây → bài viết vào lượt sau; (2) con nộp lại đề rồi tự kiểm bài viết của lượt
-          // CŨ → gán lượt gần nhất (không có cận trên của tn). Muốn chặt hơn thì Worker phải ghi `tn` vào dòng bài viết.
-          const chu = [...ds].reverse().find((l) => l.tn <= r.ts + 2);
-          if (chu) { if (!vietCua.has(chu)) vietCua.set(chu, []); vietCua.get(chu).push(r); }
-        }
-        ds.forEach((l, i) => { l.lan = Number.isInteger(l.tx.lan) && l.tx.lan > 0 ? l.tx.lan : i + 1; });
-      }
-      const de = luotDe.map((l) => {
-        const { t, tx, d, tn } = l, cho = Array.isArray(tx.cho) ? tx.cho : [];
-        const tong = { t: t.ts, x: t.x };
-        const vietLai = new Set((d.phan || []).filter((p) => p && p.bai && p.bai.kieu === 'viet_lai').flatMap((p) => (p.bai.cau || []).map((c) => c.id)));
-        const dm = E.diemLuotBm(tong, dongMuon, vietLai), muon = E.chamMuon(tong, dongMuon);   // điểm lượt: MỘT hàm với trang con (R46)
-        const atNop = new Map(), muonR = new Map();
-        for (const r of rCau) {
-          const inf = cau.get(r.i);
-          if (inf.de !== d) continue;
-          const x = xJson(r.x);
-          if (x && Number(x.lu) === tn && cho.includes(r.i)) muonR.set(r.i, r);
-          else if ((r.ts === t.ts || r.ts === tn) && !(x && x.lu !== undefined)) atNop.set(r.i, r);
-        }
-        // Bố mẹ sửa kết luận câu viết lại đã chấm LÚC nộp: dòng tổng không đổi; chênh lệch (dm.bmCau) đã nằm trong dm.d, ở đây chỉ chia về từng phần cho bảng điểm
-        const dPhan = (d.phan || []).map(() => 0);
-        if (dm) for (const [id, dd] of dm.bmCau) dPhan[cau.get(id).pi] += dd;
-        for (const [id, dung] of muon) if (dung && cau.get(id) && cau.get(id).pi >= 0) dPhan[cau.get(id).pi]++;
-        const viet = vietCua.get(l) || [];
-        const daSua = new Set([...atNop.values(), ...muonR.values(), ...viet].filter((r) => { const x = xJson(r.x); return x && x.bm; }).map((r) => r.i));
-        const choNua = cho.filter((id) => !muon.has(id));
-        const ys = [];
-        (d.phan || []).forEach((p) => {
-          const b = p && p.bai;
-          if (!b) return;
-          for (const c of b.cau || []) {
-            const inf = cau.get(c.id);
-            if (b.kieu === 'viet') { const rs = viet.filter((r) => r.i === c.id); if (rs.length) ys.push(yCau(inf, rs)); continue; }
-            const r = muonR.get(c.id) || atNop.get(c.id);
-            if (!r) { if (choNua.includes(c.id)) ys.push(yCho(inf, tn)); continue; }
-            if (r.g <= 1 || laMay(r)) ys.push(yCau(inf, [r]));
-          }
-        });
-        const phu = [];
-        if (choNua.length) phu.push('⏳ ' + choNua.length + ' câu chờ máy chấm');
-        if (daSua.size) phu.push('👪 đã sửa ' + daSua.size);
-        const dd = dm ? { d: dm.d, toi: dm.toi } : null;
-        const phan = (d.phan || []).map((p, pi) => {
-          const o = dm && Array.isArray(tx.diem) && Array.isArray(tx.diem[pi]) ? tx.diem[pi] : null;
-          const toi = o ? Number(o[1]) || 0 : 0;
-          return { ten: p && p.ten ? p.ten : 'Phần ' + (pi + 1), diem: !o ? '—' : toi === 0 && p.bai && p.bai.kieu === 'viet' ? 'bài viết' : ((Number(o[0]) || 0) + dPhan[pi]) + '/' + toi };
-        });
-        return { key: slug + '/de/' + d.id + '/' + tn + '/' + l.lan, ma: d.ma, u: deUnit.get(d.id), tieu: (d.ten || d.ma) + ' · ' + (dd ? dd.d + '/' + dd.toi : '—'), ts: tn, lan: l.lan, phu, phan, y: ys };
-      }).sort((p, q) => q.ts - p.ts || q.lan - p.lan);
+      // Lượt làm đề — khối DÙNG CHUNG với Math (qtLuotDe); phần riêng của ESL: mục = một câu (`b.cau[]` của phần), viết lại có kết luận bố mẹ sửa được
+      const khoiDe = qtLuotDe(E, {
+        slug, deMap, rTong, rMuc: rCau, theoMuc: theoCau, laMay,
+        cacMuc: (d) => (d.phan || []).flatMap((p, pi) => { const b = p && p.bai; return b ? (b.cau || []).map((c) => ({ ids: [c.id], pi, viet: b.kieu === 'viet' })) : []; }),
+        vietLai: (d) => new Set((d.phan || []).filter((p) => p && p.bai && p.bai.kieu === 'viet_lai').flatMap((p) => (p.bai.cau || []).map((c) => c.id))),
+        tenPhan: (d, pi) => { const p = d.phan[pi]; return { ten: p && p.ten ? p.ten : 'Phần ' + (pi + 1), viet: !!(p && p.bai && p.bai.kieu === 'viet') }; },
+        yDong: (m, rs) => yCau(cau.get(m.ids[0]), rs),
+        yCho: (m, ts) => yCho(cau.get(m.ids[0]), ts),
+      });
+      const de = khoiDe.de, nopMoi = khoiDe.nop;
 
       const goc = [...deMap.values()].filter((d) => d.loai === 'goc'), moi = [...deMap.values()].filter((d) => d.loai === 'moi');
       return { slug,
@@ -579,10 +676,10 @@ window.LS.ham();
                          { id: 'moi', ten: 'Đề mới', xong: moi.filter((d) => nopMoi(d.id)).length, tong: moi.length, don_vi: 'đề' },
                          { id: 'luyen', ten: 'Luyện', xong: luyenIds.filter((id) => theoCau.has(id)).length, tong: luyenIds.length, don_vi: 'câu' }],
                chu_giai: M.TEN_MUC.map((ten, cham) => ({ ten, cham })),
-               nhom: units.map((u, ui) => ({ id: 'u' + ui, ten: u.ten || 'Unit ' + (ui + 1), kt: ktUnit(ui), de: de.filter((l) => l.u === ui) })) };
+               nhom: units.map((u, ui) => ({ id: 'u' + ui, ten: u.ten || 'Unit ' + (ui + 1), kt: ktUnit(ui), de: de.filter((l) => deUnit.get(l.deId) === ui) })) };
     }
 
-    // Dựng màn hình tab Bài tập — dữ liệu phẳng, Alpine chỉ vẽ. M = bai_tap.js; E = {mod: bai_tap_esl.js} | {loi, tai_trang} | null (không có môn ESL); docs = [[slug, tài liệu dựng | null]];
+    // Dựng màn hình tab Bài tập — dữ liệu phẳng, Alpine chỉ vẽ. M = bai_tap.js; E = {mod: bai_tap_esl.js} | {loi, tai_trang} | null (không có môn ESL, không có đề Math); docs = [[slug, tài liệu dựng | null]];
     // luotTat = lượt "b.%" của học sinh (mọi môn, {course, i, c, g, ts, x}); now = epoch giây. Môn nào dựng hỏng → thẻ {slug, loi}, môn khác vẫn vẽ.
     function qtBaiTap(M, E, docs, luotTat, now) {
       const mon = [];
@@ -593,7 +690,7 @@ window.LS.ham();
           if (doc.loai_tep === 'esl') {
             the = E && E.mod ? qtBtEsl(M, E.mod, slug, doc, luotTat, now) : { slug, loi: (E && E.loi) || 'Không dựng được thẻ môn này.', tai_trang: !!(E && E.tai_trang) };
           } else if (Array.isArray(doc.muc)) {
-            the = qtBtMath(M, slug, doc, luotTat, now);
+            the = qtBtMath(M, E && E.mod ? E.mod : null, slug, doc, luotTat, now);   // E hỏng / không nạp → Math mất riêng phần đề (kiến thức theo Unit vẫn vẽ)
           }
         } catch (e) {
           console.warn('hoc-tap: không dựng được thẻ bài tập ' + slug, e);
@@ -707,7 +804,7 @@ window.LS.ham();
         },
         // Tab Bài tập: tài liệu dựng của từng môn (../study/<môn>.bai-tap.json — cùng tệp con dùng) + mọi lượt "b.%" của học sinh.
         // Không tệp nào đọc được → "chưa có bài tập" và KHÔNG gọi API. Mô-đun bai_tap.js không import được → lỗi trong tab (nút "Tải lại trang").
-        // Mô-đun riêng của một môn (bai_tap_esl.js, chỉ nạp khi có môn ESL) hỏng → lỗi nằm TRONG thẻ môn đó, môn khác vẫn vẽ (`napEsl`).
+        // Mô-đun riêng của một môn (bai_tap_esl.js, chỉ nạp khi có môn ESL hoặc đề Math) hỏng → lỗi nằm TRONG thẻ môn ESL; thẻ Math chỉ mất phần đề, môn khác vẫn vẽ (`napEsl`).
         async napBt() {
           if (!BAI_TAP_JS) {
             console.warn('hoc-tap: có môn bài tập nhưng BAI_TAP_JS rỗng — builder không chép được bai_tap.js (lỗi dựng trang)');
@@ -729,7 +826,8 @@ window.LS.ham();
             })),
           ]);
           if (!docs.some(([, d]) => d && (Array.isArray(d.muc) || d.loai_tep === 'esl'))) return { trong: true };
-          const E = docs.some(([, d]) => d && d.loai_tep === 'esl') ? await this.napEsl() : null;
+          // Mô-đun ESL cũng tính điểm lượt đề của Math (E.diemLuotBm · chamMuon): nạp khi có môn ESL HOẶC tài liệu Math có đề
+          const E = docs.some(([, d]) => d && (d.loai_tep === 'esl' || (Array.isArray(d.de) && d.de.length))) ? await this.napEsl() : null;
           const d = await this.api('/api/quantri/hoc-tap?phan=bt&user=' + encodeURIComponent(this.user));
           const cols = Array.isArray(d.cols) ? d.cols : [];
           const luot = (Array.isArray(d.rows) ? d.rows : []).map((r) => Object.fromEntries(cols.map((k, j) => [k, r[j]])));

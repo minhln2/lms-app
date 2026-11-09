@@ -130,8 +130,8 @@ window.LS.ham();
   
   
   <script type="module">
-    import * as baiTap from "../assets/bai_tap.1ca249a3.js";
-    import * as baiTapEsl from "../assets/bai_tap_esl.0907fc14.js";
+    import * as baiTap from "../assets/bai_tap.b4363ef8.js";
+    import * as baiTapEsl from "../assets/bai_tap_esl.d064ead7.js";
     window.baiTap = baiTap;
     window.baiTapEsl = baiTapEsl;
   </script>
@@ -200,7 +200,8 @@ window.LS.ham();
     // vẽ `so` của một ý `o` hay `mau` của ý `the`/`day` (chứa đáp án / lời giải mẫu).
     // Tài liệu giữ NGOÀI vùng phản ứng (BT.doc: đối tượng thô, không đổi sau khi nạp) — 1 MB JSON mà bọc Proxy là phí; chỉ
     // trạng thái làm bài (btTL, btKq, btB, btN, …) là phản ứng. Ghi sổ qua bộ đệm của quiz (save/flushBuffer), id nhóm tiền tố `b.`.
-    var BT = { doc: null, bai: new Map(), kt: new Map(), cell: new Map(), grid: new Map(), xep: new Map(), t0: new Map(), cot: new Map(), hang: new Map(), hep: new Map() };
+    var BT = { doc: null, bai: new Map(), kt: new Map(), cell: new Map(), grid: new Map(), xep: new Map(), t0: new Map(), cot: new Map(), hang: new Map(), hep: new Map(),
+               unit: new Map(), de: new Map(), soCho: null, soXong: true, kd: null, deBai: new Map(), gocK: null, gocV: [] };   // unit: concept Unit → unit[] của tệp dựng · de: mã → đề · soCho / soXong: lượt nạp sổ gần nhất (btVe chờ sổ trước khi khoá đề mới) · kd: dữ liệu ④ (NGOÀI vùng phản ứng, `btKdN` báo đổi) · deBai: id bài (cả bài tương tự) của đề → đề · gocK / gocV: nhớ btGoc
     var BT_MUC = [['focus', 'Focus'], ['practice', 'Practice'], ['challenge', 'Challenge']];
     // Mục (3.1, 8.1…) con đã chọn trong PHIÊN — nhớ theo tên mục, sessionStorage (đóng thẻ trình duyệt là quên; thêm mục mới không lệch chỉ số).
     var BT_MUC_KHOA = 'lms_bt_muc:' + location.pathname;
@@ -233,6 +234,22 @@ window.LS.ham();
         btVV: {},       // y.id (ý `viet`) → {tt: null|'cho'|'may'|'tu', kq, luot, con, ly, dat, xemMau, text, tuKq, mayChua, thayMau}
         btCur: {},      // bài gốc → chỉ số đề đang hiện (0 = gốc, k = bien_the[k-1])
         btNoiSel: {}, btThe: {}, btMore: null, btDong: {},
+        // Đề (plan 2026-11-08-math5-lam-de): tài liệu có `unit` + `de` thì bấm Unit trên cây vào màn Unit (①); mục vẫn là màn Luyện như cũ.
+        btScr: 'muc',   // 'muc' (Luyện của một mục — hash `bai-tap`) | 'unit' (① màn Unit) | 'de' (③ làm đề) | 'kq' (④ xem lại đề)
+        btUnit: '',     // concept của Unit đang mở ở ① (③ ④ cũng nhớ Unit mình đi từ đó tới)
+        btMa: '',       // mã đề đang làm (③) / đang xem kết quả (④)
+        btSo: [], btRows: [],   // lượt từ GET /api/study/bt ([{i, c, g, ts, x}]) · lượt ghi trong phiên này (③ nộp đề đẩy vào đây)
+        btDeXn: false, btDeBan: false, btDeLoi: '', btDeNhacN: 0,   // ③: dải xác nhận «Còn N ô trống» · đang nộp (chặn bấm đôi) · lỗi nộp · số ô «viết chưa đúng cách» (CC-02) lúc bấm Nộp
+        btDeThu: null,   // ③: lần nộp trước của đề (lỗi sau khi máy đã chấm câu viết) = {ma, ts, viet: {[id nhóm]: {text, dat}}} — nộp lại dùng lại giờ nộp + kết luận, không ghi dòng viết trùng
+        btDiN: 0,               // đếm lần con ĐỔI màn hình (mục · Unit · ③ · ④): btVe đang chờ sổ thấy số này đổi thì bỏ quyết định (kể cả khi con bấm lại đúng màn mục lúc đầu)
+        btLamLaiXn: false,      // ④: «Làm lại» khi đề gốc đang có bài làm dở → hỏi tại chỗ (không confirm())
+        btKdN: 0,               // ④: số lần dựng lại (BT.kd đổi → template vẽ lại)
+        btKdChiSai: false,      // ④: công tắc «Chỉ xem câu sai»
+        btKdBan: false,         // ④: đang hỏi máy lại các câu viết chờ chấm
+        btKdHoi: '',            // ④: '' (chưa hỏi) | 'khong' (không hỏi được: chưa khoá / ngoại tuyến) | 'hong' (hỏi rồi mà máy không trả lời) → hiện nút «Tự kiểm» cho câu còn chờ
+        btKdTu: {},             // ④: {id nhóm viết: {mo, tick: [bool]}} — tự kiểm của câu chờ máy
+        btKdLoi: '',
+        btSaiDe: [], btSaiDeV: 0,   // id nhóm của ĐỀ có ≥ 1 lượt g ≤ 1 (cauSaiDeBt) — bài đó hiện thêm ở cuối Luyện của mục (luyenMuc)
         // Bốn kiểu ý điều kiện (cot · o_dk · the_o · noi_nhom): ô nhớ (nháp, KHÔNG chấm / lưu), thẻ·túi đang chọn, các cách đã tìm, ý đang ở chế độ «Tìm cách khác».
         btNho: {}, btSelThe: {}, btCach: {}, btCachThem: {},
 
@@ -246,10 +263,14 @@ window.LS.ham();
             if (!d || !Array.isArray(d.muc) || !d.muc.length) return;
             this.btKhoiTao(d);
             this.btOk = true;
+            // Bài dở của ③ (lms_bt_do) ghi mỗi lần trả lời của ĐỀ đang làm đổi; chỉ theo dõi các ý của đề này (không phải cả btTL của Luyện).
+            this.$watch(() => (this.btScr === 'de' && this.btDeNow()) ? JSON.stringify(this.btDeTl(this.btDeNow())) : '', () => this.btDeLuuTam());
           } catch (e) { /* mạng / JSON hỏng: không có tab */ }
         },
         btKhoiTao(d) {
-          BT.doc = d; BT.bai.clear(); BT.kt.clear(); BT.cell.clear(); BT.grid.clear(); BT.xep.clear(); BT.cot.clear(); BT.hang.clear();
+          BT.doc = d; BT.bai.clear(); BT.kt.clear(); BT.cell.clear(); BT.grid.clear(); BT.xep.clear(); BT.cot.clear(); BT.hang.clear(); BT.unit.clear(); BT.de.clear();
+          for (const u of d.unit || []) if (u && u.concept) BT.unit.set(u.concept, u);
+          for (const de of d.de || []) if (de && de.ma) BT.de.set(de.ma, de);
           // Mặc định mở mục MỚI NHẤT (cuối `muc` — bài đang học); đã chọn mục trong phiên thì giữ (chủ dự án chốt 2026-11-03, D6).
           let mi = d.muc.length - 1;
           try { const j = d.muc.findIndex(m => m.ten === sessionStorage.getItem(BT_MUC_KHOA)); if (j >= 0) mi = j; } catch (e) { /* riêng tư */ }
@@ -260,7 +281,19 @@ window.LS.ham();
             BT.bai.set(b.id, { b, g });
             for (const y of b.y || []) tl[y.id] = this.btTLMoi(y);
           }
+          // Ý của ĐỀ (③): cùng hình dạng trả lời như ý ở Luyện, id không trùng (cacNhom: id băm toàn cục) → dùng chung btTL / btKq / btVV; btMoDe dọn trước khi nạp.
+          // (và CẢ bài tương tự `bien_the` của bài đề: câu sai về Luyện hiện cả bài, kể cả «↻ Bài tương tự»).
+          BT.deBai.clear(); BT.kd = null; BT.gocK = null;
+          for (const dd of d.de || []) for (const p of dd.phan || []) for (const b of p.bai || []) {
+            for (const y of b.y || []) tl[y.id] = this.btTLMoi(y);
+            for (const v of [b, ...(b.bien_the || [])]) {
+              BT.deBai.set(v.id, dd);
+              if (v !== b) { BT.bai.set(v.id, { b: v, g: b }); for (const y of v.y || []) tl[y.id] = this.btTLMoi(y); }
+            }
+            BT.bai.set(b.id, { b, g: b });
+          }
           this.btTL = tl;
+          this.btSaiDeTinh();
         },
         btTLMoi(y) {
           switch (y.kieu) {
@@ -278,7 +311,26 @@ window.LS.ham();
         // ── Danh sách hiện ra ─────────────────────────────────────────────────────────────────────────────────────────────
         btMucs() { return BT.doc ? BT.doc.muc : []; },
         btMucNow() { return BT.doc ? BT.doc.muc[this.btMuc] : { bai: [] }; },
-        btGoc() { return this.btMucNow().bai || []; },
+        // Bài của mục: bài `muc` như cũ + (câu sai về Luyện) bài của ĐỀ có câu con từng sai/trống/sai dạng (luyenMuc, worker/bai_tap.js) ở cuối. Hiện CẢ bài, bản GỐC trước (đúng bản đề cho; «↻ Bài tương tự» sau như mọi bài).
+        // Nhóm của bài tương tự không vào cauSaiDeBt (id khác): làm bài tương tự không đổi tập «câu sai của đề».
+        btGoc() {
+          const m = this.btMucNow();
+          if (!this.btSaiDe.length || !m.concept || !BT.doc) return m.bai || [];
+          const k = this.btMuc + '|' + this.btSaiDeV;
+          if (BT.gocK === k) return BT.gocV;
+          let ra;
+          try { ra = window.baiTap.luyenMuc(BT.doc, m.concept, this.btSaiDe).map(e => e.bai); } catch (e) { ra = m.bai || []; }
+          BT.gocK = k; BT.gocV = ra;
+          return ra;
+        },
+        btSaiDeTinh() {
+          let ra = [];
+          try { if (BT.doc && (BT.doc.de || []).length) ra = [...window.baiTap.cauSaiDeBt(BT.doc, [...this.btSo, ...this.buf(), ...this.btRows])]; } catch (e) { ra = []; }
+          if (ra.length === this.btSaiDe.length && ra.every((id, k) => id === this.btSaiDe[k])) return;
+          this.btSaiDe = ra; this.btSaiDeV++;
+        },
+        // Đề mà bài `b` (hoặc bài tương tự của nó) thuộc về → tên đề dạng CHỮ THUẦN (x-text; ten_html bỏ thẻ); '' nếu là bài của Luyện.
+        btTuDe(b) { const d = b && BT.deBai.get(b.id); return d ? String(d.ten_html || d.ten || '').replace(/<[^>]+>/g, '').trim() : ''; },
         btSlots(tier) { return this.btGoc().filter(g => g.tier === tier); },
         btInst(g) { const i = this.btCur[g.id] || 0; return i > 0 && (g.bien_the || [])[i - 1] ? g.bien_the[i - 1] : g; },
         btTenMuc(t) { return (BT_MUC.find(x => x[0] === t) || [t, t])[1]; },
@@ -308,10 +360,546 @@ window.LS.ham();
         btDatMuc(k) { this.btTier = k; this.btMore = null; },
         btSang(k) { this.btDatMuc(k); window.scrollTo(0, 0); },
         btDatBai(i) {
-          this.btMuc = i; this.btMore = null; this.btTier = this.btMucDau();
+          this.btDiN++; this.btScr = 'muc'; this.btMuc = i; this.btMore = null; this.btTier = this.btMucDau();
           if (BT.doc.muc[i].concept) this.openAncestors(BT.doc.muc[i].concept);   // cây bên trái bung tới mục đang làm
           try { sessionStorage.setItem(BT_MUC_KHOA, BT.doc.muc[i].ten); } catch (e) { /* riêng tư */ }
         },
+
+        // ── Màn Unit ①, đề (③ ④), hash (ADR 0067) ────────────────────────────────────────────────────────────────────────────
+        // Token: 'bai-tap' (mục, như cũ) · 'bai-tap/u/<concept Unit>' (①) · 'bai-tap/de/<ma>' (③) · 'bai-tap/kq/<ma>' (④). Mã lạ / đề mới đang khoá / ④ chưa có kết quả → ① hoặc mục.
+        btToken() {
+          if (this.btScr === 'unit' && this.btUnit) return 'bai-tap/u/' + this.btUnit;
+          if (this.btScr === 'de' && this.btMa) return 'bai-tap/de/' + this.btMa;
+          if (this.btScr === 'kq' && this.btMa) return 'bai-tap/kq/' + this.btMa;
+          return 'bai-tap';
+        },
+        async btVe(tk) {
+          const p = String(tk).split('/');
+          if (p[1] === 'u' && p[2] && this.btMoUnit(p[2])) return;
+          if (p[1] === 'de' && p[2]) {
+            const de = BT.de.get(p[2]);
+            // Đề MỚI chỉ mở khi đề gốc đã nộp ≥ 1 lần (cùng khoá «🔒 Chưa mở» của ①): gõ / dán link thẳng không vượt được. Sổ chưa về (tải trang ngay tại hash, máy khác) thì chờ sổ ≤ 3 s trước khi quyết.
+            if (de && this.btDeOk() && this.btDeKhoa(de) && BT.soCho && !BT.soXong) {
+              // `ve()` KHÔNG await hàm này nên lúc chờ trang vẫn tương tác được. Màn hình đã khác lúc bắt đầu chờ (thao tác của con) hoặc đã có `ve()` khác chạy (`veN` đổi: Back/Forward/hash) thì bỏ, không ghi đè.
+              const t0 = this.tokenCua(), n0 = this.veN, d0 = this.btDiN;
+              let hen;
+              await Promise.race([BT.soCho, new Promise(r => { hen = setTimeout(r, 3000); })]);
+              clearTimeout(hen);
+              if (this.tokenCua() !== t0 || this.veN !== n0 || this.btDiN !== d0) {
+                if (this.veN === n0) this.btSuaHash();      // con tự bấm sang màn khác lúc chờ (mục → mục cùng token nên bộ quan sát hash không chạy): đưa URL về đúng màn đang hiện
+                return;
+              }
+            }
+            if (de && this.btDeOk() && this.btDeKhoa(de)) {
+              if (this.btMoUnit(this.btUnitCuaDe(de))) this.btSuaHash();   // THAY mục hiện tại trong lịch sử (ADR 0067), không đẩy mục mới
+              else { this.btScr = 'muc'; this.btSuaHash(); }
+              return;
+            }
+            if (this.btMoDe(p[2])) return;
+          }
+          if (p[1] === 'kq' && p[2] && this.btKqMo(p[2])) return;
+          this.btScr = 'muc';
+          if (tk !== 'bai-tap') this.btSuaHash();
+        },
+        btSuaHash() {
+          const t = this.btToken();
+          try { history.replaceState({ ...(history.state || {}), token: t }, '', '#' + encodeURI(t)); } catch (e) { /* trang nhúng / hạn chế: giữ hash */ }
+        },
+        // Breadcrumb + dòng được tô trên cây + bấm cây ở tab Bài tập. Mục: như cũ. Unit (hoặc nút cao hơn Unit): màn Unit của Unit chứa mục MỚI NHẤT trong nhánh.
+        btCrumb() { return (this.btScr === 'muc' ? this.btMucNow().ten : this.btUnitNow().ten) || ''; },
+        btNavChon(id) { return this.btScr === 'muc' ? this.btMucNow().concept === id : this.btUnit === id; },
+        btNavBam(id, sub) {
+          const ds = this.btMucs(), coUnit = this.btUnits().some(u => sub.has(u.concept));
+          for (let i = ds.length - 1; i >= 0; i--) {
+            if (!sub.has(ds[i].concept)) continue;
+            const u = this.btUnitCuaMuc(ds[i].concept);
+            if (coUnit && u && sub.has(u.concept)) this.btMoUnit(u.concept); else this.btDatBai(i);
+            return;
+          }
+        },
+        btUnits() { return BT.doc && Array.isArray(BT.doc.unit) ? BT.doc.unit : []; },
+        btUnitNow() { return BT.unit.get(this.btUnit) || { concept: '', ten: '', muc: [], de: [] }; },
+        btUnitCuaMuc(concept) { return this.btUnits().find(u => (u.muc || []).includes(concept)) || null; },
+        btMucCuaUnit() { const ms = this.btMucs(); return (this.btUnitNow().muc || []).map(c => ms.find(m => m.concept === c)).filter(Boolean); },
+        btMoUnit(concept) {
+          if (!BT.unit.has(concept)) return false;
+          this.btDiN++; this.btUnit = concept; this.btScr = 'unit'; this.btMa = ''; this.btMore = null;
+          this.openAncestors(concept);          // cây bên trái bung tới Unit đang xem
+          window.scrollTo(0, 0);
+          return true;
+        },
+        btVeUnit() { if (!this.btMoUnit(this.btUnit)) this.btScr = 'muc'; },
+        btVaoMuc(concept) { const i = this.btMucs().findIndex(m => m.concept === concept); if (i >= 0) { this.btDatBai(i); window.scrollTo(0, 0); } },
+        // Đề cần cả bộ tính điểm lượt (window.baiTapEsl, nạp riêng ở head()) lẫn tài liệu có `de`; thiếu một trong hai thì KHÔNG có Bước 2 (Luyện vẫn chạy).
+        btDeOk() { return !!(window.baiTapEsl && window.baiTap && BT.doc && BT.de.size); },
+        // Đề GỐC của Unit đang xem — MỘT chỗ định nghĩa «Unit có đề»: dòng Bước 2 và câu dẫn đầu ① đều đọc từ đây (Unit `de: []` → trống → không nhắc tới đề).
+        btDeGoc() { return this.btDeOk() ? window.baiTap.deCuaUnit(BT.doc, this.btUnit).filter(d => d.loai === 'goc') : []; },
+        btCoDe() { return this.btDeGoc().length > 0; },
+        btDeNow() { return this.btMa ? BT.de.get(this.btMa) || null : null; },
+        // Unit mà đề `de` hiện ở: Unit đang xem nếu đề thuộc nó, không thì Unit ĐẦU của đề có trong tài liệu (mở thẳng bằng hash).
+        btUnitCuaDe(de) {
+          const us = (de.unit || []).filter(u => BT.unit.has(u));
+          return us.includes(this.btUnit) ? this.btUnit : (us[0] || '');
+        },
+        // Mở ③. `moi` = làm lại từ đầu: xoá bài dở (lms_bt_do) và dọn trạng thái; không thì nạp bài dở (nếu có).
+        btMoDe(ma, moi) {
+          const de = this.btDeOk() ? BT.de.get(ma) : null, u = de ? this.btUnitCuaDe(de) : '';
+          if (!u) return false;
+          this.btDeDon(de);
+          if (moi) this.btGhiLs(this.btKyDo(de), null); else this.btDeNap(de);
+          this.btDeXn = false; this.btDeBan = false; this.btDeLoi = ''; this.btDeNhacN = 0; this.btLamLaiXn = false;
+          this.btDiN++; this.btUnit = u; this.btMa = ma; this.btScr = 'de'; this.btMore = null;
+          this.openAncestors(u);
+          window.scrollTo(0, 0);
+          return true;
+        },
+        // ④ chỉ mở khi máy này có kết quả của đề (`lms_bt_kq`); chưa có → false (btVe rơi về mục). `sauNop` true = vừa nộp (không hỏi máy lại ngay: lượt lúc nộp đã là MỘT lần hỏi;
+        // câu viết còn chờ = máy không trả lời / không gọi được → hiện ngay «Hỏi máy lại» / «Tự kiểm», khỏi bắt con rời ④ rồi mở lại); không thì câu viết còn chờ + máy gọi được → hỏi lại MỘT lượt.
+        btKqMo(ma, sauNop) {
+          const de = this.btDeOk() ? BT.de.get(ma) : null, u = de ? this.btUnitCuaDe(de) : '';
+          const L = de && this.btDoc(this.btKyKq(de));
+          if (!u || !L) return false;
+          this.btKdChiSai = false; this.btKdHoi = ''; this.btKdTu = {}; this.btKdLoi = '';
+          this.btKdDung(de, L);
+          this.btDiN++; this.btUnit = u; this.btMa = ma; this.btScr = 'kq'; this.btMore = null; this.btLamLaiXn = false;
+          this.openAncestors(u);
+          window.scrollTo(0, 0);
+          if (!sauNop) this.btKdHoiLai();
+          else if (BT.kd && BT.kd.cho.length) this.btKdHoi = this.btKdChoDuoc() ? 'hong' : 'khong';
+          return true;
+        },
+
+        // ── Lượt đã nộp (từ sổ + đệm + phiên) ────────────────────────────────────────────────────────────────────────────────────
+        // `lms_bt_do:<user>:<de.id>` = bài dở {v: 1, tl: {[id ý]: traLoi}} · `lms_bt_kq:<user>:<de.id>` = lần nộp gần nhất {v: 1, ts, tn, lan, kq: chamDeBt(…), tl, may: {[id nhóm]: bool}}.
+        // Sổ: mỗi nhóm một dòng + MỘT dòng tổng {i: de.id, c: 'de', ok 0, g 0, x: JSON {v, de, ma, lan, tn, diem: [[d, toi_da]…], cho, cd}}; `tn` = giờ nộp nguyên (D1 kẹp `ts` của dòng).
+        btKyDo(de) { return 'lms_bt_do:' + this.user + ':' + de.id; },
+        btKyKq(de) { return 'lms_bt_kq:' + this.user + ':' + de.id; },
+        btDoc(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } },
+        btGhiLs(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* riêng tư / đầy */ } },
+        // `BT.soCho` = lượt nạp sổ gần nhất, `BT.soXong` = nó đã xong (thành công hay không) — btVe chờ sổ trước khi khoá đề mới theo lượt đề gốc.
+        btNapLuot() {
+          const p = this.btNapLuotSo();
+          BT.soCho = p; BT.soXong = false;
+          p.finally(() => { if (BT.soCho === p) BT.soXong = true; });
+          return p;
+        },
+        async btNapLuotSo() {
+          if (!this.btCo || !this.btOk || !BT.de.size || !this.online || !this.secret) return;   // môn chưa có đề: không gọi sổ (Luyện không cần)
+          try {
+            const r = await fetch('/api/study/bt?user=' + encodeURIComponent(this.user) + '&course=' + encodeURIComponent(this.course),
+                                  { headers: { accept: 'application/json', 'x-progress-key': this.secret } });
+            if (!r.ok) return;
+            const d = await r.json();
+            this.btSo = (d && Array.isArray(d.rows) ? d.rows : []).filter(Array.isArray).map(a => ({ i: a[0], c: a[1], g: a[2], ts: a[3], x: a[4] }));
+            this.btSaiDeTinh();
+            if (this.btScr === 'kq' && BT.kd) { const L = this.btDoc(this.btKyKq(BT.kd.de)); if (L) this.btKdDung(BT.kd.de, L); }      // ④ mở trước khi sổ về (tải lại đúng trang kết quả): dựng lại với dòng muộn
+          } catch (e) { /* ngoại tuyến: lượt tính từ đệm + phiên */ }
+        },
+        // Giờ nộp = `x.tn` nếu có (ts của dòng ở sổ có thể bị D1 kẹp, còn đệm / phiên giữ ts nguyên — cùng lượt thì `tn` bằng nhau), không thì `ts`.
+        btTn(r) { return r && r.x && Number.isFinite(Number(r.x.tn)) && r.x.tn !== null && r.x.tn !== '' ? Number(r.x.tn) : (r ? r.ts : 0); },
+        // Các dòng TỔNG của đề, bỏ trùng theo (giờ nộp, lan): cùng lượt có thể nằm ở nhiều nguồn (sổ, đệm, phiên). Hai lượt cùng giây vẫn là hai lượt (khác `lan`).
+        btDeRows(de) {
+          const seen = new Set(), ra = [];
+          const them = (a) => {
+            if (!a || a.c !== 'de' || a.i !== de.id) return;
+            const ts = Number(a.ts !== undefined ? a.ts : a.t) || 0;
+            let x = null; try { x = typeof a.x === 'string' ? JSON.parse(a.x) : null; } catch (e) { x = null; }
+            const khoa = this.btTn({ ts, x }) + '|' + (x && x.lan !== undefined ? x.lan : '');
+            if (seen.has(khoa)) return;
+            seen.add(khoa);
+            ra.push({ ts, x });
+          };
+          for (const a of this.btSo) them(a);
+          for (const a of this.buf()) them(a);
+          for (const a of this.btRows) them(a);
+          return ra.sort((p, q) => p.ts - q.ts || ((p.x && p.x.lan) || 0) - ((q.x && q.x.lan) || 0));
+        },
+        // Dòng có thể là câu CHẤM MUỘN (x JSON có "lu") hoặc câu BỐ MẸ ĐÃ SỬA kết luận (x có "bm") từ sổ + đệm + phiên → [{i, g, ts, x}] — đầu vào của diemLuotBm / chamMuon.
+        // Dòng muộn (id câu + `lu`) có ở SỔ thì SỔ thắng bản trong đệm / phiên (bố mẹ có thể đã sửa `g`): giữ cả hai thì chamMuon (OR theo id) cho bản cũ thắng khi bố mẹ HẠ kết luận.
+        btDongMuon() {
+          const ra = [], soCo = new Set();
+          const lu = (a) => { const m = /"lu":\s*(\d+)/.exec(a.x); return m ? a.i + '|' + m[1] : null; };
+          [this.btSo, this.buf(), this.btRows].forEach((ds, nguon) => {
+            for (const a of ds) {
+              if (!(a && typeof a.x === 'string' && (a.x.indexOf('"lu":') >= 0 || a.x.indexOf('"bm":') >= 0))) continue;
+              const k = lu(a);
+              if (k) { if (nguon === 0) soCo.add(k); else if (soCo.has(k)) continue; }
+              ra.push({ i: a.i, g: a.g, ts: Number(a.ts !== undefined ? a.ts : a.t) || 0, x: a.x });
+            }
+          });
+          return ra;
+        },
+        // Dòng tổng của lượt có giờ nộp `tn` (ts đã kẹp ở D1 có thể ≠ tn); không thấy trong sổ thì giả dòng {t: tn, x: {tn}}.
+        btTongCua(de, tn) { const r = this.btDeRows(de).find(q => this.btTn(q) === tn); return r ? { t: r.ts, x: r.x } : { t: tn, x: { tn } }; },
+        // Mọi lượt đã nộp của đề (cũ → mới): [{lan, d, toi, ts}] — d / toi = điểm lượt TÍNH LẠI từ dòng tổng + câu chấm muộn (diemLuotBm, cùng hàm với khu bố mẹ), `ts` = giờ nộp.
+        // Kết quả lưu ở máy này (`lms_bt_kq`, có thể chưa lên sổ) được gộp: mới hơn dòng sổ cuối thì là lượt mới; cùng lượt thì lấy điểm cao hơn (máy khác chấm muộn thêm thì sổ cao hơn).
+        // Lịch sử khoá theo de.id: đề gắn hai Unit hiện CÙNG lượt ở cả hai.
+        btLuotDe(de) {
+          const E = window.baiTapEsl, dong = this.btDongMuon(), ra = [];
+          for (const r of this.btDeRows(de)) {
+            const dl = E.diemLuotBm({ t: r.ts, x: r.x }, dong, new Set());
+            ra.push({ lan: Number(r.x && r.x.lan) || ra.length + 1, d: dl ? dl.d : null, toi: dl ? dl.toi : null, ts: this.btTn(r) });
+          }
+          const loc = this.btDoc(this.btKyKq(de)), tn = loc ? Number(loc.tn !== undefined ? loc.tn : loc.ts) : NaN;
+          if (loc && loc.kq && Number.isFinite(tn) && (!ra.length || tn >= ra[ra.length - 1].ts)) {
+            let d = null;
+            try {
+              const tong = this.btTongCua(de, tn), may = { ...(loc.may || {}) };
+              for (const [id, dung] of E.chamMuon(tong, dong)) may[id] = dung;
+              d = window.baiTap.chamDeBt(de, loc.tl || {}, may).tong;
+            } catch (e) { d = null; }      // kết quả cục bộ hỏng: bỏ phần điểm, vẫn tính là ĐÃ nộp
+            const k = ra.findIndex(x => x.ts === tn);
+            if (k < 0) ra.push({ lan: Number(loc.lan) || ra.length + 1, d, toi: loc.kq.toi_da, ts: tn });
+            else if (d !== null && (ra[k].d === null || d > ra[k].d)) ra[k] = { ...ra[k], d, toi: loc.kq.toi_da };
+          }
+          return ra.sort((p, q) => p.ts - q.ts || p.lan - q.lan);
+        },
+        btDeDang(de) { const o = this.btDoc(this.btKyDo(de)); return !!o && !!o.tl && Object.keys(o.tl).length > 0; },
+        btDeGocCua(de) { return de.loai === 'moi' ? (BT.de.get(de.khuon) || de) : de; },
+        // Đề MỚI đang khoá = đề gốc của khuôn chưa có lượt nộp nào (sổ · đệm · phiên · lms_bt_kq) VÀ con chưa bắt đầu đề mới này (lms_bt_do) — đã bắt đầu tức là từng được mở (tải lại giữa chừng không bị đẩy về ①).
+        btDeKhoa(de) { return de.loai === 'moi' && this.btLuotDe(this.btDeGocCua(de)).length === 0 && !this.btDeDang(de); },
+        // Đề mới kế tiếp của khuôn `g.ma`: quay vòng theo số lượt đã nộp các đề mới của khuôn (deMoiKe, worker/bai_tap_esl.js — gọi trên {de} vì Math giữ đề ở khoá `de` phẳng).
+        btDeMoiKe(g) {
+          let n = 0;
+          for (const d of BT.doc.de) if (d.loai === 'moi' && d.khuon === g.ma) n += this.btLuotDe(d).length;
+          return { de: window.baiTapEsl.deMoiKe({ de: BT.doc.de }, g.ma, n), n };
+        },
+        // ① Bước 2: mỗi đề GỐC một dòng + ô «🔄 Đề mới cùng cấu trúc» (khoá tới khi đề gốc đã nộp ≥ 1 lần).
+        btBuoc2() {
+          return this.btDeGoc().map(de => {
+            const L = this.btLuotDe(de), cuoi = L[L.length - 1] || null, dang = this.btDeDang(de), moi = this.btDeMoiKe(de);
+            return { de, n_phan: (de.phan || []).length, lan: L.length, diem: cuoi && cuoi.d !== null ? { d: cuoi.d, toi: cuoi.toi } : null, dang,
+                     co_kq: !!this.btDoc(this.btKyKq(de)), nut: dang ? 'Làm tiếp' : L.length ? 'Làm lại' : 'Bắt đầu', moi: { de: moi.de, mo: !!moi.de && !this.btDeKhoa(moi.de), n: moi.n } };
+          });
+        },
+        btDeSub(r) {
+          const p = [r.n_phan + ' phần', r.de.toi_da + ' điểm'];
+          if (r.lan) p.push('lần ' + r.lan + ': ' + (r.diem ? r.diem.d + '/' + r.diem.toi : '—'));
+          else if (!r.dang) p.push('chưa làm');
+          if (r.dang) p.push('đang làm dở');
+          return p.join(' · ');
+        },
+        btMoiSub(r) { return r.moi.mo ? 'Bộ câu khác, cùng số phần, cùng kiến thức.' + (r.moi.n ? ' Đã làm ' + r.moi.n + ' lần.' : '') : 'Mở sau khi con làm xong đề gốc này.'; },
+
+        // ── ③ Làm đề: tờ đề, bài dở, đếm ô, nhắc cách viết, nộp ──────────────────────────────────────────────────────────────
+        // Tờ đề KHÔNG báo đúng/sai (không Kiểm tra, không 💡, không lời giải, không bài tương tự, không đồng hồ). Ý của đề dùng CHUNG btTL / btKq / btVV / btB / btN với Luyện (id ý, nhóm, bài là băm toàn cục
+        // nên không trùng): btDeDon xoá sạch trạng thái của MỘT đề trước khi nạp bài dở và sau khi nộp, để câu đề hiện lại ở Luyện (câu sai về Luyện) không mang trả lời của ③.
+        btDeYs(de) { const ra = []; for (const p of de.phan || []) for (const b of p.bai || []) for (const y of b.y || []) ra.push({ y, b }); return ra; },
+        btDeDon(de) {
+          for (const { y, b } of this.btDeYs(de)) {
+            this.btTL[y.id] = this.btTLMoi(y);
+            for (const k of [this.btKq, this.btVV, this.btNho, this.btSelThe, this.btCach, this.btCachThem, this.btNoiSel]) delete k[y.id];
+            delete this.btB[b.id]; BT.t0.delete(b.id);
+            for (const n of y.nhom || []) delete this.btN[n.id];
+          }
+        },
+        // Nhãn số câu (R15): đuôi `nguon` («… Q11», «… Q3a») — không có thì số thứ tự trong phần.
+        btCauNhan(b, j) { const m = /\bQ\s*(\d+[a-z]?)\s*$/i.exec(String(b.nguon || '').trim()); return 'Câu ' + (m ? m[1] : j + 1); },
+        btDeHien() {
+          const de = this.btDeNow(), ra = [];
+          if (!de || !this.btOk) return ra;
+          (de.phan || []).forEach((p, k) => {
+            ra.push({ key: de.ma + ':p' + k, phan: p, n: k + 1 });
+            (p.bai || []).forEach((b, j) => {
+              const d = (b.y || []).reduce((s, y) => s + (Number.isInteger(y.diem) ? y.diem : 0), 0);
+              ra.push({ key: 'b' + b.id, b, g: null, extra: false, nhan: this.btCauNhan(b, j), diem: d });
+            });
+          });
+          return ra;
+        },
+        // Trả lời hiện tại của đề → {id ý: traLoi} CHỈ ý đã động tới (btDaLam), bản sao sâu. `btDeTlDay` = mọi ý (ý chưa động tới lấy giá trị trống) — đầu vào của chamDeBt.
+        btDeTl(de) {
+          const ra = {};
+          for (const { y } of this.btDeYs(de)) {
+            const v = this.btTL[y.id];
+            if (v !== undefined && this.btDaLam(y, v)) ra[y.id] = JSON.parse(JSON.stringify(v));
+          }
+          return ra;
+        },
+        btDeTlDay(de) {
+          const ra = {};
+          for (const { y } of this.btDeYs(de)) ra[y.id] = this.btTL[y.id] !== undefined ? this.btTL[y.id] : this.btTLMoi(y);
+          return ra;
+        },
+        // Ghi bài dở (gọi từ $watch đăng ký trong btNap, mỗi lần trả lời của đề đang làm đổi). Không có gì thì xoá khoá.
+        btDeLuuTam() {
+          if (this.btScr !== 'de') return;
+          const de = this.btDeNow();
+          if (!de) return;
+          const tl = this.btDeTl(de), k = this.btKyDo(de);
+          if (!Object.keys(tl).length) { this.btGhiLs(k, null); return; }
+          this.btGhiLs(k, { v: 1, tl });
+        },
+        // Nạp bài dở vào btTL. Hình dạng sai (đề đổi sau khi lưu) thì bỏ ý đó, không làm vỡ cả đề.
+        btDeNap(de) {
+          const o = this.btDoc(this.btKyDo(de));
+          if (!o || !o.tl || typeof o.tl !== 'object') return;
+          for (const { y } of this.btDeYs(de)) {
+            const v = o.tl[y.id], m = this.btTLMoi(y);
+            if (v === undefined || v === null || Array.isArray(v) !== Array.isArray(m) || typeof v !== typeof m) continue;
+            this.btTL[y.id] = Array.isArray(m) ? v.slice(0, m.length) : { ...m, ...v };
+          }
+        },
+        // Chấm cả đề (hàm thuần chamDeBt) với kết luận máy `may`; hỏng thì null.
+        btDeCham(de, may) { try { return window.baiTap.chamDeBt(de, this.btDeTlDay(de), may || {}); } catch (e) { return null; } },
+        // «Đã làm x/y ô»: ô = NHÓM chấm (id nhóm ghi sổ); ô chưa trả lời gì = `trong`. Ý `viet` trống cũng tính là trống.
+        btDeLam(de) {
+          const kq = this.btDeCham(de, {}), tl = this.btDeTlDay(de);
+          let x = 0, y = 0;
+          for (const { y: yy } of this.btDeYs(de)) {
+            for (const n of yy.nhom || []) {
+              y++;
+              const trong = yy.kieu === 'viet' ? !String((tl[yy.id] || {}).text || '').trim() : !!kq && kq.nhom[n.id] === 'trong';
+              if (!trong) x++;
+            }
+          }
+          return { x, y };
+        },
+        btDeDem() { const de = this.btDeNow(); if (!de) return ''; const l = this.btDeLam(de); return 'Đã làm ' + l.x + '/' + l.y + ' ô'; },
+        btDeTrong() { const de = this.btDeNow(); if (!de) return 0; const l = this.btDeLam(de); return l.y - l.x; },
+        // CC-02: nhắc «viết chưa đúng cách» trước khi nộp — CHỈ theo HÌNH THỨC chữ con gõ (`cachVietO`: thiếu % / đơn vị, «.6», hỗn số / phân số / thập phân sai dạng, chưa rút gọn, không đọc được), KHÔNG so với đáp số:
+        // đúng hay sai giá trị cho CÙNG một viền, nên viền + số đếm không lộ ô nào đúng. Chỉ đếm ô THẬT SỰ có viền vàng: ô của ý `o` / `bang` (viền ô qua btKq[y.id].cells) và ô dãy `day` (viền ô gõ
+        // theo nhóm, btClsDay); kiểu ý điều kiện (cot · o_dk · the_o · noi_nhom) không có viền ở ③ nên không nhắc. Trả số ô.
+        btDeNhac(de) {
+          const bt = window.baiTap;
+          let n = 0;
+          for (const { y, b } of this.btDeYs(de)) {
+            const tl = this.btTL[y.id];
+            delete this.btKq[y.id];
+            if (y.kieu === 'viet' || !this.btDaLam(y, tl)) continue;
+            try {
+              if (y.kieu === 'o' || y.kieu === 'bang') {
+                const cells = {};
+                for (const c of y.o || []) if (!c.goi_y && bt.cachVietO(c, (tl || {})[c.id])) cells[c.id] = 'cach_viet';
+                if (Object.keys(cells).length) { this.btKq[y.id] = { nhom: {}, cells }; n += Object.keys(cells).length; }
+              } else if (y.kieu === 'day') {
+                const nhom = {};
+                for (const [id, kq] of Object.entries(bt.chamY(y, tl, b))) if (kq === 'cach_viet') nhom[id] = 'cach_viet';      // `day`: chỉ «không đọc được» mới là cach_viet, không phụ thuộc đáp số
+                if (Object.keys(nhom).length) { this.btKq[y.id] = { nhom, cells: {} }; n += Object.keys(nhom).length; }
+              }
+            } catch (e) { /* ý hỏng: bỏ qua, không chặn nộp */ }
+          }
+          return n;
+        },
+        btNopBam() {
+          if (this.btDeBan) return;
+          const de = this.btDeNow();
+          if (!de) return;
+          this.btDeNhacN = this.btDeNhac(de);
+          if (this.btDeTrong() > 0 || this.btDeNhacN > 0) { this.btDeXn = true; this.$nextTick(() => { const e = document.querySelector('[data-bt-de-xn]'); if (e) e.scrollIntoView({ block: 'nearest' }); }); return; }
+          this.btNop();
+        },
+        // Câu từng có lượt g ≤ 1 (sổ + đệm + phiên này) → đúng lần sau chỉ được g 2 (luật «lần đúng đầu tiên» — phải giống ⭐ của Worker).
+        btTungSai() {
+          const s = new Set();
+          for (const ds of [this.btSo, this.buf(), this.btRows]) for (const a of ds) if (a && a.c !== 'de' && typeof a.i === 'string' && Number(a.g) <= 1) s.add(a.i);
+          return s;
+        },
+        btDeLanSau(de) { const loc = this.btDoc(this.btKyKq(de)); return Math.max(this.btDeRows(de).length, loc ? Number(loc.lan) || 0 : 0) + 1; },
+        // Câu viết trong đề: MỘT lượt /api/cham-viet (Worker tự ghi dòng của câu, kèm `lu` = giờ nộp `tn`); ≤ 15 s. Trả true/false (đạt / chưa), null = không hỏi được (→ «chờ máy» ở ④).
+        async btVietDe(id, text, tn) {
+          const ac = new AbortController(), han = setTimeout(() => ac.abort(), BT_CHO_MS);
+          try {
+            const r = await fetch('/api/cham-viet', {
+              method: 'POST', signal: ac.signal,
+              headers: { 'content-type': 'application/json', 'x-progress-key': this.secret },
+              body: JSON.stringify({ user: this.user, course: this.course, i: id, text, lan: 1, ms: 0, xem_mau: false, goi_y: false, tn }),
+            });
+            const d = await r.json();
+            if (!(r.ok && d && d.loai === 'may' && typeof d.dat === 'boolean')) return null;
+            if (d.ghi === false && d.row && typeof d.row === 'object') this.btLuu([d.row]);      // Worker ghi hỏng: trang tự đẩy qua /api/study
+            if (Number(d.cong) > 0 && window.baoDiem) window.baoDiem(Number(d.cong));
+            return d.dat;
+          } catch (e) { return null; } finally { clearTimeout(han); }
+        },
+        // Nộp: chamDeBt → hỏi máy các câu viết (song song) → ghi sổ (mỗi nhóm một dòng + MỘT dòng tổng, cùng giờ nộp) → lms_bt_kq, xoá lms_bt_do → ④ THAY mục ③ trong lịch sử (Back từ ④ về ①).
+        async btNop() {
+          const de = this.btDeNow();
+          if (!de || this.btDeBan) return;
+          this.btDeBan = true; this.btDeXn = false; this.btDeLoi = '';
+          let daGhi = false;
+          try {
+            const bt = window.baiTap;
+            const tlDay = JSON.parse(JSON.stringify(this.btDeTlDay(de))), tlTay = this.btDeTl(de), may = {}, hoi = [];
+            for (const { y } of this.btDeYs(de)) {
+              if (y.kieu !== 'viet') continue;
+              const text = String((tlDay[y.id] || {}).text || '').trim(), n = y.nhom[0];
+              if (text.length < 15) may[n.id] = false;                                   // trống / chưa thành câu (Worker từ chối dưới 15 ký tự): sai ngay, không có dòng máy
+              else if (this.secret && this.online) hoi.push({ id: n.id, text });         // không gọi được máy (chưa có khoá / ngoại tuyến): để «chờ máy», nộp vẫn được
+            }
+            // Nộp lại sau lỗi (máy đã chấm và Worker đã ghi dòng viết, rồi lỗi trước khi ghi sổ): chữ các câu viết KHÔNG đổi thì dùng lại giờ nộp + kết luận của lần trước — không hỏi máy lần nữa (trùng dòng, tốn lượt ngày);
+            // đổi chữ (dù một câu) thì lần mới hoàn toàn (giờ nộp mới), dòng cũ mồ côi không nối vào đâu.
+            const cu = this.btDeThu && this.btDeThu.ma === de.ma ? this.btDeThu : null;
+            const dungLai = !!cu && Object.entries(cu.viet).every(([id, v]) => hoi.some(h => h.id === id && h.text === v.text));
+            const ts = dungLai ? cu.ts : Math.floor(Date.now() / 1000);
+            const dat = await Promise.all(hoi.map(h => dungLai && cu.viet[h.id] ? cu.viet[h.id].dat : this.btVietDe(h.id, h.text, ts)));
+            const viet = {};
+            hoi.forEach((h, k) => { if (dat[k] !== null) { may[h.id] = dat[k]; viet[h.id] = { text: h.text, dat: dat[k] }; } });
+            this.btDeThu = { ma: de.ma, ts, viet };
+            const kq = bt.chamDeBt(de, tlDay, may), lan = this.btDeLanSau(de);
+            const rows = bt.dongNopDe(de, kq, tlDay, { tn: ts, lan, tungSai: this.btTungSai() }).map(r => ({ ...r, ms: 0, t: ts }));
+            this.btGhiLs(this.btKyKq(de), { v: 1, ts, tn: ts, lan, kq, tl: JSON.parse(JSON.stringify(tlTay)), may });
+            this.btGhiLs(this.btKyDo(de), null);
+            this.btRows.push(...rows);
+            this.btLuu(rows);
+            this.btSaiDeTinh();
+            daGhi = true;
+            this.btDeThu = null;
+            this.dangVe = true;                                                          // đổi màn hình mà KHÔNG đẩy mục lịch sử mới: thay mục ③ bằng ④
+            try {
+              if (!this.btKqMo(de.ma, true)) this.btMoUnit(this.btUnitCuaDe(de));      // không ghi được lms_bt_kq (trình duyệt chặn bộ nhớ): về ① thay vì để tờ đề trống
+              window.LS.thay(this.btToken());
+            } finally { this.$nextTick(() => { this.dangVe = false; }); }
+            this.btDeDon(de);
+          } catch (e) {
+            if (!daGhi) this.btDeLoi = 'Chưa nộp được — bài của con vẫn còn nguyên, bấm Nộp bài lần nữa nhé.';      // đã ghi sổ rồi thì không mời nộp lại (trùng lượt)
+            else console.error(e);
+          } finally { this.btDeBan = false; }
+        },
+        // Làm lại từ ④ (đề gốc của đề vừa xem): đang có bài dở của đề gốc thì HỎI tại chỗ (dải, không confirm()) — «Làm tiếp bài dở» giữ nó, «Xoá, làm lại từ đầu» xoá.
+        btLamLai(de) {
+          const g = this.btDeGocCua(de || this.btDeNow());
+          if (this.btDeDang(g)) { this.btLamLaiXn = true; this.$nextTick(() => { const e = document.querySelector('[data-bt-lam-lai-xn]'); if (e) e.scrollIntoView({ block: 'nearest' }); }); return; }
+          this.btMoDe(g.ma, true);
+        },
+        btLamTiep(de) { const g = this.btDeGocCua(de || this.btDeNow()); this.btLamLaiXn = false; this.btMoDe(g.ma); },
+        btXoaLamLai(de) { const g = this.btDeGocCua(de || this.btDeNow()); this.btLamLaiXn = false; this.btMoDe(g.ma, true); },
+
+        // ── ④ Xem lại đề (CHỈ ĐỌC) ────────────────────────────────────────────────────────────────────────────────────────────
+        // Dựng từ `lms_bt_kq` (L.tl = ý đã động tới, L.may = kết luận của máy lúc nộp) — KHÔNG đụng btTL / btKq của Luyện (thẻ ④ là markup riêng, không có ô nhập). Kết luận từng câu viết phủ theo thứ tự:
+        // L.may → câu viết trống / < 15 ký tự = sai NGAY (Worker từ chối dưới 15; không chờ) → câu chấm MUỘN ở sổ / đệm / phiên (chamMuon: dòng `lu == tn`, kể cả khi bố mẹ đã sửa `g`).
+        // KHÔNG ghi ngược vào lms_bt_kq (bố mẹ hạ kết luận thì ④ tự đúng, điểm ④ = điểm ① `btLuotDe`). Dữ liệu vẽ nằm ở BT.kd (NGOÀI vùng phản ứng: chứa bài của tài liệu); `btKdN` báo đổi.
+        btKdG() { this.btKdN; return BT.kd; },
+        btKdMayPhu(de, L) {
+          const E = window.baiTapEsl, tn = Number(L.tn !== undefined ? L.tn : L.ts), tl = L.tl || {}, may = { ...(L.may || {}) }, viet = [];
+          for (const { y } of this.btDeYs(de)) {
+            if (y.kieu !== 'viet') continue;
+            const n = y.nhom[0];
+            viet.push(n.id);
+            if (may[n.id] === undefined && String((tl[y.id] || {}).text || '').trim().length < 15) may[n.id] = false;
+          }
+          let tong = this.btTongCua(de, tn);
+          if (!tong.x || !Array.isArray(tong.x.cho)) tong = { t: tn, x: { ...(tong.x || {}), tn, cho: viet } };      // dòng tổng chưa lên sổ: cho = mọi nhóm viết (như dongNopDe)
+          for (const [id, dung] of E.chamMuon(tong, this.btDongMuon())) may[id] = dung;
+          return may;
+        },
+        // Nhắc cách viết của MỘT ý chưa đúng (theo HÌNH THỨC chữ con gõ: cachVietO): chưa rút gọn · sai dạng · thiếu đơn vị / %.
+        btKdLy(y, tl, r) {
+          const bt = window.baiTap, ra = [];
+          let tg = r.ly === 'chua_toi_gian';
+          if (y.kieu === 'o' || y.kieu === 'bang') {
+            const sd = [], dv = [];
+            for (const c of y.o || []) {
+              if (c.goi_y) continue;
+              const l = bt.cachVietO(c, (tl || {})[c.id]);
+              if (l === 'sai_dang') sd.push(c.id); else if (l === 'thieu_don_vi') dv.push(c.id); else if (l === 'chua_toi_gian') tg = true;
+            }
+            if (tg) ra.push('Chưa rút gọn — đề đòi phân số tối giản (simplify).');
+            if (sd.length) ra.push(this.btNhacDang(y, sd, 'Cách viết chưa đúng — đề đòi dạng '));
+            if (dv.length) ra.push(this.btNhacDonVi(y, dv));
+          } else if (r.kq === 'cach_viet') ra.push('Cách viết chưa đúng yêu cầu của đề.');
+          return ra;
+        },
+        // Một ý → dòng vẽ của ④. `kq` ∈ dung · sai · trong · cach_viet · cho (chờ máy chấm câu viết).
+        btKdY(b, y, yi, kq, tl) {
+          const bt = window.baiTap, r = kq.y[y.id] || { diem: 0, toi_da: 1, kq: 'sai' }, viet = y.kieu === 'viet';
+          let con = '', dap = '', ly = [];
+          try {
+            con = viet ? String((tl || {}).text || '').trim() : bt.xY(y, tl, b);
+            dap = viet ? '' : bt.dapY(y, b);
+            if (r.kq !== 'dung') ly = this.btKdLy(y, tl, r);
+          } catch (e) { /* ý lạ: bỏ phần chữ phụ, vẫn vẽ ✓/✗ */ }
+          // Câu viết trống = «Bỏ trống»; viết dưới 15 ký tự (chưa thành câu) = sai ngay, không chờ máy.
+          const trong = viet && r.kq === 'sai' && !con, ngan = viet && r.kq === 'sai' && !!con && con.length < 15;
+          return { y, nhan: y.nhan || (b.y.length > 1 ? String(yi + 1) : ''), kq: trong ? 'trong' : r.kq, diem: r.diem, toi: r.toi_da, con, dap, ly, viet, ngan };
+        },
+        btKdDung(de, L) {
+          const bt = window.baiTap, may = this.btKdMayPhu(de, L), tlDay = {};
+          for (const { y } of this.btDeYs(de)) tlDay[y.id] = L.tl && L.tl[y.id] !== undefined ? L.tl[y.id] : this.btTLMoi(y);
+          const kq = bt.chamDeBt(de, tlDay, may), phan = [], ds = [], cho = [];
+          (de.phan || []).forEach((p, k) => {
+            const o = { n: k + 1, ten_html: p.ten_html || '', diem: kq.phan[k].diem, toi: kq.phan[k].toi_da };
+            ds.push({ key: 'p' + k, phan: o });
+            (p.bai || []).forEach((b, j) => {
+              const ys = (b.y || []).map((y, yi) => this.btKdY(b, y, yi, kq, tlDay[y.id]));
+              ds.push({ key: 'b' + b.id, b, nhan: this.btCauNhan(b, j), diem: ys.reduce((a, q) => a + q.diem, 0), toi: ys.reduce((a, q) => a + q.toi, 0), ys, can: ys.some(q => q.kq !== 'dung') });
+              for (const q of ys) if (q.viet && q.kq === 'cho') cho.push({ id: q.y.nhom[0].id, kt: q.y.nhom[0].kt, y: q.y, b, text: q.con });
+            });
+            phan.push(o);
+          });
+          BT.kd = { de, ts: L.ts, tn: Number(L.tn !== undefined ? L.tn : L.ts), lan: Number(L.lan) || 1, tong: kq.tong, toi: kq.toi_da, phan, ds, cho };
+          this.btKdN++;
+        },
+        // «Chỉ xem câu sai»: bài còn đáng xem = có ý chưa đúng (sai, trống, chờ máy); phần không có bài nào như vậy ẩn.
+        btKdHien() {
+          const k = this.btKdG();
+          if (!k) return [];
+          if (!this.btKdChiSai) return k.ds;
+          const ra = []; let dau = null;
+          for (const e of k.ds) {
+            if (e.phan) { dau = e; continue; }
+            if (e.can) { if (dau) { ra.push(dau); dau = null; } ra.push(e); }
+          }
+          return ra;
+        },
+        btKdTin(q) {
+          const d = q.diem + '/' + q.toi + ' điểm';
+          switch (q.kq) {
+            case 'dung': return '✓ Đúng · ' + d;
+            case 'cho': return '⏳ Đang chờ máy chấm — chưa tính điểm';
+            case 'trong': return '✗ Bỏ trống · ' + d;
+            case 'cach_viet': return '✗ Chưa đúng cách viết · ' + d;
+            default: return (q.ngan ? '✗ Chưa đủ một câu · ' : q.viet ? '✗ Máy chấm: chưa đạt · ' : '✗ Chưa đúng · ') + d;
+          }
+        },
+        btKdChoDuoc() { return !!this.online && !!this.secret && navigator.onLine !== false; },
+        // Câu viết còn chờ máy: hỏi lại MỘT lượt (cùng `tn` → Worker ghi dòng muộn `lu == tn`). Có kết luận thì ghi vào L.may (① khớp ④); máy không trả lời → btKdHoi 'hong' → hiện «Tự kiểm» để khỏi chờ mãi.
+        async btKdHoiLai() {
+          let k = BT.kd;
+          if (!k || this.btKdBan) return;
+          if (BT.soCho && !BT.soXong) {      // sổ đang về: câu chờ có thể đã có dòng muộn (Worker / máy khác ghi) — chờ ≤ 3 s rồi mới hỏi máy, khỏi tốn một lượt chấm của ngày
+            const d0 = this.btDiN;
+            await Promise.race([BT.soCho, new Promise(r => setTimeout(r, 3000))]);
+            if (this.btDiN !== d0) return;     // con đã đổi màn hình trong lúc chờ (rời ④, hoặc mở lại ④ → đã có lượt hỏi mới): không hỏi máy, khỏi tốn một lượt chấm của ngày
+            const L0 = this.btDoc(this.btKyKq(k.de));
+            if (L0 && this.btScr === 'kq' && this.btMa === k.de.ma) this.btKdDung(k.de, L0);
+            k = BT.kd;
+          }
+          if (!k || !k.cho.length) return;
+          if (!this.btKdChoDuoc()) { this.btKdHoi = 'khong'; return; }
+          this.btKdBan = true;
+          try {
+            const de = k.de, ket = await Promise.all(k.cho.map(c => this.btVietDe(c.id, c.text, k.tn)));
+            const L = this.btDoc(this.btKyKq(de));
+            if (!L) return;
+            L.may = L.may || {};
+            let moi = 0;
+            k.cho.forEach((c, i) => { if (ket[i] !== null && L.may[c.id] === undefined) { L.may[c.id] = ket[i]; moi++; } });
+            if (moi) this.btGhiLs(this.btKyKq(de), L);
+            this.btKdHoi = ket.some(r => r === null) ? 'hong' : '';
+            if (this.btScr === 'kq' && this.btMa === de.ma) this.btKdDung(de, L);
+          } finally { this.btKdBan = false; }
+        },
+        // Tự kiểm (máy không hỏi được): tick các ý câu của con đã có → «Ghi kết quả» = MỘT dòng muộn `lu == tn` (đạt g 2, chưa đạt g 1; lượt máy đã dùng lúc nộp nên không bao giờ g 3). Đạt = chamY của ý (như Luyện).
+        btKdTuMo(c) { this.btKdTu = { ...this.btKdTu, [c.id]: { tick: (c.y.tu_kiem || []).map(() => false) } }; },
+        btKdTuDat(c) {
+          const T = this.btKdTu[c.id];
+          if (!T) return false;
+          try { return window.baiTap.chamY(c.y, { tick: T.tick, text: c.text }, c.b)[c.id] === 'dung'; } catch (e) { return false; }
+        },
+        btKdTuXong(c) {
+          const T = this.btKdTu[c.id], k = BT.kd;
+          if (!T || !k) return;
+          const bt = window.baiTap, dat = this.btKdTuDat(c), g = bt.gViet({ dat, lan: 2 }), tk = {};
+          (c.y.tu_kiem_ma || []).forEach((ma, i) => { tk[ma] = T.tick[i] ? 1 : 0; });
+          const row = { i: c.id, c: c.kt, ok: g >= 2 ? 1 : 0, g, ms: 0, t: Math.floor(Date.now() / 1000),
+                        x: bt.goiX({ v: 1, t: String(c.text).slice(0, 600), l: 2, tk, ly: !this.online ? 'ngoai_tuyen' : !this.secret ? 'khoa' : 'loi', lu: k.tn }) };
+          this.btRows.push(row); this.btLuu([row]); this.btSaiDeTinh();
+          const { [c.id]: _x, ...con } = this.btKdTu; this.btKdTu = con;
+          const L = this.btDoc(this.btKyKq(k.de));
+          if (L) this.btKdDung(k.de, L);
+        },
+
         btDoiVi() { this.btVi = !this.btVi; try { localStorage.setItem('lms_bt_vi', this.btVi ? '1' : '0'); } catch (e) { /* riêng tư/đầy */ } },
         // Đồng hồ `ms` của một đề chạy từ lần ĐẦU con chạm / gõ vào thẻ đó (không phải lúc thẻ được vẽ ra: thẻ thứ 6 của mức sẽ ôm cả thời gian làm 5 thẻ trước).
         btVao(b) { if (!BT.t0.has(b.id)) BT.t0.set(b.id, Date.now()); },
@@ -421,7 +1009,7 @@ window.LS.ham();
           return g;
         },
         // Ý có ô ép DẠNG fraction (`dang: 'phan_so'`, Unit 6): đáp số có thể là số nguyên («2») mà con vẫn phải gõ được «/» → bàn phím chữ như ý có đáp số phân số.
-        btYPhanSo(y) { return (y.o || []).some(c => String(c.dap || '').includes('/') || c.dang === 'phan_so'); },
+        btYPhanSo(y) { return (y.o || []).some(c => String(c.dap || '').includes('/') || ['phan_so', 'hon_so', 'ps'].includes(c.dang)); },
         // Ý có ô số ÂM (`am: true`, Unit 1/2/4/6): bàn phím SỐ (`decimal` / `numeric`) của iPhone / iPad KHÔNG có dấu trừ → cả ý dùng bàn phím chữ (`inputmode="text"`: «-» luôn gõ được).
         // Xét theo CẢ Ý như `btYPhanSo` — ô nào âm không lộ qua kiểu bàn phím. Không dùng `pattern`: nó chỉ kiểm hợp lệ form, không đổi bàn phím.
         btYAm(y) { return (y.o || []).some(c => c.am === true); },
@@ -579,15 +1167,17 @@ window.LS.ham();
         // Lời nhắc «sai dạng» (`{kq: 'cach_viet', ly: 'sai_dang'}` của ô có `dang`, Unit 6): giá trị đúng rồi, chỉ cần viết lại ở dạng đề đòi. MỘT câu cho cả ý, nêu dạng của CÁC Ô sai dạng (decimal / percentage / fraction — giữ thuật ngữ
         // tiếng Anh, cùng nhãn với `terms`; theo thứ tự ô, mỗi dạng một lần). Cách viết nói bằng CHỮ, chỉ riêng ô % có ví dụ số (CC-01) — số ví dụ luôn khác đáp số (`btSoViDu`).
         //   decimal: «(dấu chấm)» chỉ khi có ô đáp số KHÔNG nguyên · percentage: «có dấu %, như 44%» (ô con tự gõ %; máy cấm `dang` trên ô có % in sẵn `don_vi_in`, CC-06, nên không có nhánh «% in sẵn»).
-        btNhacDang(y, ids) {
+        btNhacDang(y, ids, dau = 'Đúng giá trị rồi — viết dạng ') {
           const oo = ids.map(id => this.btCell(y, id));
           const nhan = {
             thap_phan: cs => cs.some(c => !/^[-−+]?\d+$/.test(String(c.dap == null ? '' : c.dap).trim())) ? 'decimal (dấu chấm)' : 'decimal',
             phan_tram: () => 'percentage (có dấu %, như ' + this.btSoViDu(y, [44, 25, 35, 15, 55, 65, 85, 95]) + '%)',
             phan_so: () => 'fraction (a/b)',
+            hon_so: () => 'mixed number (hỗn số, có phần nguyên)',          // QD-01: giá trị > 1 phải gõ có phần nguyên
+            ps: () => 'fraction (phân số a/b, không có phần nguyên)',        // QD-01: a/b, không phần nguyên
           };
           const ten = [...new Set(oo.map(c => c.dang).filter(d => nhan[d]))].map(d => nhan[d](oo.filter(c => c.dang === d)));
-          return 'Đúng giá trị rồi — viết dạng ' + (ten.length ? ten.join(' / ') : 'đề đòi') + ' nhé.';
+          return dau + (ten.length ? ten.join(' / ') : 'đề đòi') + ' nhé.';
         },
         // Viền + nền ô gõ: sai → CHỈ ô vi phạm (`chiTiet().o`) đỏ; đúng → mọi ô xanh; `cot` sai thì KHÔNG tô ô nào.
         btClsDien(y, id) {
@@ -2311,7 +2901,7 @@ window.LS.ham();
           if (s === 'done') return 'xong';
           if (m === 'summary') return 'tom-tat';
           if (m === 'hist') return 'tu-tra';
-          if (m === 'bt') return this.beOk ? this.beToken() : 'bai-tap';
+          if (m === 'bt') return this.beOk ? this.beToken() : this.btOk ? this.btToken() : 'bai-tap';
           if (m === 'cards') return s === 'learn' ? 'the/hoc' : (s === 'test' ? 'the/kt' : 'the');
           if (m === 'quiz') return s === 'quiz' ? 'trac-nghiem/lam' : 'trac-nghiem';
           return 'tom-tat';
@@ -2341,7 +2931,12 @@ window.LS.ham();
               // Phần đồng bộ của beVe vẫn chạy trong `dangVe` như cũ; phần sau lúc chờ tự kiểm lại màn hình (beVe).
               this.go('bt'); this.beVe(tk).catch((e) => console.error(e)); return;
             }
-            if (tk === 'bai-tap') { this.go(this.btOk ? 'bt' : 'summary'); return; }
+            // Tab Bài tập Math: 'bai-tap' (mục) · 'bai-tap/u/<Unit>' (① màn Unit) · 'bai-tap/de/<ma>' (③) · 'bai-tap/kq/<ma>' (④) — btVe chọn màn (mã lạ → mục); không chờ sổ ở đây, như ESL
+            if ((tk === 'bai-tap' || tk.startsWith('bai-tap/')) && this.btOk) {
+              if (this.mode === 'bt' && tk === this.btToken()) return;   // đã ở đúng màn hình này (vừa đóng lớp phủ menu): dựng lại sẽ cuộn về đầu trang và đặt lại ③
+              this.go('bt'); this.btVe(tk).catch((e) => console.error(e)); return;
+            }
+            if (tk === 'bai-tap') { this.go('summary'); return; }
             if (tk === 'the') { this.go('cards'); return; }
             if (tk === 'the/hoc') { this.go('cards'); this.startLearn(); return; }
             if (tk === 'the/kt') { this.go('cards'); this.startTest(); return; }
@@ -2386,6 +2981,10 @@ window.LS.ham();
           }
           await this.napApi();
           this.beNapLuot();   // lượt `b.*` của sổ (mức theo mảng, câu sai của đề, luật g «lần đúng đầu tiên»): không chặn, về sau thì tự vẽ lại
+          // Math: sổ lượt của ĐỀ (lịch sử «lần n: d/M» ở màn Unit, khoá đề mới). Chờ tài liệu bài tập rồi mới gọi (btNapLuotSo bỏ qua môn chưa có đề). Đăng ký TRƯỚC `await btNap` ở dưới
+          // nên khi ve() chạy, BT.soCho đã có. Nhập mã bí mật sau khi trang mở ('lms-key'): nạp lại.
+          btNap.then(() => this.btNapLuot());
+          if (this.btCo) window.addEventListener('lms-key', () => { this.btNapLuot(); });
           if (this.beCo) {
             // Nhập mã bí mật SAU khi trang đã mở (askSecret → 'lms-key'): nạp lại sổ lượt, không thì luật g 3 / mức chỉ thấy đệm + phiên cho tới khi tải lại trang.
             window.addEventListener('lms-key', () => { this.beNapLuot(); });
@@ -2403,7 +3002,7 @@ window.LS.ham();
           this.flushBuffer();
           this.traGan();
           this.chonGan();
-          if (location.hash === '#bai-tap') await btNap;   // mở thẳng #bai-tap: phải có dữ liệu trước khi LS vẽ lại màn hình
+          if (location.hash.startsWith('#bai-tap')) await btNap;   // mở thẳng #bai-tap (hoặc #bai-tap/u/<Unit> · /de/<ma> của Math): phải có dữ liệu trước khi LS vẽ lại màn hình
           if (location.hash.startsWith('#bai-tap')) await beNap;   // … và #bai-tap/luyen/<kt> của môn ESL
           // Lớp phủ ảnh đóng (bằng cách nào cũng được) thì quay về kiểu phóng thường cho các chỗ dùng `zoom` khác.
           this.$watch('zoom', (v) => { if (!v) this.zoomRong = false; });
@@ -2949,8 +3548,8 @@ timMo: false,
           return (ds || []).some(x => sub.has(x.concept));
         },
         // Tab Bài tập chọn mục theo `btMuc` (mỗi mục bài tập gắn `concept` = id mục trong cây), không theo `scope`:
-        // bấm một mục trên cây = chọn mục bài tập đó; bấm cả Unit = mục MỚI NHẤT của Unit (cùng luật mặc định D6).
-        navChon(id) { return this.mode === 'bt' ? (this.beOk ? this.beUnitNow().concept === id : this.btMucNow().concept === id) : this.scope === id; },
+        // bấm một mục trên cây = chọn mục bài tập đó; bấm cả Unit = màn Unit (tài liệu Math có `unit`/đề; không thì mục MỚI NHẤT của Unit, luật mặc định D6).
+        navChon(id) { return this.mode === 'bt' ? (this.beOk ? this.beUnitNow().concept === id : this.btNavChon(id)) : this.scope === id; },
         navBam(id) {
           if (!this.navCo(id)) return;
           if (this.mode !== 'bt') { this.setScope(id); return; }
@@ -2961,12 +3560,11 @@ timMo: false,
             this.navOpen = false;
             return;
           }
-          const ds = this.btMucs();
-          for (let i = ds.length - 1; i >= 0; i--) if (sub.has(ds[i].concept)) { this.btDatBai(i); break; }
+          this.btNavBam(id, sub);   // Math: bấm mục = màn mục (như cũ); bấm Unit (tài liệu có `unit`) = màn Unit ①; tài liệu không `unit` = mục mới nhất của nhánh
           this.navOpen = false;
         },
         get scopeName() {
-          if (this.mode === 'bt' && this.btOk) return this.btMucNow().ten || '';   // tab Bài tập: breadcrumb = mục bài tập đang làm (không theo scope)
+          if (this.mode === 'bt' && this.btOk) return this.btCrumb();   // tab Bài tập: breadcrumb = mục bài tập đang làm (màn Unit / đề: Unit), không theo scope
           if (this.mode === 'bt' && this.beOk) return this.beUnitNow().ten || '';   // tab Bài tập ESL: breadcrumb = Unit đang làm
           if (!this.scope) return 'Cả môn';
           return this.label((this.data?.concepts || []).find(x => x.id === this.scope)) || this.scope;
@@ -3238,7 +3836,8 @@ timMo: false,
           if (m === 'hist') this.loadHist();
           // Mở tab Bài tập lần đầu: mức đầu tiên chưa xong (tính lúc này, khi lịch D1 đã về).
           if (m === 'bt' && !this.btTierDat) { this.btTierDat = true; this.btTier = this.btMucDau(); }
-          if (m === 'bt' && this.btOk && this.btMucNow().concept) this.openAncestors(this.btMucNow().concept);
+          if (m === 'bt' && this.btOk && this.btScr !== 'muc' && this.btUnit) this.openAncestors(this.btUnit);
+          else if (m === 'bt' && this.btOk && this.btMucNow().concept) this.openAncestors(this.btMucNow().concept);
           if (m === 'bt' && this.beOk && this.beUnitNow().concept) this.openAncestors(this.beUnitNow().concept);
         },
         start(n) {
@@ -6948,7 +7547,8 @@ registerProcessor('thu-16k',T);`;
          Chép hình học / màu / chữ từ mockup đã duyệt (artifact/mockup-math5-bai-tap-3-1.html, màn của con): con KHÔNG thấy nhãn
          kiến thức / hình thức. Logic ở `baiTapStore()` (đầu file). x-html CHỈ với khoá *_html, visual.html và hinh_de.html (đã qua chu()
          lúc build); nguon / nhan / lua_chon[].k / tên kiến thức đi qua x-text. Không bao giờ vẽ `so` của ý `o` hay `mau`. -->
-    <template x-if="mode === 'bt' && btOk">
+    
+    <template x-if="mode === 'bt' && btOk && btScr === 'muc'">
     <div data-bt class="space-y-3">
       <div class="flex items-start justify-between gap-2">
         <div class="min-w-0">
@@ -6970,8 +7570,10 @@ registerProcessor('thu-16k',T);`;
       </div>
 
       <div class="space-y-3">
+      
       <template x-for="e in btHien()" :key="e.key">
       <div>
+
 
         <!-- Gợi ý cuối mức: MỘT lời gợi ý theo kiến thức sai nhiều nhất ở lần Kiểm tra đầu -->
         <template x-if="e.goiy">
@@ -7009,13 +7611,16 @@ registerProcessor('thu-16k',T);`;
         <section data-bt-bai :data-bt-id="e.b.id" :data-extra="String(e.extra)" @pointerdown.capture="btVao(e.b)" @keydown.capture="btVao(e.b)" @focusin="btVao(e.b)"
                  :class="(btB[e.b.id] || {}).dung ? 'border-emerald-300' : 'border-slate-200'"
                  class="rounded-2xl border bg-white px-4 py-3.5 text-slate-900">
+
           <div class="flex flex-wrap items-center gap-1.5 text-xs">
             <span data-bt-tier class="rounded-md px-1.5 py-px font-bold text-white"
                   :class="e.b.tier === 'focus' ? 'bg-sky-500' : e.b.tier === 'practice' ? 'bg-indigo-500' : 'bg-pink-600'" x-text="btTenMuc(e.b.tier)"></span>
             <span data-bt-nguon class="font-semibold text-slate-700" x-text="e.b.nguon"></span>
             <span x-show="e.b.loai !== 'goc'" data-bt-extra class="rounded-full bg-amber-100 px-2 py-px font-semibold text-amber-800">Extra</span>
+            <template x-if="btTuDe(e.b)"><span data-bt-tu-de class="rounded-full bg-rose-50 px-2 py-px font-semibold text-rose-700" x-text="'Câu sai ở đề: ' + btTuDe(e.b)"></span></template>
             <span x-show="(btB[e.b.id] || {}).dung" class="ml-auto font-bold text-emerald-600">✓ xong</span>
           </div>
+
           <p data-bt-de class="mt-2 whitespace-pre-line text-[15.5px]" x-html="e.b.en_html || ''"></p>
           <p x-show="btVi && e.b.vi_html" class="mt-0.5 whitespace-pre-line text-[13.5px] italic text-slate-500" x-html="e.b.vi_html || ''"></p>
 
@@ -8002,6 +8607,7 @@ registerProcessor('thu-16k',T);`;
           </template>
           </div>
 
+
           <div data-bt-fb x-show="(btB[e.b.id] || {}).fb" x-cloak :class="btClsFb(e.b)" class="mt-2.5 rounded-[10px] px-2.5 py-1.5 text-sm" x-text="((btB[e.b.id] || {}).fb || {}).tin"></div>
 
           <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
@@ -8070,12 +8676,1306 @@ registerProcessor('thu-16k',T);`;
               </template>
             </div>
           </template>
+
         </section>
         </template>
 
       </div>
       </template>
+
       </div>
+    </div>
+    </template>
+
+    
+    <template x-if="mode === 'bt' && btOk && btScr === 'unit'">
+    <div data-bt-unit :data-unit="btUnit" class="space-y-3">
+      <div>
+        <h2 data-bt-unit-ten class="text-xl font-bold leading-snug text-slate-900"><span x-text="btUnitNow().ten"></span> · Bài tập</h2>
+        <p data-bt-unit-dan class="text-[13.5px] text-slate-500" x-text="btCoDe() ? 'Luyện từng mục trước, rồi làm trọn đề như trên lớp.' : 'Luyện từng mục.'"></p>
+      </div>
+      <p data-bt-buoc1 class="pt-2 text-xs font-bold uppercase tracking-wide text-slate-500" x-text="btCoDe() ? 'Bước 1 · Luyện' : 'Luyện'">Luyện</p>
+      <template x-for="m in btMucCuaUnit()" :key="m.concept">
+        <button type="button" data-bt-unit-muc :data-concept="m.concept" @click="btVaoMuc(m.concept)"
+                class="flex min-h-12 w-full items-center justify-between gap-3 rounded-[14px] border border-slate-200 bg-white px-3 py-2.5 text-left">
+          <span class="min-w-0">
+            <b class="block text-[15.5px] leading-snug text-slate-900" x-html="m.ten_html || ''"></b>
+            <span x-show="btVi && m.vi_html" class="block text-[13px] italic text-slate-500" x-html="m.vi_html || ''"></span>
+          </span>
+          <span class="shrink-0 text-xs text-slate-500" x-text="(m.bai || []).length + ' bài ›'"></span>
+        </button>
+      </template>
+      
+      <div data-bt-buoc2 x-show="btCoDe()" class="space-y-2">
+        <p class="pt-3 text-xs font-bold uppercase tracking-wide text-slate-500">Bước 2 · Làm trọn đề</p>
+        <template x-for="r in btBuoc2()" :key="r.de.ma">
+          <div class="rounded-[14px] border border-slate-200 bg-white px-3 py-2.5">
+            <div data-bt-de :data-ma="r.de.ma" class="flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-[15px] leading-snug"><b data-bt-de-ten class="text-slate-900" x-html="r.de.ten_html || ''"></b><span x-show="r.de.mo_ta_html" class="text-slate-500"> · </span><span class="text-slate-500" x-html="r.de.mo_ta_html || ''"></span></p>
+                <p data-bt-de-sub class="text-[13px] text-slate-500" x-text="btDeSub(r)"></p>
+                <template x-if="r.co_kq"><button type="button" data-bt-de-xem-kq @click="btKqMo(r.de.ma)" class="-my-1 min-h-8 text-[13px] font-semibold text-indigo-700 underline">Xem kết quả</button></template>
+              </div>
+              <button type="button" data-bt-de-bat-dau @click="btMoDe(r.de.ma)" class="min-h-10 shrink-0 rounded-[10px] border border-indigo-600 bg-indigo-600 px-4 text-[15px] font-semibold text-white" x-text="r.nut"></button>
+            </div>
+            <template x-if="r.moi.de">
+              <div data-bt-moi :data-ma="r.de.ma" class="mt-2 flex items-center justify-between gap-3 border-t border-dashed border-slate-200 pt-2">
+                <div class="min-w-0">
+                  <p class="text-[14px] font-semibold text-slate-800">🔄 Đề mới cùng cấu trúc</p>
+                  <p class="text-[12.5px] text-slate-500" x-text="btMoiSub(r)"></p>
+                </div>
+                <button type="button" data-bt-moi-nut :data-khoa="r.moi.mo ? '0' : '1'" :data-de="r.moi.de.ma" :disabled="!r.moi.mo" @click="r.moi.mo && btMoDe(r.moi.de.ma)"
+                        :class="r.moi.mo ? 'border-indigo-600 bg-white text-indigo-700' : 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'"
+                        class="min-h-10 shrink-0 rounded-[10px] border px-3 text-sm font-semibold" x-text="r.moi.mo ? 'Làm đề mới' : '🔒 Chưa mở'"></button>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+    </template>
+
+    
+    <template x-if="mode === 'bt' && btOk && btScr === 'de' && btDeNow()">
+    <div data-bt-de-man :data-ma="btMa" data-man="de" class="space-y-3">
+      <div class="flex items-center justify-between gap-2">
+        <button type="button" data-bt-de-ve @click="btVeUnit()" class="min-h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700">← <span x-text="btUnitNow().ten"></span></button>
+        <button type="button" data-bt-vi @click="btDoiVi()" :aria-pressed="String(btVi)" title="Hiện / ẩn các dòng tiếng Việt"
+                :class="btVi ? 'border-cyan-600 bg-cyan-600 text-white' : 'border-slate-300 bg-white text-slate-600'"
+                class="min-h-8 shrink-0 rounded-full border px-3 text-xs font-semibold">VI</button>
+      </div>
+      <div>
+        <h2 data-bt-de-man-ten class="text-xl font-bold leading-snug text-slate-900" x-html="btDeNow().ten_html || ''"></h2>
+        <p data-bt-de-dau x-show="btDeNow().dau_de_html" class="text-[13.5px] text-slate-600" x-html="btDeNow().dau_de_html || ''"></p>
+        <p data-bt-de-dan class="text-[13.5px] text-slate-500">Làm hết rồi bấm «Nộp bài». Trong lúc làm không hiện đúng/sai và không có gợi ý. Đóng trang giữa chừng thì bài đang làm vẫn được giữ.</p>
+        <p data-bt-de-diem class="text-[13px] font-semibold text-slate-500" x-text="btDeNow().toi_da + ' điểm'"></p>
+      </div>
+      <div data-bt-de-ds :class="btDeBan ? 'pointer-events-none opacity-60' : ''" class="space-y-3">
+        
+      <template x-for="e in btDeHien()" :key="e.key">
+      <div>
+
+
+        <template x-if="e.phan">
+          <div data-bt-de-phan :data-n="e.n" class="pt-3">
+            <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400" x-text="'Phần ' + e.n"></p>
+            <h3 class="text-[15px] font-semibold leading-snug text-slate-900"><span x-html="e.phan.ten_html || ''"></span> <span class="font-normal text-slate-500" x-text="'(' + e.phan.toi_da + ' điểm)'"></span></h3>
+          </div>
+        </template>
+
+        <!-- Gợi ý cuối mức: MỘT lời gợi ý theo kiến thức sai nhiều nhất ở lần Kiểm tra đầu -->
+        <template x-if="e.goiy">
+          <div data-bt-goiy class="rounded-2xl border-[1.5px] border-indigo-200 bg-indigo-50 px-4 py-3 text-[15.5px]">
+            <template x-if="e.goiy.kt">
+              <div>
+                <p>Xong mức <b x-text="e.goiy.muc"></b>! Con hay sai phần <b data-bt-goiy-kt x-text="e.goiy.ten"></b>.</p>
+                <div class="mt-2.5 flex flex-wrap items-center gap-2">
+                  <button type="button" data-bt-them @click="btLamThem(e.goiy.kt)" class="min-h-10 rounded-[10px] bg-indigo-600 px-4 text-[15px] font-semibold text-white">Làm thêm 5 bài phần này</button>
+                  <button type="button" data-bt-sau @click="btDongGoiY()" class="min-h-10 rounded-[10px] border border-indigo-200 bg-white px-3 text-sm font-semibold text-indigo-800">Để sau</button>
+                  <button type="button" x-show="e.goiy.the" data-bt-the-lai @click="btXemThe(e.goiy.kt)" class="min-h-8 py-1 text-[13px] font-semibold text-fuchsia-800">📘 Xem lại thẻ <span x-text="e.goiy.the"></span></button>
+                </div>
+              </div>
+            </template>
+            <template x-if="!e.goiy.kt">
+              <div>
+                <p>🎉 Con làm đúng hết mức <b x-text="e.goiy.muc"></b>!</p>
+                <div x-show="e.goiy.tiep" class="mt-2.5">
+                  <button type="button" data-bt-tiep @click="btSang(e.goiy.tiep)" class="min-h-10 rounded-[10px] bg-indigo-600 px-4 text-[15px] font-semibold text-white" x-text="'Sang ' + e.goiy.tiepTen + ' →'"></button>
+                </div>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <!-- Đầu danh sách "Làm thêm" -->
+        <template x-if="e.dau">
+          <div data-bt-them-dau class="flex items-center justify-between gap-2 rounded-xl bg-slate-100 px-3 py-2">
+            <p class="min-w-0 text-sm font-semibold text-slate-700"><span x-text="e.n ? 'Làm thêm: ' + e.ten : 'Chưa có bài thêm cho phần này.'"></span><span x-show="e.n" x-text="' (' + e.n + ' bài)'"></span></p>
+            <button type="button" data-bt-them-dong @click="btMore = null" class="min-h-9 shrink-0 rounded-lg border border-slate-300 bg-white px-3 text-sm">Đóng ✕</button>
+          </div>
+        </template>
+
+        <template x-if="e.b">
+        <section data-bt-bai :data-bt-id="e.b.id" :data-extra="String(e.extra)" @pointerdown.capture="btVao(e.b)" @keydown.capture="btVao(e.b)" @focusin="btVao(e.b)"
+                 :class="(btB[e.b.id] || {}).dung ? 'border-emerald-300' : 'border-slate-200'"
+                 class="rounded-2xl border bg-white px-4 py-3.5 text-slate-900">
+
+          <div class="flex flex-wrap items-center gap-1.5 text-xs">
+            <span data-bt-cau class="rounded-md bg-slate-800 px-1.5 py-px font-bold text-white" x-text="e.nhan"></span>
+            <span data-bt-cau-diem x-show="e.diem" class="font-semibold text-slate-500" x-text="'(' + e.diem + ' điểm)'"></span>
+          </div>
+
+          <p data-bt-de class="mt-2 whitespace-pre-line text-[15.5px]" x-html="e.b.en_html || ''"></p>
+          <p x-show="btVi && e.b.vi_html" class="mt-0.5 whitespace-pre-line text-[13.5px] italic text-slate-500" x-html="e.b.vi_html || ''"></p>
+
+          <!-- Bảng số liệu của đề -->
+          <template x-if="e.b.bang">
+            <div data-bt-bang class="mt-2 max-w-full overflow-x-auto">
+              <table class="border-collapse text-[15px]">
+                <thead><tr>
+                  <th class="border border-slate-300 bg-slate-100 px-2 py-1"></th>
+                  <template x-for="(c, ci) in (e.b.bang.cot_html || [])" :key="ci"><th class="border border-slate-300 bg-slate-100 px-2 py-1 text-[13px] font-semibold" x-html="c"></th></template>
+                </tr></thead>
+                <tbody>
+                  <template x-for="(h, hi) in e.b.bang.hang" :key="hi">
+                    <tr>
+                      <th class="border border-slate-300 bg-slate-100 px-2 py-1 text-left font-semibold" x-html="h.t_html || ''"></th>
+                      <template x-for="(v, vi) in h.so" :key="vi"><td class="border border-slate-300 px-2 py-1 text-center" x-text="v"></td></template>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </template>
+
+          <!-- Các ý -->
+          <div class="mt-3 space-y-3">
+          <template x-for="(y, yi) in e.b.y" :key="y.id">
+            <!-- Mỗi ý một khối: ý thứ hai trở đi có vạch ngăn phía trên; chữ cái của ý (a, b, c) là huy hiệu tròn riêng (kiểu số bước của thẻ tóm tắt; nhãn dài «c(ii)» thì co giãn thành viên thuốc `min-w-6 px-1.5`, CC-02),
+                 KHÔNG dính vào chữ của đề. Ý `the` thứ hai trở đi không vẽ gì (cả nhóm dùng chung một hàng thẻ) nên ẩn hẳn, khỏi để lại vạch + khoảng trống. -->
+            <div data-bt-y :data-kieu="y.kieu" x-show="btYHien(e.b, y)" :class="yi > 0 ? 'border-t border-slate-200 pt-3' : ''">
+              <div x-show="y.kieu !== 'the' && (y.en_html || (y.nhan && e.b.y.length > 1))" class="flex items-start gap-2.5">
+                <span data-bt-nhan x-show="y.nhan" class="mt-px grid h-6 min-w-6 shrink-0 place-items-center whitespace-nowrap rounded-full bg-indigo-600 px-1.5 text-sm font-bold leading-none text-white" x-text="y.nhan"></span>
+                <div class="min-w-0 flex-1">
+                  <p data-bt-y-de class="whitespace-pre-line text-[15.5px]" x-html="y.en_html || ''"></p>
+                  <p x-show="btVi && y.vi_html" class="whitespace-pre-line text-[13.5px] italic text-slate-500" x-html="y.vi_html || ''"></p>
+                </div>
+              </div>
+
+              <!-- Hình của ĐỀ (`hinh_de`, R18): hình con phải ĐỌC mới làm được (bảng counter, trục số). Luôn hiện, không khoá theo Kiểm tra, đứng TRƯỚC ô nhập;
+                   khác `visual` (hình giải thích, chỉ ở «Lời giải» bên dưới). HTML do builder dựng (`hinh_de.html`, qua study_hinh.render) — x-html an toàn như `visual.html`. -->
+              <template x-if="y.hinh_de && y.hinh_de.html">
+                <div data-bt-hinh-de class="mt-2 max-w-full overflow-x-auto rounded-xl border border-dashed border-slate-200 bg-white p-2.5 [&>*]:mx-auto" x-html="y.hinh_de.html"></div>
+              </template>
+
+              <!-- ô số theo dòng -->
+              <template x-if="y.kieu === 'o'">
+                <div class="mt-1.5 space-y-2">
+                  <template x-if="y.tb != null && y.dem_tat_ca">
+                    <div data-bt-che class="flex flex-wrap gap-2">
+                      <template x-for="(v, vi) in (y.so || [])" :key="'v' + vi"><span class="inline-flex h-14 w-11 items-center justify-center rounded-lg border-2 border-slate-600 bg-white text-xl font-bold" x-text="v"></span></template>
+                      <template x-for="k in (y.dem_tat_ca - (y.so || []).length)" :key="'h' + k"><span class="bt-an inline-flex h-14 w-11 items-center justify-center rounded-lg border-2 border-slate-600 text-xl font-bold">?</span></template>
+                    </div>
+                  </template>
+                  
+<template x-for="(d, li) in btDongChinh(e.b, y)" :key="li">
+  <div :data-bt-goi-y="d.gy ? 'dong' : null" :class="d.gy ? 'rounded-lg border border-dashed border-amber-300 bg-amber-50 px-2 py-1.5' : ''" class="flex flex-wrap items-center gap-1.5 text-[17px]">
+    <span x-show="d.dau" data-bt-goi-y-nhan class="w-full text-[11px] font-bold uppercase tracking-wider text-amber-700">💡 Gợi ý</span>
+    <template x-for="(p, pi) in d.ln" :key="pi">
+      
+<span :class="p.o && btOChu(btCell(y, p.o)) ? 'min-w-[16rem] flex-1' : ''" class="inline-flex items-center gap-1.5">
+  <template x-if="p.html !== undefined"><span x-html="p.html"></span></template>
+  <template x-if="p.o">
+    <span :class="btOChu(btCell(y, p.o)) ? 'min-w-0 flex-1' : ''" class="inline-flex flex-wrap items-center gap-1.5">
+      <!-- ý có đáp số phân số (Unit 8): bàn phím chữ để gõ được "/" và dấu cách (3/4, 1 3/20) — bàn phím decimal của iPad không có; xét theo CẢ Ý để không lộ ô nào là phân số.
+           Ô phép tính (`bt` "= …": 20.478, 1 19/20) rộng hơn (w-24); TRONG bảng `luoi` mà mọi đáp số ngắn (≤ 4 ký tự, `btLuoiHep`, CC-13) thì w-14 để bảng 9–10 cột không tràn khung ở iPad. Ô CHỮ (`dap_chu`, `[[= chu(x)]]`: «fifty-six point zero eight two») là <textarea rows=1> TỰ GIÃN, rộng hết phần còn lại của dòng (`flex-1`, tối thiểu 16rem): word form dài («eight hundred and thirteen thousand, five hundred and ninety-three point zero zero eight», ~865 px ở 17 px) xuống dòng thay vì cuộn ngang trong ô 256 px; Enter không xuống dòng mà bỏ focus (đáp án một dòng).
+           Ý có ô `am` (số âm): bàn phím chữ cho cả ý (`btYAm`). Ô nhiều giá trị (`uoc_chung`…): bàn phím chữ + placeholder «cách nhau dấu phẩy» + ô rộng 12rem, chữ gợi ý nhỏ hơn chữ gõ để vừa ô (`btNhieuGt`). -->
+      <template x-if="btOChu(btCell(y, p.o))">
+        <textarea rows="1" inputmode="text" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-bt-o :data-o="p.o"
+                  x-init="$nextTick(() => btFitTheoDoi($el))" @keydown.enter.prevent="$el.blur()"
+                  :value="btO(y, p.o)" @input="btNhapO(y, p.o, $event.target.value); btFit($el)" :aria-label="'Ô ' + p.o" :class="btCls(y, p.o)"
+                  class="block min-h-10 w-full resize-none overflow-hidden rounded-lg border-[1.5px] px-2 py-[7px] text-left text-[17px] font-semibold leading-snug"></textarea>
+      </template>
+      <template x-if="!btOChu(btCell(y, p.o))">
+      <input type="text" :inputmode="btYPhanSo(y) || btYAm(y) || btNhieuGt(y, btCell(y, p.o)) ? 'text' : 'decimal'" autocomplete="off" autocapitalize="off" spellcheck="false" data-bt-o :data-o="p.o"
+             :value="btO(y, p.o)" @input="btNhapO(y, p.o, $event.target.value)" :disabled="btTL[y.id][p.o] === 'none'"
+             :placeholder="btNhieuGt(y, btCell(y, p.o)) ? 'cách nhau dấu phẩy' : btCell(y, p.o).don_vi ? 'số + đv' : ''" :aria-label="'Ô ' + p.o"
+             :class="btCls(y, p.o) + (btNhieuGt(y, btCell(y, p.o)) ? ' w-48 placeholder:text-sm placeholder:font-normal' : btCell(y, p.o).don_vi || String(btCell(y, p.o).bt || '').startsWith('=') ? ' w-24' : ' w-14')"
+             class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+      </template>
+      <button type="button" x-show="btLaMode(y, btCell(y, p.o))" data-bt-nomode @click="btNone(y, p.o)"
+              :class="btTL[y.id][p.o] === 'none' ? 'border-slate-700 bg-slate-700 text-white' : 'border-dashed border-slate-400 bg-white text-slate-700'"
+              class="min-h-8 rounded-lg border px-2 text-xs">no mode</button>
+    </span>
+  </template>
+</span>
+
+    </template>
+  </div>
+</template>
+
+                  <!-- Bảng có ô trống (`luoi`, M4b): hàng × ô, ô nhập nằm TRONG ô bảng (cột thẳng, có viền); bảng rộng thì cuộn ngang trong khung bảng, không tràn trang.
+                       `luoi_dau`: hàng đầu là hàng tiêu đề. Ô nhập dùng cùng markup với `dong` (macro `phan_o` ở `_bt_o_nhap.html`), ô chữ chỉ tối thiểu 11rem. Đánh số ô tiếp sau ô của `dong`. -->
+                  <template x-if="(y.luoi_manh || []).length">
+                    <div data-bt-luoi class="max-w-full overflow-x-auto">
+                      <table class="border-collapse text-[15px]">
+                        <!-- `luoi_dau`: hàng đầu là hàng TIÊU ĐỀ thật (<thead> + <th scope="col">, trình đọc màn hình biết đó là tiêu đề cột); các hàng còn lại là <td> trong <tbody> (M6b) -->
+                        <template x-if="y.luoi_dau">
+                          <thead>
+                            <tr>
+                              <template x-for="(ce, ci) in y.luoi_manh[0]" :key="ci">
+                                <th scope="col" class="border border-slate-300 bg-slate-100 px-2 py-1 text-center align-middle font-semibold">
+                                  <span class="inline-flex flex-wrap items-center justify-center gap-1.5">
+                                    <template x-for="(p, pi) in ce" :key="pi">
+                                      
+<span :class="p.o && btOChu(btCell(y, p.o)) ? 'min-w-[11rem]' : ''" class="inline-flex items-center gap-1.5">
+  <template x-if="p.html !== undefined"><span x-html="p.html"></span></template>
+  <template x-if="p.o">
+    <span :class="btOChu(btCell(y, p.o)) ? 'min-w-0' : ''" class="inline-flex flex-wrap items-center gap-1.5">
+      <!-- ý có đáp số phân số (Unit 8): bàn phím chữ để gõ được "/" và dấu cách (3/4, 1 3/20) — bàn phím decimal của iPad không có; xét theo CẢ Ý để không lộ ô nào là phân số.
+           Ô phép tính (`bt` "= …": 20.478, 1 19/20) rộng hơn (w-24); TRONG bảng `luoi` mà mọi đáp số ngắn (≤ 4 ký tự, `btLuoiHep`, CC-13) thì w-14 để bảng 9–10 cột không tràn khung ở iPad. Ô CHỮ (`dap_chu`, `[[= chu(x)]]`: «fifty-six point zero eight two») là <textarea rows=1> TỰ GIÃN, rộng hết phần còn lại của dòng (`flex-1`, tối thiểu 16rem): word form dài («eight hundred and thirteen thousand, five hundred and ninety-three point zero zero eight», ~865 px ở 17 px) xuống dòng thay vì cuộn ngang trong ô 256 px; Enter không xuống dòng mà bỏ focus (đáp án một dòng).
+           Ý có ô `am` (số âm): bàn phím chữ cho cả ý (`btYAm`). Ô nhiều giá trị (`uoc_chung`…): bàn phím chữ + placeholder «cách nhau dấu phẩy» + ô rộng 12rem, chữ gợi ý nhỏ hơn chữ gõ để vừa ô (`btNhieuGt`). -->
+      <template x-if="btOChu(btCell(y, p.o))">
+        <textarea rows="1" inputmode="text" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-bt-o :data-o="p.o"
+                  x-init="$nextTick(() => btFitTheoDoi($el))" @keydown.enter.prevent="$el.blur()"
+                  :value="btO(y, p.o)" @input="btNhapO(y, p.o, $event.target.value); btFit($el)" :aria-label="'Ô ' + p.o" :class="btCls(y, p.o)"
+                  class="block min-h-10 w-full resize-none overflow-hidden rounded-lg border-[1.5px] px-2 py-[7px] text-left text-[17px] font-semibold leading-snug"></textarea>
+      </template>
+      <template x-if="!btOChu(btCell(y, p.o))">
+      <input type="text" :inputmode="btYPhanSo(y) || btYAm(y) || btNhieuGt(y, btCell(y, p.o)) ? 'text' : 'decimal'" autocomplete="off" autocapitalize="off" spellcheck="false" data-bt-o :data-o="p.o"
+             :value="btO(y, p.o)" @input="btNhapO(y, p.o, $event.target.value)" :disabled="btTL[y.id][p.o] === 'none'"
+             :placeholder="btNhieuGt(y, btCell(y, p.o)) ? 'cách nhau dấu phẩy' : btCell(y, p.o).don_vi ? 'số + đv' : ''" :aria-label="'Ô ' + p.o"
+             :class="btCls(y, p.o) + (btNhieuGt(y, btCell(y, p.o)) ? ' w-48 placeholder:text-sm placeholder:font-normal' : btCell(y, p.o).don_vi ? ' w-24' : String(btCell(y, p.o).bt || '').startsWith('=') ? (btLuoiHep(y) ? ' w-14' : ' w-24') : ' w-14')"
+             class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+      </template>
+      <button type="button" x-show="btLaMode(y, btCell(y, p.o))" data-bt-nomode @click="btNone(y, p.o)"
+              :class="btTL[y.id][p.o] === 'none' ? 'border-slate-700 bg-slate-700 text-white' : 'border-dashed border-slate-400 bg-white text-slate-700'"
+              class="min-h-8 rounded-lg border px-2 text-xs">no mode</button>
+    </span>
+  </template>
+</span>
+
+                                    </template>
+                                  </span>
+                                </th>
+                              </template>
+                            </tr>
+                          </thead>
+                        </template>
+                        <tbody>
+                          <template x-for="(hang, ri) in (y.luoi_dau ? y.luoi_manh.slice(1) : y.luoi_manh)" :key="ri">
+                            <tr>
+                              <template x-for="(ce, ci) in hang" :key="ci">
+                                <td class="border border-slate-300 px-2 py-1 text-center align-middle">
+                                  <span class="inline-flex flex-wrap items-center justify-center gap-1.5">
+                                    <template x-for="(p, pi) in ce" :key="pi">
+                                      
+<span :class="p.o && btOChu(btCell(y, p.o)) ? 'min-w-[11rem]' : ''" class="inline-flex items-center gap-1.5">
+  <template x-if="p.html !== undefined"><span x-html="p.html"></span></template>
+  <template x-if="p.o">
+    <span :class="btOChu(btCell(y, p.o)) ? 'min-w-0' : ''" class="inline-flex flex-wrap items-center gap-1.5">
+      <!-- ý có đáp số phân số (Unit 8): bàn phím chữ để gõ được "/" và dấu cách (3/4, 1 3/20) — bàn phím decimal của iPad không có; xét theo CẢ Ý để không lộ ô nào là phân số.
+           Ô phép tính (`bt` "= …": 20.478, 1 19/20) rộng hơn (w-24); TRONG bảng `luoi` mà mọi đáp số ngắn (≤ 4 ký tự, `btLuoiHep`, CC-13) thì w-14 để bảng 9–10 cột không tràn khung ở iPad. Ô CHỮ (`dap_chu`, `[[= chu(x)]]`: «fifty-six point zero eight two») là <textarea rows=1> TỰ GIÃN, rộng hết phần còn lại của dòng (`flex-1`, tối thiểu 16rem): word form dài («eight hundred and thirteen thousand, five hundred and ninety-three point zero zero eight», ~865 px ở 17 px) xuống dòng thay vì cuộn ngang trong ô 256 px; Enter không xuống dòng mà bỏ focus (đáp án một dòng).
+           Ý có ô `am` (số âm): bàn phím chữ cho cả ý (`btYAm`). Ô nhiều giá trị (`uoc_chung`…): bàn phím chữ + placeholder «cách nhau dấu phẩy» + ô rộng 12rem, chữ gợi ý nhỏ hơn chữ gõ để vừa ô (`btNhieuGt`). -->
+      <template x-if="btOChu(btCell(y, p.o))">
+        <textarea rows="1" inputmode="text" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-bt-o :data-o="p.o"
+                  x-init="$nextTick(() => btFitTheoDoi($el))" @keydown.enter.prevent="$el.blur()"
+                  :value="btO(y, p.o)" @input="btNhapO(y, p.o, $event.target.value); btFit($el)" :aria-label="'Ô ' + p.o" :class="btCls(y, p.o)"
+                  class="block min-h-10 w-full resize-none overflow-hidden rounded-lg border-[1.5px] px-2 py-[7px] text-left text-[17px] font-semibold leading-snug"></textarea>
+      </template>
+      <template x-if="!btOChu(btCell(y, p.o))">
+      <input type="text" :inputmode="btYPhanSo(y) || btYAm(y) || btNhieuGt(y, btCell(y, p.o)) ? 'text' : 'decimal'" autocomplete="off" autocapitalize="off" spellcheck="false" data-bt-o :data-o="p.o"
+             :value="btO(y, p.o)" @input="btNhapO(y, p.o, $event.target.value)" :disabled="btTL[y.id][p.o] === 'none'"
+             :placeholder="btNhieuGt(y, btCell(y, p.o)) ? 'cách nhau dấu phẩy' : btCell(y, p.o).don_vi ? 'số + đv' : ''" :aria-label="'Ô ' + p.o"
+             :class="btCls(y, p.o) + (btNhieuGt(y, btCell(y, p.o)) ? ' w-48 placeholder:text-sm placeholder:font-normal' : btCell(y, p.o).don_vi ? ' w-24' : String(btCell(y, p.o).bt || '').startsWith('=') ? (btLuoiHep(y) ? ' w-14' : ' w-24') : ' w-14')"
+             class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+      </template>
+      <button type="button" x-show="btLaMode(y, btCell(y, p.o))" data-bt-nomode @click="btNone(y, p.o)"
+              :class="btTL[y.id][p.o] === 'none' ? 'border-slate-700 bg-slate-700 text-white' : 'border-dashed border-slate-400 bg-white text-slate-700'"
+              class="min-h-8 rounded-lg border px-2 text-xs">no mode</button>
+    </span>
+  </template>
+</span>
+
+                                    </template>
+                                  </span>
+                                </td>
+                              </template>
+                            </tr>
+                          </template>
+                        </tbody>
+                      </table>
+                    </div>
+                  </template>
+                  
+<template x-for="(d, li) in btDongGy(e.b, y)" :key="li">
+  <div :data-bt-goi-y="d.gy ? 'dong' : null" :class="d.gy ? 'rounded-lg border border-dashed border-amber-300 bg-amber-50 px-2 py-1.5' : ''" class="flex flex-wrap items-center gap-1.5 text-[17px]">
+    <span x-show="d.dau" data-bt-goi-y-nhan class="w-full text-[11px] font-bold uppercase tracking-wider text-amber-700">💡 Gợi ý</span>
+    <template x-for="(p, pi) in d.ln" :key="pi">
+      
+<span :class="p.o && btOChu(btCell(y, p.o)) ? 'min-w-[16rem] flex-1' : ''" class="inline-flex items-center gap-1.5">
+  <template x-if="p.html !== undefined"><span x-html="p.html"></span></template>
+  <template x-if="p.o">
+    <span :class="btOChu(btCell(y, p.o)) ? 'min-w-0 flex-1' : ''" class="inline-flex flex-wrap items-center gap-1.5">
+      <!-- ý có đáp số phân số (Unit 8): bàn phím chữ để gõ được "/" và dấu cách (3/4, 1 3/20) — bàn phím decimal của iPad không có; xét theo CẢ Ý để không lộ ô nào là phân số.
+           Ô phép tính (`bt` "= …": 20.478, 1 19/20) rộng hơn (w-24); TRONG bảng `luoi` mà mọi đáp số ngắn (≤ 4 ký tự, `btLuoiHep`, CC-13) thì w-14 để bảng 9–10 cột không tràn khung ở iPad. Ô CHỮ (`dap_chu`, `[[= chu(x)]]`: «fifty-six point zero eight two») là <textarea rows=1> TỰ GIÃN, rộng hết phần còn lại của dòng (`flex-1`, tối thiểu 16rem): word form dài («eight hundred and thirteen thousand, five hundred and ninety-three point zero zero eight», ~865 px ở 17 px) xuống dòng thay vì cuộn ngang trong ô 256 px; Enter không xuống dòng mà bỏ focus (đáp án một dòng).
+           Ý có ô `am` (số âm): bàn phím chữ cho cả ý (`btYAm`). Ô nhiều giá trị (`uoc_chung`…): bàn phím chữ + placeholder «cách nhau dấu phẩy» + ô rộng 12rem, chữ gợi ý nhỏ hơn chữ gõ để vừa ô (`btNhieuGt`). -->
+      <template x-if="btOChu(btCell(y, p.o))">
+        <textarea rows="1" inputmode="text" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-bt-o :data-o="p.o"
+                  x-init="$nextTick(() => btFitTheoDoi($el))" @keydown.enter.prevent="$el.blur()"
+                  :value="btO(y, p.o)" @input="btNhapO(y, p.o, $event.target.value); btFit($el)" :aria-label="'Ô ' + p.o" :class="btCls(y, p.o)"
+                  class="block min-h-10 w-full resize-none overflow-hidden rounded-lg border-[1.5px] px-2 py-[7px] text-left text-[17px] font-semibold leading-snug"></textarea>
+      </template>
+      <template x-if="!btOChu(btCell(y, p.o))">
+      <input type="text" :inputmode="btYPhanSo(y) || btYAm(y) || btNhieuGt(y, btCell(y, p.o)) ? 'text' : 'decimal'" autocomplete="off" autocapitalize="off" spellcheck="false" data-bt-o :data-o="p.o"
+             :value="btO(y, p.o)" @input="btNhapO(y, p.o, $event.target.value)" :disabled="btTL[y.id][p.o] === 'none'"
+             :placeholder="btNhieuGt(y, btCell(y, p.o)) ? 'cách nhau dấu phẩy' : btCell(y, p.o).don_vi ? 'số + đv' : ''" :aria-label="'Ô ' + p.o"
+             :class="btCls(y, p.o) + (btNhieuGt(y, btCell(y, p.o)) ? ' w-48 placeholder:text-sm placeholder:font-normal' : btCell(y, p.o).don_vi || String(btCell(y, p.o).bt || '').startsWith('=') ? ' w-24' : ' w-14')"
+             class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+      </template>
+      <button type="button" x-show="btLaMode(y, btCell(y, p.o))" data-bt-nomode @click="btNone(y, p.o)"
+              :class="btTL[y.id][p.o] === 'none' ? 'border-slate-700 bg-slate-700 text-white' : 'border-dashed border-slate-400 bg-white text-slate-700'"
+              class="min-h-8 rounded-lg border px-2 text-xs">no mode</button>
+    </span>
+  </template>
+</span>
+
+    </template>
+  </div>
+</template>
+
+                </div>
+              </template>
+
+              <!-- bảng ô -->
+              <template x-if="y.kieu === 'bang'">
+                <div data-bt-bang-y class="mt-1.5 max-w-full overflow-x-auto">
+                  <table class="border-collapse text-[15px]">
+                    <thead><tr>
+                      <th class="border border-slate-300 bg-slate-100 px-2 py-1"></th>
+                      <template x-for="(c, ci) in y.cot" :key="ci"><th class="border border-slate-300 bg-slate-100 px-2 py-1 text-[13px] font-semibold" x-html="c.t_html || ''"></th></template>
+                    </tr></thead>
+                    <tbody>
+                      <template x-for="(h, hi) in y.hang" :key="hi">
+                        <tr>
+                          <th class="border border-slate-300 bg-slate-100 px-2 py-1 text-left font-semibold" x-html="h.t_html || ''"></th>
+                          <template x-for="(c, ci) in y.cot" :key="ci">
+                            <td class="border border-slate-300 p-1 text-center">
+                              <template x-if="btGrid(y)[hi][ci]">
+                                <span class="inline-flex flex-col items-center gap-1">
+                                  <input type="text" :inputmode="btYAm(y) ? 'text' : 'decimal'" autocomplete="off" autocapitalize="off" spellcheck="false" data-bt-o :data-o="btGrid(y)[hi][ci].id"
+                                         :value="btO(y, btGrid(y)[hi][ci].id)" @input="btNhapO(y, btGrid(y)[hi][ci].id, $event.target.value)" :disabled="btTL[y.id][btGrid(y)[hi][ci].id] === 'none'"
+                                         :placeholder="btGrid(y)[hi][ci].don_vi ? 'số + đv' : ''" :aria-label="'Ô ' + btGrid(y)[hi][ci].id"
+                                         :class="btCls(y, btGrid(y)[hi][ci].id) + (btGrid(y)[hi][ci].don_vi ? ' w-24' : ' w-14')"
+                                         class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+                                  <button type="button" x-show="btLaMode(y, btGrid(y)[hi][ci])" data-bt-nomode @click="btNone(y, btGrid(y)[hi][ci].id)"
+                                          :class="btTL[y.id][btGrid(y)[hi][ci].id] === 'none' ? 'border-slate-700 bg-slate-700 text-white' : 'border-dashed border-slate-400 bg-white text-slate-700'"
+                                          class="min-h-8 rounded-lg border px-2 text-xs">no mode</button>
+                                </span>
+                              </template>
+                            </td>
+                          </template>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
+              </template>
+
+              <!-- nối: chạm trái rồi chạm phải -->
+              <template x-if="y.kieu === 'noi'">
+                <div data-bt-noi class="mt-1.5 grid grid-cols-2 gap-2.5">
+                  <div class="flex flex-col gap-2">
+                    <template x-for="(t, i) in y.trai" :key="i">
+                      <button type="button" data-bt-noi-l :data-i="i" @click="btNoiL(y, i)" :class="btClsNoi(y, 'l', i)"
+                              class="min-h-10 rounded-[10px] border-[1.5px] px-2 py-2 text-center text-[15px]"><span x-html="t.t_html || ''"></span></button>
+                    </template>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <template x-for="j in btXepPhai(y)" :key="j">
+                      <button type="button" data-bt-noi-r :data-j="j" @click="btNoiR(y, j)" :class="btClsNoi(y, 'r', j)"
+                              class="min-h-10 rounded-[10px] border-[1.5px] px-2 py-2 text-center text-[15px]"><span x-html="y.phai[j].t_html || ''"></span></button>
+                    </template>
+                  </div>
+                </div>
+              </template>
+
+              <!-- chọn (+ lý do) -->
+              <template x-if="y.kieu === 'chon'">
+                <div data-bt-chon class="mt-1.5">
+                  <div class="flex flex-wrap gap-2">
+                    <template x-for="lc in y.lua_chon" :key="lc.k">
+                      <button type="button" data-bt-lc="dap" :data-k="lc.k" @click="btChon(y, 'dap', lc.k)" :class="btClsChon(y, 'dap', lc.k)"
+                              class="min-h-10 rounded-[10px] border-[1.5px] px-3 py-2 text-left text-[14.5px]"><span x-html="lc.t_html || ''"></span></button>
+                    </template>
+                  </div>
+                  <template x-if="y.ly_do">
+                    <div>
+                      <p class="mt-3 text-[15px] font-semibold">Why?</p>
+                      <div class="mt-1.5 flex flex-wrap gap-2">
+                        <template x-for="lc in y.ly_do.lua_chon" :key="lc.k">
+                          <button type="button" data-bt-lc="ly" :data-k="lc.k" @click="btChon(y, 'ly_do', lc.k)" :class="btClsChon(y, 'ly_do', lc.k)"
+                                  class="min-h-10 rounded-[10px] border-[1.5px] px-3 py-2 text-left text-[14.5px]"><span x-html="lc.t_html || ''"></span></button>
+                        </template>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </template>
+
+              <!-- tick nhiều -->
+              <template x-if="y.kieu === 'tick'">
+                <div data-bt-tick class="mt-1.5 flex flex-col gap-1.5">
+                  <template x-for="(c, ci) in y.cau" :key="ci">
+                    <label :class="btClsMuc(y, ci)" class="flex min-h-10 items-center gap-2 rounded-lg px-1.5 py-1 text-[14.5px]">
+                      <input type="checkbox" x-model="btTL[y.id][ci]" @change="btClr(y)" class="h-8 w-8 shrink-0 accent-indigo-600">
+                      <span x-html="c.t_html || ''"></span>
+                    </label>
+                  </template>
+                </div>
+              </template>
+
+              <!-- Đúng / Sai -->
+              <template x-if="y.kieu === 'dung_sai'">
+                <div data-bt-ds class="mt-1.5">
+                  <template x-for="(c, ci) in y.cau" :key="ci">
+                    <div class="flex flex-wrap items-center justify-between gap-1.5 border-b border-dashed border-slate-200 py-1.5 last:border-b-0">
+                      <span class="min-w-0 flex-1 text-[14.5px]" x-html="c.t_html || ''"></span>
+                      <span class="flex gap-1.5">
+                        <button type="button" data-bt-ds-d @click="btDS(y, ci, true)" :class="btClsDS(y, ci, true)" class="min-h-10 rounded-[10px] border-[1.5px] px-3 text-[14.5px]">Đúng</button>
+                        <button type="button" data-bt-ds-s @click="btDS(y, ci, false)" :class="btClsDS(y, ci, false)" class="min-h-10 rounded-[10px] border-[1.5px] px-3 text-[14.5px]">Sai</button>
+                      </span>
+                    </div>
+                  </template>
+                </div>
+              </template>
+
+              <!-- chọn thẻ: các ý a, b, c của bài dùng chung hàng thẻ — chọn ý bằng nút -->
+              <template x-if="y.kieu === 'the' && btTheY(e.b) && y.id === btTheYs(e.b)[0].id">
+                <div data-bt-the-khoi class="mt-0.5">
+                  <div data-bt-the-sel class="flex flex-col gap-1.5">
+                    <template x-for="(z, zi) in btTheYs(e.b)" :key="z.id">
+                      <button type="button" :data-zi="zi" @click="btTheChon(e.b, zi)"
+                              :class="btTheY(e.b).id === z.id ? 'border-indigo-600 bg-indigo-50 font-semibold' : 'border-slate-300 bg-white'"
+                              class="min-h-10 rounded-[10px] border-[1.5px] px-2.5 py-1.5 text-left text-[14.5px]">
+                        <span data-bt-nhan x-show="z.nhan" class="mr-1.5 inline-grid h-6 min-w-6 place-items-center whitespace-nowrap rounded-full bg-indigo-600 px-1.5 align-middle text-sm font-bold leading-none text-white" x-text="z.nhan"></span><span x-html="z.en_html || ''"></span>
+                        <span x-show="btYDung(z) === true" class="font-bold text-emerald-600"> ✓</span><span x-show="btYDung(z) === false" class="font-bold text-rose-600"> ✗</span>
+                      </button>
+                    </template>
+                  </div>
+                  <div data-bt-the class="my-2.5 flex flex-wrap gap-2">
+                    <template x-for="(v, vi) in e.b.the_so" :key="vi">
+                      <button type="button" :data-vi="vi" @click="btThePick(e.b, vi)"
+                              :class="btTheOn(e.b, vi) ? '-translate-y-1 border-indigo-600 bg-indigo-600 text-white' : 'border-slate-600 bg-white text-slate-900'"
+                              class="h-[52px] w-[46px] rounded-lg border-2 text-lg font-bold" x-text="v"></button>
+                    </template>
+                  </div>
+                  <p class="text-sm text-slate-700">Đã chọn: <b data-bt-the-chon x-text="btTheTxt(e.b)"></b></p>
+                  <div data-bt-cond class="mt-1.5 flex flex-col gap-0.5 text-sm">
+                    <template x-for="(c, ci) in btCondThe(e.b)" :key="ci"><div><span x-text="c.ok ? '✅' : '❌'"></span> <span x-text="c.t"></span></div></template>
+                  </div>
+                </div>
+              </template>
+
+              <!-- gõ dãy số -->
+              <template x-if="y.kieu === 'day'">
+                <div class="mt-1.5">
+                  <input type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" data-bt-day
+                         x-model="btTL[y.id]" @input="btClr(y)" placeholder="ví dụ: 119, 131, 132"
+                         :class="btClsDay(y)" class="h-10 w-full rounded-lg border-[1.5px] px-2.5 text-[17px] font-semibold">
+                </div>
+              </template>
+
+              <!-- viết câu: Gemini chấm (btVV tt: cho → may), lỗi / hết lượt / ngoại tuyến → danh sách tự kiểm (tt tu). Mọi chữ do Gemini sinh CHỈ qua x-text. -->
+              <template x-if="y.kieu === 'viet'">
+                <div class="mt-1.5">
+                  <textarea rows="3" data-bt-viet x-model="btTL[y.id].text" maxlength="600" :readonly="btVR(y).tt === 'cho'" placeholder="Viết bằng tiếng Anh…"
+                            x-effect="btAutoCaoHen($el, (btTL[y.id] || {}).text)" @focus="btAutoCao($el)" @resize.window.debounce.150ms="btAutoCao($el)"
+                            :class="btVR(y).tt === 'cho' ? 'bg-slate-50' : ''"
+                            class="w-full rounded-[10px] border-[1.5px] border-slate-400 p-2 text-[15px]"></textarea>
+                  <p data-bt-viet-dem class="text-right text-xs text-slate-500" x-text="String(((btTL[y.id] || {}).text || '').length) + '/600'"></p>
+
+                  <!-- đang chấm -->
+                  <template x-if="btVR(y).tt === 'cho'">
+                    <div data-bt-viet-cho role="status" class="mt-2.5 flex items-center gap-2 rounded-[14px] border-[1.5px] border-slate-300 bg-slate-50 px-3 py-2.5 text-[14.5px]">
+                      <span class="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-[2.5px] border-indigo-200 border-t-indigo-600"></span>
+                      <span>Máy đang đọc câu của con… <span class="text-[12.5px] text-slate-500">(khoảng 2 giây)</span></span>
+                    </div>
+                  </template>
+
+                  <!-- máy chấm xong: đạt / chưa đạt -->
+                  <template x-if="btVR(y).tt === 'may' && btVR(y).kq">
+                    <div data-bt-viet-kq :data-dat="btVR(y).dat ? '1' : '0'"
+                         :class="btVR(y).dat ? 'border-emerald-300 bg-emerald-50' : 'border-amber-300 bg-amber-50'"
+                         class="mt-2.5 rounded-[14px] border-[1.5px] px-3 py-2.5">
+                      <h4 data-bt-viet-tit class="mb-1.5 text-[15px] font-bold" x-text="btVietTit(y)"></h4>
+                      <template x-for="(tc, ti) in btTcHien(y)" :key="ti">
+                        <div data-bt-viet-tc :data-dat="tc.dat ? '1' : '0'" :data-ma="tc.ma"
+                             class="grid grid-cols-[22px_minmax(0,1fr)] gap-1.5 border-b border-dashed border-slate-200 py-1.5 text-[14.5px] last:border-b-0">
+                          <span x-text="tc.dat ? '✅' : '❌'"></span>
+                          <span class="min-w-0">
+                            <span data-bt-viet-nhan x-text="btNhanTc(y, tc.ma)"></span>
+                            <template x-if="tc.dat && tc.trich">
+                              <q data-bt-viet-trich class="mt-1 block break-words rounded-md bg-emerald-100 px-1.5 py-px text-[13px] text-emerald-900 [quotes:'«'_'»']" x-text="tc.trich"></q>
+                            </template>
+                            <template x-if="!tc.dat && tc.ghi">
+                              <span data-bt-viet-ghi class="mt-0.5 block break-words text-[13px] text-amber-700" x-text="tc.ghi"></span>
+                            </template>
+                          </span>
+                        </div>
+                      </template>
+                      <template x-for="(so, si) in btSoHien(y)" :key="si">
+                        <p data-bt-viet-so :data-sai="so.sai ? '1' : '0'" :class="so.sai ? 'bg-red-50 text-red-800' : 'bg-emerald-50 text-emerald-800'"
+                           class="mt-2 break-words rounded-lg px-2 py-1.5 text-sm" x-text="so.chu"></p>
+                      </template>
+                      <template x-if="btVR(y).kq.nx">
+                        <p data-bt-viet-nx class="mt-2 break-words rounded-[10px] border border-slate-200 bg-white px-2.5 py-2 text-[14.5px]" x-text="btVR(y).kq.nx"></p>
+                      </template>
+                      <p data-bt-viet-ai class="mt-1.5 text-[11.5px] leading-snug text-slate-500" x-text="btVietChan(y)"></p>
+                    </div>
+                  </template>
+
+                  <!-- lùi về tự kiểm -->
+                  <template x-if="(btKq[y.id] || {}).tuKiem">
+                    <div data-bt-tu-kiem class="mt-2.5 rounded-[14px] border-[1.5px] border-slate-300 bg-slate-50 px-3 py-2.5">
+                      <h4 data-bt-tu-tit class="text-[15px] font-bold" x-text="btTuTit(y)"></h4>
+                      <p class="mb-1 mt-1 text-[12.5px] text-slate-500">Tick những ý câu của con đã có, rồi bấm Kiểm tra lần nữa. Bố mẹ sẽ đọc câu của con.</p>
+                      <template x-for="(t, ti) in (y.tu_kiem_html || [])" :key="ti">
+                        <label class="flex min-h-10 items-center gap-2 text-[14.5px]">
+                          <input type="checkbox" x-model="btTL[y.id].tick[ti]" class="h-8 w-8 shrink-0 accent-indigo-600">
+                          <span x-html="t"></span>
+                        </label>
+                      </template>
+                    </div>
+                  </template>
+                </div>
+              </template>
+
+              <!-- bốn kiểu ý điều kiện (cot · o_dk · the_o · noi_nhom): markup ở templates/_bt_dang_moi.html -->
+              
+<!-- cot: phép cộng / trừ viết cột, ô chữ số còn thiếu; «✏️ Ghi số nhớ» là ô nháp (không chấm, không lưu) -->
+<template x-if="y.kieu === 'cot'">
+  <div data-bt-cot class="mt-1.5">
+    <button type="button" data-bt-nho-nut @click="btNhoDoi(y)" :aria-pressed="String(!!(btNho[y.id] && btNho[y.id].mo))"
+            class="min-h-8 rounded-[10px] border border-dashed border-indigo-300 bg-white px-2.5 text-[13px] text-indigo-700"
+            x-text="btNho[y.id] && btNho[y.id].mo ? 'Ẩn ô nhớ' : '✏️ Ghi số nhớ'"></button>
+    <div class="mt-1.5 max-w-full overflow-x-auto pb-1">
+      <div data-bt-cot-luoi class="inline-grid items-center justify-items-center gap-y-1.5 text-[22px] font-semibold text-slate-900" :style="btCotCss(y)">
+        <template x-for="k in btCotO(y)" :key="k.key">
+          <div :class="btClsCotO(k)">
+            <template x-if="k.t === 'c'"><span x-text="k.v"></span></template>
+            <template x-if="k.t === 'p'"><span class="text-[26px] leading-none">•</span></template>
+            <template x-if="k.t === 'dau'"><span class="text-[26px] leading-none" x-text="k.v"></span></template>
+            <template x-if="k.t === 'o'">
+              <input type="text" inputmode="numeric" maxlength="1" autocomplete="off" autocapitalize="off" spellcheck="false" data-bt-cot-o :data-o="k.id"
+                     :value="btO(y, k.id)" @input="btNhapDien(y, k.id, $event.target.value)" aria-label="chữ số còn thiếu"
+                     :class="btClsDien(y, k.id)" class="h-11 w-10 rounded-lg border-[1.5px] p-0 text-center text-[22px] font-bold">
+            </template>
+            <template x-if="k.t === 'nho'">
+              <input type="text" inputmode="numeric" maxlength="1" autocomplete="off" autocapitalize="off" spellcheck="false" data-bt-nho aria-label="ô nhớ"
+                     :value="btNhoGt(y, k.ci)" @input="btNhoNhap(y, k.ci, $event.target.value)"
+                     class="h-8 w-8 rounded-md border border-dashed border-indigo-300 bg-indigo-50 p-0 text-center text-[13px] font-bold text-indigo-800">
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+    <p x-show="btNho[y.id] && btNho[y.id].mo" data-bt-nho-goi class="mt-0.5 text-xs text-slate-500">Ô nhớ chỉ để con ghi nháp — máy không chấm.</p>
+  </div>
+</template>
+
+<!-- o_dk: ô số + điều kiện; phân số đứng -->
+<template x-if="y.kieu === 'o_dk'">
+  <div data-bt-odk class="mt-1.5">
+<div :class="btCayNhan(y) ? 'gap-y-3 py-2' : 'gap-y-1'" class="flex flex-wrap items-center gap-x-1.5 text-[19px] font-semibold">
+  <template x-for="(h, hi) in y.cay.trai" :key="'t' + hi">
+    <span class="inline-flex items-center gap-1.5">
+      <span x-show="hi > 0 || h.dau !== '+'" x-text="h.dau === '+' ? '+' : '−'"></span>
+      
+<template x-if="!h.mau"><span class="inline-flex items-center">
+<template x-if="h.tu.so !== undefined"><span x-text="h.tu.so"></span></template>
+<template x-if="h.tu.o !== undefined && y.kieu === 'o_dk' && !h.tu.lap">
+  <span class="relative inline-flex">
+    <input type="text" :inputmode="btDienIM(y, h.tu.o)" autocomplete="off" autocapitalize="off" spellcheck="false"
+           :data-bt-od="h.tu.o" :value="btO(y, h.tu.o)" @input="btNhapDien(y, h.tu.o, $event.target.value)" :aria-label="'Ô ' + h.tu.o"
+           :class="btClsDien(y, h.tu.o) + ' ' + btRongO(y, h.tu.o, false)"
+           class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+    
+<template x-if="btTenO(h.tu.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -top-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.tu.o)"></span></template>
+
+  </span>
+</template>
+
+<template x-if="h.tu.o !== undefined && y.kieu === 'o_dk' && h.tu.lap">
+  <span class="relative inline-flex">
+    <span data-bt-od-lap :data-bt-od-lap-cua="h.tu.o" aria-hidden="true" :class="btClsDien(y, h.tu.o) + ' ' + btRongO(y, h.tu.o, false)"
+          class="inline-flex h-10 items-center justify-center rounded-lg border-[1.5px] border-dashed px-1 text-center text-[17px] font-semibold text-slate-700" x-text="btO(y, h.tu.o) || '·'"></span>
+    
+<template x-if="btTenO(h.tu.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -top-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.tu.o)"></span></template>
+
+  </span>
+</template>
+<template x-if="h.tu.o !== undefined && y.kieu === 'the_o'">
+  <button type="button" data-bt-slot :data-o="h.tu.o" @click="btSlotBam(y, h.tu.o)" :aria-label="'Ô ' + (h.tu.o + 1)"
+          :class="btClsSlot(y, h.tu.o)" class="h-12 w-[76px] rounded-lg border-2 p-0 text-[17px] font-bold text-slate-900" x-text="btSlotTxt(y, h.tu.o)"></button>
+</template>
+</span></template>
+<template x-if="h.mau">
+  <span class="inline-flex flex-col items-center gap-0.5 text-[18px]">
+    <span class="inline-flex min-h-[22px] items-center">
+<template x-if="h.tu.so !== undefined"><span x-text="h.tu.so"></span></template>
+<template x-if="h.tu.o !== undefined && y.kieu === 'o_dk' && !h.tu.lap">
+  <span class="relative inline-flex">
+    <input type="text" :inputmode="btDienIM(y, h.tu.o)" autocomplete="off" autocapitalize="off" spellcheck="false"
+           :data-bt-od="h.tu.o" :value="btO(y, h.tu.o)" @input="btNhapDien(y, h.tu.o, $event.target.value)" :aria-label="'Ô ' + h.tu.o"
+           :class="btClsDien(y, h.tu.o) + ' ' + btRongO(y, h.tu.o, true)"
+           class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+    
+<template x-if="btTenO(h.tu.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -top-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.tu.o)"></span></template>
+
+  </span>
+</template>
+
+<template x-if="h.tu.o !== undefined && y.kieu === 'o_dk' && h.tu.lap">
+  <span class="relative inline-flex">
+    <span data-bt-od-lap :data-bt-od-lap-cua="h.tu.o" aria-hidden="true" :class="btClsDien(y, h.tu.o) + ' ' + btRongO(y, h.tu.o, true)"
+          class="inline-flex h-10 items-center justify-center rounded-lg border-[1.5px] border-dashed px-1 text-center text-[17px] font-semibold text-slate-700" x-text="btO(y, h.tu.o) || '·'"></span>
+    
+<template x-if="btTenO(h.tu.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -top-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.tu.o)"></span></template>
+
+  </span>
+</template>
+<template x-if="h.tu.o !== undefined && y.kieu === 'the_o'">
+  <button type="button" data-bt-slot :data-o="h.tu.o" @click="btSlotBam(y, h.tu.o)" :aria-label="'Ô ' + (h.tu.o + 1)"
+          :class="btClsSlot(y, h.tu.o)" class="h-12 w-[76px] rounded-lg border-2 p-0 text-[17px] font-bold text-slate-900" x-text="btSlotTxt(y, h.tu.o)"></button>
+</template>
+</span>
+    <span class="self-stretch border-t-2 border-slate-700"></span>
+    <span class="inline-flex min-h-[22px] items-center">
+<template x-if="h.mau.so !== undefined"><span x-text="h.mau.so"></span></template>
+<template x-if="h.mau.o !== undefined && y.kieu === 'o_dk' && !h.mau.lap">
+  <span class="relative inline-flex">
+    <input type="text" :inputmode="btDienIM(y, h.mau.o)" autocomplete="off" autocapitalize="off" spellcheck="false"
+           :data-bt-od="h.mau.o" :value="btO(y, h.mau.o)" @input="btNhapDien(y, h.mau.o, $event.target.value)" :aria-label="'Ô ' + h.mau.o"
+           :class="btClsDien(y, h.mau.o) + ' ' + btRongO(y, h.mau.o, true)"
+           class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+    
+<template x-if="btTenO(h.mau.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -bottom-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.mau.o)"></span></template>
+
+  </span>
+</template>
+
+<template x-if="h.mau.o !== undefined && y.kieu === 'o_dk' && h.mau.lap">
+  <span class="relative inline-flex">
+    <span data-bt-od-lap :data-bt-od-lap-cua="h.mau.o" aria-hidden="true" :class="btClsDien(y, h.mau.o) + ' ' + btRongO(y, h.mau.o, true)"
+          class="inline-flex h-10 items-center justify-center rounded-lg border-[1.5px] border-dashed px-1 text-center text-[17px] font-semibold text-slate-700" x-text="btO(y, h.mau.o) || '·'"></span>
+    
+<template x-if="btTenO(h.mau.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -bottom-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.mau.o)"></span></template>
+
+  </span>
+</template>
+<template x-if="h.mau.o !== undefined && y.kieu === 'the_o'">
+  <button type="button" data-bt-slot :data-o="h.mau.o" @click="btSlotBam(y, h.mau.o)" :aria-label="'Ô ' + (h.mau.o + 1)"
+          :class="btClsSlot(y, h.mau.o)" class="h-12 w-[76px] rounded-lg border-2 p-0 text-[17px] font-bold text-slate-900" x-text="btSlotTxt(y, h.mau.o)"></button>
+</template>
+</span>
+  </span>
+</template>
+
+    </span>
+  </template>
+  <span>=</span>
+  <template x-for="(h, hi) in y.cay.phai" :key="'p' + hi">
+    <span class="inline-flex items-center gap-1.5">
+      <span x-show="hi > 0 || h.dau !== '+'" x-text="h.dau === '+' ? '+' : '−'"></span>
+      
+<template x-if="!h.mau"><span class="inline-flex items-center">
+<template x-if="h.tu.so !== undefined"><span x-text="h.tu.so"></span></template>
+<template x-if="h.tu.o !== undefined && y.kieu === 'o_dk' && !h.tu.lap">
+  <span class="relative inline-flex">
+    <input type="text" :inputmode="btDienIM(y, h.tu.o)" autocomplete="off" autocapitalize="off" spellcheck="false"
+           :data-bt-od="h.tu.o" :value="btO(y, h.tu.o)" @input="btNhapDien(y, h.tu.o, $event.target.value)" :aria-label="'Ô ' + h.tu.o"
+           :class="btClsDien(y, h.tu.o) + ' ' + btRongO(y, h.tu.o, false)"
+           class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+    
+<template x-if="btTenO(h.tu.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -top-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.tu.o)"></span></template>
+
+  </span>
+</template>
+
+<template x-if="h.tu.o !== undefined && y.kieu === 'o_dk' && h.tu.lap">
+  <span class="relative inline-flex">
+    <span data-bt-od-lap :data-bt-od-lap-cua="h.tu.o" aria-hidden="true" :class="btClsDien(y, h.tu.o) + ' ' + btRongO(y, h.tu.o, false)"
+          class="inline-flex h-10 items-center justify-center rounded-lg border-[1.5px] border-dashed px-1 text-center text-[17px] font-semibold text-slate-700" x-text="btO(y, h.tu.o) || '·'"></span>
+    
+<template x-if="btTenO(h.tu.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -top-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.tu.o)"></span></template>
+
+  </span>
+</template>
+<template x-if="h.tu.o !== undefined && y.kieu === 'the_o'">
+  <button type="button" data-bt-slot :data-o="h.tu.o" @click="btSlotBam(y, h.tu.o)" :aria-label="'Ô ' + (h.tu.o + 1)"
+          :class="btClsSlot(y, h.tu.o)" class="h-12 w-[76px] rounded-lg border-2 p-0 text-[17px] font-bold text-slate-900" x-text="btSlotTxt(y, h.tu.o)"></button>
+</template>
+</span></template>
+<template x-if="h.mau">
+  <span class="inline-flex flex-col items-center gap-0.5 text-[18px]">
+    <span class="inline-flex min-h-[22px] items-center">
+<template x-if="h.tu.so !== undefined"><span x-text="h.tu.so"></span></template>
+<template x-if="h.tu.o !== undefined && y.kieu === 'o_dk' && !h.tu.lap">
+  <span class="relative inline-flex">
+    <input type="text" :inputmode="btDienIM(y, h.tu.o)" autocomplete="off" autocapitalize="off" spellcheck="false"
+           :data-bt-od="h.tu.o" :value="btO(y, h.tu.o)" @input="btNhapDien(y, h.tu.o, $event.target.value)" :aria-label="'Ô ' + h.tu.o"
+           :class="btClsDien(y, h.tu.o) + ' ' + btRongO(y, h.tu.o, true)"
+           class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+    
+<template x-if="btTenO(h.tu.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -top-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.tu.o)"></span></template>
+
+  </span>
+</template>
+
+<template x-if="h.tu.o !== undefined && y.kieu === 'o_dk' && h.tu.lap">
+  <span class="relative inline-flex">
+    <span data-bt-od-lap :data-bt-od-lap-cua="h.tu.o" aria-hidden="true" :class="btClsDien(y, h.tu.o) + ' ' + btRongO(y, h.tu.o, true)"
+          class="inline-flex h-10 items-center justify-center rounded-lg border-[1.5px] border-dashed px-1 text-center text-[17px] font-semibold text-slate-700" x-text="btO(y, h.tu.o) || '·'"></span>
+    
+<template x-if="btTenO(h.tu.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -top-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.tu.o)"></span></template>
+
+  </span>
+</template>
+<template x-if="h.tu.o !== undefined && y.kieu === 'the_o'">
+  <button type="button" data-bt-slot :data-o="h.tu.o" @click="btSlotBam(y, h.tu.o)" :aria-label="'Ô ' + (h.tu.o + 1)"
+          :class="btClsSlot(y, h.tu.o)" class="h-12 w-[76px] rounded-lg border-2 p-0 text-[17px] font-bold text-slate-900" x-text="btSlotTxt(y, h.tu.o)"></button>
+</template>
+</span>
+    <span class="self-stretch border-t-2 border-slate-700"></span>
+    <span class="inline-flex min-h-[22px] items-center">
+<template x-if="h.mau.so !== undefined"><span x-text="h.mau.so"></span></template>
+<template x-if="h.mau.o !== undefined && y.kieu === 'o_dk' && !h.mau.lap">
+  <span class="relative inline-flex">
+    <input type="text" :inputmode="btDienIM(y, h.mau.o)" autocomplete="off" autocapitalize="off" spellcheck="false"
+           :data-bt-od="h.mau.o" :value="btO(y, h.mau.o)" @input="btNhapDien(y, h.mau.o, $event.target.value)" :aria-label="'Ô ' + h.mau.o"
+           :class="btClsDien(y, h.mau.o) + ' ' + btRongO(y, h.mau.o, true)"
+           class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+    
+<template x-if="btTenO(h.mau.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -bottom-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.mau.o)"></span></template>
+
+  </span>
+</template>
+
+<template x-if="h.mau.o !== undefined && y.kieu === 'o_dk' && h.mau.lap">
+  <span class="relative inline-flex">
+    <span data-bt-od-lap :data-bt-od-lap-cua="h.mau.o" aria-hidden="true" :class="btClsDien(y, h.mau.o) + ' ' + btRongO(y, h.mau.o, true)"
+          class="inline-flex h-10 items-center justify-center rounded-lg border-[1.5px] border-dashed px-1 text-center text-[17px] font-semibold text-slate-700" x-text="btO(y, h.mau.o) || '·'"></span>
+    
+<template x-if="btTenO(h.mau.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -bottom-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.mau.o)"></span></template>
+
+  </span>
+</template>
+<template x-if="h.mau.o !== undefined && y.kieu === 'the_o'">
+  <button type="button" data-bt-slot :data-o="h.mau.o" @click="btSlotBam(y, h.mau.o)" :aria-label="'Ô ' + (h.mau.o + 1)"
+          :class="btClsSlot(y, h.mau.o)" class="h-12 w-[76px] rounded-lg border-2 p-0 text-[17px] font-bold text-slate-900" x-text="btSlotTxt(y, h.mau.o)"></button>
+</template>
+</span>
+  </span>
+</template>
+
+    </span>
+  </template>
+</div>
+</div>
+</template>
+
+<!-- the_o: chạm thẻ rồi chạm ô (không kéo thả); chạm ô đã có thẻ → thẻ về hàng; thẻ đã dùng mờ đi -->
+<template x-if="y.kieu === 'the_o'">
+  <div data-bt-theo class="mt-1.5">
+    <div data-bt-theo-the class="my-2 flex flex-wrap gap-2">
+      <template x-for="(v, vi) in y.the_so" :key="vi">
+        <button type="button" data-bt-card :data-vi="vi" :aria-pressed="String(btSelThe[y.id] === vi)" :data-used="String(btTheDung(y, vi))" @click="btCardBam(y, vi)"
+                :class="btClsCard(y, vi)" class="h-12 min-w-[64px] rounded-lg border-2 px-2 text-[17px] font-bold" x-text="v"></button>
+      </template>
+    </div>
+    <template x-for="(cy, ri) in y.hang_cay" :key="ri">
+      <div class="my-1.5 flex flex-wrap items-center gap-2">
+        
+<div :class="btCayNhan(y) ? 'gap-y-3 py-2' : 'gap-y-1'" class="flex flex-wrap items-center gap-x-1.5 text-[19px] font-semibold">
+  <template x-for="(h, hi) in cy.trai" :key="'t' + hi">
+    <span class="inline-flex items-center gap-1.5">
+      <span x-show="hi > 0 || h.dau !== '+'" x-text="h.dau === '+' ? '+' : '−'"></span>
+      
+<template x-if="!h.mau"><span class="inline-flex items-center">
+<template x-if="h.tu.so !== undefined"><span x-text="h.tu.so"></span></template>
+<template x-if="h.tu.o !== undefined && y.kieu === 'o_dk' && !h.tu.lap">
+  <span class="relative inline-flex">
+    <input type="text" :inputmode="btDienIM(y, h.tu.o)" autocomplete="off" autocapitalize="off" spellcheck="false"
+           :data-bt-od="h.tu.o" :value="btO(y, h.tu.o)" @input="btNhapDien(y, h.tu.o, $event.target.value)" :aria-label="'Ô ' + h.tu.o"
+           :class="btClsDien(y, h.tu.o) + ' ' + btRongO(y, h.tu.o, false)"
+           class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+    
+<template x-if="btTenO(h.tu.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -top-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.tu.o)"></span></template>
+
+  </span>
+</template>
+
+<template x-if="h.tu.o !== undefined && y.kieu === 'o_dk' && h.tu.lap">
+  <span class="relative inline-flex">
+    <span data-bt-od-lap :data-bt-od-lap-cua="h.tu.o" aria-hidden="true" :class="btClsDien(y, h.tu.o) + ' ' + btRongO(y, h.tu.o, false)"
+          class="inline-flex h-10 items-center justify-center rounded-lg border-[1.5px] border-dashed px-1 text-center text-[17px] font-semibold text-slate-700" x-text="btO(y, h.tu.o) || '·'"></span>
+    
+<template x-if="btTenO(h.tu.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -top-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.tu.o)"></span></template>
+
+  </span>
+</template>
+<template x-if="h.tu.o !== undefined && y.kieu === 'the_o'">
+  <button type="button" data-bt-slot :data-o="h.tu.o" @click="btSlotBam(y, h.tu.o)" :aria-label="'Ô ' + (h.tu.o + 1)"
+          :class="btClsSlot(y, h.tu.o)" class="h-12 w-[76px] rounded-lg border-2 p-0 text-[17px] font-bold text-slate-900" x-text="btSlotTxt(y, h.tu.o)"></button>
+</template>
+</span></template>
+<template x-if="h.mau">
+  <span class="inline-flex flex-col items-center gap-0.5 text-[18px]">
+    <span class="inline-flex min-h-[22px] items-center">
+<template x-if="h.tu.so !== undefined"><span x-text="h.tu.so"></span></template>
+<template x-if="h.tu.o !== undefined && y.kieu === 'o_dk' && !h.tu.lap">
+  <span class="relative inline-flex">
+    <input type="text" :inputmode="btDienIM(y, h.tu.o)" autocomplete="off" autocapitalize="off" spellcheck="false"
+           :data-bt-od="h.tu.o" :value="btO(y, h.tu.o)" @input="btNhapDien(y, h.tu.o, $event.target.value)" :aria-label="'Ô ' + h.tu.o"
+           :class="btClsDien(y, h.tu.o) + ' ' + btRongO(y, h.tu.o, true)"
+           class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+    
+<template x-if="btTenO(h.tu.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -top-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.tu.o)"></span></template>
+
+  </span>
+</template>
+
+<template x-if="h.tu.o !== undefined && y.kieu === 'o_dk' && h.tu.lap">
+  <span class="relative inline-flex">
+    <span data-bt-od-lap :data-bt-od-lap-cua="h.tu.o" aria-hidden="true" :class="btClsDien(y, h.tu.o) + ' ' + btRongO(y, h.tu.o, true)"
+          class="inline-flex h-10 items-center justify-center rounded-lg border-[1.5px] border-dashed px-1 text-center text-[17px] font-semibold text-slate-700" x-text="btO(y, h.tu.o) || '·'"></span>
+    
+<template x-if="btTenO(h.tu.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -top-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.tu.o)"></span></template>
+
+  </span>
+</template>
+<template x-if="h.tu.o !== undefined && y.kieu === 'the_o'">
+  <button type="button" data-bt-slot :data-o="h.tu.o" @click="btSlotBam(y, h.tu.o)" :aria-label="'Ô ' + (h.tu.o + 1)"
+          :class="btClsSlot(y, h.tu.o)" class="h-12 w-[76px] rounded-lg border-2 p-0 text-[17px] font-bold text-slate-900" x-text="btSlotTxt(y, h.tu.o)"></button>
+</template>
+</span>
+    <span class="self-stretch border-t-2 border-slate-700"></span>
+    <span class="inline-flex min-h-[22px] items-center">
+<template x-if="h.mau.so !== undefined"><span x-text="h.mau.so"></span></template>
+<template x-if="h.mau.o !== undefined && y.kieu === 'o_dk' && !h.mau.lap">
+  <span class="relative inline-flex">
+    <input type="text" :inputmode="btDienIM(y, h.mau.o)" autocomplete="off" autocapitalize="off" spellcheck="false"
+           :data-bt-od="h.mau.o" :value="btO(y, h.mau.o)" @input="btNhapDien(y, h.mau.o, $event.target.value)" :aria-label="'Ô ' + h.mau.o"
+           :class="btClsDien(y, h.mau.o) + ' ' + btRongO(y, h.mau.o, true)"
+           class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+    
+<template x-if="btTenO(h.mau.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -bottom-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.mau.o)"></span></template>
+
+  </span>
+</template>
+
+<template x-if="h.mau.o !== undefined && y.kieu === 'o_dk' && h.mau.lap">
+  <span class="relative inline-flex">
+    <span data-bt-od-lap :data-bt-od-lap-cua="h.mau.o" aria-hidden="true" :class="btClsDien(y, h.mau.o) + ' ' + btRongO(y, h.mau.o, true)"
+          class="inline-flex h-10 items-center justify-center rounded-lg border-[1.5px] border-dashed px-1 text-center text-[17px] font-semibold text-slate-700" x-text="btO(y, h.mau.o) || '·'"></span>
+    
+<template x-if="btTenO(h.mau.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -bottom-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.mau.o)"></span></template>
+
+  </span>
+</template>
+<template x-if="h.mau.o !== undefined && y.kieu === 'the_o'">
+  <button type="button" data-bt-slot :data-o="h.mau.o" @click="btSlotBam(y, h.mau.o)" :aria-label="'Ô ' + (h.mau.o + 1)"
+          :class="btClsSlot(y, h.mau.o)" class="h-12 w-[76px] rounded-lg border-2 p-0 text-[17px] font-bold text-slate-900" x-text="btSlotTxt(y, h.mau.o)"></button>
+</template>
+</span>
+  </span>
+</template>
+
+    </span>
+  </template>
+  <span>=</span>
+  <template x-for="(h, hi) in cy.phai" :key="'p' + hi">
+    <span class="inline-flex items-center gap-1.5">
+      <span x-show="hi > 0 || h.dau !== '+'" x-text="h.dau === '+' ? '+' : '−'"></span>
+      
+<template x-if="!h.mau"><span class="inline-flex items-center">
+<template x-if="h.tu.so !== undefined"><span x-text="h.tu.so"></span></template>
+<template x-if="h.tu.o !== undefined && y.kieu === 'o_dk' && !h.tu.lap">
+  <span class="relative inline-flex">
+    <input type="text" :inputmode="btDienIM(y, h.tu.o)" autocomplete="off" autocapitalize="off" spellcheck="false"
+           :data-bt-od="h.tu.o" :value="btO(y, h.tu.o)" @input="btNhapDien(y, h.tu.o, $event.target.value)" :aria-label="'Ô ' + h.tu.o"
+           :class="btClsDien(y, h.tu.o) + ' ' + btRongO(y, h.tu.o, false)"
+           class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+    
+<template x-if="btTenO(h.tu.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -top-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.tu.o)"></span></template>
+
+  </span>
+</template>
+
+<template x-if="h.tu.o !== undefined && y.kieu === 'o_dk' && h.tu.lap">
+  <span class="relative inline-flex">
+    <span data-bt-od-lap :data-bt-od-lap-cua="h.tu.o" aria-hidden="true" :class="btClsDien(y, h.tu.o) + ' ' + btRongO(y, h.tu.o, false)"
+          class="inline-flex h-10 items-center justify-center rounded-lg border-[1.5px] border-dashed px-1 text-center text-[17px] font-semibold text-slate-700" x-text="btO(y, h.tu.o) || '·'"></span>
+    
+<template x-if="btTenO(h.tu.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -top-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.tu.o)"></span></template>
+
+  </span>
+</template>
+<template x-if="h.tu.o !== undefined && y.kieu === 'the_o'">
+  <button type="button" data-bt-slot :data-o="h.tu.o" @click="btSlotBam(y, h.tu.o)" :aria-label="'Ô ' + (h.tu.o + 1)"
+          :class="btClsSlot(y, h.tu.o)" class="h-12 w-[76px] rounded-lg border-2 p-0 text-[17px] font-bold text-slate-900" x-text="btSlotTxt(y, h.tu.o)"></button>
+</template>
+</span></template>
+<template x-if="h.mau">
+  <span class="inline-flex flex-col items-center gap-0.5 text-[18px]">
+    <span class="inline-flex min-h-[22px] items-center">
+<template x-if="h.tu.so !== undefined"><span x-text="h.tu.so"></span></template>
+<template x-if="h.tu.o !== undefined && y.kieu === 'o_dk' && !h.tu.lap">
+  <span class="relative inline-flex">
+    <input type="text" :inputmode="btDienIM(y, h.tu.o)" autocomplete="off" autocapitalize="off" spellcheck="false"
+           :data-bt-od="h.tu.o" :value="btO(y, h.tu.o)" @input="btNhapDien(y, h.tu.o, $event.target.value)" :aria-label="'Ô ' + h.tu.o"
+           :class="btClsDien(y, h.tu.o) + ' ' + btRongO(y, h.tu.o, true)"
+           class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+    
+<template x-if="btTenO(h.tu.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -top-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.tu.o)"></span></template>
+
+  </span>
+</template>
+
+<template x-if="h.tu.o !== undefined && y.kieu === 'o_dk' && h.tu.lap">
+  <span class="relative inline-flex">
+    <span data-bt-od-lap :data-bt-od-lap-cua="h.tu.o" aria-hidden="true" :class="btClsDien(y, h.tu.o) + ' ' + btRongO(y, h.tu.o, true)"
+          class="inline-flex h-10 items-center justify-center rounded-lg border-[1.5px] border-dashed px-1 text-center text-[17px] font-semibold text-slate-700" x-text="btO(y, h.tu.o) || '·'"></span>
+    
+<template x-if="btTenO(h.tu.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -top-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.tu.o)"></span></template>
+
+  </span>
+</template>
+<template x-if="h.tu.o !== undefined && y.kieu === 'the_o'">
+  <button type="button" data-bt-slot :data-o="h.tu.o" @click="btSlotBam(y, h.tu.o)" :aria-label="'Ô ' + (h.tu.o + 1)"
+          :class="btClsSlot(y, h.tu.o)" class="h-12 w-[76px] rounded-lg border-2 p-0 text-[17px] font-bold text-slate-900" x-text="btSlotTxt(y, h.tu.o)"></button>
+</template>
+</span>
+    <span class="self-stretch border-t-2 border-slate-700"></span>
+    <span class="inline-flex min-h-[22px] items-center">
+<template x-if="h.mau.so !== undefined"><span x-text="h.mau.so"></span></template>
+<template x-if="h.mau.o !== undefined && y.kieu === 'o_dk' && !h.mau.lap">
+  <span class="relative inline-flex">
+    <input type="text" :inputmode="btDienIM(y, h.mau.o)" autocomplete="off" autocapitalize="off" spellcheck="false"
+           :data-bt-od="h.mau.o" :value="btO(y, h.mau.o)" @input="btNhapDien(y, h.mau.o, $event.target.value)" :aria-label="'Ô ' + h.mau.o"
+           :class="btClsDien(y, h.mau.o) + ' ' + btRongO(y, h.mau.o, true)"
+           class="h-10 rounded-lg border-[1.5px] px-1 text-center text-[17px] font-semibold">
+    
+<template x-if="btTenO(h.mau.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -bottom-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.mau.o)"></span></template>
+
+  </span>
+</template>
+
+<template x-if="h.mau.o !== undefined && y.kieu === 'o_dk' && h.mau.lap">
+  <span class="relative inline-flex">
+    <span data-bt-od-lap :data-bt-od-lap-cua="h.mau.o" aria-hidden="true" :class="btClsDien(y, h.mau.o) + ' ' + btRongO(y, h.mau.o, true)"
+          class="inline-flex h-10 items-center justify-center rounded-lg border-[1.5px] border-dashed px-1 text-center text-[17px] font-semibold text-slate-700" x-text="btO(y, h.mau.o) || '·'"></span>
+    
+<template x-if="btTenO(h.mau.o)"><span data-bt-od-nhan aria-hidden="true" class="pointer-events-none absolute -bottom-[7px] left-1 z-10 rounded bg-white px-0.5 text-xs font-bold leading-none text-slate-700" x-text="btTenO(h.mau.o)"></span></template>
+
+  </span>
+</template>
+<template x-if="h.mau.o !== undefined && y.kieu === 'the_o'">
+  <button type="button" data-bt-slot :data-o="h.mau.o" @click="btSlotBam(y, h.mau.o)" :aria-label="'Ô ' + (h.mau.o + 1)"
+          :class="btClsSlot(y, h.mau.o)" class="h-12 w-[76px] rounded-lg border-2 p-0 text-[17px] font-bold text-slate-900" x-text="btSlotTxt(y, h.mau.o)"></button>
+</template>
+</span>
+  </span>
+</template>
+
+    </span>
+  </template>
+</div>
+
+        <span data-bt-hang-mk x-show="btHangOk(y, ri) !== null" :class="btHangOk(y, ri) ? 'text-emerald-600' : 'text-rose-600'"
+              class="text-xl font-extrabold" x-text="btHangOk(y, ri) ? '✓' : '✗'"></span>
+      </div>
+    </template>
+  </div>
+</template>
+
+<!-- thu_tu (Unit 6): xếp thẻ phân số / thập phân / % theo thứ tự. Hàng ĐÃ XẾP ở trên (nhãn theo `chieu`, `so_o` ô đánh số), hàng thẻ ĐÃ XÁO ở dưới; chạm thẻ dưới → vào ô trống đầu tiên, chạm thẻ trên → về hàng dưới, ↺ = xếp lại.
+     Thẻ in `t_html` (phân số xếp chồng như chữ đề; khoá *_html mới được x-html); sai → tô ĐỎ hai thẻ kề nhau của `chiTiet().cap` (không nói thẻ nào lớn hơn), dòng chữ ở khung phản hồi chung bên dưới. -->
+<template x-if="y.kieu === 'thu_tu'">
+  <div data-bt-tt class="mt-1.5">
+    <div class="flex items-center justify-between gap-2">
+      <p data-bt-tt-nhan class="text-[13px] font-bold text-slate-600" x-text="btTtNhan(y)"></p>
+      <button type="button" data-bt-tt-lai @click="btTtLai(y)" aria-label="Xếp lại từ đầu" title="Xếp lại từ đầu"
+              class="min-h-8 min-w-8 rounded-lg border border-slate-300 bg-white px-2 text-base leading-none text-slate-700">↺</button>
+    </div>
+    <div data-bt-tt-hang class="my-1.5 flex flex-wrap gap-2">
+      <template x-for="(vi, p) in (btTL[y.id] || [])" :key="'o' + p">
+        <button type="button" data-bt-tt-o :data-p="p" :data-co="String(btTtThe(y, p) !== null)" @click="btTtGo(y, p)"
+                :aria-label="'Vị trí ' + (p + 1) + (btTtThe(y, p) !== null ? ': ' + btTtThe(y, p).chu_tho + ' (chạm để gỡ)' : ' (trống)')"
+                :class="btTtClsO(y, p)" class="inline-flex h-12 min-w-[56px] items-center justify-center rounded-lg border-2 px-2 text-[17px] font-bold text-slate-900">
+          <template x-if="btTtThe(y, p) !== null"><span x-html="btTtThe(y, p).t_html"></span></template>
+          <template x-if="btTtThe(y, p) === null"><span class="text-[15px] font-semibold text-slate-400" x-text="p + 1"></span></template>
+        </button>
+      </template>
+    </div>
+    <div data-bt-tt-the class="my-2 flex flex-wrap gap-2">
+      <template x-for="(c, vi) in y.the" :key="'t' + vi">
+        <button type="button" data-bt-tt-card :data-vi="vi" :data-used="String(btTheDung(y, vi))" :aria-disabled="String(btTheDung(y, vi))" @click="btTtDat(y, vi)"
+                :aria-label="c.chu_tho + (btTheDung(y, vi) ? ' (đã xếp)' : '')"
+                :class="btTtClsThe(y, vi)" class="inline-flex h-12 min-w-[56px] items-center justify-center rounded-lg border-2 px-2 text-[17px] font-bold"><span x-html="c.t_html"></span></button>
+      </template>
+    </div>
+  </div>
+</template>
+
+<!-- noi_nhom: chạm túi rồi chạm hộp; màu theo HỘP; hộp cuối (nhãn null) có ô gõ tổng -->
+<template x-if="y.kieu === 'noi_nhom'">
+  <div data-bt-nn class="mt-1.5">
+    <div data-bt-nn-tui class="my-2 flex flex-wrap gap-1.5">
+      <template x-for="(t, i) in y.trai" :key="i">
+        <button type="button" data-bt-tui :data-i="i" :aria-pressed="String(btSelThe[y.id] === i)" @click="btTuiBam(y, i)"
+                :class="btClsTui(y, i)" class="min-h-10 rounded-xl border-[1.5px] px-2.5 text-[15px] font-bold" x-text="btKem(y, t)"></button>
+      </template>
+    </div>
+    <template x-for="(nh, k) in y.phai" :key="k">
+      <div data-bt-hop :data-k="k" role="button" tabindex="0" @click="btHopBam(y, k, $event)" @keydown.enter.prevent="btHopBam(y, k, $event)"
+           :class="btClsHop(y, k)" class="my-1.5 flex min-h-12 w-full cursor-pointer items-center gap-2 rounded-[10px] border-[1.5px] px-2 py-1 text-left text-[15px] text-slate-900">
+        <span aria-hidden="true">📦</span>
+        <span class="min-w-[78px] font-extrabold">
+          <template x-if="nh !== null"><span x-text="btKem(y, nh)"></span></template>
+          <template x-if="nh === null">
+            <span class="inline-flex items-center gap-1">
+              <span x-show="btDvTruoc(y)" x-text="y.don_vi"></span>
+              <input type="text" inputmode="decimal" autocomplete="off" autocapitalize="off" spellcheck="false" data-bt-go aria-label="tổng của hộp cuối"
+                     :value="(btTL[y.id] || {}).go || ''" @input="btGoNhap(y, $event.target.value)"
+                     class="h-10 w-16 rounded-lg border-[1.5px] border-slate-400 bg-white px-1 text-center text-[17px] font-semibold">
+              <span x-show="y.don_vi && !btDvTruoc(y)" x-text="y.don_vi"></span>
+            </span>
+          </template>
+        </span>
+        <span class="inline-flex flex-1 flex-wrap gap-1">
+          <template x-for="i in btHopTui(y, k)" :key="'c' + i">
+            <i data-bt-chip :class="btMauHop(k)" class="rounded-lg border px-2 py-0.5 text-sm font-bold not-italic text-white" x-text="btKem(y, y.trai[i])"></i>
+          </template>
+          <template x-for="j in btHopTrong(y, k)" :key="'e' + j">
+            <u data-bt-trong class="rounded-lg border-[1.5px] border-dashed border-slate-300 px-3 py-0.5 text-sm text-slate-300 no-underline">?</u>
+          </template>
+        </span>
+        <span data-bt-hop-mk x-show="btHopMk(y, k) !== ''" :class="btHopMk(y, k) === '✓' ? 'text-emerald-600' : 'text-rose-600'"
+              class="text-xl font-extrabold" x-text="btHopMk(y, k)"></span>
+      </div>
+    </template>
+  </div>
+</template>
+
+<!-- Chung cho bốn kiểu: phản hồi dưới ý, «↻ Tìm cách khác», 💡 -->
+<template x-if="btLaDien(y)">
+  <div data-bt-dien>
+    <template x-if="btCT(y) && btCT(y).dong.length">
+      <div data-bt-ct :class="btClsCT(y)" class="mt-2 rounded-[10px] px-2.5 py-1.5 text-sm">
+        <!-- Dòng «— đúng» (✅) có thể đứng cạnh dòng vi phạm (❌): kết luận của cả ý hiện TÁCH khỏi danh sách để con không đọc nhầm là đã đúng -->
+        <p data-bt-ct-kl x-show="btCtHon(y)" class="mb-1 font-semibold">✗ Chưa đúng — sửa các dòng ❌ rồi kiểm tra lại.</p>
+        <template x-for="(d, di) in btCT(y).dong" :key="di"><div class="py-0.5"><span x-text="d.ok ? '✅' : '❌'"></span> <span x-text="d.t"></span></div></template>
+      </div>
+    </template>
+    <template x-if="y.nhieu_cach">
+      <div data-bt-cach class="mt-2">
+        <p data-bt-cach-msg x-show="btCachMsg(y)" :class="btCachMsg(y) && btCachMsg(y).loai === 'ok' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-900'"
+           class="rounded-[10px] px-2.5 py-1.5 text-sm" x-text="btCachMsg(y) ? btCachMsg(y).tin : ''"></p>
+        <template x-if="(btCach[y.id] || []).length">
+          <div data-bt-cach-ds class="mt-2 rounded-[10px] bg-slate-50 px-2.5 py-1.5">
+            <p class="text-[13px] font-semibold text-slate-600">Các cách con đã tìm:</p>
+            <template x-for="(c, ci) in btCach[y.id]" :key="ci"><p data-bt-cach-dong class="py-0.5 text-sm"><b class="text-emerald-600">✓</b> <span x-text="c.chu"></span></p></template>
+          </div>
+        </template>
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+          <button type="button" data-bt-cach-nut x-show="btCachNut(y)" @click="btCachKhac(y, e.b)"
+                  class="min-h-10 rounded-[10px] border border-indigo-200 bg-white px-3 text-sm font-semibold text-indigo-800">↻ Tìm cách khác</button>
+          <p data-bt-cach-het x-show="btCachDu(y)" class="text-sm font-semibold text-emerald-700" x-text="y.so_nghiem != null ? 'Con đã tìm hết ' + y.so_nghiem + ' cách.' : ''"></p>
+        </div>
+      </div>
+    </template>
+    <template x-if="btYGoiYHien(e.b, y)">
+      <div data-bt-goi-y="khoi" class="mt-2 rounded-lg border border-dashed border-amber-300 bg-amber-50 px-2 py-1.5 text-sm">
+        <p data-bt-goi-y-nhan class="text-[11px] font-bold uppercase tracking-wider text-amber-700">💡 Gợi ý</p>
+        <template x-for="(g, gi) in (y.goi_y_html || [])" :key="gi"><p data-bt-goi-y-dong class="py-0.5" x-html="y.goi_y_html[gi]"></p></template>
+        <p data-bt-goi-y-lech x-show="btLech(y)" class="py-0.5" x-text="'Cột ' + btLech(y) + ' chưa khớp.'"></p>
+        <p x-show="y.kieu === 'cot' && !(y.goi_y_html || []).length && !btLech(y)" class="py-0.5 text-slate-600">Bấm Kiểm tra trước — gợi ý sẽ nói cột nào chưa khớp.</p>
+      </div>
+    </template>
+  </div>
+</template>
+
+            </div>
+          </template>
+          </div>
+
+
+        </section>
+        </template>
+
+      </div>
+      </template>
+
+      </div>
+      <div data-bt-de-bar class="sticky bottom-0 z-10 -mx-1 border-t border-slate-200 bg-white/95 px-1 py-2 backdrop-blur">
+        <template x-if="btDeXn">
+          <div data-bt-de-xn class="mb-2 flex flex-wrap items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 pr-14 text-[14px] text-amber-900">
+            <span class="grow font-semibold">
+              <span data-bt-de-xn-trong class="block" x-show="btDeTrong() > 0" x-text="'Còn ' + btDeTrong() + ' ô trống'"></span>
+              <span data-bt-de-xn-viet class="block" x-show="btDeNhacN > 0" x-text="btDeNhacN + ' ô viết chưa đúng cách — xem lại ô viền vàng'"></span>
+            </span>
+            <button type="button" data-bt-nop-luon @click="btNop()" class="min-h-9 rounded-[10px] border border-indigo-600 bg-indigo-600 px-3 text-sm font-semibold text-white">Nộp luôn</button>
+            <button type="button" data-bt-lam-tiep @click="btDeXn = false" class="min-h-9 rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-700">Làm tiếp</button>
+          </div>
+        </template>
+        <p x-show="btDeLoi" data-bt-de-loi class="mb-1.5 pr-14 text-[13.5px] text-rose-700" x-text="btDeLoi"></p>
+        <div class="flex items-center justify-between gap-2 pr-14">
+          <span data-bt-de-dem class="text-[13.5px] text-slate-600" x-text="btDeDem()"></span>
+          <button type="button" data-bt-de-nop @click="btNopBam()" :disabled="!!btDeBan" class="min-h-10 rounded-[10px] border border-indigo-600 bg-indigo-600 px-5 text-[15px] font-semibold text-white disabled:opacity-50" x-text="btDeBan ? 'Đang nộp…' : 'Nộp bài'"></button>
+        </div>
+      </div>
+    </div>
+    </template>
+
+    
+    <template x-if="mode === 'bt' && btOk && btScr === 'kq'">
+    <div data-bt-de-man :data-ma="btMa" data-man="kq" class="space-y-3">
+      <div class="flex items-center justify-between gap-2">
+        <button type="button" data-bt-de-ve @click="btVeUnit()" class="min-h-9 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700">← <span x-text="btUnitNow().ten"></span></button>
+        <button type="button" data-bt-vi @click="btDoiVi()" :aria-pressed="String(btVi)" title="Hiện / ẩn các dòng tiếng Việt"
+                :class="btVi ? 'border-cyan-600 bg-cyan-600 text-white' : 'border-slate-300 bg-white text-slate-600'"
+                class="min-h-8 shrink-0 rounded-full border px-3 text-xs font-semibold">VI</button>
+      </div>
+      <h2 data-bt-de-man-ten class="text-xl font-bold leading-snug text-slate-900" x-html="(btDeNow() || {}).ten_html || ''"></h2>
+      <template x-if="btKdG()">
+      <div data-bt-kq class="space-y-3">
+        <div data-bt-kq-tong class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+          <p class="text-[13px] text-slate-500" x-text="'Lần ' + btKdG().lan"></p>
+          <p class="text-[26px] font-bold leading-tight text-slate-900"><span data-bt-kq-diem x-text="btKdG().tong + '/' + btKdG().toi"></span> <span class="text-base font-semibold text-slate-500">điểm</span></p>
+          <div data-bt-kq-phan class="mt-2 flex flex-wrap gap-1.5">
+            <template x-for="p in btKdG().phan" :key="p.n">
+              <span data-bt-kq-phan-chip :data-n="p.n" class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[13px] font-semibold text-slate-700" x-text="'Phần ' + p.n + ': ' + p.diem + '/' + p.toi"></span>
+            </template>
+          </div>
+          <p data-bt-kq-cho x-show="btKdG().cho.length" class="mt-2 rounded-lg bg-amber-50 px-2.5 py-1.5 text-[13.5px] text-amber-900"
+             x-text="'⏳ ' + btKdG().cho.length + ' câu viết đang chờ máy chấm — chưa tính điểm. Mở lại trang này sau, điểm sẽ được cộng nếu đạt.'"></p>
+        </div>
+        <label class="flex min-h-10 items-center gap-2 text-[14.5px] text-slate-700">
+          <input type="checkbox" data-bt-kq-chi-sai x-model="btKdChiSai" class="h-6 w-6 shrink-0 accent-indigo-600">
+          <span>Chỉ xem câu sai</span>
+        </label>
+        <div data-bt-kq-ds class="space-y-3">
+          <template x-for="e in btKdHien()" :key="e.key">
+          <div>
+            <template x-if="e.phan">
+              <div data-bt-kq-phan-dau :data-n="e.phan.n" class="pt-3">
+                <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400" x-text="'Phần ' + e.phan.n"></p>
+                <h3 class="text-[15px] font-semibold leading-snug text-slate-900"><span x-html="e.phan.ten_html"></span> <span class="font-normal text-slate-500" x-text="'(' + e.phan.diem + '/' + e.phan.toi + ' điểm)'"></span></h3>
+              </div>
+            </template>
+            <template x-if="e.b">
+            <section data-bt-kq-bai :data-bt-id="e.b.id" :data-can="String(e.can)" class="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-slate-900">
+              <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                <span data-bt-cau class="rounded-md bg-slate-800 px-1.5 py-px font-bold text-white" x-text="e.nhan"></span>
+                <span data-bt-kq-bai-diem class="font-semibold text-slate-500" x-text="e.diem + '/' + e.toi + ' điểm'"></span>
+              </div>
+              <p data-bt-de class="mt-2 whitespace-pre-line text-[15.5px]" x-html="e.b.en_html || ''"></p>
+              <p x-show="btVi && e.b.vi_html" class="mt-0.5 whitespace-pre-line text-[13.5px] italic text-slate-500" x-html="e.b.vi_html || ''"></p>
+              <template x-if="e.b.bang">
+                <div data-bt-bang class="mt-2 max-w-full overflow-x-auto">
+                  <table class="border-collapse text-[15px]">
+                    <thead><tr>
+                      <th class="border border-slate-300 bg-slate-100 px-2 py-1"></th>
+                      <template x-for="(c, ci) in (e.b.bang.cot_html || [])" :key="ci"><th class="border border-slate-300 bg-slate-100 px-2 py-1 text-[13px] font-semibold" x-html="c"></th></template>
+                    </tr></thead>
+                    <tbody>
+                      <template x-for="(h, hi) in e.b.bang.hang" :key="hi">
+                        <tr>
+                          <th class="border border-slate-300 bg-slate-100 px-2 py-1 text-left font-semibold" x-html="h.t_html || ''"></th>
+                          <template x-for="(v, vi) in h.so" :key="vi"><td class="border border-slate-300 px-2 py-1 text-center" x-text="v"></td></template>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
+              </template>
+              <div class="mt-3 space-y-3">
+                <template x-for="q in e.ys" :key="q.y.id">
+                <div data-bt-kq-y :data-kq="q.kq" :data-y="q.y.id"
+                     :class="q.kq === 'dung' ? 'border-emerald-500' : q.kq === 'cho' ? 'border-amber-400' : 'border-rose-500'" class="border-l-[3px] pl-2.5">
+                  <div x-show="q.y.en_html || q.nhan" class="flex items-start gap-2.5">
+                    <span data-bt-nhan x-show="q.nhan" class="mt-px grid h-6 min-w-6 shrink-0 place-items-center whitespace-nowrap rounded-full bg-indigo-600 px-1.5 text-sm font-bold leading-none text-white" x-text="q.nhan"></span>
+                    <div class="min-w-0 flex-1">
+                      <p data-bt-y-de class="whitespace-pre-line text-[15.5px]" x-html="q.y.en_html || ''"></p>
+                      <p x-show="btVi && q.y.vi_html" class="whitespace-pre-line text-[13.5px] italic text-slate-500" x-html="q.y.vi_html || ''"></p>
+                    </div>
+                  </div>
+                  <template x-if="q.y.hinh_de && q.y.hinh_de.html">
+                    <div data-bt-hinh-de class="mt-2 max-w-full overflow-x-auto rounded-xl border border-dashed border-slate-200 bg-white p-2.5 [&>*]:mx-auto" x-html="q.y.hinh_de.html"></div>
+                  </template>
+                  <p data-bt-kq-tin class="mt-1.5 text-[14.5px] font-semibold"
+                     :class="q.kq === 'dung' ? 'text-emerald-700' : q.kq === 'cho' ? 'text-amber-800' : 'text-rose-700'" x-text="btKdTin(q)"></p>
+                  <template x-if="q.kq !== 'trong' && (q.con || q.dap)">
+                    <p data-bt-kq-con class="mt-0.5 break-words text-[14.5px] text-slate-800">
+                      <span x-text="q.viet ? 'Con viết: ' : 'Con điền: '"></span><b x-text="q.con || '—'"></b><template x-if="q.kq !== 'dung' && q.kq !== 'cho' && q.dap"><span> → đúng là <b data-bt-kq-dap x-text="q.dap"></b></span></template>
+                    </p>
+                  </template>
+                  <template x-if="q.kq === 'trong' && q.dap"><p data-bt-kq-con class="mt-0.5 break-words text-[14.5px] text-slate-800">Đúng là <b data-bt-kq-dap x-text="q.dap"></b></p></template>
+                  <template x-for="(l, li) in q.ly" :key="li"><p data-bt-kq-ly class="mt-0.5 text-[13.5px] text-amber-800" x-text="l"></p></template>
+
+                  <!-- câu viết chờ máy -->
+                  <template x-if="q.viet && q.kq === 'cho'">
+                    <div data-bt-kq-cho-may class="mt-1.5 space-y-1.5">
+                      <p x-show="btKdBan" data-bt-kq-dang-hoi class="text-[13.5px] text-slate-600">Đang nhờ máy xem…</p>
+                      <template x-if="!btKdBan && btKdHoi && !btKdTu[q.y.nhom[0].id]">
+                        <div class="flex flex-wrap items-center gap-2">
+                          <span class="text-[13.5px] text-slate-600" x-text="btKdHoi === 'khong' ? 'Chưa kết nối được máy chấm.' : 'Máy chấm chưa trả lời.'"></span>
+                          <button type="button" data-bt-kq-hoi @click="btKdHoiLai()" x-show="btKdChoDuoc()" class="min-h-9 rounded-[10px] border border-indigo-200 bg-white px-3 text-sm font-semibold text-indigo-800">Hỏi máy lại</button>
+                          <button type="button" data-bt-kq-tu @click="btKdTuMo(btKdG().cho.find(c => c.id === q.y.nhom[0].id))" class="min-h-9 rounded-[10px] border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800">Tự kiểm</button>
+                        </div>
+                      </template>
+                      <template x-if="btKdTu[q.y.nhom[0].id]">
+                        <div data-bt-kq-tu-ds class="rounded-[14px] border-[1.5px] border-slate-300 bg-slate-50 px-3 py-2.5">
+                          <p class="mb-1 text-[12.5px] text-slate-500">Tick những ý câu của con đã có, rồi bấm «Ghi kết quả». Bố mẹ sẽ đọc câu của con.</p>
+                          <template x-for="(t, ti) in (q.y.tu_kiem_html || [])" :key="ti">
+                            <label class="flex min-h-10 items-center gap-2 text-[14.5px]">
+                              <input type="checkbox" x-model="btKdTu[q.y.nhom[0].id].tick[ti]" class="h-8 w-8 shrink-0 accent-indigo-600">
+                              <span x-html="t"></span>
+                            </label>
+                          </template>
+                          <button type="button" data-bt-kq-tu-xong @click="btKdTuXong(btKdG().cho.find(c => c.id === q.y.nhom[0].id))"
+                                  class="mt-1.5 min-h-10 rounded-[10px] border border-indigo-600 bg-indigo-600 px-4 text-[15px] font-semibold text-white"
+                                  x-text="btKdTuDat(btKdG().cho.find(c => c.id === q.y.nhom[0].id)) ? 'Ghi kết quả: đạt' : 'Ghi kết quả: chưa đạt'"></button>
+                        </div>
+                      </template>
+                    </div>
+                  </template>
+
+                  <!-- lời giải: chỉ ý chưa đúng (sai, trống, sai cách viết) -->
+                  <template x-if="q.kq !== 'dung' && q.kq !== 'cho' && ((q.y.giai || []).length || (q.viet && q.y.bai_mau_html))">
+                    <details data-bt-kq-giai open class="mt-2 rounded-xl bg-neutral-50 px-2.5 py-2">
+                      <summary class="cursor-pointer text-[11px] font-bold uppercase tracking-wider text-slate-500">Lời giải</summary>
+                      <div class="ml-1 mt-1 border-l-[3px] border-indigo-200 pl-3">
+                        <template x-for="(st, si) in (q.y.giai || [])" :key="si">
+                          <div data-bt-buoc class="grid grid-cols-[22px_1fr] items-start gap-2 border-b border-dashed border-slate-200 py-1.5 text-[15px] last:border-b-0">
+                            <span class="mt-0.5 grid h-[22px] w-[22px] place-items-center rounded-full bg-indigo-600 text-xs font-bold text-white" x-text="si + 1"></span>
+                            <div class="min-w-0">
+                              <div x-html="st.t_html || ''"></div>
+                              <template x-if="st.visual && st.visual.html"><div class="mt-1 max-w-full overflow-x-auto [&>*]:mx-auto" x-html="st.visual.html"></div></template>
+                            </div>
+                          </div>
+                        </template>
+                        <template x-if="q.viet && q.y.bai_mau_html"><div data-bt-bai-mau class="py-1.5 text-[15px]"><b>Bài mẫu:</b> <span x-html="q.y.bai_mau_html"></span></div></template>
+                      </div>
+                      <template x-if="q.y.visual && q.y.visual.html"><div data-bt-hinh class="mt-2 max-w-full overflow-x-auto rounded-xl border border-dashed border-slate-200 bg-white p-2.5 [&>*]:mx-auto" x-html="q.y.visual.html"></div></template>
+                    </details>
+                  </template>
+                </div>
+                </template>
+              </div>
+            </section>
+            </template>
+          </div>
+          </template>
+        </div>
+      </div>
+      </template>
+      
+      <div class="border-t border-slate-200 pb-16 pt-3">
+        <template x-if="btLamLaiXn">
+          <div data-bt-lam-lai-xn class="mb-2 flex flex-wrap items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-[14px] text-amber-900">
+            <span class="grow font-semibold">Đề gốc đang có bài làm dở</span>
+            <button type="button" data-bt-lam-tiep-do @click="btLamTiep()" class="min-h-9 rounded-[10px] border border-indigo-600 bg-indigo-600 px-3 text-sm font-semibold text-white">Làm tiếp bài dở</button>
+            <button type="button" data-bt-xoa-lam-lai @click="btXoaLamLai()" class="min-h-9 rounded-[10px] border border-slate-300 bg-white px-3 text-sm text-slate-700">Xoá, làm lại từ đầu</button>
+          </div>
+        </template>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" data-bt-lam-lai @click="btLamLai()" class="min-h-10 rounded-[10px] border border-indigo-600 bg-white px-4 text-[15px] font-semibold text-indigo-700">Làm lại đề gốc</button>
+        </div>
+      </div>
+
     </div>
     </template>
 

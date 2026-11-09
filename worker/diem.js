@@ -31,6 +31,8 @@ export const DIEM = {
   // Bài tập ESL 5 (ADR 0072 mở rộng, Q10 — spec 2026-11-04-bai-tap-esl-unit-3-design.md): môn có `bt_sao: "lan_dau"` trong manifest
   // thì lượt `b.*` ĐÚNG đầu tiên của mỗi id câu được BT_LAN_DAU (= ON + ON_NHO: điểm một lượt đúng đầu ngày theo luật ôn), MỘT lần trong đời.
   BT_LAN_DAU: 3,
+  // Math 5 «Làm trọn đề» (plan 2026-11-08-math5-lam-de, Task 3): môn có `bt_sao: "de"` + `bt_lan_dau: [id nhóm của mọi đề]` — CHỈ các id đó theo luật trên (cùng BT_LAN_DAU, ở bất cứ đâu con làm,
+  // cả khi quay về Luyện); câu còn lại của Luyện giữ luật ôn. Id đã từng ĐÚNG ở Luyện (khoá `on:<id>:<ngày>:nho`, `daDungOn`) coi như đã nhận lần đầu — không +3.
   // Ôn tập Toán 6 (worker/toan_diem.js, ADR 0070): THAY luật ôn ở trên cho môn `toan-6` — chủ dự án duyệt 2026-10-23.
   TOAN: {
     BAI: { "mo-khoa": [5, 3], "tang-toc": [10, 5], "chinh-phuc": [15, 8], "thu-thach": [20, 10] },   // theo `muc` của bài: [đủ (g 3), nửa (g 2)]; mỗi bài tối đa MỘT lần ĐỦ trong đời
@@ -486,23 +488,43 @@ export function chonLanDau(rows, daCo, now, slug, nhan = "Bài tập") {
 }
 
 /**
+ * Hàm thuần (Math 5, câu chuyển từ Luyện vào đề): id `i` đã từng ĐÚNG theo luật ôn — `daCo` (tập khoá đã đọc) có khoá `on:<i>:<ngày VN>:nho` còn HIỆU LỰC (không có dòng gỡ `huy:` của
+ * chính khoá đó, ADR 0063: bố mẹ gỡ ngày ôn thì câu lại được ⭐). Câu đó đã được điểm từ trước nên lần đúng đầu tiên trong đề không +BT_LAN_DAU nữa. Chỉ `:nho` mới tính: lượt Luyện SAI chỉ
+ * để lại khoá `:1…:3`, chưa phải «đúng». `daCo` phải chứa cả khoảng `on:<i>:` lẫn `huy:on:<i>:` (congOn đọc; hàm này không đụng DB).
+ */
+export function daDungOn(daCo, i) {
+  const tt = `on:${i}:`;
+  for (const k of daCo) {
+    if (k.startsWith(tt) && /^\d{4}-\d{2}-\d{2}:nho(?:#\d+)?$/.test(k.slice(tt.length)) && !daCo.has("huy:" + k)) return true;
+  }
+  return false;
+}
+
+/**
  * Lô lượt ôn của writeSession (`rows` đã lọc, `t` thiếu → now) → điểm vừa cộng. Môn (slug) không có trong manifest → 0.
  * Môn có `bt_sao === "lan_dau"` (chỉ ESL 5): lượt `b.*` (kể cả dòng tổng đề `c = "de"`, mang id `b.`) đi `chonLanDau`, còn lại
  * (quiz `q.*`, thẻ `f.*`) vẫn đi `chonOn`. Môn khác: mọi lượt đi `chonOn` y như trước.
+ * Môn có `bt_sao === "de"` + `bt_lan_dau` (Math 5 có đề): lượt có `i ∈ bt_lan_dau` đi `chonLanDau` (lượt ĐÚNG, trừ id đã `daDungOn`; lượt sai → 0, như ESL); dòng tổng đề (`c = "de"`) không
+ * được điểm nào; mọi lượt khác (câu Luyện ngoài danh sách, thẻ, quiz) vẫn `chonOn`. Để biết `daDungOn` đọc thêm hai khoảng `[on:<i>:, on:<i>;)` + `huy:on:<i>:` cho mỗi id đề đúng trong lô.
  */
 export async function congOn(env, url, user, course, rows, now = giay()) {
   if (!rows.length) return 0;
   const mf = await docManifest(env, url, user);
   const mon = mf && Object.values(mf.mon).find((m) => m && m.slug === course);
   if (!mon) return 0;
-  const bt = mon.bt_sao === "lan_dau";
-  const rOn = bt ? rows.filter((a) => !a.i.startsWith("b.")) : rows;
-  const rBt = bt ? rows.filter((a) => a.i.startsWith("b.") && a.ok && a.c !== "de") : [];   // chỉ lượt chonLanDau có thể nhận
+  const esl = mon.bt_sao === "lan_dau";
+  const deIds = mon.bt_sao === "de" ? new Set((Array.isArray(mon.bt_lan_dau) ? mon.bt_lan_dau : []).filter((x) => typeof x === "string")) : null;   // Math có đề
+  const bt = esl || deIds !== null;
+  const theoBt = esl ? (a) => a.i.startsWith("b.") : deIds ? (a) => a.c === "de" || deIds.has(a.i) : () => false;   // lượt thuộc luật «lần đầu» (không bao giờ vào chonOn)
+  const rOn = bt ? rows.filter((a) => !theoBt(a)) : rows;
+  const rBt = bt ? rows.filter((a) => theoBt(a) && a.i.startsWith("b.") && a.ok && a.c !== "de") : [];   // chỉ lượt chonLanDau có thể nhận
+  const idDe = deIds ? [...new Set(rBt.map((a) => a.i))] : [];   // id đề cần biết «đã từng đúng ở Luyện» chưa
   // Mỗi tiền tố hai khoảng: khoá ôn (mọi lượt) và dòng gỡ của chúng; mỗi nguồn `bt:<i>` hai khoảng [s, s + '$') (s, s#n) và của
   // `huy:` + s. CROSS JOIN: json_each ở vòng ngoài, mỗi khoảng một lần quét trên chỉ mục UNIQUE (user_id, khoa).
   const kh = [
     ...tienToOn(rOn, now).flatMap((t) => [khoang(t), khoang("huy:" + t)]),
     ...[...new Set(rBt.map((a) => `bt:${mon.slug}:${a.i}`))].flatMap((s) => [[s, s + "$"], ["huy:" + s, "huy:" + s + "$"]]),
+    ...idDe.flatMap((i) => [khoang(`on:${i}:`), khoang(`huy:on:${i}:`)]),   // mọi ngày ôn của id đề (`daDungOn`) + dòng gỡ của chúng
   ];
   const co = kh.length
     ? await env.STUDY_DB.prepare(
@@ -512,7 +534,7 @@ export async function congOn(env, url, user, course, rows, now = giay()) {
     : { results: [] };
   const daCo = new Set((co.results || []).map((r) => r.khoa));
   const moi = chonOn(rOn, daCo, now, `Ôn tập · ${mon.ten || course}`);
-  if (bt) moi.push(...chonLanDau(rBt, daCo, now, mon.slug, `Bài tập · ${mon.ten || course}`));
+  if (bt) moi.push(...chonLanDau(deIds ? rBt.filter((a) => !daDungOn(daCo, a.i)) : rBt, daCo, now, mon.slug, `Bài tập · ${mon.ten || course}`));
   return (await ghiDiem(env, user, moi, now)).cong;
 }
 // ══ Hết Task 4 ═══════════════════════════════════════════════════════════════
