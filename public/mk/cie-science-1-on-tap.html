@@ -121,7 +121,7 @@ window.LS.ham();
   <title>Ôn tập · CIE Science 1</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.4097fe7f.css">
+  <link rel="stylesheet" href="../assets/tw.a1e47e99.css">
   
   <script type="module">
     import { sched, phatLai } from "../assets/lich_on.ebee479f.js";
@@ -3358,7 +3358,8 @@ timMo: false,
           if (!this.qq) return arr || [];
           return (arr || []).filter(x => this.hit(...keys.map(k => {
             const v = x[k];
-            return Array.isArray(v) ? v.map(y => typeof y === 'object' ? Object.values(y).join(' ') : y).join(' ') : v;
+            return Array.isArray(v) ? v.map(y => typeof y === 'object' ? Object.values(y).join(' ') : y).join(' ')
+                 : (v && typeof v === 'object') ? JSON.stringify(v) : v;   // `table` của ý: {head, rows}
           })));
         },
         // Nguồn của MỌI lượt chọn câu: bật lọc thì mục đã thuộc đứng ngoài hẳn.
@@ -3624,6 +3625,7 @@ timMo: false,
         // Qua fq như exps/works: đếm và vẽ phải dùng CHUNG một phép lọc, lệch
         // nhau là lá rỗng vẫn hiện hoặc lá có nội dung bị giấu.
         lists(sec, leafId)  { return this.fq(this.arr(sec, 'checklists', 'checklist').filter(x => x.concept === leafId), 'title', 'note', 'items'); },
+        igs(sec, leafId)    { return (sec.infographics || []).filter(x => x.concept === leafId); },
         exps(sec, leafId)   { return this.fq(this.arr(sec, 'experiments', 'from_the_book').filter(x => x.concept === leafId), 'title','summary','result'); },
         // Bản CẤP MỤC: mục dùng `topics` (Toán) hay `words` (ESL) bỏ hẳn vùng vẽ
         // theo lá, nên bài mẫu và checklist của nó không hiện ở đâu cả. Đã đo:
@@ -3788,10 +3790,13 @@ timMo: false,
         // Lọc theo lá VÀ theo ô tìm. Mọi khối trong tóm tắt đi qua đây nên chỉ
         // cần bọc một chỗ; khối nào lọc hết thì phần bao ngoài tự ẩn vì
         // template dùng `.length` để quyết định có vẽ hay không.
+        // Ý phụ của một ý chính; đang tìm thì chỉ giữ dòng chứa từ khoá (lọc tới từng dòng như danh sách).
+        subs(pt) { const L = pt.sub || []; return this.qq ? L.filter(su => this.hit(su.t || su)) : L; },
         tagged(list, leafId) {
           return this.fk(this.fq((list || []).filter(x => x && x.concept === leafId),
                          't', 'term', 'def', 'example', 'title', 'wrong', 'right',
-                         'problem', 'answer', 'summary', 'result', 'rules', 'items', 'rows', 'lines'));
+                         'problem', 'answer', 'summary', 'result', 'rules', 'items', 'rows', 'lines',
+                         'sub', 'table', 'conclusion'));
         },
         // Mọi thứ KHÔNG gắn vào lá nào của mục — dữ liệu cũ, hoặc ý thuộc cả mục
         untagged(sec) {
@@ -7220,6 +7225,57 @@ registerProcessor('thu-16k',T);`;
                 <span class="ml-auto text-xs text-slate-400" x-text="leaf.pages ? pg(leaf.pages) : ''"></span>
               </div>
 
+              <!-- «Điều cần nhớ» của lá — đứng ĐẦU lá, MỘT khung: hình tổng quan của lá (`infographics`) rồi
+                   các ý đánh số, hình của ý (`pt.figure`, SVG vẽ tay ở study/<hs>/img/<môn>/) nằm NGAY DƯỚI ý đó.
+                   Hình minh hoạ hai ý liền nhau thì gắn vào ý thứ hai. `pt.image` vẫn là ảnh nhỏ cạnh chữ như cũ. -->
+              <template x-if="show.facts && (tagged(points(sec), leaf.id).length || igs(sec, leaf.id).length)">
+              <div class="px-4 pt-3">
+              <div class="rounded-xl border border-sky-200 bg-sky-50/50 p-3">
+              <p class="text-[13px] font-bold uppercase tracking-wider text-sky-600 mb-1.5">✦ Điều cần nhớ</p>
+              <template x-for="(ig, ii) in igs(sec, leaf.id)" :key="'ig' + ii">
+                <img @click.stop="zoom = 'study/img/cie-science-1/' + ig.image" :src="'study/img/cie-science-1/' + ig.image" :alt="ig.title || ''" loading="lazy"
+                     class="cursor-zoom-in w-full max-w-2xl mx-auto mb-2 rounded-lg border border-sky-100 bg-white p-1.5">
+              </template>
+              <ol class="space-y-2">
+                <template x-for="(pt, i) in tagged(points(sec), leaf.id)" :key="i">
+                  <li>
+                    <div class="flex gap-2 items-start">
+                      <span class="shrink-0 grid place-items-center w-5 h-5 mt-px rounded-full bg-indigo-600 text-white text-[11px] font-bold tabular-nums" x-text="i + 1"></span>
+                      <input x-show="canMark && pt.mark" x-cloak type="checkbox" title="Đã thuộc" :checked="isKnown(pt.mark)" @change="setKnown([{id: pt.mark, c: pt.concept || sec.concept}], $event.target.checked)" class="mt-0.5 shrink-0 w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><div class="flex-1"><p class="text-[15px] text-slate-700 leading-snug [&_b]:text-slate-900">
+                        <!-- ý chính = câu đầu, ngắn, đậm cả câu; phần giải thích sau nó chữ thường, chỉ **từ khoá** đậm -->
+                        <span class="font-semibold text-slate-900" x-html="tx(lead(pt.t)[0])"></span><span x-html="tx(lead(pt.t)[1])"></span></p>
+                      <p x-show="pt.t_vi" x-cloak class="text-sm text-cyan-700 leading-snug" x-html="hl(pt.t_vi)"></p>
+                      <!-- ý PHỤ (số liệu, ví dụ, chi tiết) — hiện sẵn, thụt dưới ý chính; mục {t, kl:true} = kết luận
+                           suy từ câu hỏi / thí nghiệm của sách, không phải chữ sách → nhãn «kết luận TN» -->
+                      <ul x-show="subs(pt).length" class="mt-1 list-disc pl-4 space-y-0.5 text-[13px] text-slate-600 leading-snug">
+                        <template x-for="(su, si) in subs(pt)" :key="si">
+                          <li class="[&_b]:text-slate-800"><span x-show="su.kl" class="mr-1 rounded bg-violet-100 px-1 text-[11px] font-semibold text-violet-700">kết luận TN</span><span x-html="tx(su.t || su)"></span></li>
+                        </template>
+                      </ul>
+                      <!-- bảng của ý (so sánh song song: cơ quan → nhiệm vụ, trai / gái…): head + rows, ô hiểu **đậm** -->
+                      <template x-if="pt.table">
+                        <div class="mt-1.5 overflow-x-auto">
+                          <p x-show="pt.table.kl" class="mb-0.5"><span class="rounded bg-violet-100 px-1 text-[11px] font-semibold text-violet-700">kết luận TN</span></p>
+                          <table class="w-full border-collapse text-[13px] leading-snug bg-white">
+                            <thead><tr><template x-for="(h, hi) in pt.table.head" :key="hi"><th class="border border-slate-200 bg-slate-100 px-2 py-1 text-left font-semibold text-slate-800" x-html="tx(h)"></th></template></tr></thead>
+                            <tbody><template x-for="(r, ri) in pt.table.rows" :key="ri"><tr><template x-for="(c, ci) in r" :key="ci"><td class="border border-slate-200 px-2 py-1 align-top text-slate-700 [&_b]:text-slate-900" :class="ci === 0 && pt.table.head[0] === '' ? 'font-semibold text-slate-800 bg-slate-50' : ''" x-html="tx(c)"></td></template></tr></template></tbody>
+                          </table>
+                        </div>
+                      </template></div>
+                      <template x-if="pt.image"><img @click.stop="zoom = 'study/img/cie-science-1/' + pt.image" :src="'study/img/cie-science-1/' + pt.image" alt="" class="cursor-zoom-in w-16 shrink-0 self-start rounded border border-sky-200 bg-white object-contain"></template>
+                    </div>
+                    <!-- `figure`: một tên tệp hoặc danh sách (hai hình cắt sách cạnh nhau, vd cơ quan nam / nữ) -->
+                    <div x-show="pt.figure" class="mt-1.5 sm:ml-7 grid gap-1.5" :class="[].concat(pt.figure || []).length > 1 ? 'sm:grid-cols-2' : ''">
+                      <template x-for="fg in [].concat(pt.figure || [])" :key="fg"><img @click.stop="zoom = 'study/img/cie-science-1/' + fg" :src="'study/img/cie-science-1/' + fg" alt="" loading="lazy"
+                           class="cursor-zoom-in w-full max-w-2xl rounded-lg border border-sky-100 bg-white p-1.5"></template>
+                    </div>
+                  </li>
+                </template>
+              </ol>
+              </div>
+              </div>
+              </template>
+
               <!-- từ vựng của lá -->
               <template x-if="show.gloss && tagged(sec.glossary, leaf.id).length">
               <div class="px-4 pt-3">
@@ -7239,22 +7295,6 @@ registerProcessor('thu-16k',T);`;
                   </div>
                 </template>
               </dl>
-              </div>
-              </template>
-
-              <!-- ý của lá -->
-              <template x-if="show.facts && tagged(points(sec), leaf.id).length">
-              <div class="px-4 pt-3">
-              <p class="text-[13px] font-bold uppercase tracking-wider text-sky-600 mb-1.5">✦ Điều cần nhớ</p>
-              <div class="grid gap-2 sm:grid-cols-2">
-                <template x-for="(pt, i) in tagged(points(sec), leaf.id)" :key="i">
-                  <div class="flex gap-2.5 rounded-lg border border-sky-200 bg-sky-50/40 p-3">
-                    <input x-show="canMark && pt.mark" x-cloak type="checkbox" title="Đã thuộc" :checked="isKnown(pt.mark)" @change="setKnown([{id: pt.mark, c: pt.concept || sec.concept}], $event.target.checked)" class="mt-1 shrink-0 w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"><div class="flex-1"><p class="text-sm text-slate-700 leading-snug"><span class="font-semibold text-slate-900" x-html="hl(lead(pt.t)[0])"></span><span x-html="hl(lead(pt.t)[1])"></span></p>
-                    <p x-show="pt.t_vi" x-cloak class="text-sm text-cyan-700 leading-snug" x-html="hl(pt.t_vi)"></p></div>
-                    <template x-if="pt.image"><img @click.stop="zoom = 'study/img/cie-science-1/' + pt.image" :src="'study/img/cie-science-1/' + pt.image" alt="" class="cursor-zoom-in w-16 shrink-0 self-start rounded border border-sky-200 bg-white object-contain"></template>
-                  </div>
-                </template>
-              </div>
               </div>
               </template>
 
@@ -7315,6 +7355,7 @@ registerProcessor('thu-16k',T);`;
                   <div class="min-w-0 flex-1 text-sm space-y-1.5">
                     <p x-show="ex.summary" class="text-slate-700" x-html="hl(ex.summary)"></p>
                     <p x-show="ex.result" class="font-medium text-violet-900"><span class="font-semibold">Thấy:</span> <span x-html="hl(ex.result)"></span></p>
+                    <p x-show="ex.conclusion" class="text-violet-800"><span class="font-semibold">Kết luận:</span> <span x-html="hl(ex.conclusion)"></span></p>
                   </div>
                   <!-- x-if chứ không x-show: :src vẫn bind khi ẩn → trình duyệt tải "img/null" (404) -->
                   <template x-if="ex.image">
@@ -7487,6 +7528,7 @@ registerProcessor('thu-16k',T);`;
                 <div class="min-w-0 flex-1 text-sm space-y-1.5">
                   <p x-show="ex.summary" class="text-slate-700" x-html="hl(ex.summary)"></p>
                   <p x-show="ex.result" class="font-medium text-violet-900"><span class="font-semibold">Thấy:</span> <span x-html="hl(ex.result)"></span></p>
+                  <p x-show="ex.conclusion" class="text-violet-800"><span class="font-semibold">Kết luận:</span> <span x-html="hl(ex.conclusion)"></span></p>
                 </div>
                 <template x-if="ex.image">
                 <img @click.stop="zoom = 'study/img/cie-science-1/' + ex.image" :src="'study/img/cie-science-1/' + ex.image" :alt="ex.title || ''" loading="lazy"
