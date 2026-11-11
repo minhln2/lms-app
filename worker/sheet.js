@@ -57,9 +57,15 @@ function toSessions(rows, col) {
   const sessions = [];
   let cur = null, group = null, subject = "";
 
+  // Nhóm nằm TRÊN mọi buổi (đầu bảng, "U4 Review") vẫn phải gắn vào một buổi — trước đây nó
+  // lơ lửng, các mục bên dưới đổ vào đó rồi mất (dòng 4–5 "Lớp Ms Dung").
+  const ensureCur = () => {
+    if (!cur) { cur = { title: "Chưa phân buổi", groups: [] }; sessions.push(cur); }
+  };
   const newGroup = (name) => {
+    ensureCur();
     group = { name, items: [] };
-    if (cur) cur.groups.push(group);
+    cur.groups.push(group);
   };
 
   rows.forEach((r, i) => {
@@ -84,7 +90,6 @@ function toSessions(rows, col) {
     if (!label) return;
 
     if (!isTask) { newGroup(label); return; }  // dòng có chữ nhưng không có ô tick
-    if (!cur) { cur = { title: "Chưa phân buổi", groups: [] }; sessions.push(cur); }
     if (!group) newGroup("");
     group.items.push({
       row: rowNo,
