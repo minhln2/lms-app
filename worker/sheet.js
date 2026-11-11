@@ -161,14 +161,19 @@ async function readViaApi(env, col) {
       `?includeGridData=true&ranges=${encodeURIComponent(`'${tab.properties.title}'!A:${lastCol}`)}` +
       `&fields=${encodeURIComponent(
         "sheets.data.rowData.values(formattedValue,hyperlink,textFormatRuns(format.link.uri),"
-        + "chipRuns(chip.richLinkProperties.uri))",
+        + "chipRuns(chip.richLinkProperties.uri),dataValidation.condition.type)",
       )}`,
     { headers: auth },
   );
   if (!r.ok) throw new Error(`Sheets API ${r.status} khi đọc dữ liệu`);
   const grid = (await r.json()).sheets?.[0]?.data?.[0]?.rowData || [];
   return grid.map((row) =>
-    (row.values || []).map((c) => ({ text: c.formattedValue || "", link: linkCuaO(c) })),
+    // Checkbox mới chèn mà chưa ai bấm: ô vẽ ô vuông trống nhưng KHÔNG có giá trị → coi là FALSE,
+    // không thì dòng đó bị nhận nhầm thành tiêu đề nhóm rồi lọc mất (dòng 4–5 "Lớp Ms Dung").
+    (row.values || []).map((c) => ({
+      text: c.formattedValue || (c.dataValidation?.condition?.type === "BOOLEAN" ? "FALSE" : ""),
+      link: linkCuaO(c),
+    })),
   );
 }
 
