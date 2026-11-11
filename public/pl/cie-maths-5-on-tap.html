@@ -121,7 +121,7 @@ window.LS.ham();
   <title>Ôn tập · CIE Maths 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.a1e47e99.css">
+  <link rel="stylesheet" href="../assets/tw.9acef182.css">
   
   <script type="module">
     import { sched, phatLai } from "../assets/lich_on.ebee479f.js";
@@ -1756,6 +1756,8 @@ window.LS.ham();
     };
     var BE_MO_HET = ['het_cau', 'het_ngay', 'khong_co'];   // tự kiểm KHÔNG thoáng qua: câu đó không gửi máy nữa trong phiên (tới «Làm lại»)
     var BE_MO0 = Object.freeze({ text: '', tt: null, dat: false, ly: '', ma: '', con: null, gui: '' });
+    // Ô `o` giãn theo chữ đang gõ bằng CSS `field-sizing: content`; trình duyệt chưa có (Safari < 18.2) thì `beRongO` đặt width theo số ký tự (đơn vị ch).
+    var BE_FS = !!(window.CSS && CSS.supports && CSS.supports('field-sizing', 'content'));
     var BE_V0 = Object.freeze({ text: '', gui: '', tt: null, kq: null, luot: 0, ly: '', dat: false, con: null, tick: [], tuKq: null, daGhi: false });
 
     // Hạt giống cố định theo chuỗi `s` (cùng bài → cùng thứ tự xáo, không đổi giữa các lần mở).
@@ -1968,6 +1970,7 @@ window.LS.ham();
         beKhoa(c) { return this.beKq[c.id] !== undefined; },
         beChu(i) { return String.fromCharCode(65 + i); },
         beNhap(bai, c, v) { if (this.beKhoa(c)) return; this.beVao(bai); this.beTL[c.id] = v; },
+        beRongO(c) { return BE_FS ? '' : 'width:' + ((this.beTL[c.id] || '').length + 2) + 'ch'; },   // dự phòng cho field-sizing; min-width / max-width ở class của ô
         beChon(bai, c, chu) { if (this.beKhoa(c)) return; this.beVao(bai); this.beTL[c.id] = chu; },
         // khung / chuỗi: chạm từ rồi chạm ô; chạm ô đã điền = gỡ
         beChipDung(bai, w) { return (bai.cau || []).some(c => this.beTL[c.id] === w); },
@@ -10214,8 +10217,8 @@ registerProcessor('thu-16k',T);`;
     <div>
       <p data-be-doan class="mt-2 text-[15.5px] leading-[2.6]"><template x-for="(s, si) in e.bai.manh" :key="si"><span><span x-show="s.html !== undefined" class="whitespace-pre-line" x-html="s.html || ''"></span><template x-if="s.o !== undefined"><input type="text" data-be-o data-be-cau :data-cau="e.bai.cau[s.o].id" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
        :value="beTL[e.bai.cau[s.o].id] || ''" :disabled="beKhoa(e.bai.cau[s.o])" :placeholder="e.bai.tach ? '' : String(e.bai.cau.indexOf(e.bai.cau[s.o]) + 1)" :aria-label="'Ô ' + (e.bai.cau.indexOf(e.bai.cau[s.o]) + 1)"
-       @input="beNhap(e.bai, e.bai.cau[s.o], $event.target.value)" :class="beClsO(e.bai.cau[s.o])"
-       class="mx-1 inline-block h-9 w-24 rounded-md border-b-2 px-1 text-center text-[15px] text-slate-900 placeholder:text-slate-300 disabled:opacity-100"></template></span></template></p>
+       @input="beNhap(e.bai, e.bai.cau[s.o], $event.target.value)" :class="beClsO(e.bai.cau[s.o])" :style="beRongO(e.bai.cau[s.o])"
+       class="mx-1 inline-block h-9 min-w-[96px] max-w-full [field-sizing:content] rounded-md border-b-2 px-1 text-center text-[15px] text-slate-900 placeholder:text-slate-300 disabled:opacity-100"></template></span></template></p>
       
 <div class="mt-1 space-y-1"><template x-for="c in e.bai.cau" :key="c.id"><div>
 <template x-if="beKq[c.id] !== undefined">
@@ -10274,8 +10277,8 @@ registerProcessor('thu-16k',T);`;
         <div :class="beClsCau(e, c)" class="mt-2">
           <p class="text-[15.5px] leading-[2.6]"><template x-for="(s, si) in c.manh" :key="si"><span><span x-show="s.html !== undefined" class="whitespace-pre-line" x-html="s.html || ''"></span><template x-if="s.o !== undefined"><input type="text" data-be-o data-be-cau :data-cau="c.id" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
        :value="beTL[c.id] || ''" :disabled="beKhoa(c)" :placeholder="e.bai.tach ? '' : String(e.bai.cau.indexOf(c) + 1)" :aria-label="'Ô ' + (e.bai.cau.indexOf(c) + 1)"
-       @input="beNhap(e.bai, c, $event.target.value)" :class="beClsO(c)"
-       class="mx-1 inline-block h-9 w-24 rounded-md border-b-2 px-1 text-center text-[15px] text-slate-900 placeholder:text-slate-300 disabled:opacity-100"></template></span></template></p>
+       @input="beNhap(e.bai, c, $event.target.value)" :class="beClsO(c)" :style="beRongO(c)"
+       class="mx-1 inline-block h-9 min-w-[96px] max-w-full [field-sizing:content] rounded-md border-b-2 px-1 text-center text-[15px] text-slate-900 placeholder:text-slate-300 disabled:opacity-100"></template></span></template></p>
           
 <template x-if="beKq[c.id] !== undefined">
   <div data-be-fb :data-cau="c.id" :data-kq="beKq[c.id]" :class="beClsFb(c)" x-show="!(e.bai.chiXem && beChiSai && beKq[c.id] === 'dung')" class="mt-1.5 rounded-lg px-3 py-1.5 text-[13.5px] leading-snug">
@@ -11166,8 +11169,8 @@ registerProcessor('thu-16k',T);`;
     <div>
       <p data-be-doan class="mt-2 text-[15.5px] leading-[2.6]"><template x-for="(s, si) in e.bai.manh" :key="si"><span><span x-show="s.html !== undefined" class="whitespace-pre-line" x-html="s.html || ''"></span><template x-if="s.o !== undefined"><input type="text" data-be-o data-be-cau :data-cau="e.bai.cau[s.o].id" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
        :value="beTL[e.bai.cau[s.o].id] || ''" :disabled="beKhoa(e.bai.cau[s.o])" :placeholder="e.bai.tach ? '' : String(e.bai.cau.indexOf(e.bai.cau[s.o]) + 1)" :aria-label="'Ô ' + (e.bai.cau.indexOf(e.bai.cau[s.o]) + 1)"
-       @input="beNhap(e.bai, e.bai.cau[s.o], $event.target.value)" :class="beClsO(e.bai.cau[s.o])"
-       class="mx-1 inline-block h-9 w-24 rounded-md border-b-2 px-1 text-center text-[15px] text-slate-900 placeholder:text-slate-300 disabled:opacity-100"></template></span></template></p>
+       @input="beNhap(e.bai, e.bai.cau[s.o], $event.target.value)" :class="beClsO(e.bai.cau[s.o])" :style="beRongO(e.bai.cau[s.o])"
+       class="mx-1 inline-block h-9 min-w-[96px] max-w-full [field-sizing:content] rounded-md border-b-2 px-1 text-center text-[15px] text-slate-900 placeholder:text-slate-300 disabled:opacity-100"></template></span></template></p>
       
 <div class="mt-1 space-y-1"><template x-for="c in e.bai.cau" :key="c.id"><div>
 <template x-if="beKq[c.id] !== undefined">
@@ -11226,8 +11229,8 @@ registerProcessor('thu-16k',T);`;
         <div :class="beClsCau(e, c)" class="mt-2">
           <p class="text-[15.5px] leading-[2.6]"><template x-for="(s, si) in c.manh" :key="si"><span><span x-show="s.html !== undefined" class="whitespace-pre-line" x-html="s.html || ''"></span><template x-if="s.o !== undefined"><input type="text" data-be-o data-be-cau :data-cau="c.id" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
        :value="beTL[c.id] || ''" :disabled="beKhoa(c)" :placeholder="e.bai.tach ? '' : String(e.bai.cau.indexOf(c) + 1)" :aria-label="'Ô ' + (e.bai.cau.indexOf(c) + 1)"
-       @input="beNhap(e.bai, c, $event.target.value)" :class="beClsO(c)"
-       class="mx-1 inline-block h-9 w-24 rounded-md border-b-2 px-1 text-center text-[15px] text-slate-900 placeholder:text-slate-300 disabled:opacity-100"></template></span></template></p>
+       @input="beNhap(e.bai, c, $event.target.value)" :class="beClsO(c)" :style="beRongO(c)"
+       class="mx-1 inline-block h-9 min-w-[96px] max-w-full [field-sizing:content] rounded-md border-b-2 px-1 text-center text-[15px] text-slate-900 placeholder:text-slate-300 disabled:opacity-100"></template></span></template></p>
           
 <template x-if="beKq[c.id] !== undefined">
   <div data-be-fb :data-cau="c.id" :data-kq="beKq[c.id]" :class="beClsFb(c)" x-show="!(e.bai.chiXem && beChiSai && beKq[c.id] === 'dung')" class="mt-1.5 rounded-lg px-3 py-1.5 text-[13.5px] leading-snug">
@@ -12154,8 +12157,8 @@ registerProcessor('thu-16k',T);`;
     <div>
       <p data-be-doan class="mt-2 text-[15.5px] leading-[2.6]"><template x-for="(s, si) in e.bai.manh" :key="si"><span><span x-show="s.html !== undefined" class="whitespace-pre-line" x-html="s.html || ''"></span><template x-if="s.o !== undefined"><input type="text" data-be-o data-be-cau :data-cau="e.bai.cau[s.o].id" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
        :value="beTL[e.bai.cau[s.o].id] || ''" :disabled="beKhoa(e.bai.cau[s.o])" :placeholder="e.bai.tach ? '' : String(e.bai.cau.indexOf(e.bai.cau[s.o]) + 1)" :aria-label="'Ô ' + (e.bai.cau.indexOf(e.bai.cau[s.o]) + 1)"
-       @input="beNhap(e.bai, e.bai.cau[s.o], $event.target.value)" :class="beClsO(e.bai.cau[s.o])"
-       class="mx-1 inline-block h-9 w-24 rounded-md border-b-2 px-1 text-center text-[15px] text-slate-900 placeholder:text-slate-300 disabled:opacity-100"></template></span></template></p>
+       @input="beNhap(e.bai, e.bai.cau[s.o], $event.target.value)" :class="beClsO(e.bai.cau[s.o])" :style="beRongO(e.bai.cau[s.o])"
+       class="mx-1 inline-block h-9 min-w-[96px] max-w-full [field-sizing:content] rounded-md border-b-2 px-1 text-center text-[15px] text-slate-900 placeholder:text-slate-300 disabled:opacity-100"></template></span></template></p>
       
 <div class="mt-1 space-y-1"><template x-for="c in e.bai.cau" :key="c.id"><div>
 <template x-if="beKq[c.id] !== undefined">
@@ -12214,8 +12217,8 @@ registerProcessor('thu-16k',T);`;
         <div :class="beClsCau(e, c)" class="mt-2">
           <p class="text-[15.5px] leading-[2.6]"><template x-for="(s, si) in c.manh" :key="si"><span><span x-show="s.html !== undefined" class="whitespace-pre-line" x-html="s.html || ''"></span><template x-if="s.o !== undefined"><input type="text" data-be-o data-be-cau :data-cau="c.id" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
        :value="beTL[c.id] || ''" :disabled="beKhoa(c)" :placeholder="e.bai.tach ? '' : String(e.bai.cau.indexOf(c) + 1)" :aria-label="'Ô ' + (e.bai.cau.indexOf(c) + 1)"
-       @input="beNhap(e.bai, c, $event.target.value)" :class="beClsO(c)"
-       class="mx-1 inline-block h-9 w-24 rounded-md border-b-2 px-1 text-center text-[15px] text-slate-900 placeholder:text-slate-300 disabled:opacity-100"></template></span></template></p>
+       @input="beNhap(e.bai, c, $event.target.value)" :class="beClsO(c)" :style="beRongO(c)"
+       class="mx-1 inline-block h-9 min-w-[96px] max-w-full [field-sizing:content] rounded-md border-b-2 px-1 text-center text-[15px] text-slate-900 placeholder:text-slate-300 disabled:opacity-100"></template></span></template></p>
           
 <template x-if="beKq[c.id] !== undefined">
   <div data-be-fb :data-cau="c.id" :data-kq="beKq[c.id]" :class="beClsFb(c)" x-show="!(e.bai.chiXem && beChiSai && beKq[c.id] === 'dung')" class="mt-1.5 rounded-lg px-3 py-1.5 text-[13.5px] leading-snug">
