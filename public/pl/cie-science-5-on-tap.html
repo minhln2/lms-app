@@ -1772,6 +1772,7 @@ window.LS.ham();
       return {
         beCo: false,                // môn có tệp bài tập ESL (builder: course.bai_tap_kieu == 'esl'); fetch thành công mới hiện tab (studyStore đặt)
         beOk: false, beU: 0,
+        beNavKt: '',                // mảng vừa chọn từ mục lục (mảng có `concept`) — tô dòng mục con trên cây
         beScr: 'tong',              // 'tong' (①) | 'luyen' (②) | 'de' (③ làm trọn đề) | 'kq' (④ kết quả đề)
         beKt: '',                   // mảng đang mở ở ②
         beMa: '',                   // mã đề đang làm (③) / đang xem kết quả (④)
@@ -1874,6 +1875,18 @@ window.LS.ham();
         beCoDe() { return this.beDeGoc().length > 0; },
         beMangNow() { return BE.mang.get(this.beKt) || {}; },
         beMangCua(c, bai) { return BE.mang.get((c && c.kt) || (bai && bai.kt)) || null; },
+        // Mục lục → mảng: mảng có `concept` mà id nằm trong nhánh đó (vd bấm 1.2 hay mục cháu của 1.2). → {i: chỉ số Unit, m} | null
+        beMangNav(id) {
+          const us = this.beUnits();
+          for (let i = 0; i < us.length; i++) for (const m of us[i].mang || []) if (m.concept && this.subtree(m.concept).has(id)) return { i, m };
+          return null;
+        },
+        // Dòng sáng trên cây: mục con của mảng đang luyện (②) / vừa chọn từ mục lục; mảng không có `concept` → dòng Unit.
+        beNavChon(id) {
+          const kt = this.beScr === 'luyen' ? this.beKt : this.beNavKt;
+          const c = kt && (this.beMangs().find(m => m.id === kt) || {}).concept;
+          return c ? c === id : this.beUnitNow().concept === id;
+        },
         beDatUnit(i) { if (i >= 0 && i < this.beUnits().length) { this.beU = i; this.beScr = 'tong'; } },
         // Nút hình thức ở ①: các kiểu bài Luyện của mảng, theo thứ tự xuất hiện.
         beKieuCua(kt) {
@@ -3547,18 +3560,25 @@ timMo: false,
           const m = this.mode;
           if (m === 'hist') return true;
           const sub = this.subtree(id);
-          if (m === 'bt') return this.beOk ? this.beUnits().some(x => sub.has(x.concept)) : this.btMucs().some(x => sub.has(x.concept));
+          if (m === 'bt') return this.beOk ? this.beUnits().some(x => sub.has(x.concept)) || !!this.beMangNav(id) : this.btMucs().some(x => sub.has(x.concept));
           const ds = m === 'cards' ? this.data?.flashcards : m === 'quiz' ? this.data?.quiz : this.data?.summary;
           return (ds || []).some(x => sub.has(x.concept));
         },
         // Tab Bài tập chọn mục theo `btMuc` (mỗi mục bài tập gắn `concept` = id mục trong cây), không theo `scope`:
         // bấm một mục trên cây = chọn mục bài tập đó; bấm cả Unit = màn Unit (tài liệu Math có `unit`/đề; không thì mục MỚI NHẤT của Unit, luật mặc định D6).
-        navChon(id) { return this.mode === 'bt' ? (this.beOk ? this.beUnitNow().concept === id : this.btNavChon(id)) : this.scope === id; },
+        navChon(id) { return this.mode === 'bt' ? (this.beOk ? this.beNavChon(id) : this.btNavChon(id)) : this.scope === id; },
         navBam(id) {
           if (!this.navCo(id)) return;
           if (this.mode !== 'bt') { this.setScope(id); return; }
           const sub = this.subtree(id);
-          if (this.beOk) {      // ESL: bấm Unit trên cây = Unit đó (mới nhất trước), về ① nếu đổi Unit
+          if (this.beOk) {      // ESL: bấm Unit trên cây = Unit đó (mới nhất trước), về ① nếu đổi Unit; bấm mục con có mảng (`concept`) = ① của Unit, cuộn tới mảng
+            const t = this.beMangNav(id);
+            if (t && !this.beUnits().some(x => sub.has(x.concept))) {
+              this.beDatUnit(t.i); this.beNavKt = t.m.id; this.navOpen = false;
+              this.$nextTick(() => document.querySelector('[data-be-mang][data-kt="' + t.m.id + '"]')?.scrollIntoView({ block: 'start' }));
+              return;
+            }
+            this.beNavKt = '';
             const us = this.beUnits();
             for (let i = us.length - 1; i >= 0; i--) if (sub.has(us[i].concept)) { if (i !== this.beU) this.beDatUnit(i); break; }
             this.navOpen = false;
@@ -10038,7 +10058,7 @@ registerProcessor('thu-16k',T);`;
     </div>
     <p data-be-buoc1 class="pt-2 text-xs font-bold uppercase tracking-wide text-slate-500" x-text="beCoDe() ? 'Bước 1 · Luyện theo mảng kiến thức' : 'Luyện theo mảng kiến thức'">Luyện theo mảng kiến thức</p>
     <template x-for="m in beMangs()" :key="m.id">
-      <div data-be-mang :data-kt="m.id" class="rounded-[14px] border border-slate-200 bg-white px-3 py-2.5">
+      <div data-be-mang :data-kt="m.id" class="scroll-mt-[calc(var(--hdr)+12px)] rounded-[14px] border border-slate-200 bg-white px-3 py-2.5">
         <div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
           <b class="text-[15.5px] text-slate-900" x-html="m.ten_html"></b>
           <span class="text-[13px] text-slate-500" x-html="m.luat_html"></span>
