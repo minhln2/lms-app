@@ -38,6 +38,7 @@ window.LS = (function () {
   // kéo trang về chỗ cũ, đè lên cú cuộn đó (máy chậm: luôn thua; 2026-10-16). Back của người dùng
   // không qua đây ⇒ vẫn khôi phục như ADR 0067.
   var boCuon = 0;
+  var sang = null;      // LS.dong(tk, true): token màn mới, chờ popstate của chính lần back đó
   function token() {
     try { return decodeURI((location.hash || '').replace(/^#/, '')); } catch (e) { return ''; }
   }
@@ -86,7 +87,12 @@ window.LS = (function () {
   addEventListener('popstate', function (e) {
     if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
-    if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
+    if (boCuon) {
+      boCuon = 0;
+      var t = sang; sang = null;
+      if (t !== null && t !== (token() || goc) && !dang) { di(t, true); return; }   // trang đã ở màn `t`: chỉ ghi lịch sử (hash rỗng = màn gốc)
+      if (st) { st = Object.assign({}, st); delete st.cuon; }
+    }
     veLai(token(), st);
   });
   addEventListener('scroll', henLuu, { passive: true });
@@ -104,9 +110,9 @@ window.LS = (function () {
     di: function (tk) { di(tk, true); },
     thay: function (tk) { di(tk, false); },
     mo: function (tk) { di(tk, true); },
-    dong: function (tk) {
+    dong: function (tk, daSang) {
       var st = history.state || {};
-      if (st.ls && (st.sau || 0) > 0) { boCuon = 1; history.back(); }
+      if (st.ls && (st.sau || 0) > 0) { boCuon = 1; sang = daSang ? tk : null; history.back(); }
       else di(tk === undefined ? goc : tk, false);
     },
     nghe: function (fn, g0) { ve = fn; goc = g0 || ''; veLai(token(), history.state); },
@@ -1774,7 +1780,7 @@ window.LS.ham();
       return {
         beCo: false,                // môn có tệp bài tập ESL (builder: course.bai_tap_kieu == 'esl'); fetch thành công mới hiện tab (studyStore đặt)
         beOk: false, beU: 0,
-        beNavKt: '',                // mảng vừa chọn từ mục lục (mảng có `concept`) — tô dòng mục con trên cây
+        beTier: '',                 // mức đang xem ở ② (focus | practice | challenge), như màn mục của Math; '' = mọi mức
         beScr: 'tong',              // 'tong' (①) | 'luyen' (②) | 'de' (③ làm trọn đề) | 'kq' (④ kết quả đề)
         beKt: '',                   // mảng đang mở ở ②
         beMa: '',                   // mã đề đang làm (③) / đang xem kết quả (④)
@@ -1883,10 +1889,9 @@ window.LS.ham();
           for (let i = 0; i < us.length; i++) for (const m of us[i].mang || []) if (m.concept && this.subtree(m.concept).has(id)) return { i, m };
           return null;
         },
-        // Dòng sáng trên cây: mục con của mảng đang luyện (②) / vừa chọn từ mục lục; mảng không có `concept` → dòng Unit.
+        // Dòng sáng trên cây: mục con của mảng đang luyện (②); mảng không có `concept` / màn khác → dòng Unit.
         beNavChon(id) {
-          const kt = this.beScr === 'luyen' ? this.beKt : this.beNavKt;
-          const c = kt && (this.beMangs().find(m => m.id === kt) || {}).concept;
+          const c = this.beScr === 'luyen' && (this.beMangs().find(m => m.id === this.beKt) || {}).concept;
           return c ? c === id : this.beUnitNow().concept === id;
         },
         beDatUnit(i) { if (i >= 0 && i < this.beUnits().length) { this.beU = i; this.beScr = 'tong'; } },
@@ -1941,13 +1946,19 @@ window.LS.ham();
           if (p[1] === 'kq' && p[2] && this.beKdMo(p[2], false)) return;
           this.beScr = 'tong';
         },
-        beMo(kt) { this.beKt = kt; this.beScr = 'luyen'; this.beDung(); },
+        beMo(kt) {
+          const cu = kt === this.beKt;      // về lại đúng mảng (Back từ Tóm tắt…) → giữ mức đang xem
+          this.beKt = kt; this.beScr = 'luyen'; this.beDung();
+          if (!cu || (this.beTier && !this.beTiers().some(t => t.k === this.beTier))) this.beTier = (this.beTiers()[0] || {}).k || '';
+        },
         beVeTong() { this.beScr = 'tong'; window.scrollTo(0, 0); },
         // ① → ②, cuộn tới bài ĐẦU của kiểu `kieu` (chờ theo điều kiện, ≤ 4 s).
         beVaoLuyen(kt, kieu) {
           this.beMo(kt);
           window.scrollTo(0, 0);
           if (!kieu) return;
+          const f = this.beDs.find(e => !e.de && e.bai.kieu === kieu);
+          if (f) this.beTier = f.bai.tier;
           const t0 = Date.now();
           const toi = () => {
             const e = Array.from(document.querySelectorAll('[data-be-luyen] [data-be-bai]')).find(x => x.getAttribute('data-kieu') === kieu);
@@ -1967,6 +1978,12 @@ window.LS.ham();
           }
           this.beDs = ra;
         },
+        // Ba mức như Math (BT_MUC ở _bt_math.html): chỉ mức có bài Luyện; mức theo kiểu bài (TIER ở src/bai_tap_esl.py). Bài từ đề làm sai hiện ở mọi mức.
+        beTiers() {
+          return [['focus', 'Focus'], ['practice', 'Practice'], ['challenge', 'Challenge']]
+            .map(([k, ten]) => ({ k, ten, n: this.beDs.filter(e => !e.de && e.bai.tier === k).length })).filter(t => t.n);
+        },
+        beHien() { return this.beDs.filter(e => !this.beTier || e.de || e.bai.tier === this.beTier); },   // beTier '' = mọi mức (chỉ bài test đặt)
         beCauHien(e) {
           const r = e.ids ? e.bai.cau.filter(c => e.ids.includes(c.id)) : e.bai.cau;
           return e.bai.chiXem && this.beChiSai ? r.filter(c => this.beKq[c.id] !== 'dung') : r;      // ④ «Chỉ xem câu sai»: câu đúng của bài tách biến mất
@@ -3029,7 +3046,7 @@ window.LS.ham();
             if (this.dangVe) return;
             const moMoi = this.laLopPhu(moi), moCu = this.laLopPhu(cu);
             if (moMoi && !moCu) LS.mo(moi);
-            else if (!moMoi && moCu) LS.dong(moi);
+            else if (!moMoi && moCu) LS.dong(moi, true);   // bấm mục lục có thể đổi màn ngay lúc đóng (mục con → bài tập)
             else LS.di(moi);
           });
           LS.nghe((tk) => this.ve(tk), 'tom-tat');
@@ -3573,14 +3590,12 @@ timMo: false,
           if (!this.navCo(id)) return;
           if (this.mode !== 'bt') { this.setScope(id); return; }
           const sub = this.subtree(id);
-          if (this.beOk) {      // ESL: bấm Unit trên cây = Unit đó (mới nhất trước), về ① nếu đổi Unit; bấm mục con có mảng (`concept`) = ① của Unit, cuộn tới mảng
+          if (this.beOk) {      // ESL: bấm Unit trên cây = Unit đó (mới nhất trước), về ① nếu đổi Unit; bấm mục con có mảng (`concept`) = ② của mảng đó (như màn mục của Math)
             const t = this.beMangNav(id);
             if (t && !this.beUnits().some(x => sub.has(x.concept))) {
-              this.beDatUnit(t.i); this.beNavKt = t.m.id; this.navOpen = false;
-              this.$nextTick(() => document.querySelector('[data-be-mang][data-kt="' + t.m.id + '"]')?.scrollIntoView({ block: 'start' }));
+              this.beDatUnit(t.i); this.beVaoLuyen(t.m.id); this.navOpen = false;
               return;
             }
-            this.beNavKt = '';
             const us = this.beUnits();
             for (let i = us.length - 1; i >= 0; i--) if (sub.has(us[i].concept)) { if (i !== this.beU) this.beDatUnit(i); break; }
             this.navOpen = false;
@@ -10060,7 +10075,7 @@ registerProcessor('thu-16k',T);`;
     </div>
     <p data-be-buoc1 class="pt-2 text-xs font-bold uppercase tracking-wide text-slate-500" x-text="beCoDe() ? 'Bước 1 · Luyện theo mảng kiến thức' : 'Luyện theo mảng kiến thức'">Luyện theo mảng kiến thức</p>
     <template x-for="m in beMangs()" :key="m.id">
-      <div data-be-mang :data-kt="m.id" class="scroll-mt-[calc(var(--hdr)+12px)] rounded-[14px] border border-slate-200 bg-white px-3 py-2.5">
+      <div data-be-mang :data-kt="m.id" class="rounded-[14px] border border-slate-200 bg-white px-3 py-2.5">
         <div class="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
           <b class="text-[15.5px] text-slate-900" x-html="m.ten_html"></b>
           <span class="text-[13px] text-slate-500" x-html="m.luat_html"></span>
@@ -10135,7 +10150,17 @@ registerProcessor('thu-16k',T);`;
     </div>
     <p x-show="beDs.length === 0" class="rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-600">Mảng này chưa có bài luyện.</p>
 
-    <template x-for="e in beDs" :key="e.key">
+    <div data-be-tiers x-show="beTiers().length > 1" class="grid grid-cols-3 gap-1.5">
+      <template x-for="t in beTiers()" :key="t.k">
+        <button type="button" :data-tier="t.k" @click="beTier = t.k; window.scrollTo(0, 0)"
+                :class="beTier === t.k ? 'border-indigo-600 bg-indigo-50 text-indigo-900' : 'border-slate-300 bg-white text-slate-800'"
+                class="min-h-11 rounded-xl border-[1.5px] px-1 py-1.5 text-[15px] font-bold leading-tight">
+          <span x-text="t.ten"></span><small class="block text-xs font-medium text-slate-500" x-text="t.n + ' bài'"></small>
+        </button>
+      </template>
+    </div>
+
+    <template x-for="e in beHien()" :key="e.key">
     <div class="space-y-2">
       <template x-if="e.dau"><h3 data-be-sai-de class="pt-3 text-sm font-bold text-rose-700">Câu con làm sai trong đề đã nộp</h3></template>
       <div data-be-bai :data-bai="e.bai.id" :data-kieu="e.bai.kieu" class="scroll-mt-[calc(var(--hdr)+12px)] rounded-2xl border border-slate-200 bg-white px-3.5 py-3">

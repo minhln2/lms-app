@@ -20,6 +20,7 @@ window.LS = (function () {
   // kéo trang về chỗ cũ, đè lên cú cuộn đó (máy chậm: luôn thua; 2026-10-16). Back của người dùng
   // không qua đây ⇒ vẫn khôi phục như ADR 0067.
   var boCuon = 0;
+  var sang = null;      // LS.dong(tk, true): token màn mới, chờ popstate của chính lần back đó
   function token() {
     try { return decodeURI((location.hash || '').replace(/^#/, '')); } catch (e) { return ''; }
   }
@@ -68,7 +69,12 @@ window.LS = (function () {
   addEventListener('popstate', function (e) {
     if (!boCuon) huyHen();      // popstate do LS.dong(): trang nền KHÔNG đổi → lượt hẹn còn treo là của chính nó, để nó lưu
     var st = e.state;
-    if (boCuon) { boCuon = 0; if (st) { st = Object.assign({}, st); delete st.cuon; } }
+    if (boCuon) {
+      boCuon = 0;
+      var t = sang; sang = null;
+      if (t !== null && t !== (token() || goc) && !dang) { di(t, true); return; }   // trang đã ở màn `t`: chỉ ghi lịch sử (hash rỗng = màn gốc)
+      if (st) { st = Object.assign({}, st); delete st.cuon; }
+    }
     veLai(token(), st);
   });
   addEventListener('scroll', henLuu, { passive: true });
@@ -86,9 +92,9 @@ window.LS = (function () {
     di: function (tk) { di(tk, true); },
     thay: function (tk) { di(tk, false); },
     mo: function (tk) { di(tk, true); },
-    dong: function (tk) {
+    dong: function (tk, daSang) {
       var st = history.state || {};
-      if (st.ls && (st.sau || 0) > 0) { boCuon = 1; history.back(); }
+      if (st.ls && (st.sau || 0) > 0) { boCuon = 1; sang = daSang ? tk : null; history.back(); }
       else di(tk === undefined ? goc : tk, false);
     },
     nghe: function (fn, g0) { ve = fn; goc = g0 || ''; veLai(token(), history.state); },
