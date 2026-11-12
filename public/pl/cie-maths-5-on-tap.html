@@ -9,6 +9,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -127,7 +128,8 @@ window.LS.ham();
   <title>Ôn tập · CIE Maths 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.bb231065.css">
+  <link rel="stylesheet" href="../assets/tw.76c72d05.css">
+  
   
   <script type="module">
     import { sched, phatLai } from "../assets/lich_on.ebee479f.js";
@@ -3231,6 +3233,8 @@ window.LS.ham();
         zoom: '',
         // Hình TỰ VẼ của ảnh từ vựng (`visual.html`, builder dựng): chạm ô vuông nhỏ → lớp phủ hiện bản cỡ thường (như `zoom` cho ảnh tệp). Chỉ nhận html của builder.
         zoomHtml: '',
+        // Khuôn thẻ hình: từ mới (phần tử `glossary`) đang mở trong popup, hoặc null. Chạm ô từ → đặt; ✕ / chạm nền / Esc → null.
+        popTu: null,
         // Tab Bài tập ESL: hình cả bài (ô chữ 940 px) phóng ở KÍCH THƯỚC GỐC trong khung cuộn được — `max-w-full` của lớp phủ thường bóp nó còn ~358 px ở 390 px, không to hơn ảnh ở trang.
         // Lớp phủ này vào lịch sử (token `anh`, ADR 0067) CHỈ ở tab Bài tập: các chỗ khác dùng `zoom` như cũ (không đổi lịch sử).
         zoomRong: false,
@@ -3299,7 +3303,7 @@ timMo: false,
                 + (s.chains  ? this.chainsOf(sec).length : 0)
                 // Khối cấp MỤC (không gắn lá nào) cũng phải tính: mục chỉ có
                 // phần này mà bỏ sót là bị giấu oan.
-                + (s.facts   ? u.points.length : 0)
+                + (s.facts   ? (sec.khuon === 'the_hinh' ? this.thePts(sec).length : u.points.length) : 0)   // thẻ hình: đếm thẻ đã lọc, không thì mục không khớp vẫn hiện
                 + (s.watch   ? u.watch.length : 0)
                 + (s.list    ? this.allLists(sec).length : 0)
                 + (s.exp     ? this.secExps(sec).length : 0)
@@ -3390,6 +3394,10 @@ timMo: false,
         // Chữ của thẻ Toán định dạng mới: escape → markup chữ (phân số, ==tô==, **đậm**)
         // → tô từ khoá CHỈ trên đoạn chữ thường. Cùng HTML với `chu()` của Python (txChu ở đầu script).
         tx(v) { return txChu(v, this.qq); },
+        // Chuỗi gửi /api/tts của khuôn thẻ hình: bỏ `**`, gộp khoảng trắng — PHẢI giống hệt `tron` của worker/tts.js (danh sách trắng lưu bản đã tron).
+        tron(s) { return String(s || '').replace(/\*\*/g, '').replace(/\s+/g, ' ').trim(); },
+        // Thẻ ý của khuôn thẻ hình, lọc theo ô tìm (chữ `t` hoặc dòng `sub`).
+        thePts(sec) { return this.fk(this.fq(this.points(sec), 't', 'sub')); },
         hit(...parts) {
           if (!this.qq) return true;
           return khopTu(parts.filter(Boolean).join(' ').toLowerCase(), this.qq);
@@ -6761,7 +6769,6 @@ registerProcessor('thu-16k',T);`;
             <h3 class="text-lg font-bold text-indigo-900" x-html="hl(conceptName(sec.concept))"></h3>
             <p x-show="codesOf(sec.concept).length" class="mt-1 flex flex-wrap gap-1"><template x-for="cd in codesOf(sec.concept)" :key="cd"><span class="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-500" x-text="cd"></span></template></p>
           </div>
-
           <!-- Ý lớn: một câu, chữ to, để nhớ được cả mục -->
           <div x-show="sec.big_en && (!qq || hit(sec.big_en))" x-cloak class="px-5 py-4">
             <p class="text-base font-medium text-slate-800 leading-snug" x-html="hl(sec.big_en)"></p>
@@ -7602,6 +7609,7 @@ registerProcessor('thu-16k',T);`;
               <span class="px-2 py-0.5 text-xs rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100" x-html="hl(t)"></span>
             </template>
           </div>
+          
         </section>
         </div>
       </template>
@@ -13366,6 +13374,7 @@ registerProcessor('thu-16k',T);`;
               class="fixed top-3 right-3 w-10 h-10 rounded-full bg-white/90 text-slate-700 text-xl leading-none hover:bg-white">✕</button>
     </div>
   </template>
+  
   <template x-if="zoom">
     <div data-zoom-lop @click="zoom = ''" @keydown.escape.window="zoom = ''"
          :class="zoomRong ? 'overflow-auto' : 'items-center justify-center'"

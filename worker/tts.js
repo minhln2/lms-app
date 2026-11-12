@@ -87,12 +87,25 @@ async function sha1(s) {
  * 317 từ) và `sounds[]` bị bỏ sót, mà môn ESL để `glossary` rỗng theo SPEC nên
  * gần như MỌI nút loa của môn đó đều rơi về giọng dự phòng.
  * `test_tts_routes.mjs` chốt hai bên khớp nhau.
+ *
+ * Khoá đọc được của mỗi mục `summary`: `glossary[].term`, `words[].items[].word`,
+ * `sounds[].words[].en`, và (khuôn thẻ hình) `big_en`, `points[].t`,
+ * `points[].sub[]` (chuỗi hoặc `{t}`), `glossary[].def`, `glossary[].example`.
+ * Nhóm sau có `**in đậm**` trong JSON; trang gửi bản ĐÃ bỏ `**` nên ở đây cũng
+ * lưu bản đã `tron()`. Luật `tron` phải giống hệt bên template.
  */
+export const tron = (s) => String(s || "").replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
+
 export function speakable(doc) {
   const set = new Set();
   const add = (s) => { const t = (s == null ? "" : String(s)).trim(); if (t) set.add(t); };
   for (const s of doc.summary || []) {
-    for (const g of s.glossary || []) add(g.term);                                 // g.term
+    add(tron(s.big_en));                                                           // thẻ hình: câu lớn
+    for (const p of s.points || []) {
+      add(tron(p.t));                                                              // thẻ hình: ý
+      for (const x of p.sub || []) add(tron(typeof x === "string" ? x : x && x.t)); // thẻ hình: ý con
+    }
+    for (const g of s.glossary || []) { add(g.term); add(tron(g.def)); add(tron(g.example)); }  // g.term · nghĩa · ví dụ
     for (const ws of s.words || []) for (const it of ws.items || []) add(it.word);  // w.word
     for (const sd of s.sounds || []) for (const wd of sd.words || []) add(wd.en);   // wd.en
   }
