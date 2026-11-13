@@ -9,7 +9,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <title>Lịch sử học tập — Quản trị — PL</title>
-  <link rel="stylesheet" href="../../assets/tw.d12815aa.css">
+  <link rel="stylesheet" href="../../assets/tw.e02200b2.css">
 <script>
 window.LS = (function () {
   var ve = null, goc = '', dang = 0, henCuon = null, cho = null;
@@ -210,7 +210,7 @@ window.LS.ham();
     const TOAN_MUC = "../../assets/toan_muc.cf56682c.js";
     const BAI_TAP = ["cie-maths-5", "cie-esl-5", "cie-science-5"];   // slug các môn có ../study/<slug>.bai-tap.json
     const BAI_TAP_JS = "../../assets/bai_tap.b4363ef8.js";
-    const BAI_TAP_ESL_JS = "../../assets/bai_tap_esl.d064ead7.js";   // chấm / «Con điền» của ESL 5 (chỉ nạp khi có môn ESL hoặc đề Math)
+    const BAI_TAP_ESL_JS = "../../assets/bai_tap_esl.ab9c5a7a.js";   // chấm / «Con điền» của ESL 5 (chỉ nạp khi có môn ESL hoặc đề Math)
     // Năm mức của dạng (spec 2026-10-21 §6). Class là literal (Tailwind quét HTML đã render).
     const MUC_TOAN = [
       { icon: '⚪', ten: 'Chưa học', lop: 'bg-slate-100 text-slate-700' },
@@ -606,7 +606,7 @@ window.LS.ham();
       const mucCua = M.mucKt(rCau, E.cacCau(doc), now);
 
       // Chữ / ảnh của một câu
-      const nhanCau = (b, ci) => (b.tach ? 'câu ' + (ci + 1) : (b.cau || []).length < 2 ? '' : (b.kieu === 'sua_loi' ? 'lỗi ' : b.kieu === 'noi' ? 'cặp ' : 'ô ') + (ci + 1));
+      const nhanCau = (b, ci) => (b.tach ? 'câu ' + (ci + 1) : (b.cau || []).length < 2 ? '' : (b.kieu === 'sua_loi' ? 'lỗi ' : b.kieu === 'noi' ? 'cặp ' : b.kieu === 'xep_gio' ? 'món ' : 'ô ') + (ci + 1));
       const tieuCau = (inf) => { const n = nhanCau(inf.b, inf.ci); return (inf.b.nguon || inf.b.id) + (n ? ' · ' + n : ''); };
       const canhCau = (inf) => {   // câu hỏi rút gọn để bố mẹ biết con đang điền vào đâu (chỉ kiểu có chữ nền: điền ô / khung, viết lại, câu mở)
         const { c, b } = inf;
@@ -631,7 +631,7 @@ window.LS.ham();
       const dapDung = (inf) => {   // đáp án đúng ở CÙNG khuôn chữ với «Con điền»: dựng trả lời đúng rồi qua E.xCau
         const { c, b } = inf, d = Array.isArray(c.dap) ? c.dap : [];
         switch (b.kieu) {
-          case 'abc': case 'hoi_thoai': case 'noi': return E.xCau(c, c.dap, b);
+          case 'abc': case 'hoi_thoai': case 'noi': case 'xep_gio': return E.xCau(c, c.dap, b);
           case 'o': case 'khung': case 'chuoi': case 'viet_lai': return d.length ? E.xCau(c, d[0], b) : '';
           case 'sua_loi': return d.length ? E.xCau(c, { chon: true, sua: d[0] }, b) : '';
           case 'sap_xep': return d.length ? gonX(d[0]) : '';

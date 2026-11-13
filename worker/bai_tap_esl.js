@@ -16,6 +16,7 @@
  *   o khung chuoi viet_lai   "does not rain"   chuỗi ô (con gõ, hoặc chọn từ khung)
  *   mo         "We stay at home."          câu mở: chuỗi con gõ (phần sau «___» của `t`, hoặc cả câu khi không có `t`); không có danh sách chấp nhận — có chữ là «cho_may» (Gemini chấm)
  *   noi        2                           chỉ số VẾ PHẢI (trong bai.phai) đã nối cho câu (cặp); null / vắng = chưa nối; 0 là một đáp án (không phải «trống»)
+ *   xep_gio    1                           chỉ số GIỎ (trong bai.gio) con đã xếp món (câu) vào; null / vắng / không phải số nguyên = chưa xếp; 0 là một đáp án; số nguyên khác `dap` (kể cả -1, ngoài khoảng) = «sai». CHỈ khuon lop1
  *   sua_loi    {chon: true, sua: "takes"}  cho câu (lỗi k): chon = con đã bấm ĐÚNG chữ sai của lỗi đó, sua = chữ con gõ. Chữ KHÔNG sai con bấm
  *                                          KHÔNG vào tl của câu nào: nằm ở tlBai._nham (mảng chỉ số token trong bai.tu), không chấm, không ghi sổ
  *   sap_xep    [1, 0, 2, 3, 4]             chỉ số mảnh (trong cau.manh) theo THỨ TỰ con xếp; đủ mảnh mới chấm, thiếu = «trống»
@@ -122,7 +123,7 @@ const nhanDuoc = (cau) => new Set(dsDap(cau?.dap).map(chuan));
 /**
  * Chấm MỘT câu đã dựng → "dung" | "sai" | "trong" | "cho_may". `bai` chỉ cần `bai.kieu`. Không bao giờ ném: tl lạ → "trong" (hoặc "sai" khi rõ ràng sai).
  *   abc / hoi_thoai   so chữ cái sau chuan · o khung chuoi   so với danh sách chấp nhận sau chuan · viet_lai   như trên, không khớp → "cho_may" (trừ khi chữ gõ, sau trim, ngắn hơn LAI_TEXT_MIN: "sai")
- *   noi               tl === cau.dap (chỉ số vế phải) · sua_loi   phải chọn đúng chữ sai VÀ gõ chữ sửa; chọn mà chưa gõ = "trong"
+ *   noi / xep_gio     tl === cau.dap (chỉ số vế phải / chỉ số giỏ; không phải số nguyên = "trong") · sua_loi   phải chọn đúng chữ sai VÀ gõ chữ sửa; chọn mà chưa gõ = "trong"
  *   sap_xep           chỉ số trùng / ngoài khoảng → "sai" (xét TRƯỚC khi đếm mảnh thiếu); thiếu mảnh → "trong"; đủ thì ghép chữ rồi so danh sách chấp nhận
  *   viet / mo         có chữ (sau chuan) → "cho_may", không thì "trong"; mo KHÔNG bao giờ "sai" tại trang (câu ngắn vẫn «cho_may»: `moChan` chặn, rồi trang hiện lý do)
  */
@@ -145,6 +146,7 @@ export function chamCau(cau, tl, bai) {
       return doDaiLai(tl) < LAI_TEXT_MIN ? "sai" : "cho_may";     // quá ngắn: không thể là một câu, khỏi nhờ máy
     }
     case "noi":
+    case "xep_gio":
       if (!Number.isInteger(tl)) return "trong";
       return tl === cau?.dap ? "dung" : "sai";
     case "sua_loi": {
@@ -256,7 +258,8 @@ function xTho(cau, tl, bai) {
       const k = coChu(tl).toUpperCase();
       if (!k) return "";
       const t = dsDap(cau?.lc)[k.charCodeAt(0) - 65];
-      return t ? `${k}. ${gon(t)}` : k;
+      if (t === undefined || t === null) return k;
+      return `${k}. ${gon(t) || "hình " + k}`;     // lựa chọn chỉ có hình (lc "" — khuon lop1): «B. hình B», không bao giờ tên tệp
     }
     case "hoi_thoai": {
       const k = coChu(tl).toUpperCase();
@@ -273,6 +276,13 @@ function xTho(cau, tl, bai) {
       const i = dsDap(bai?.cau).findIndex((c) => c && cau && c.id === cau.id);
       const trai = i >= 0 ? chuVe(dsDap(bai?.trai)[i], bai) : "";
       return trai ? `${trai} → ${phai}` : phai;
+    }
+    case "xep_gio": {
+      const gio = Number.isInteger(tl) ? dsDap(bai?.gio)[tl] : undefined;
+      if (typeof gio !== "string") return "";
+      const chu = typeof cau?.t === "string" ? gon(cau.t) : "";
+      const n = cau?.anh ? dsDap(bai?.cau).filter((c) => c && c.anh).findIndex((c) => c === cau || (c.id !== undefined && c.id === cau.id)) + 1 : 0;     // «hình N»: thứ tự trong các món có ảnh của bài (không bao giờ tên tệp)
+      return `${chu || (n ? "hình " + n : "hình")} → ${gon(gio)}`;
     }
     case "sua_loi": {
       if (tl === null || tl === undefined) return "";
@@ -292,7 +302,8 @@ function xTho(cau, tl, bai) {
 /**
  * «Con điền» của MỘT câu (cột `x` của dòng sổ; khu bố mẹ hiện «Con điền: …»), ≤ 200 ký tự (X_CAU), không bao giờ ném.
  *   abc / hoi_thoai: «B. eats» (chữ cái + chữ phương án) · o khung chuoi viet_lai viet mo: chữ con gõ (gọn khoảng trắng, GIỮ nguyên hoa / nháy) ·
- *   noi: «chick → a partner for life» (ảnh: «hình a»; ảnh không nhãn: «hình 2» theo thứ tự trong bài, KHÔNG BAO GIỜ tên tệp) · sua_loi: «take→takes»; đã làm gì đó mà chưa chọn đúng chữ sai / chưa gõ chữ sửa: «(chưa tìm)» ·
+ *   noi: «chick → a partner for life» (ảnh: «hình a»; ảnh không nhãn: «hình 2» theo thứ tự trong bài, KHÔNG BAO GIỜ tên tệp) · xep_gio: «apple → healthy» (món chỉ ảnh: «hình N», N = thứ tự trong các món có ảnh của bài, từ 1; chưa xếp / giỏ lạ: "") ·
+ *   abc có lựa chọn chỉ hình (khuon lop1): «B. hình B» · sua_loi: «take→takes»; đã làm gì đó mà chưa chọn đúng chữ sai / chưa gõ chữ sửa: «(chưa tìm)» ·
  *   sap_xep: các mảnh theo thứ tự con xếp · chưa làm gì: "".
  */
 export function xCau(cau, tl, bai) {
@@ -483,6 +494,50 @@ export function luyenCua(doc, kt, saiDe) {
   if (sai.size) {
     for (const u of units) for (const d of u.de || []) for (const p of d.phan || []) nhat(p?.bai, (c) => sai.has(c.id), (b) => (b.cau || []).some((c) => sai.has(c.id)));
   }
+  return ra;
+}
+
+/**
+ * Một LƯỢT Luyện của khuôn lớp 1: 5–8 câu từ `luyenCua(doc, kt, saiDe)` → [{bai, chiCau}] = các MÀN theo thứ tự làm.
+ * Màn: bài `tach` → một màn mỗi câu (`chiCau` [id]); bài không `tach` (noi, xep_gio) → một màn cả bài (`chiCau` null, số câu = `bai.cau.length`).
+ * Nhóm (theo `luot` = [{i, g, ts}]): ① màn có câu CHƯA TỪNG có lượt g ≥ 2 → ② màn có câu mà lượt MỚI NHẤT (theo ts) g ≤ 1 → ③ còn lại; xáo từng nhóm bằng `rnd`.
+ * Lấy lần lượt, bỏ màn làm tổng vượt 8, dừng khi tổng ≥ 5; màn đầu tiên tự nó > 8 câu thì lấy riêng.
+ * Hết vòng mà tổng < 5 → thêm các màn đã bỏ theo thứ tự ưu tiên cho tới khi ≥ 5 (vượt 8 CHỈ để đủ 5). Màn `sap_xep` dời về CUỐI (giữ thứ tự tương đối). Kho < 5 câu → cả kho.
+ * `rnd` BẮT BUỘC (hàm thuần, không tự gọi ngẫu nhiên): nơi gọi giao diện truyền `Math.random`, test truyền hạt cố định.
+ */
+export function luotLop1(doc, kt, luot, saiDe, rnd) {
+  const tungDung = new Set(), moiNhat = new Map();
+  for (const a of luot || []) {
+    if (typeof a?.g !== "number") continue;
+    if (a.g >= 2) tungDung.add(a.i);
+    if (!moiNhat.has(a.i) || a.ts >= moiNhat.get(a.i).ts) moiNhat.set(a.i, a);
+  }
+  const nhom = [[], [], []];
+  for (const { bai, chiCau } of luyenCua(doc, kt, saiDe)) {
+    for (const ids of bai.tach ? chiCau.map((id) => [id]) : [bai.cau.map((c) => c.id)]) {
+      const m = { bai, chiCau: bai.tach ? ids : null, n: ids.length };
+      nhom[ids.some((i) => !tungDung.has(i)) ? 0 : ids.some((i) => moiNhat.get(i).g <= 1) ? 1 : 2].push(m);
+    }
+  }
+  const ra = [], boQua = [];
+  let tong = 0;
+  for (const m of nhom.flatMap((g) => { for (let i = g.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [g[i], g[j]] = [g[j], g[i]]; } return g; })) {
+    if (tong >= 5) break;
+    if (tong + m.n > 8 && tong > 0) { boQua.push(m); continue; }
+    ra.push(m);
+    tong += m.n;
+  }
+  for (const m of boQua) { if (tong >= 5) break; ra.push(m); tong += m.n; }   // bù cho đủ 5, được vượt 8
+  return [...ra.filter((m) => m.bai.kieu !== "sap_xep"), ...ra.filter((m) => m.bai.kieu === "sap_xep")].map(({ bai, chiCau }) => ({ bai, chiCau }));
+}
+
+/** Mục Booklet của một đề lớp 1 = các phần LIỀN NHAU cùng `ten` (một màn hình) → [{ten, ten_html, phan: chỉ số trong `de.phan`}]. */
+export function mucCuaDe(de) {
+  const ra = [];
+  (de?.phan || []).forEach((p, i) => {
+    if (ra.length && ra.at(-1).ten === p?.ten) ra.at(-1).phan.push(i);
+    else ra.push({ ten: p?.ten, ten_html: p?.ten_html, phan: [i] });
+  });
   return ra;
 }
 

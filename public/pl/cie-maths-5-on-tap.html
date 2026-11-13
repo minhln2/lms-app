@@ -129,7 +129,7 @@ window.LS.ham();
   <title>Ôn tập · CIE Maths 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.d12815aa.css">
+  <link rel="stylesheet" href="../assets/tw.e02200b2.css">
   
   
   <script type="module">
@@ -142,9 +142,10 @@ window.LS.ham();
     window.baiTap = baiTap;
   </script>
   <script type="module">
-    import * as baiTapEsl from "../assets/bai_tap_esl.d064ead7.js";
+    import * as baiTapEsl from "../assets/bai_tap_esl.ab9c5a7a.js";
     window.baiTapEsl = baiTapEsl;
   </script>
+  
   
   <script defer src="../assets/alpine.63d2636a.js"></script>
   <script>
@@ -1752,7 +1753,7 @@ window.LS.ham();
     var BE_LAI_MAX = 200;
     var BE_LY_THAY = 'Con so lại câu với yêu cầu của đề nhé.';   // = LY_LAI_THAY của worker/cham_lai.js: lời chỉ hướng chung khi câu không chấm được (lệnh / quá ngắn / quá dài)
     var BE_FM = { abc: 'Chọn A/B/C', o: 'Điền vào chỗ trống', khung: 'Chọn từ trong khung', noi: 'Nối', chuoi: 'Hoàn thành chuỗi', sua_loi: 'Sửa lỗi trong đoạn',
-                  sap_xep: 'Sắp xếp từ thành câu', hoi_thoai: 'Hội thoại A–H', viet_lai: 'Viết lại câu', viet: 'Viết đoạn văn', mo: 'Tự viết câu' };
+                  sap_xep: 'Sắp xếp từ thành câu', hoi_thoai: 'Hội thoại A–H', viet_lai: 'Viết lại câu', viet: 'Viết đoạn văn', mo: 'Tự viết câu', xep_gio: 'Xếp vào giỏ' };
     var BE_CON = { abc: 'câu chưa chọn', noi: 'cặp chưa nối', sua_loi: 'lỗi chưa tìm hoặc chưa sửa', sap_xep: 'câu chưa xếp đủ', viet: 'bài chưa viết', mo: 'câu chưa viết' };   // mặc định: «ô trống»
     var BE_LY_TU = ['nghi_lenh', 'het_cau', 'het_ngay', 'khong_co', 'loi'];
     var BE_LY_THOANG = ['loi', 'ngoai_tuyen'];     // lùi về tự kiểm vì lỗi THOÁNG QUA (cùng BT_LY_THOANG của Math): con sửa chữ thì «Gửi nhờ nhận xét» gọi máy lại
@@ -1783,6 +1784,7 @@ window.LS.ham();
       return {
         beCo: false,                // môn có tệp bài tập ESL (builder: course.bai_tap_kieu == 'esl'); fetch thành công mới hiện tab (studyStore đặt)
         beOk: false, beU: 0,
+        beL1: false,                // tài liệu `khuon: 'lop1'` (beKhoiTao): giao diện lớp 1 (templates/_bt_lop1.html) thay ESL — tab() này tự ẩn, beMo / beMoDe chuyển cho `l1MoLuot` / `l1MoDe`
         beTier: '',                 // mức đang xem ở ② (focus | practice | challenge), như màn mục của Math; '' = mọi mức
         beScr: 'tong',              // 'tong' (①) | 'luyen' (②) | 'de' (③ làm trọn đề) | 'kq' (④ kết quả đề)
         beKt: '',                   // mảng đang mở ở ②
@@ -1830,6 +1832,7 @@ window.LS.ham();
           }
           BE.cacCau = window.baiTapEsl.cacCau(d);
           this.beU = 0;
+          this.beL1 = d.khuon === 'lop1';
           this.beTinh();
         },
         // Lượt của con cho mức / tiến độ / luật g: sổ (GET /api/study/bt) + đệm chưa gửi + lượt ghi trong phiên. Trùng hệt thì mucKt tự bỏ.
@@ -1953,6 +1956,7 @@ window.LS.ham();
           const cu = kt === this.beKt;      // về lại đúng mảng (Back từ Tóm tắt…) → giữ mức đang xem
           this.beKt = kt; this.beScr = 'luyen'; this.beDung();
           if (!cu || (this.beTier && !this.beTiers().some(t => t.k === this.beTier))) this.beTier = (this.beTiers()[0] || {}).k || '';
+          if (this.beL1) this.l1MoLuot(kt);
         },
         beVeTong() { this.beScr = 'tong'; window.scrollTo(0, 0); },
         // ① → ②, cuộn tới bài ĐẦU của kiểu `kieu` (chờ theo điều kiện, ≤ 4 s).
@@ -2572,6 +2576,7 @@ window.LS.ham();
           if (moi) this.beGhiLs(this.beKyDo(de), null); else this.beDeNap(de);
           this.beScr = 'de';
           window.scrollTo(0, 0);
+          if (this.beL1) this.l1MoDe(ma);
           return true;
         },
         beDeNap(de) {
@@ -2889,11 +2894,234 @@ window.LS.ham();
     }
 
 
+    // ── Tab «📝 Bài tập» khuôn lớp 1 (Task 5–6) ─────────────────────────────────────────────────────────────────────────────────────────────────
+    // Màn ② (Task 6): `l1MoLuot` (beMo gọi) rút một LƯỢT bằng luotLop1 → `l1Man` = [{bai, chiCau, cs}] (`cs` = các câu của màn, theo thứ tự); mỗi MÓN / CẶP / CÂU là MỘT chấm.
+    // Màn MỘT câu (abc, khung): chạm = chấm ngay (`l1Cham`). Máy trạng thái `l1St`: cho (chờ chạm) → dung (viền xanh, tự sang ~0,8 s) | sai1 (giải thích + Try again → lai) | sai2 (lần 2 sai: tô đáp án đúng, Next).
+    // Sổ: CHỈ lần chạm ĐẦU của mỗi câu trong lượt (`l1Lan`); thử lại không ghi. `l1Ghi(bai, c, tl, dung)` ghi MỘT câu và đánh dấu xong (`l1Fin`: đúng, hoặc lần 2 → lộ đáp án).
+    // Task 7: sap_xep dùng lại `l1Cham` (tl = mảng chỉ số thẻ). noi / xep_gio = màn cả bài (`chiCau` null, mỗi cặp / món một câu): chạm vế trái / món (`l1Pick`) rồi vế phải / giỏ (`l1Dich`) = chấm ngay;
+    // sai lần 1 → giải thích + bỏ chọn (chạm lại để thử lại), sai lần 2 → nối / thả đúng hộ. Câu xong luôn nằm ở chỗ ĐÚNG (`c.dap`) nên không cần bảng «món → giỏ».
+    function baiTapLop1Store() {
+      return {
+        l1Man: [], l1I: 0, l1Lan: {}, l1Dung: 0, l1Xong: false,
+        l1Kq: {},          // {idCâu: 'dung' | 'sai'} = kết quả lần chạm ĐẦU (màu chấm; x của «x / y đúng»)
+        l1St: 'cho', l1Chon: null, l1Ch: [], l1Hen: 0,      // trạng thái (lần chạm gần nhất) · lựa chọn vừa chạm (noi / xep_gio: chỉ số vế trái / món đang chọn) · lựa chọn / thẻ (đã xáo) · hẹn giờ tự sang câu sau
+        l1Fin: {},         // {idCâu: true} câu ĐÃ XONG (đúng, hoặc lần 2 lộ đáp án): chấm tiến độ, vế đã nối, món đã vào giỏ
+        l1Muc: 0, l1Sel: {},   // Đề (Task 8): chỉ số mục Booklet đang xem (③ và ④) · {idBài 'd:…': chỉ số vế trái / món đang chọn | null} (noi / xep_gio; chỉ trong bộ nhớ)
+        l1Cd: null, l1Bad: -1, l1Xep: [],      // câu vừa chạm (khối giải thích) · noi / xep_gio: vế phải / giỏ vừa chọn nhầm · sap_xep: chỉ số thẻ đã đặt, theo thứ tự
+        l1MoLuot(kt) {
+          clearTimeout(this.l1Hen);
+          let man = [];
+          try { man = window.baiTapEsl.luotLop1(BE.doc, kt, this.beLuot(), this.beSaiDe, Math.random); } catch (e) { console.error(e); }
+          this.l1Man = man.map(m => ({ ...m, cs: m.chiCau ? m.chiCau.map(id => m.bai.cau.find(c => c.id === id)) : m.bai.cau }));
+          this.l1I = 0; this.l1Lan = {}; this.l1Kq = {}; this.l1Fin = {}; this.l1Dung = 0; this.l1Xong = !this.l1Man.length;
+          this.l1Vao();
+        },
+        l1MoDe() { this.l1Muc = 0; this.l1Sel = {}; },   // beMoDe đã đặt beScr, mã đề, beDeDs và nạp bài dở
+        // Vào màn `l1I`: xoá trạng thái chạm, xáo lựa chọn, đặt lại đồng hồ `ms` của bài (dòng sổ đo từ lúc màn hiện).
+        l1Vao() {
+          clearTimeout(this.l1Hen);
+          this.l1St = 'cho'; this.l1Chon = null; this.l1Cd = null; this.l1Bad = -1; this.l1Xep = []; this.l1Ch = this.l1Lcs();
+          const m = this.l1M();
+          if (m) BE.t0.set(m.bai.id, Date.now());
+          window.scrollTo(0, 0);
+        },
+        l1M() { return this.l1Man[this.l1I]; },
+        l1Y() { return this.l1Man.reduce((n, m) => n + m.cs.length, 0); },
+        l1Ten() { const m = BE.mang.get(this.beKt); return (m ? m.ten : '') + ' · Luyện'; },
+        // Màn MỘT câu ở dạng làm được: abc, hoặc khung có đúng một ô.
+        l1Mot() {
+          const m = this.l1M(), c = m && m.chiCau && m.cs[0];
+          return !!c && (m.bai.kieu === 'abc' || (m.bai.kieu === 'khung' && (c.manh || []).filter(p => p.o !== undefined).length === 1));
+        },
+        // Lựa chọn của màn: abc = lc (chữ cái A.. · chữ · hình), khung = thẻ trong hộp từ (XÁO theo id câu — trừ True/False giữ «True» trước); noi = vế phải (`k` = chỉ số trong bai.phai) · sap_xep = thẻ chữ (`k` = chỉ số trong manh).
+        // noi / sap_xep xáo KHÔNG được trùng thứ tự gốc (vế phải cùng hàng vế trái, thẻ đúng thứ tự câu = lộ đáp án).
+        l1Lcs() {
+          const m = this.l1M(), kieu = m && m.bai.kieu;
+          if (kieu === 'noi') return this.l1Dao(m.bai.id, m.bai.phai.map((v, j) => ({ ...v, k: j })));
+          if (kieu === 'sap_xep') { const c = m.cs[0]; return this.l1Dao(c.id, c.manh.map((t, i) => ({ k: i, t, html: c.manh_html[i] }))); }
+          return this.l1Mot() ? this.l1LcCau(m.bai, m.cs[0]) : [];
+        },
+        l1Dao(id, ds) { const o = beXao(id, ds.length); if (ds.length > 1 && o.every((x, i) => x === i)) o.push(o.shift()); return o.map(i => ds[i]); },
+        // Lựa chọn của MỘT câu abc / khung (Luyện + Đề): abc = lc (chữ cái A.. · chữ · hình), khung = thẻ trong hộp từ; XÁO theo id câu — trừ True/False giữ «True» trước.
+        l1LcCau(bai, c) {
+          const abc = bai.kieu === 'abc';
+          const ds = abc ? c.lc.map((t, i) => ({ k: String.fromCharCode(65 + i), t, html: c.lc_html[i], anh: c.lc_anh_url ? c.lc_anh_url[i] : null }))
+                         : bai.khung.map((t, i) => ({ k: t, t, html: bai.khung_html[i], anh: null }));
+          if (abc && c.lc.length === 2 && c.lc[0] === 'True' && c.lc[1] === 'False') return ds;
+          return beXao(c.id, ds.length).map(i => ds[i]);
+        },
+        // Số cột của lưới lựa chọn: hình → 3 lựa chọn 3 cột, còn lại 2 cột; chữ → 3 lựa chọn xếp dọc, còn lại 2 cột.
+        l1Cot(ch = this.l1Ch) {
+          const n = ch.length, hinh = ch.some(o => o.anh);
+          return n < 2 ? 'grid-cols-1' : hinh ? (n === 3 ? 'grid-cols-3' : 'grid-cols-2') : (n === 3 ? 'grid-cols-1' : 'grid-cols-2');
+        },
+        // Dấu của lựa chọn `k`: 'sai' (đã chạm, sai) · 'dung' (đã chạm đúng; hoặc lần 2 sai: đáp án đúng) · ''.
+        l1StLc(k) {
+          const m = this.l1M(), c = m && m.cs[0];
+          if (!c) return '';
+          if (this.l1Chon === k) return this.l1St === 'dung' ? 'dung' : 'sai';
+          return this.l1St === 'sai2' && window.baiTapEsl.chamCau(c, k, m.bai) === 'dung' ? 'dung' : '';
+        },
+        l1ClsLc(k) {
+          const st = this.l1StLc(k);
+          return st === 'dung' ? 'border-emerald-500 bg-emerald-50' : st === 'sai' ? 'border-rose-500 bg-rose-50' : 'border-slate-300 bg-white active:border-sky-500 active:bg-sky-50';
+        },
+        // Đếm một lần chạm của câu `c` (đáp án `tl`, `dung` đã chấm) và ghi sổ CHỈ lần chạm ĐẦU của câu trong lượt (l1Kq · l1Dung · beLuu). Trả số lần đã chạm. noi / xep_gio gọi cho từng cặp / món.
+        l1Ghi(bai, c, tl, dung) {
+          const lan = (this.l1Lan[c.id] || 0) + 1;
+          this.l1Lan[c.id] = lan;
+          if (lan === 1) {
+            this.l1Kq[c.id] = dung ? 'dung' : 'sai';
+            if (dung) this.l1Dung++;
+            this.beLuu([this.beDong(bai, c, dung, window.baiTapEsl.xCau(c, tl, bai))]);
+          }
+          if (dung || lan >= 2) this.l1Fin[c.id] = true;
+          return lan;
+        },
+        // Chạm lựa chọn `tl` (abc: chữ cái · khung: từ) của câu `c` = chấm ngay. Chạm lúc đang hiện giải thích / sắp sang câu sau: bỏ qua (kiểm `l1St` đầu hàm, đồng bộ: chạm đúp không ghi hai lần).
+        l1Cham(bai, c, tl) {
+          if (this.l1St !== 'cho' && this.l1St !== 'lai') return;
+          const dung = window.baiTapEsl.chamCau(c, tl, bai) === 'dung', lan = this.l1Ghi(bai, c, tl, dung);
+          this.l1St = dung ? 'dung' : lan >= 2 ? 'sai2' : 'sai1';
+          this.l1Chon = tl; this.l1Cd = c;
+          if (dung) { const i0 = this.l1I; this.l1Hen = setTimeout(() => { if (this.beScr === 'luyen' && this.l1I === i0 && this.l1St === 'dung') this.l1Sang(); }, 800); }
+        },
+        l1ThuLai() { if (this.l1St === 'sai1') { this.l1St = 'lai'; this.l1Chon = null; this.l1Xep = []; } },
+        l1Sang() {
+          clearTimeout(this.l1Hen);
+          if (this.l1I + 1 < this.l1Man.length) { this.l1I++; this.l1Vao(); } else { this.l1Xong = true; window.scrollTo(0, 0); }
+        },
+        // Thanh chấm: MỘT chấm mỗi câu (món / cặp), theo thứ tự lượt. dung | sai = kết quả lần chạm đầu của câu ĐÃ XONG (màn trước, hoặc câu của màn hiện tại đã xong: `l1Fin`); dang = câu đang làm; cho = chưa tới.
+        l1Chams() {
+          const ra = [];
+          this.l1Man.forEach((m, i) => m.cs.forEach((c) => {
+            const k = this.l1Kq[c.id];
+            ra.push(k && (i < this.l1I || this.l1Xong || this.l1Fin[c.id]) ? k : i === this.l1I && !this.l1Xong ? 'dang' : 'cho');
+          }));
+          return ra;
+        },
+        // ── Màn nhiều câu (Task 7) ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+        // Loại màn: 'mot' (abc, khung một ô) · 'noi' · 'xep_gio' · 'sap_xep' (máy dựng chỉ cho khung đúng 1 ô và không có `doan`, nên không loại nào khác).
+        l1Loai() { const m = this.l1M(); return !m ? '' : this.l1Mot() ? 'mot' : m.bai.kieu; },
+        // Màn «Try again» cả câu (một câu một màn): abc / khung / sap_xep. noi / xep_gio: chạm lại từng cặp / món.
+        l1Lai() { const k = this.l1Loai(); return k === 'mot' || k === 'sap_xep'; },
+        // Mọi câu của màn đã xong (đúng, hoặc lộ đáp án ở lần 2).
+        l1Het() { const m = this.l1M(); return !!m && m.cs.every(c => this.l1Fin[c.id]); },
+        // noi / xep_gio: chạm vế trái / món `i` = chọn (chạm lại: bỏ chọn); cặp / món đã xong thì bỏ qua. Chọn mới làm giải thích cũ biến mất.
+        l1Pick(i) {
+          const c = this.l1M().cs[i];
+          if (!c || this.l1Fin[c.id]) return;
+          this.l1Chon = this.l1Chon === i ? null : i; this.l1Bad = -1; this.l1St = 'cho';
+        },
+        // Chạm vế phải / giỏ `j` khi đang chọn = chấm cặp / món đó ngay. Bỏ chọn NGAY (đồng bộ: chạm đúp không ghi hai lần): đúng → xong; sai lần 1 → giải thích; sai lần 2 → xong ở chỗ đúng + giải thích.
+        l1Dich(j) {
+          const m = this.l1M(), i = this.l1Chon, c = i !== null && m.cs[i];
+          if (!c || this.l1Fin[c.id] || (m.bai.kieu === 'noi' && j < m.cs.length && this.l1Fin[m.cs[j].id])) return;
+          const dung = window.baiTapEsl.chamCau(c, j, m.bai) === 'dung', lan = this.l1Ghi(m.bai, c, j, dung);
+          this.l1Chon = null; this.l1Cd = c; this.l1Bad = dung ? -1 : j;
+          this.l1St = dung ? 'dung' : lan >= 2 ? 'sai2' : 'sai1';
+        },
+        // noi: dấu của vế trái (`k` = chỉ số cặp) hoặc vế phải (`phai`: `k` = chỉ số trong bai.phai; vế j ghép với cặp j, vế THỪA có j ≥ số cặp): dung · chon (chỉ trái) · sai (chỉ phải: vừa nối nhầm) · ''.
+        l1NoiSt(k, phai) {
+          const c = this.l1M().cs[k];
+          if (c && this.l1Fin[c.id]) return 'dung';
+          return phai ? (this.l1Bad === k ? 'sai' : '') : (this.l1Chon === k ? 'chon' : '');
+        },
+        l1ClsVe(st) {
+          return st === 'dung' ? 'border-emerald-500 bg-emerald-50' : st === 'sai' ? 'border-rose-500 bg-rose-50' : st === 'chon' ? 'border-sky-500 bg-sky-50 ring-4 ring-sky-200 -translate-y-1 shadow-lg' : st === 'dat' ? 'border-sky-500 bg-sky-50' : 'border-slate-300 bg-white active:border-sky-500 active:bg-sky-50';
+        },
+        // xep_gio: món đang ở khay (`j` = -1) hoặc đã nằm trong giỏ `j` (xong luôn ở giỏ đúng c.dap); [{c, i}].
+        l1Mon(j) { return this.l1M().cs.map((c, i) => ({ c, i })).filter(x => (this.l1Fin[x.c.id] ? x.c.dap : -1) === j); },
+        l1StMon(x) { return this.l1Chon === x.i ? 'chon' : this.l1St === 'sai1' && this.l1Cd && this.l1Cd.id === x.c.id ? 'sai' : ''; },
+        // sap_xep: chạm thẻ `k` ở khay = đặt vào chỗ kế tiếp; đủ mảnh thì chấm (l1Cham). Chạm thẻ đã đặt trên dòng ghép (`pos`) = bỏ nó. Chỉ khi chưa chấm / đã «Try again».
+        l1XepThem(k) {
+          const m = this.l1M(), c = m.cs[0];
+          if ((this.l1St !== 'cho' && this.l1St !== 'lai') || this.l1Xep.includes(k)) return;
+          this.l1Xep.push(k);
+          if (this.l1Xep.length === c.manh.length) this.l1Cham(m.bai, c, [...this.l1Xep]);
+        },
+        l1XepBo(pos) { if (this.l1St === 'cho' || this.l1St === 'lai') this.l1Xep.splice(pos, 1); },
+        l1ClsCham(st) { return st === 'dung' ? 'h-6 w-6 bg-emerald-500' : st === 'sai' ? 'h-6 w-6 bg-rose-500' : st === 'dang' ? 'h-6 w-6 bg-sky-500 ring-4 ring-sky-200' : 'h-6 w-6 bg-slate-200'; },
+        // 🔊 của khuôn lớp 1: chữ ĐÃ bỏ `**` (tron — cùng luật danh sách trắng của /api/tts), ngôn ngữ = `tieng` cấp tệp (vắng → ngôn ngữ môn).
+        l1Noi(s) { return this.speak(this.tron(s), false, BE.doc.tieng); },
+        // Nhãn mức ở ①: CHỈ lượt Luyện. `beMucMap` (máy ESL) tính cả câu Đề (cacCau) → sau khi nộp Đề, thanh «0/8» đi kèm «Làm được». Bộ nhớ theo đối tượng `beMucMap` (máy ESL gán đối tượng mới mỗi lần tính lại; bộ nhớ nằm ngoài trạng thái phản ứng).
+        l1Nhan(kt) {
+          const k = this.beMucMap;
+          if (!BE.l1Nhan || BE.l1Nhan.k !== k) BE.l1Nhan = { k, m: window.baiTap.mucKt(this.beLuot(), window.baiTapEsl.cacCau({ unit: BE.doc.unit.map(u => ({ luyen: u.luyen })) }), Math.floor(Date.now() / 1000)) };
+          const m = BE.l1Nhan.m[kt];
+          return m === undefined ? '' : window.baiTapEsl.nhanMuc(m);
+        },
+        // Nhãn dòng phụ của nút Đề: «N mục» (mục Booklet = các phần liền nhau cùng tên) + kết quả lần gần nhất / «đang làm dở».
+        l1DeSub(r) {
+          const p = [window.baiTapEsl.mucCuaDe(r.de).length + ' mục'];
+          if (r.lan) p.push('lần ' + r.lan + ': ' + (r.diem ? r.diem.d + '/' + r.diem.toi : '—'));
+          if (r.dang) p.push('đang làm dở');
+          return p.join(' · ');
+        },
+        // ── Đề (Task 8) ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+        // MỘT mục Booklet (các phần liền nhau cùng `ten`, `mucCuaDe`) mỗi màn hình, ở ③ (`beScr` 'de') lẫn ④ ('kq'; `beKd.ds` thay `beDeDs`). Đáp án ở ③ là CHÍNH `beTL[c.id]` của máy ESL (id `d:`;
+        // abc: chữ cái · khung: từ · noi / xep_gio: chỉ số vế phải / giỏ · sap_xep: mảng chỉ số, đủ mảnh mới chấm) — nên bài dở, hỏi câu trống, nộp (beNop: sổ + dòng tổng) và ④ (beKd, beKq) là máy ESL, không viết lại.
+        l1Mucs() { return window.baiTapEsl.mucCuaDe(this.beDeNow()); },
+        l1MucNow() {
+          const m = this.l1Mucs()[this.l1Muc], ds = this.beScr === 'kq' ? (this.beKd ? this.beKd.ds : []) : this.beDeDs;
+          return m ? { ten: m.ten, es: m.phan.map(pi => ds.find(e => e.n === pi + 1)).filter(Boolean) } : null;
+        },
+        l1Cuoi() { return this.l1Muc >= this.l1Mucs().length - 1; },
+        l1MucDiem(m) { return m.es.reduce((n, e) => n + e.diem, 0) + ' / ' + m.es.reduce((n, e) => n + e.toi_da, 0); },
+        l1DePhai(e) { return this.l1Dao(e.bai.id, e.bai.phai.map((v, j) => ({ ...v, k: j }))); },
+        l1DiMuc(d) {
+          const i = this.l1Muc + d;
+          if (i < 0 || i >= this.l1Mucs().length) return;
+          this.l1Muc = i; this.beDeXn = false; window.scrollTo(0, 0);
+        },
+        // abc / khung: chạm = đặt (đổi ý = thay), KHÔNG chấm; khung: chạm ô = bỏ từ.
+        l1DeDat(c, k) { if (!this.beDeBan) this.beTL[c.id] = k; },
+        l1DeBo(c) { if (!this.beDeBan) delete this.beTL[c.id]; },
+        // noi / xep_gio: chạm vế trái / món `i`: đã nối / thả → gỡ ra và chọn lại; chưa → chọn (chạm lại: bỏ chọn).
+        l1DePick(e, i) {
+          if (this.beDeBan) return;
+          const c = e.bai.cau[i], id = e.bai.id;
+          if (this.beTL[c.id] !== undefined) { delete this.beTL[c.id]; this.l1Sel[id] = i; } else this.l1Sel[id] = this.l1Sel[id] === i ? null : i;
+        },
+        // Chạm vế phải / giỏ `j`: đang chọn → đặt vào (noi: vế phải đã có chủ thì gỡ chủ cũ, một vế một chủ); không chọn mà là vế phải noi đã nối → gỡ.
+        l1DeDich(e, j) {
+          if (this.beDeBan) return;
+          const id = e.bai.id, i = this.l1Sel[id], cs = e.bai.cau, cu = e.bai.kieu === 'noi' ? cs.find(c => this.beTL[c.id] === j) : null;
+          if (cu) delete this.beTL[cu.id];
+          if (i !== null && i !== undefined) { this.beTL[cs[i].id] = j; this.l1Sel[id] = null; }
+        },
+        // Dấu vế trái / món `i`: chon (đang chọn) · dat (đã nối / thả) · ''. Chủ của vế phải `j` (noi): chỉ số cặp hoặc -1.
+        l1DeSt(e, i) { return this.l1Sel[e.bai.id] === i ? 'chon' : this.beTL[e.bai.cau[i].id] !== undefined ? 'dat' : ''; },
+        l1DeChu(e, j) { return e.bai.cau.findIndex(c => this.beTL[c.id] === j); },
+        l1DeMon(e, j) { return e.bai.cau.map((c, i) => ({ c, i })).filter(x => (this.beTL[x.c.id] === undefined ? -1 : this.beTL[x.c.id]) === j); },
+        // sap_xep: chạm thẻ `k` ở khay = đặt vào chỗ kế tiếp; chạm thẻ đã đặt (`pos`) = bỏ. Đủ mảnh thì máy ESL mới chấm (lúc nộp).
+        l1DeXep(c, k) { const cur = this.beTL[c.id] || []; if (!this.beDeBan && !cur.includes(k)) this.beTL[c.id] = [...cur, k]; },
+        l1DeXepBo(c, pos) {
+          if (this.beDeBan) return;
+          const cur = [...(this.beTL[c.id] || [])];
+          cur.splice(pos, 1);
+          if (cur.length) this.beTL[c.id] = cur; else delete this.beTL[c.id];
+        },
+        // ④: một câu để xem lại → {q, con, dap} (mỗi vế {anh, t}): câu hỏi · con chọn · đáp án đúng. Chữ thuần (x-text), hình theo URL đã dựng.
+        l1KqCau(e, c, ci) {
+          const b = e.bai, tl = this.beTL[c.id], mot = (anh, t) => ({ anh: anh || null, t: t || '' }), ve = (v) => (v ? mot(v.anh_url, v.t || v.nhan) : mot());
+          const lc = (k) => { const i = typeof k === 'string' ? k.charCodeAt(0) - 65 : -1; return i >= 0 && i < c.lc.length ? mot(c.lc_anh_url && c.lc_anh_url[i], c.lc[i]) : mot(); };
+          if (b.kieu === 'abc') return { q: mot(c.anh_url, c.t), con: lc(tl), dap: lc(c.dap) };
+          if (b.kieu === 'khung') return { q: mot(c.anh_url, c.noi), con: mot(null, typeof tl === 'string' ? tl : ''), dap: mot(null, c.dap[0]) };
+          if (b.kieu === 'noi') return { q: ve(b.trai[ci]), con: ve(b.phai[tl]), dap: ve(b.phai[c.dap]) };
+          if (b.kieu === 'xep_gio') return { q: mot(c.anh_url, c.t), con: mot(null, b.gio[tl]), dap: mot(null, b.gio[c.dap]) };
+          return { q: mot(c.anh_url, ''), con: mot(null, (Array.isArray(tl) ? tl : []).map(i => c.manh[i]).join(' ')), dap: mot(null, c.dap[0]) };
+        },
+      };
+    }
+
+
     const UNIT_CUA = new WeakMap();   // unitCua(): this.data → Map(id concept → id Unit)
     function studyStore(user, course) {
       return {
         ...baiTapStore(),
         ...baiTapEslStore(),
+        ...baiTapLop1Store(),
         beCo: false,   // môn có tệp bài tập ESL (builder); fetch thành công mới hiện tab
         user, course,
         // Nút "📒 Sổ tay" ở khối Grammar: concept → trang sổ tay (builder dựng từ sotay/nguon/<user>.json).
@@ -4041,7 +4269,7 @@ timMo: false,
         // trắng nào được). Chỉ popup truyền cờ này. Bật cho MỌI nút loa thì danh
         // sách trắng không bao giờ được dùng tới nữa, và nó sẽ mục ruỗng mà
         // không ai biết — đúng kiểu hỏng mà `tts.js` đã dặn.
-        async speak(text, tinCay) {
+        async speak(text, tinCay, nn) {
           text = (text || '').trim(); if (!text) return;
           if (this.noi.dang) return;   // đang thu âm Luyện nói: tiếng máy đọc sẽ lọt vào bản thu
           this.noiDungNghe();
@@ -4054,20 +4282,20 @@ timMo: false,
             } else {
               const h = (tinCay && this.secret) ? { headers: { 'x-progress-key': this.secret } } : undefined;
               // `lang`: môn dạy bằng tiếng Việt (LSĐL, Tiếng Việt) đọc bằng giọng vi-VN.
-              const nn = this.traNgonNgu() === 'vi' ? '&lang=vi' : '';
-              const r = await fetch(`/api/tts?user=${this.user}&course=${this.course}${nn}&text=${encodeURIComponent(text)}`, h);
+              const lang = (nn || this.traNgonNgu()) === 'vi' ? '&lang=vi' : '';   // `nn` (tuỳ chọn, khuôn lớp 1: `tieng` của tệp bài tập) thay ngôn ngữ của môn
+              const r = await fetch(`/api/tts?user=${this.user}&course=${this.course}${lang}&text=${encodeURIComponent(text)}`, h);
               if (!r.ok) throw new Error('HTTP ' + r.status);
               src = URL.createObjectURL(await r.blob());
               this._nhoBlob(text, src);
             }
             this._player = new Audio(src);
             await this._player.play();
-          } catch (e) { this.speakLocal(text); }
+          } catch (e) { this.speakLocal(text, nn); }
         },
-        speakLocal(text) {
+        speakLocal(text, nn) {
           if (!('speechSynthesis' in window)) return;
           const u = new SpeechSynthesisUtterance(text);
-          const vi = this.traNgonNgu() === 'vi';
+          const vi = (nn || this.traNgonNgu()) === 'vi';
           u.lang = vi ? 'vi-VN' : 'en-US'; u.rate = 0.9;
           const v = window.speechSynthesis.getVoices().find(x => (vi ? /^vi[-_]VN/i : /^en[-_]US/i).test(x.lang));
           if (v) u.voice = v;
@@ -10316,7 +10544,7 @@ registerProcessor('thu-16k',T);`;
     </template>
 
     <!-- ── Bài tập ESL (màn của con): ① các mảng · ② Luyện theo mảng — markup + logic ở templates/_bt_esl.html ── -->
-<template x-if="mode === 'bt' && beOk">
+<template x-if="mode === 'bt' && beOk && !beL1">
 <div data-be class="space-y-3">
   <p x-show="beLuuCanh" x-cloak data-be-luu-canh role="status" class="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[13px] leading-snug text-amber-900" x-text="beLuuCanh"></p>
 
@@ -13298,6 +13526,507 @@ registerProcessor('thu-16k',T);`;
   </div>
   </template>
 
+
+</div>
+</template>
+
+    <!-- ── Bài tập khuôn lớp 1 (MK): màn ① danh sách bài + Đề — markup + logic ở templates/_bt_lop1.html ── -->
+<style>@keyframes l1-nay{0%{transform:translateY(-16px)}35%{transform:translateY(0)}50%{transform:translateX(-8px)}65%{transform:translateX(8px)}80%{transform:translateX(-4px)}100%{transform:none}}.l1-nay{animation:l1-nay .6s ease-out}@media (prefers-reduced-motion:reduce){.l1-nay{animation:none}}</style>
+<template x-if="mode === 'bt' && beOk && beL1">
+<div data-l1 class="font-[Andika,system-ui,sans-serif] space-y-4 text-slate-800">
+
+  
+  <template x-if="beScr === 'tong'">
+  <div data-l1-tong class="space-y-4">
+    
+    <template x-if="beUnits().length > 1">
+      <div class="flex flex-wrap gap-3">
+        <template x-for="(u, i) in beUnits()" :key="u.concept">
+          <button type="button" data-l1-unit :data-i="i" :aria-pressed="String(beU === i)" @click="beDatUnit(i)"
+                  :class="beU === i ? 'border-sky-600 bg-sky-600 text-white' : 'border-slate-200 bg-white text-slate-700'"
+                  class="min-h-[64px] min-w-[260px] flex-1 rounded-2xl border-[3px] px-4 py-2 text-left text-[19px] font-bold leading-snug" x-html="u.ten_html"></button>
+        </template>
+      </div>
+    </template>
+    <template x-if="beUnits().length <= 1"><h2 class="text-[26px] font-bold leading-snug text-slate-900" x-html="beUnitNow().ten_html"></h2></template>
+    <div class="space-y-3">
+      <template x-for="m in beMangs()" :key="m.id">
+        <button type="button" data-l1-mang :data-kt="m.id" @click="beMo(m.id)"
+                class="flex min-h-[88px] w-full items-center gap-4 rounded-3xl border-[3px] border-slate-200 bg-white px-5 py-3 text-left shadow-sm active:border-sky-500 active:bg-sky-50">
+          <span class="min-w-0 flex-1">
+            <span class="block text-[24px] font-bold leading-snug text-slate-900" x-html="m.ten_html"></span>
+            <template x-if="beTien[m.id] && beTien[m.id].y > 0">
+              <span data-l1-tien :data-x="beTien[m.id].x" :data-y="beTien[m.id].y" role="progressbar" :aria-label="'Tiến độ ' + m.ten" :aria-valuenow="beTien[m.id].x" :aria-valuemax="beTien[m.id].y"
+                    class="mt-2 block h-[14px] overflow-hidden rounded-full bg-slate-200"><i class="block h-full rounded-full bg-emerald-500" :style="'width:' + beTienPct(m.id) + '%'"></i></span>
+            </template>
+          </span>
+          <span class="shrink-0 text-right">
+            <span class="block text-[20px] font-bold text-slate-700" x-text="beTien[m.id] ? beTien[m.id].x + '/' + beTien[m.id].y : ''"></span>
+            <template x-if="l1Nhan(m.id)"><span data-l1-muc class="block text-[15px] text-slate-500" x-text="l1Nhan(m.id)"></span></template>
+          </span>
+          <span class="shrink-0 text-[34px] leading-none text-sky-600" aria-hidden="true">›</span>
+        </button>
+      </template>
+    </div>
+    <div x-show="beCoDe()" class="space-y-3 pt-2">
+      <template x-for="r in beBuoc2()" :key="r.de.ma">
+        <div class="space-y-2">
+          <button type="button" data-l1-de :data-ma="r.de.ma" @click="beMoDe(r.de.ma)"
+                  class="flex min-h-[88px] w-full items-center gap-4 rounded-3xl border-[3px] border-indigo-600 bg-indigo-600 px-5 py-3 text-left text-white shadow-sm active:bg-indigo-700">
+            <span class="text-[34px] leading-none" aria-hidden="true">📝</span>
+            <span class="min-w-0 flex-1">
+              <span class="block text-[24px] font-bold leading-snug" x-text="r.de.ten"></span>
+              <span data-l1-de-sub class="block text-[16px] text-indigo-100" x-text="l1DeSub(r)"></span>
+            </span>
+            <span class="shrink-0 text-[20px] font-bold" x-text="({ 'Bắt đầu': 'Start', 'Làm tiếp': 'Continue', 'Làm lại': 'Again' })[r.nut] || r.nut"></span>
+          </button>
+          <template x-if="r.moi.de">
+            <button type="button" data-l1-moi :data-ma="r.moi.de.ma" :data-khoa="r.moi.mo ? '0' : '1'" :disabled="!r.moi.mo" @click="r.moi.mo && beMoDe(r.moi.de.ma)"
+                    :class="r.moi.mo ? 'border-indigo-600 bg-white text-indigo-700' : 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'"
+                    class="flex min-h-[72px] w-full items-center justify-center gap-3 rounded-3xl border-[3px] px-5 py-3 text-[22px] font-bold" x-text="r.moi.mo ? '🔄 New test' : '🔒 New test'"></button>
+          </template>
+        </div>
+      </template>
+    </div>
+  </div>
+  </template>
+
+  
+  <template x-if="beScr === 'luyen'">
+  <div data-l1-luot :data-n="l1Man.length" :data-xong="l1Xong ? '1' : '0'" class="space-y-5">
+    <div class="flex items-center justify-between gap-4">
+      <span class="min-w-0 truncate text-[18px] font-bold text-slate-500" x-text="l1Ten()"></span>
+      <span data-l1-cham :data-n="l1Chams().length" class="flex shrink-0 flex-wrap items-center justify-end gap-2" aria-hidden="true">
+        <template x-for="(st, j) in l1Chams()" :key="j"><i :data-st="st" :class="l1ClsCham(st)" class="block rounded-full"></i></template>
+      </span>
+    </div>
+
+    <template x-if="!l1Xong && l1M()">
+    <div data-l1-man :data-i="l1I" :data-kieu="l1M().bai.kieu" :data-st="l1St" class="space-y-5">
+      <template x-if="l1Mot()">
+      <div class="space-y-5">
+        <template x-for="c in [l1M().cs[0]]" :key="c.id">
+        <div class="space-y-5">
+          <p class="text-[20px] leading-snug text-slate-500" x-html="l1M().bai.yeu_cau_html"></p>
+          <div class="flex items-start gap-3">
+            <button type="button" data-l1-nghe="cau" @click="l1Noi(c.noi)" aria-label="Listen to the question"
+                    class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
+            <div class="min-w-0 flex-1">
+              <template x-if="l1M().bai.kieu === 'abc'">
+                <p data-l1-cau class="text-[30px] font-bold leading-snug text-slate-900"><span x-html="c.t_html"></span><template x-if="c.bao_html"><span class="ml-2 text-[24px] font-normal text-slate-600" x-html="c.bao_html"></span></template></p>
+              </template>
+              <template x-if="l1M().bai.kieu === 'khung'">
+                <p data-l1-cau class="text-[30px] font-bold leading-[2.4] text-slate-900"><template x-for="(p, j) in c.manh" :key="j"><span><template x-if="p.o === undefined"><span x-html="p.html"></span></template><template x-if="p.o !== undefined"><span data-l1-o :data-st="l1Chon ? (l1StLc(l1Chon) || 'sai') : ''" :class="l1Chon ? (l1St === 'dung' ? 'border-emerald-500 text-emerald-700' : 'border-rose-500 text-rose-700') : 'border-slate-400'" class="mx-1 inline-block min-w-[140px] border-b-4 px-2 text-center" x-text="l1Chon || ' '"></span></template></span></template></p>
+              </template>
+            </div>
+          </div>
+          <template x-if="c.anh_url"><img data-l1-anh :src="c.anh_url" alt="Picture" class="mx-auto block max-h-[300px] w-auto max-w-full rounded-3xl border-2 border-slate-200 bg-white object-contain"></template>
+          <div data-l1-lcs :class="l1Cot()" class="grid gap-4">
+            <template x-for="o in l1Ch" :key="o.k">
+              <div class="relative flex flex-col">
+                <button type="button" data-l1-lc :data-k="o.k" :data-st="l1StLc(o.k)" :aria-label="o.t || ('Picture ' + o.k)" @click="l1Cham(l1M().bai, c, o.k)" :class="l1ClsLc(o.k)"
+                        class="flex min-h-[88px] w-full flex-1 flex-col items-center justify-center gap-2 rounded-3xl border-[4px] p-3 text-center shadow-sm">
+                  <template x-if="o.anh"><img :src="o.anh" :alt="'Picture ' + o.k" class="h-[160px] w-full rounded-2xl bg-white object-contain"></template>
+                  <template x-if="o.t"><span class="flex min-h-[64px] w-full items-center justify-center pr-[72px] text-[28px] font-bold leading-snug text-slate-900" x-html="o.html"></span></template>
+                </button>
+                <span x-show="l1StLc(o.k) === 'dung'" class="pointer-events-none absolute left-4 top-3 text-[34px] font-bold text-emerald-600" aria-hidden="true">✓</span>
+                <span x-show="l1StLc(o.k) === 'sai'" class="pointer-events-none absolute left-4 top-3 text-[34px] font-bold text-rose-600" aria-hidden="true">✗</span>
+                <template x-if="o.t"><button type="button" data-l1-nghe="lc" @click="l1Noi(o.t)" :aria-label="'Listen: ' + o.t"
+                        class="absolute bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
+              </div>
+            </template>
+          </div>
+        </div>
+        </template>
+      </div>
+      </template>
+
+      
+      <template x-if="['noi', 'xep_gio', 'sap_xep'].includes(l1Loai())">
+        <div class="flex items-center gap-3">
+          <button type="button" data-l1-nghe="yc" @click="l1Noi(l1M().bai.yeu_cau)" aria-label="Listen to the instruction" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
+          <p data-l1-cau class="min-w-0 flex-1 text-[26px] font-bold leading-snug text-slate-900" x-html="l1M().bai.yeu_cau_html"></p>
+        </div>
+      </template>
+
+      
+      <template x-if="l1Loai() === 'noi'">
+      <div class="grid grid-cols-2 gap-6">
+        <div class="flex flex-col gap-4">
+          <template x-for="(v, i) in l1M().bai.trai" :key="i">
+            <div class="relative flex">
+              <button type="button" data-l1-noi-l :data-k="i" :data-st="l1NoiSt(i)" :disabled="l1NoiSt(i) === 'dung'" :aria-label="v.t || v.nhan || 'Picture'" @click="l1Pick(i)" :class="l1ClsVe(l1NoiSt(i))"
+                      class="flex min-h-[88px] w-full flex-col items-center justify-center gap-1 rounded-3xl border-[4px] p-3 text-center shadow-sm transition-transform">
+                <template x-if="v.anh_url"><img :src="v.anh_url" alt="Picture" class="h-[120px] w-full rounded-2xl bg-white object-contain"></template>
+                <template x-if="v.nhan"><span class="text-[22px] font-bold leading-snug text-slate-700" x-text="v.nhan"></span></template>
+                <template x-if="v.t"><span class="flex min-h-[64px] w-full items-center justify-center pr-[72px] text-[26px] font-bold leading-snug text-slate-900" x-html="v.t_html"></span></template>
+              </button>
+              <span x-show="l1NoiSt(i) === 'dung'" class="pointer-events-none absolute left-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-[20px] font-bold text-white" aria-hidden="true" x-text="i + 1"></span>
+              <template x-if="v.t"><button type="button" data-l1-nghe="noi" @click="l1Noi(v.t)" :aria-label="'Listen: ' + v.t" class="absolute bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
+            </div>
+          </template>
+        </div>
+        <div class="flex flex-col gap-4">
+          <template x-for="v in l1Ch" :key="v.k">
+            <div class="relative flex">
+              <button type="button" data-l1-noi-r :data-k="v.k" :data-st="l1NoiSt(v.k, true)" :disabled="l1NoiSt(v.k, true) === 'dung'" :aria-label="v.t || v.nhan || 'Picture'" @click="l1Dich(v.k)" :class="l1ClsVe(l1NoiSt(v.k, true))"
+                      class="flex min-h-[88px] w-full flex-col items-center justify-center gap-1 rounded-3xl border-[4px] p-3 text-center shadow-sm transition-transform">
+                <template x-if="v.anh_url"><img :src="v.anh_url" alt="Picture" class="h-[120px] w-full rounded-2xl bg-white object-contain"></template>
+                <template x-if="v.nhan"><span class="text-[22px] font-bold leading-snug text-slate-700" x-text="v.nhan"></span></template>
+                <template x-if="v.t"><span class="flex min-h-[64px] w-full items-center justify-center pr-[72px] text-[26px] font-bold leading-snug text-slate-900" x-html="v.t_html"></span></template>
+              </button>
+              <span x-show="l1NoiSt(v.k, true) === 'dung'" class="pointer-events-none absolute left-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-[20px] font-bold text-white" aria-hidden="true" x-text="v.k + 1"></span>
+              <template x-if="v.t"><button type="button" data-l1-nghe="noi" @click="l1Noi(v.t)" :aria-label="'Listen: ' + v.t" class="absolute bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
+            </div>
+          </template>
+        </div>
+      </div>
+      </template>
+
+      
+      <template x-if="l1Loai() === 'xep_gio'">
+      <div class="space-y-5">
+        <div data-l1-khay :class="l1M().cs.length >= 4 ? 'grid-cols-4' : l1M().cs.length === 3 ? 'grid-cols-3' : 'grid-cols-2'" class="grid gap-3">
+          <template x-for="x in l1Mon(-1)" :key="x.c.id">
+            <div :class="l1ClsVe(l1StMon(x)) + (l1StMon(x) === 'sai' ? ' l1-nay' : '')" class="flex flex-col items-center gap-1 rounded-2xl border-[4px] p-2 shadow-sm transition-transform">
+              <button type="button" data-l1-mon :data-k="x.i" :data-st="l1StMon(x)" :aria-label="x.c.t || 'Picture'" @click="l1Pick(x.i)" class="flex min-h-[64px] w-full flex-col items-center justify-center gap-1">
+                <template x-if="x.c.anh_url"><img :src="x.c.anh_url" alt="Picture" class="h-[96px] w-full rounded-xl bg-white object-contain"></template>
+                <template x-if="x.c.t"><span class="block text-[22px] font-bold leading-snug text-slate-900" x-html="x.c.t_html"></span></template>
+              </button>
+              <template x-if="x.c.t"><button type="button" data-l1-nghe="mon" @click="l1Noi(x.c.t)" :aria-label="'Listen: ' + x.c.t" class="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
+            </div>
+          </template>
+        </div>
+        <div :class="l1M().bai.gio.length >= 3 ? 'grid-cols-3' : 'grid-cols-2'" class="grid gap-4">
+          <template x-for="(g, j) in l1M().bai.gio" :key="j">
+            <div class="relative flex">
+              <button type="button" data-l1-gio :data-k="j" :data-st="l1Bad === j ? 'sai' : ''" @click="l1Dich(j)"
+                      :class="l1Bad === j ? 'border-rose-500 bg-rose-50' : l1Chon !== null ? 'border-sky-400 bg-sky-50' : 'border-slate-400 bg-slate-50'"
+                      class="flex min-h-[180px] w-full flex-col items-stretch gap-2 rounded-3xl border-[4px] border-dashed p-3 text-left">
+                <span class="block pr-[72px] text-[24px] font-bold leading-snug text-slate-900" x-html="l1M().bai.gio_html[j]"></span>
+                <span class="flex flex-wrap gap-2">
+                  <template x-for="x in l1Mon(j)" :key="x.c.id">
+                    <span data-l1-mon :data-k="x.i" class="inline-flex items-center gap-2 rounded-xl border-[3px] border-emerald-500 bg-emerald-50 px-2 py-1 text-[20px] font-bold leading-snug text-slate-900">
+                      <template x-if="x.c.anh_url"><img :src="x.c.anh_url" alt="Picture" class="h-[56px] w-[56px] rounded-lg bg-white object-contain"></template>
+                      <template x-if="x.c.t"><span x-html="x.c.t_html"></span></template>
+                    </span>
+                  </template>
+                </span>
+              </button>
+              <button type="button" data-l1-nghe="gio" @click="l1Noi(g)" :aria-label="'Listen: ' + g" class="absolute right-2 top-2 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
+            </div>
+          </template>
+        </div>
+      </div>
+      </template>
+
+      
+      <template x-if="l1Loai() === 'sap_xep'">
+      <div class="space-y-5">
+        <template x-for="c in [l1M().cs[0]]" :key="c.id">
+        <div class="space-y-5">
+          <template x-if="c.anh_url"><img data-l1-anh :src="c.anh_url" alt="Picture" class="mx-auto block max-h-[240px] w-auto max-w-full rounded-3xl border-2 border-slate-200 bg-white object-contain"></template>
+          <div data-l1-xep :data-st="l1St" :class="l1St === 'dung' ? 'border-emerald-500 bg-emerald-50' : l1St === 'sai1' || l1St === 'sai2' ? 'border-rose-500 bg-rose-50' : 'border-slate-400 bg-slate-50'"
+               class="flex min-h-[104px] flex-wrap items-center gap-3 rounded-3xl border-[4px] border-dashed p-3">
+            <template x-for="(k, pos) in l1Xep" :key="k">
+              <button type="button" data-l1-dat :data-k="k" @click="l1XepBo(pos)" class="min-h-[64px] min-w-[64px] rounded-2xl border-[3px] border-sky-500 bg-white px-4 text-[28px] font-bold leading-snug text-slate-900" x-html="c.manh_html[k]"></button>
+            </template>
+            <template x-if="!l1Xep.length"><span class="px-2 text-[20px] text-slate-400" aria-hidden="true">…</span></template>
+          </div>
+          <template x-if="l1St === 'sai2'">
+            <p data-l1-xep-dap class="rounded-3xl border-2 border-emerald-500 bg-emerald-50 p-4 text-[28px] font-bold leading-snug text-slate-900"><span class="mr-2 text-emerald-600" aria-hidden="true">✓</span><span x-html="c.dap_html[0]"></span></p>
+          </template>
+          <div class="flex flex-wrap gap-3">
+            <template x-for="o in l1Ch" :key="o.k">
+              <div class="flex items-center gap-1 rounded-2xl border-[3px] border-slate-300 bg-white p-1">
+                <button type="button" data-l1-manh :data-k="o.k" :disabled="l1Xep.includes(o.k)" @click="l1XepThem(o.k)" :class="l1Xep.includes(o.k) ? 'opacity-30' : 'active:bg-sky-50'" class="min-h-[64px] min-w-[64px] rounded-xl px-4 text-[28px] font-bold leading-snug text-slate-900" x-html="o.html"></button>
+                <button type="button" data-l1-nghe="manh" @click="l1Noi(o.t)" :aria-label="'Listen: ' + o.t" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
+              </div>
+            </template>
+          </div>
+        </div>
+        </template>
+      </div>
+      </template>
+
+      
+      <template x-if="l1St === 'sai1' || l1St === 'sai2'">
+        <div class="space-y-5" x-init="$nextTick(() => $el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }))">
+          <template x-for="c in [l1Cd]" :key="c.id">
+            <div data-l1-ly class="rounded-3xl border-2 border-rose-200 bg-rose-50 p-4">
+              <div class="flex items-start gap-3">
+                <template x-if="c.ly_en"><button type="button" data-l1-nghe="ly" @click="l1Noi(c.ly_en)" aria-label="Listen to the explanation" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white text-[30px] active:bg-indigo-100">🔊</button></template>
+                <div class="min-w-0 flex-1">
+                  <p class="text-[24px] leading-snug text-slate-900" x-html="c.ly_en_html"></p>
+                  <p class="mt-1 text-[16px] leading-snug text-slate-500" x-html="c.ly_html"></p>
+                </div>
+              </div>
+            </div>
+          </template>
+          <template x-if="l1St === 'sai1' && l1Lai()">
+            <button type="button" data-l1-thu-lai @click="l1ThuLai()" class="mx-auto flex min-h-[72px] items-center justify-center rounded-full bg-sky-600 px-12 text-[26px] font-bold text-white active:bg-sky-700">Try again ↻</button>
+          </template>
+          <template x-if="l1St === 'sai2' && l1Lai()">
+            <button type="button" data-l1-tiep @click="l1Sang()" class="mx-auto flex min-h-[72px] items-center justify-center rounded-full bg-sky-600 px-12 text-[26px] font-bold text-white active:bg-sky-700">Next ›</button>
+          </template>
+        </div>
+      </template>
+      
+      <template x-if="!l1Lai() && l1Het()">
+        <button type="button" data-l1-tiep @click="l1Sang()" x-init="$nextTick(() => $el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }))" class="mx-auto flex min-h-[72px] items-center justify-center rounded-full bg-sky-600 px-12 text-[26px] font-bold text-white active:bg-sky-700">Next ›</button>
+      </template>
+    </div>
+    </template>
+
+    <template x-if="l1Xong">
+      <div data-l1-tong-ket :data-x="l1Dung" :data-y="l1Y()" class="space-y-6 py-6 text-center">
+        <template x-if="l1Y() > 0"><p class="text-[56px] font-bold leading-tight text-slate-900" x-text="l1Dung + ' / ' + l1Y() + ' đúng'"></p></template>
+        <template x-if="l1Y() === 0"><p class="text-[24px] text-slate-600">Bài này chưa có câu để luyện.</p></template>
+        <div class="flex flex-wrap items-center justify-center gap-4">
+          <template x-if="l1Y() > 0"><button type="button" data-l1-luot-nua @click="l1MoLuot(beKt)" class="min-h-[80px] min-w-[220px] rounded-full bg-sky-600 px-10 text-[26px] font-bold text-white active:bg-sky-700">Play again</button></template>
+          <button type="button" data-l1-ve-ds @click="beVeTong()" class="min-h-[80px] min-w-[220px] rounded-full border-[3px] border-slate-300 bg-white px-10 text-[24px] font-bold text-slate-700 active:bg-slate-100">Back to the list</button>
+        </div>
+      </div>
+    </template>
+  </div>
+  </template>
+
+
+  
+  <template x-if="beScr === 'de' && l1MucNow()">
+  <div data-l1-de :data-ma="beMa" :data-n="l1Mucs().length" class="space-y-5">
+    <template x-for="m in [l1MucNow()]" :key="l1Muc">
+    <div class="space-y-5">
+      <div class="flex items-center justify-between gap-4">
+        <span class="min-w-0 truncate text-[18px] font-bold text-slate-500" x-text="beDeNow().ten"></span>
+        <span class="shrink-0 text-[18px] font-bold text-slate-500" x-text="(l1Muc + 1) + ' / ' + l1Mucs().length"></span>
+      </div>
+      <div data-l1-muc :data-i="l1Muc" :data-n="l1Mucs().length" :data-ten="m.ten" class="flex items-center gap-3">
+        <button type="button" data-l1-nghe="muc" @click="l1Noi(m.ten)" aria-label="Listen to the title" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
+        <h2 class="min-w-0 flex-1 text-[30px] font-bold leading-snug text-slate-900" x-text="m.ten"></h2>
+      </div>
+      <template x-for="e in m.es" :key="e.key">
+      <section data-l1-phan :data-kieu="e.bai.kieu" class="space-y-5 rounded-3xl border-2 border-slate-200 bg-white p-4">
+        <div class="flex items-center gap-3">
+          <button type="button" data-l1-nghe="yc" @click="l1Noi(e.bai.yeu_cau)" aria-label="Listen to the instruction" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
+          <p class="min-w-0 flex-1 text-[22px] leading-snug text-slate-600" x-html="e.bai.yeu_cau_html"></p>
+        </div>
+
+        
+        <template x-if="e.bai.kieu === 'abc' || e.bai.kieu === 'khung'">
+        <div class="space-y-6">
+          <template x-for="c in e.bai.cau" :key="c.id">
+          <div data-l1-q :data-id="c.rid" class="space-y-4">
+            <div class="flex items-start gap-3">
+              <button type="button" data-l1-nghe="cau" @click="l1Noi(c.noi)" aria-label="Listen to the question" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
+              <div class="min-w-0 flex-1">
+                <template x-if="e.bai.kieu === 'abc'">
+                  <p data-l1-cau class="text-[30px] font-bold leading-snug text-slate-900"><span x-html="c.t_html"></span><template x-if="c.bao_html"><span class="ml-2 text-[24px] font-normal text-slate-600" x-html="c.bao_html"></span></template></p>
+                </template>
+                <template x-if="e.bai.kieu === 'khung'">
+                  <p data-l1-cau class="text-[30px] font-bold leading-[2.4] text-slate-900"><template x-for="(p, j) in c.manh" :key="j"><span><template x-if="p.o === undefined"><span x-html="p.html"></span></template><template x-if="p.o !== undefined"><span data-l1-o :data-st="beTL[c.id] ? 'chon' : ''" @click="l1DeBo(c)" :class="beTL[c.id] ? 'border-sky-500 text-sky-700' : 'border-slate-400'" class="mx-1 inline-block min-w-[140px] border-b-4 px-2 text-center" x-text="beTL[c.id] || ' '"></span></template></span></template></p>
+                </template>
+              </div>
+            </div>
+            <template x-if="c.anh_url"><img data-l1-anh :src="c.anh_url" alt="Picture" class="mx-auto block max-h-[300px] w-auto max-w-full rounded-3xl border-2 border-slate-200 bg-white object-contain"></template>
+            <template x-for="ch in [l1LcCau(e.bai, c)]" :key="c.id">
+            <div data-l1-lcs :class="l1Cot(ch)" class="grid gap-4">
+              <template x-for="o in ch" :key="o.k">
+                <div class="relative flex flex-col">
+                  <button type="button" data-l1-lc :data-k="o.k" :data-st="beTL[c.id] === o.k ? 'chon' : ''" :aria-label="o.t || ('Picture ' + o.k)" @click="l1DeDat(c, o.k)"
+                          :class="beTL[c.id] === o.k ? 'border-sky-500 bg-sky-50 ring-4 ring-sky-200' : 'border-slate-300 bg-white active:border-sky-500 active:bg-sky-50'"
+                          class="flex min-h-[88px] w-full flex-1 flex-col items-center justify-center gap-2 rounded-3xl border-[4px] p-3 text-center shadow-sm">
+                    <template x-if="o.anh"><img :src="o.anh" :alt="'Picture ' + o.k" class="h-[160px] w-full rounded-2xl bg-white object-contain"></template>
+                    <template x-if="o.t"><span class="flex min-h-[64px] w-full items-center justify-center pr-[72px] text-[28px] font-bold leading-snug text-slate-900" x-html="o.html"></span></template>
+                  </button>
+                  <template x-if="o.t"><button type="button" data-l1-nghe="lc" @click="l1Noi(o.t)" :aria-label="'Listen: ' + o.t" class="absolute bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
+                </div>
+              </template>
+            </div>
+            </template>
+          </div>
+          </template>
+        </div>
+        </template>
+
+        
+        <template x-if="e.bai.kieu === 'noi'">
+        <div class="grid grid-cols-2 gap-6">
+          <div class="flex flex-col gap-4">
+            <template x-for="(v, i) in e.bai.trai" :key="i">
+              <div class="relative flex">
+                <button type="button" data-l1-noi-l :data-k="i" :data-st="l1DeSt(e, i)" :aria-label="v.t || v.nhan || 'Picture'" @click="l1DePick(e, i)" :class="l1ClsVe(l1DeSt(e, i))"
+                        class="flex min-h-[88px] w-full flex-col items-center justify-center gap-1 rounded-3xl border-[4px] p-3 text-center shadow-sm transition-transform">
+                  <template x-if="v.anh_url"><img :src="v.anh_url" alt="Picture" class="h-[120px] w-full rounded-2xl bg-white object-contain"></template>
+                  <template x-if="v.nhan"><span class="text-[22px] font-bold leading-snug text-slate-700" x-text="v.nhan"></span></template>
+                  <template x-if="v.t"><span class="flex min-h-[64px] w-full items-center justify-center pr-[72px] text-[26px] font-bold leading-snug text-slate-900" x-html="v.t_html"></span></template>
+                </button>
+                <span x-show="l1DeSt(e, i) === 'dat'" class="pointer-events-none absolute left-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-sky-500 text-[20px] font-bold text-white" aria-hidden="true" x-text="i + 1"></span>
+                <template x-if="v.t"><button type="button" data-l1-nghe="noi" @click="l1Noi(v.t)" :aria-label="'Listen: ' + v.t" class="absolute bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
+              </div>
+            </template>
+          </div>
+          <div class="flex flex-col gap-4">
+            <template x-for="v in l1DePhai(e)" :key="v.k">
+              <div class="relative flex">
+                <button type="button" data-l1-noi-r :data-k="v.k" :data-st="l1DeChu(e, v.k) >= 0 ? 'dat' : ''" :aria-label="v.t || v.nhan || 'Picture'" @click="l1DeDich(e, v.k)" :class="l1ClsVe(l1DeChu(e, v.k) >= 0 ? 'dat' : '')"
+                        class="flex min-h-[88px] w-full flex-col items-center justify-center gap-1 rounded-3xl border-[4px] p-3 text-center shadow-sm transition-transform">
+                  <template x-if="v.anh_url"><img :src="v.anh_url" alt="Picture" class="h-[120px] w-full rounded-2xl bg-white object-contain"></template>
+                  <template x-if="v.nhan"><span class="text-[22px] font-bold leading-snug text-slate-700" x-text="v.nhan"></span></template>
+                  <template x-if="v.t"><span class="flex min-h-[64px] w-full items-center justify-center pr-[72px] text-[26px] font-bold leading-snug text-slate-900" x-html="v.t_html"></span></template>
+                </button>
+                <span x-show="l1DeChu(e, v.k) >= 0" class="pointer-events-none absolute left-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-sky-500 text-[20px] font-bold text-white" aria-hidden="true" x-text="l1DeChu(e, v.k) + 1"></span>
+                <template x-if="v.t"><button type="button" data-l1-nghe="noi" @click="l1Noi(v.t)" :aria-label="'Listen: ' + v.t" class="absolute bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
+              </div>
+            </template>
+          </div>
+        </div>
+        </template>
+
+        
+        <template x-if="e.bai.kieu === 'xep_gio'">
+        <div class="space-y-5">
+          <div data-l1-khay :class="e.bai.cau.length >= 4 ? 'grid-cols-4' : e.bai.cau.length === 3 ? 'grid-cols-3' : 'grid-cols-2'" class="grid gap-3">
+            <template x-for="x in l1DeMon(e, -1)" :key="x.c.id">
+              <div :class="l1ClsVe(l1DeSt(e, x.i))" class="flex flex-col items-center gap-1 rounded-2xl border-[4px] p-2 shadow-sm transition-transform">
+                <button type="button" data-l1-mon :data-k="x.i" :data-st="l1DeSt(e, x.i)" :aria-label="x.c.t || 'Picture'" @click="l1DePick(e, x.i)" class="flex min-h-[64px] w-full flex-col items-center justify-center gap-1">
+                  <template x-if="x.c.anh_url"><img :src="x.c.anh_url" alt="Picture" class="h-[96px] w-full rounded-xl bg-white object-contain"></template>
+                  <template x-if="x.c.t"><span class="block text-[22px] font-bold leading-snug text-slate-900" x-html="x.c.t_html"></span></template>
+                </button>
+                <template x-if="x.c.t"><button type="button" data-l1-nghe="mon" @click="l1Noi(x.c.t)" :aria-label="'Listen: ' + x.c.t" class="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
+              </div>
+            </template>
+          </div>
+          <div :class="e.bai.gio.length >= 3 ? 'grid-cols-3' : 'grid-cols-2'" class="grid gap-4">
+            <template x-for="(g, j) in e.bai.gio" :key="j">
+              <div class="relative flex">
+                <button type="button" data-l1-gio :data-k="j" @click="l1DeDich(e, j)" :class="l1Sel[e.bai.id] !== null && l1Sel[e.bai.id] !== undefined ? 'border-sky-400 bg-sky-50' : 'border-slate-400 bg-slate-50'"
+                        class="flex min-h-[180px] w-full flex-col items-stretch gap-2 rounded-3xl border-[4px] border-dashed p-3 text-left">
+                  <span class="block pr-[72px] text-[24px] font-bold leading-snug text-slate-900" x-html="e.bai.gio_html[j]"></span>
+                  <span class="flex flex-wrap gap-2">
+                    <template x-for="x in l1DeMon(e, j)" :key="x.c.id">
+                      <span role="button" data-l1-mon :data-k="x.i" @click.stop="l1DePick(e, x.i)" class="inline-flex min-h-[64px] items-center gap-2 rounded-xl border-[3px] border-sky-500 bg-sky-50 px-2 py-1 text-[20px] font-bold leading-snug text-slate-900">
+                        <template x-if="x.c.anh_url"><img :src="x.c.anh_url" alt="Picture" class="h-[56px] w-[56px] rounded-lg bg-white object-contain"></template>
+                        <template x-if="x.c.t"><span x-html="x.c.t_html"></span></template>
+                      </span>
+                    </template>
+                  </span>
+                </button>
+                <button type="button" data-l1-nghe="gio" @click="l1Noi(g)" :aria-label="'Listen: ' + g" class="absolute right-2 top-2 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
+              </div>
+            </template>
+          </div>
+        </div>
+        </template>
+
+        
+        <template x-if="e.bai.kieu === 'sap_xep'">
+        <div class="space-y-6">
+          <template x-for="c in e.bai.cau" :key="c.id">
+          <div data-l1-q :data-id="c.rid" class="space-y-4">
+            <template x-if="c.anh_url"><img data-l1-anh :src="c.anh_url" alt="Picture" class="mx-auto block max-h-[240px] w-auto max-w-full rounded-3xl border-2 border-slate-200 bg-white object-contain"></template>
+            <div data-l1-xep class="flex min-h-[104px] flex-wrap items-center gap-3 rounded-3xl border-[4px] border-dashed border-slate-400 bg-slate-50 p-3">
+              <template x-for="(k, pos) in (beTL[c.id] || [])" :key="k">
+                <button type="button" data-l1-dat :data-k="k" @click="l1DeXepBo(c, pos)" class="min-h-[64px] min-w-[64px] rounded-2xl border-[3px] border-sky-500 bg-white px-4 text-[28px] font-bold leading-snug text-slate-900" x-html="c.manh_html[k]"></button>
+              </template>
+              <template x-if="!(beTL[c.id] || []).length"><span class="px-2 text-[20px] text-slate-400" aria-hidden="true">…</span></template>
+            </div>
+            <div class="flex flex-wrap gap-3">
+              <template x-for="o in l1Dao(c.id, c.manh.map((t, i) => ({ k: i, t, html: c.manh_html[i] })))" :key="o.k">
+                <div class="flex items-center gap-1 rounded-2xl border-[3px] border-slate-300 bg-white p-1">
+                  <button type="button" data-l1-manh :data-k="o.k" :disabled="(beTL[c.id] || []).includes(o.k)" @click="l1DeXep(c, o.k)" :class="(beTL[c.id] || []).includes(o.k) ? 'opacity-30' : 'active:bg-sky-50'" class="min-h-[64px] min-w-[64px] rounded-xl px-4 text-[28px] font-bold leading-snug text-slate-900" x-html="o.html"></button>
+                  <button type="button" data-l1-nghe="manh" @click="l1Noi(o.t)" :aria-label="'Listen: ' + o.t" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
+                </div>
+              </template>
+            </div>
+          </div>
+          </template>
+        </div>
+        </template>
+      </section>
+      </template>
+
+      <div class="space-y-3 pt-2">
+        <template x-if="beDeXn && l1Cuoi()">
+          <div data-l1-xn class="space-y-3 rounded-3xl border-[3px] border-amber-400 bg-amber-50 p-4 text-center">
+            <p class="text-[24px] font-bold leading-snug text-slate-900" x-text="'Còn ' + beDeTrong() + ' câu chưa làm. Nộp bài luôn không?'"></p>
+            <div class="flex gap-3">
+              <button type="button" data-l1-lam-tiep @click="beDeXn = false" class="min-h-[72px] flex-1 rounded-full border-[3px] border-slate-300 bg-white text-[24px] font-bold text-slate-700 active:bg-slate-100">Keep going</button>
+              <button type="button" data-l1-nop-luon :disabled="beDeBan" @click="beNop()" class="min-h-[72px] flex-1 rounded-full bg-indigo-600 text-[24px] font-bold text-white active:bg-indigo-700">Submit now</button>
+            </div>
+          </div>
+        </template>
+        <template x-if="beDeLoi"><p class="text-center text-[18px] leading-snug text-rose-600" x-text="beDeLoi"></p></template>
+        <p class="text-center text-[16px] text-slate-500" x-text="beDeDem()"></p>
+        <div class="flex gap-3">
+          <template x-if="l1Muc > 0"><button type="button" data-l1-truoc @click="l1DiMuc(-1)" class="min-h-[72px] flex-1 rounded-full border-[3px] border-slate-300 bg-white text-[26px] font-bold text-slate-700 active:bg-slate-100">‹ Back</button></template>
+          <template x-if="!l1Cuoi()"><button type="button" data-l1-tiep @click="l1DiMuc(1)" class="min-h-[72px] flex-1 rounded-full bg-sky-600 text-[26px] font-bold text-white active:bg-sky-700">Next ›</button></template>
+          <template x-if="l1Cuoi()"><button type="button" data-l1-nop :disabled="beDeBan" @click="beNopBam()" class="min-h-[72px] flex-1 rounded-full bg-indigo-600 text-[26px] font-bold text-white active:bg-indigo-700">Submit</button></template>
+        </div>
+      </div>
+    </div>
+    </template>
+  </div>
+  </template>
+
+  
+  <template x-if="beScr === 'kq' && beKd && l1MucNow()">
+  <div data-l1-kq :data-x="beKd.tong" :data-y="beKd.toi_da" x-init="l1Muc = 0" class="space-y-5">
+    <div class="space-y-1 text-center">
+      <p class="text-[18px] font-bold text-slate-500" x-text="beKd.de.ten"></p>
+      <p class="text-[56px] font-bold leading-tight text-slate-900" x-text="beKd.tong + ' / ' + beKd.toi_da + ' đúng'"></p>
+    </div>
+    <template x-for="m in [l1MucNow()]" :key="l1Muc">
+    <div class="space-y-4">
+      <div data-l1-muc :data-i="l1Muc" :data-n="l1Mucs().length" :data-ten="m.ten" class="flex items-center gap-3">
+        <button type="button" data-l1-nghe="muc" @click="l1Noi(m.ten)" aria-label="Listen to the title" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
+        <h2 class="min-w-0 flex-1 text-[30px] font-bold leading-snug text-slate-900" x-text="m.ten"></h2>
+        <span class="shrink-0 text-[24px] font-bold text-slate-700" x-text="l1MucDiem(m)"></span>
+      </div>
+      <template x-for="e in m.es" :key="e.key">
+        <div class="space-y-4">
+        <template x-for="(c, ci) in e.bai.cau" :key="c.id">
+        <div data-l1-q :data-id="c.rid" :data-st="beKq[c.id]" :class="beKq[c.id] === 'dung' ? 'border-emerald-500 bg-emerald-50' : 'border-rose-400 bg-rose-50'" class="rounded-3xl border-[3px] p-4">
+          <template x-for="r in [l1KqCau(e, c, ci)]" :key="c.id">
+          <div class="space-y-3">
+            <div class="flex items-start gap-3">
+              <span class="w-10 shrink-0 text-[40px] font-bold leading-none" :class="beKq[c.id] === 'dung' ? 'text-emerald-600' : 'text-rose-600'" x-text="beKq[c.id] === 'dung' ? '✓' : '✗'" aria-hidden="true"></span>
+              <div class="min-w-0 flex-1 space-y-2">
+                <template x-if="r.q.anh"><img :src="r.q.anh" alt="Picture" class="max-h-[160px] w-auto max-w-full rounded-2xl border-2 border-slate-200 bg-white object-contain"></template>
+                <template x-if="r.q.t"><p class="text-[26px] font-bold leading-snug text-slate-900" x-text="r.q.t"></p></template>
+              </div>
+            </div>
+            <div data-l1-con class="flex flex-wrap items-center gap-3"><span class="w-[96px] shrink-0 text-[16px] text-slate-500">Con chọn</span><span :class="beKq[c.id] === &#39;dung&#39; ? &#39;border-emerald-500&#39; : &#39;border-rose-500&#39;" class="inline-flex min-h-[64px] items-center gap-3 rounded-2xl border-[3px] bg-white px-3 py-2"><template x-if="r.con.anh"><img :src="r.con.anh" alt="Picture" class="h-[96px] w-auto max-w-[220px] rounded-xl object-contain"></template><template x-if="r.con.t"><span class="text-[26px] font-bold leading-snug text-slate-900" x-text="r.con.t"></span></template><template x-if="!r.con.anh && !r.con.t"><span class="text-[20px] text-slate-400">(chưa chọn)</span></template></span></div>
+            <template x-if="beKq[c.id] !== 'dung'">
+              <div data-l1-dap class="flex flex-wrap items-center gap-3"><span class="w-[96px] shrink-0 text-[16px] text-slate-500">Đáp án</span><span :class="&#39;border-emerald-500&#39;" class="inline-flex min-h-[64px] items-center gap-3 rounded-2xl border-[3px] bg-white px-3 py-2"><template x-if="r.dap.anh"><img :src="r.dap.anh" alt="Picture" class="h-[96px] w-auto max-w-[220px] rounded-xl object-contain"></template><template x-if="r.dap.t"><span class="text-[26px] font-bold leading-snug text-slate-900" x-text="r.dap.t"></span></template><template x-if="!r.dap.anh && !r.dap.t"><span class="text-[20px] text-slate-400">(chưa chọn)</span></template></span></div>
+            </template>
+            <div data-l1-ly class="flex items-start gap-3 rounded-2xl bg-white/70 p-3">
+              <template x-if="c.ly_en"><button type="button" data-l1-nghe="ly" @click="l1Noi(c.ly_en)" aria-label="Listen to the explanation" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
+              <div class="min-w-0 flex-1">
+                <p class="text-[22px] leading-snug text-slate-900" x-html="c.ly_en_html"></p>
+                <p class="mt-1 text-[16px] leading-snug text-slate-500" x-html="c.ly_html"></p>
+              </div>
+            </div>
+          </div>
+          </template>
+        </div>
+        </template>
+        </div>
+      </template>
+      <div class="flex gap-3 pt-2">
+        <template x-if="l1Muc > 0"><button type="button" data-l1-truoc @click="l1DiMuc(-1)" class="min-h-[72px] flex-1 rounded-full border-[3px] border-slate-300 bg-white text-[26px] font-bold text-slate-700 active:bg-slate-100">‹ Back</button></template>
+        <template x-if="!l1Cuoi()"><button type="button" data-l1-tiep @click="l1DiMuc(1)" class="min-h-[72px] flex-1 rounded-full bg-sky-600 text-[26px] font-bold text-white active:bg-sky-700">Next ›</button></template>
+      </div>
+    </div>
+    </template>
+    <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+      <template x-for="kt in [...new Set(beKd.phan.map(p => p.kt).filter(Boolean))]" :key="kt">
+        <button type="button" data-l1-luyen :data-kt="kt" @click="beKdLuyen(kt)" class="min-h-[80px] rounded-full bg-sky-600 px-8 text-[22px] font-bold text-white active:bg-sky-700" x-text="'Practice: ' + beKdMangTen(kt)"></button>
+      </template>
+      <button type="button" data-l1-ve-ds @click="beVeTong()" class="min-h-[80px] min-w-[220px] rounded-full border-[3px] border-slate-300 bg-white px-10 text-[24px] font-bold text-slate-700 active:bg-slate-100">Back to the list</button>
+    </div>
+  </div>
+  </template>
 
 </div>
 </template>

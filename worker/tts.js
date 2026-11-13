@@ -93,6 +93,9 @@ async function sha1(s) {
  * `points[].sub[]` (chuỗi hoặc `{t}`), `glossary[].def`, `glossary[].example`.
  * Nhóm sau có `**in đậm**` trong JSON; trang gửi bản ĐÃ bỏ `**` nên ở đây cũng
  * lưu bản đã `tron()`. Luật `tron` phải giống hệt bên template.
+ *
+ * Bài tập lớp 1: `allowed()` còn gộp `speakable()` của `{course}.bai-tap.json` —
+ * khoá `noi` cấp tệp (mảng đã sắp, mỗi chuỗi đã `tron`, chỉ có ở bản dựng `lop1`).
  */
 export const tron = (s) => String(s || "").replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
 // Câu bài nói mẫu (`summary[].speaking[].model[]`): `[…]` đánh dấu chỗ con thay chi tiết của mình — đọc to thì bỏ ngoặc.
@@ -120,10 +123,14 @@ export function speakable(doc) {
 }
 
 async function allowed(env, request, user, course) {
-  const url = new URL(`/${user}/study/${course}.json`, request.url);
-  const r = await env.ASSETS.fetch(new Request(url, request));
+  const get = (hau) => env.ASSETS.fetch(new Request(new URL(`/${user}/study/${course}${hau}.json`, request.url), request));
+  const [r, b] = await Promise.all([get(""), get(".bai-tap").catch(() => null)]);
   if (!r.ok) return null;
-  return speakable(await r.json());
+  const set = speakable(await r.json());
+  // Bài tập là phần PHỤ: vắng / 404 / JSON hỏng thì chỉ còn học liệu — endpoint công khai không được vỡ vì nó.
+  // Chỉ `noi` cấp tệp: khoá summary / flashcards / quiz trong tệp bài tập KHÔNG được vào danh sách trắng.
+  try { if (b && b.ok) for (const s of speakable({ noi: (await b.json()).noi })) set.add(s); } catch { /* bỏ phần bài tập */ }
+  return set;
 }
 
 export async function handleTts(request, env, url) {
