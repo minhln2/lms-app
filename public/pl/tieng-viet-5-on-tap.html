@@ -459,6 +459,8 @@ window.LS.ham();
         },
         // ④ chỉ mở khi máy này có kết quả của đề (`lms_bt_kq`); chưa có → false (btVe rơi về mục). `sauNop` true = vừa nộp (không hỏi máy lại ngay: lượt lúc nộp đã là MỘT lần hỏi;
         // câu viết còn chờ = máy không trả lời / không gọi được → hiện ngay «Hỏi máy lại» / «Tự kiểm», khỏi bắt con rời ④ rồi mở lại); không thì câu viết còn chờ + máy gọi được → hỏi lại MỘT lượt.
+        // ④ «Con điền / đúng là» là chữ THÔ (xY / dapY, cũng là chữ sổ): bỏ markup phân số / đậm / tô để con không thấy «{17/40}»
+        btChuTho(s) { return String(s ?? '').replace(/\{(-?\d+(?:[.,]\d+)?(?: \d+)?\/\d+)\}/g, '$1').replace(/\*\*|==/g, ''); },
         btKqMo(ma, sauNop) {
           const de = this.btDeOk() ? BT.de.get(ma) : null, u = de ? this.btUnitCuaDe(de) : '';
           const L = de && this.btDoc(this.btKyKq(de));
@@ -10461,10 +10463,10 @@ registerProcessor('thu-16k',T);`;
                      :class="q.kq === 'dung' ? 'text-emerald-700' : q.kq === 'cho' ? 'text-amber-800' : 'text-rose-700'" x-text="btKdTin(q)"></p>
                   <template x-if="q.kq !== 'trong' && (q.con || q.dap)">
                     <p data-bt-kq-con class="mt-0.5 break-words text-[14.5px] text-slate-800">
-                      <span x-text="q.viet ? 'Con viết: ' : 'Con điền: '"></span><b x-text="q.con || '—'"></b><template x-if="q.kq !== 'dung' && q.kq !== 'cho' && q.dap"><span> → đúng là <b data-bt-kq-dap x-text="q.dap"></b></span></template>
+                      <span x-text="q.viet ? 'Con viết: ' : 'Con điền: '"></span><b x-text="btChuTho(q.con) || '—'"></b><template x-if="q.kq !== 'dung' && q.kq !== 'cho' && q.dap"><span> → đúng là <b data-bt-kq-dap x-text="btChuTho(q.dap)"></b></span></template>
                     </p>
                   </template>
-                  <template x-if="q.kq === 'trong' && q.dap"><p data-bt-kq-con class="mt-0.5 break-words text-[14.5px] text-slate-800">Đúng là <b data-bt-kq-dap x-text="q.dap"></b></p></template>
+                  <template x-if="q.kq === 'trong' && q.dap"><p data-bt-kq-con class="mt-0.5 break-words text-[14.5px] text-slate-800">Đúng là <b data-bt-kq-dap x-text="btChuTho(q.dap)"></b></p></template>
                   <template x-for="(l, li) in q.ly" :key="li"><p data-bt-kq-ly class="mt-0.5 text-[13.5px] text-amber-800" x-text="l"></p></template>
 
                   <!-- câu viết chờ máy -->
