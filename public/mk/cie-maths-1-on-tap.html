@@ -129,7 +129,7 @@ window.LS.ham();
   <title>Ôn tập · CIE Maths 1</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.33ae33e3.css">
+  <link rel="stylesheet" href="../assets/tw.2c878c6c.css">
   <link rel="stylesheet" href="../assets/andika.77cba689/font-face.css">
   
   <script type="module">
@@ -3264,6 +3264,10 @@ window.LS.ham();
           this.chonGan();
           if (location.hash.startsWith('#bai-tap')) await btNap;   // mở thẳng #bai-tap (hoặc #bai-tap/u/<Unit> · /de/<ma> của Math): phải có dữ liệu trước khi LS vẽ lại màn hình
           if (location.hash.startsWith('#bai-tap')) await beNap;   // … và #bai-tap/luyen/<kt> của môn ESL
+          // `?muc=<concept>` (trang dẫn đường ôn thi /{id}/on-thi-cuoi-ky.html): mở đúng mục trên cây cho Tóm tắt / Thẻ (tab do `#…` quyết).
+          // Đặt TRƯỚC `chonGan` không được (nó khôi phục phạm vi đã nhớ) — nên đặt sau. Mục lạ / không có tóm tắt thì bỏ qua, như bấm mục mờ.
+          const muc = new URLSearchParams(location.search).get('muc');
+          if (muc && this.navCo(muc)) this.scope = muc;
           // Lớp phủ ảnh đóng (bằng cách nào cũng được) thì quay về kiểu phóng thường cho các chỗ dùng `zoom` khác.
           this.$watch('zoom', (v) => { if (!v) this.zoomRong = false; });
           // Back/hash (ADR 0067). Đăng ký SAU khi có dữ liệu để ve() đặt đúng mode.
