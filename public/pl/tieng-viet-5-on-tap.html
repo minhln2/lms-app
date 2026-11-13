@@ -129,7 +129,7 @@ window.LS.ham();
   <title>Ôn tập · Tiếng Việt 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.e02200b2.css">
+  <link rel="stylesheet" href="../assets/tw.33ae33e3.css">
   
   
   <script type="module">
@@ -2872,6 +2872,8 @@ window.LS.ham();
         beVietLai(bai, c) { const V = this.beVV(c); V.gui = ''; V.tt = null; V.ly = ''; V.tuKq = null; return this.beVietGui(bai, c); },
         beKdLuyen(kt) { if (BE.mang.has(kt)) this.beMo(kt); },
         beKdMangTen(kt) { const m = BE.mang.get(kt); return m ? m.ten : kt; },
+        // Nhãn nút «Luyện thêm»: «Unit 1 · Present perfect» (số Unit lấy từ tiền tố id mảng u<số>.).
+        beTenUnitMang(kt) { const m = /^u(\d+)\./.exec(kt); return (m ? 'Unit ' + m[1] + ' · ' : '') + this.beKdMangTen(kt); },
         // «Làm lại đề gốc» xoá bài dở của đề gốc (beMoDe(…, true)): đang có bài dở thì HỎI tại chỗ (dải, không confirm() của trình duyệt, không mục lịch sử) — «Làm tiếp bài dở» giữ nó, «Xoá, làm lại từ đầu» như cũ (#7 review A8).
         beKdLamLai() {
           const g = this.beDeGocCua(this.beKd.de);
@@ -10565,6 +10567,15 @@ registerProcessor('thu-16k',T);`;
                     class="min-h-[34px] rounded-full border border-indigo-200 bg-indigo-50 px-3 text-[13.5px] text-indigo-900" x-text="f.nhan"></button>
           </template>
         </div>
+        
+        <template x-if="(m.luyen_them || []).length">
+          <div data-be-luyen-them class="mt-2 flex flex-wrap items-center gap-1.5 text-[13px] text-slate-500">➕ Luyện thêm:
+            <template x-for="k in m.luyen_them" :key="k">
+              <button type="button" data-be-luyen-them-nut :data-kt="k" @click="beMo(k); window.scrollTo(0, 0)"
+                      class="min-h-[34px] rounded-full border border-emerald-200 bg-emerald-50 px-3 text-[13px] text-emerald-900" x-text="beTenUnitMang(k)"></button>
+            </template>
+          </div>
+        </template>
         <template x-if="(m.so_tay || []).length">
           <p data-be-sotay class="mt-2 text-[13px] text-slate-500">📒 Sổ tay:
             <template x-for="(s, si) in m.so_tay" :key="s.id"><span><a data-be-sotay-a :href="s.url" target="_blank" rel="noopener" class="-my-2 inline-block py-2 font-semibold text-indigo-600 hover:underline" x-text="s.ten"></a><span x-show="si < m.so_tay.length - 1"> · </span></span></template>
@@ -10660,6 +10671,18 @@ registerProcessor('thu-16k',T);`;
           <div data-be-bai-doc class="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[15px]">
             <p class="font-semibold" x-html="e.bai.bai_doc.tieu_de_html || ''"></p>
             <p class="whitespace-pre-line" x-html="e.bai.bai_doc.chu_html || ''"></p>
+          </div>
+        </template>
+
+        <template x-if="e.bai.bai_nghe">
+          <div data-be-bai-nghe x-data="{ hien: false }" class="mt-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-[15px]">
+            <p class="font-semibold">🎧 <span x-html="e.bai.bai_nghe.tieu_de_html || ''"></span></p>
+            <div class="mt-1.5 flex flex-wrap gap-2">
+              <button type="button" data-be-nghe @click="ngheMau(e.bai.bai_nghe.cau)" class="inline-flex items-center gap-1 rounded-full border border-sky-300 bg-white px-3 py-1.5 text-sm font-medium text-sky-800 hover:border-sky-500">🔊 Nghe</button>
+              <button type="button" data-be-loi-thoai @click="hien = !hien" class="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-600 hover:border-slate-500" x-text="hien ? 'Ẩn lời thoại' : 'Xem lời thoại'"></button>
+            </div>
+            <p class="mt-1 text-xs text-slate-500">Nghe 2 lần rồi mới trả lời. Làm xong mới mở lời thoại để xem mình nghe sót chỗ nào.</p>
+            <p x-show="hien" x-cloak data-be-loi-thoai-chu class="mt-1.5 text-slate-800" x-text="e.bai.bai_nghe.cau.join(' ')"></p>
           </div>
         </template>
 
@@ -11612,6 +11635,18 @@ registerProcessor('thu-16k',T);`;
           <div data-be-bai-doc class="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[15px]">
             <p class="font-semibold" x-html="e.bai.bai_doc.tieu_de_html || ''"></p>
             <p class="whitespace-pre-line" x-html="e.bai.bai_doc.chu_html || ''"></p>
+          </div>
+        </template>
+
+        <template x-if="e.bai.bai_nghe">
+          <div data-be-bai-nghe x-data="{ hien: false }" class="mt-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-[15px]">
+            <p class="font-semibold">🎧 <span x-html="e.bai.bai_nghe.tieu_de_html || ''"></span></p>
+            <div class="mt-1.5 flex flex-wrap gap-2">
+              <button type="button" data-be-nghe @click="ngheMau(e.bai.bai_nghe.cau)" class="inline-flex items-center gap-1 rounded-full border border-sky-300 bg-white px-3 py-1.5 text-sm font-medium text-sky-800 hover:border-sky-500">🔊 Nghe</button>
+              <button type="button" data-be-loi-thoai @click="hien = !hien" class="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-600 hover:border-slate-500" x-text="hien ? 'Ẩn lời thoại' : 'Xem lời thoại'"></button>
+            </div>
+            <p class="mt-1 text-xs text-slate-500">Nghe 2 lần rồi mới trả lời. Làm xong mới mở lời thoại để xem mình nghe sót chỗ nào.</p>
+            <p x-show="hien" x-cloak data-be-loi-thoai-chu class="mt-1.5 text-slate-800" x-text="e.bai.bai_nghe.cau.join(' ')"></p>
           </div>
         </template>
 
@@ -12600,6 +12635,18 @@ registerProcessor('thu-16k',T);`;
           <div data-be-bai-doc class="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[15px]">
             <p class="font-semibold" x-html="e.bai.bai_doc.tieu_de_html || ''"></p>
             <p class="whitespace-pre-line" x-html="e.bai.bai_doc.chu_html || ''"></p>
+          </div>
+        </template>
+
+        <template x-if="e.bai.bai_nghe">
+          <div data-be-bai-nghe x-data="{ hien: false }" class="mt-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-[15px]">
+            <p class="font-semibold">🎧 <span x-html="e.bai.bai_nghe.tieu_de_html || ''"></span></p>
+            <div class="mt-1.5 flex flex-wrap gap-2">
+              <button type="button" data-be-nghe @click="ngheMau(e.bai.bai_nghe.cau)" class="inline-flex items-center gap-1 rounded-full border border-sky-300 bg-white px-3 py-1.5 text-sm font-medium text-sky-800 hover:border-sky-500">🔊 Nghe</button>
+              <button type="button" data-be-loi-thoai @click="hien = !hien" class="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-600 hover:border-slate-500" x-text="hien ? 'Ẩn lời thoại' : 'Xem lời thoại'"></button>
+            </div>
+            <p class="mt-1 text-xs text-slate-500">Nghe 2 lần rồi mới trả lời. Làm xong mới mở lời thoại để xem mình nghe sót chỗ nào.</p>
+            <p x-show="hien" x-cloak data-be-loi-thoai-chu class="mt-1.5 text-slate-800" x-text="e.bai.bai_nghe.cau.join(' ')"></p>
           </div>
         </template>
 
