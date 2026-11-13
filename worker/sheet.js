@@ -96,7 +96,8 @@ function toSessions(rows, col) {
       subject,
       label,
       // Ưu tiên hyperlink gắn trong ô; nếu không có thì xét bản thân nội dung
-      url: b.link || (/^https?:\/\//.test(label) ? label : ""),
+      // URL có thể nằm giữa chữ: "LMS https://wordwall.net/…" (dòng 15 lớp Ms Dung)
+      url: b.link || (label.match(/https?:\/\/\S+/) || [""])[0],
       done: raw === "TRUE",
     });
   });
