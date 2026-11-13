@@ -10,6 +10,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -128,7 +129,7 @@ window.LS.ham();
   <title>Ôn tập · CIE Science 5</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.6b334bde.css">
+  <link rel="stylesheet" href="../assets/tw.d12815aa.css">
   
   
   <script type="module">
@@ -3400,7 +3401,9 @@ timMo: false,
         // Đọc lần lượt các câu (tts.js chỉ nhận ≤ 200 ký tự/lần): câu sau chờ câu trước phát xong. Bấm loa khác giữa chừng → dừng chuỗi.
         // shortcut: rơi về giọng hệ điều hành (`speakLocal`, không có `_player`) thì chỉ đọc câu đầu — nối chuỗi cho speechSynthesis khi cần.
         async ngheMau(lines) {
-          const luot = this._luotMau = {};
+          if (this.noi.dang) return;
+          // Số, không phải object: Alpine bọc object vừa gán thành proxy, `this._luotMau !== luot` luôn đúng → không câu nào được đọc (lỗi 2026-11-13).
+          const luot = this._luotMau = (this._luotMau || 0) + 1;
           for (const ln of lines || []) {
             if (this._luotMau !== luot) return;
             await this.speak(this.noiMau(ln));
@@ -4038,6 +4041,8 @@ timMo: false,
         // không ai biết — đúng kiểu hỏng mà `tts.js` đã dặn.
         async speak(text, tinCay) {
           text = (text || '').trim(); if (!text) return;
+          if (this.noi.dang) return;   // đang thu âm Luyện nói: tiếng máy đọc sẽ lọt vào bản thu
+          this.noiDungNghe();
           if (this._player) { this._player.pause(); this._player = null; }
           if ('speechSynthesis' in window) window.speechSynthesis.cancel();
           try {
@@ -5572,6 +5577,157 @@ registerProcessor('thu-16k',T);`;
         },
 
 
+        // ── 🎙 Thu âm Luyện nói (`_noi_thuam.html`) ────────────────────────
+        noi: { ban: {}, nap: false, dang: '', giay: 0, gui: {}, loi: {}, phat: '' },
+        _noiM: (() => { const m = { luong: null, rec: null, hen: 0, xong: null, cho: {}, url: {}, audio: null }; return () => m; })(),
+        noiDuong(cau, b) { return `/api/noi/${this.user}/${this.course}` + (cau ? `/${cau}/${b.ts}-${b.dai}` : ''); },
+        noiGio(ts) { const d = new Date(ts), h = (n) => String(n).padStart(2, '0'); return `${h(d.getDate())}/${h(d.getMonth() + 1)} ${h(d.getHours())}:${h(d.getMinutes())}`; },
+        noiDai(ms) { const s = Math.round(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); },
+        noiDu(cau) { return (this.noi.ban[cau] || []).length >= 5; },
+        noiKhoa(cau) { return this.noi.dang !== cau && (this.noiDu(cau) || !!this.noi.gui[cau]); },
+        noiMatMa(r) {
+          if (r.status !== 401) return false;
+          this.secret = ''; localStorage.removeItem('lms_key'); window.dispatchEvent(new Event('lms-key'));
+          return true;
+        },
+        async noiNap() {
+          if (!this.secret || this.noi.nap) return;
+          this.noi.nap = true;
+          try {
+            const r = await fetch(this.noiDuong(), { headers: { 'x-progress-key': this.secret } });
+            if (this.noiMatMa(r) || !r.ok) { this.noi.nap = false; return; }
+            this.noi.ban = (await r.json()).ban || {};
+          } catch (e) { this.noi.nap = false; }
+        },
+        noiDungNghe() {
+          const m = this._noiM();
+          if (m.audio) { m.audio.pause(); m.audio = null; }
+          this.noi.phat = '';
+        },
+        async noiThu(cau) {
+          const m = this._noiM();
+          // Đang chờ micro (Safari hỏi quyền, có thể vài giây): bấm thêm thì bỏ qua — không thì luồng đầu mồ côi, micro bật mãi.
+          if (m.mo) return;
+          const truoc = this.noi.dang;
+          if (truoc) await this.noiDung();
+          if (truoc === cau || this.noiKhoa(cau)) return;
+          // Trang xuống nền → dừng và giữ phần đã thu. Gắn MỘT lần ở document (không theo khối x-if: khối ẩn đi thì mất listener).
+          if (!m.anGan) {
+            m.anGan = true;
+            document.addEventListener('visibilitychange', () => { if (document.hidden) { m.huy = true; this.noiDung(); } });
+          }
+          // Không để tiếng nào đang phát lọt vào bản thu.
+          if (this._player) { this._player.pause(); this._player = null; }
+          if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+          this._luotMau = (this._luotMau || 0) + 1;   // huỷ lượt «Nghe bài mẫu» đang chạy
+          this.noiDungNghe();
+          this.noi.loi = { ...this.noi.loi, [cau]: '' };
+          // `dang` đặt TRƯỚC await: 🔊 / ▶ / nút thu khác bị chặn ngay trong lúc chờ quyền micro.
+          m.mo = true; m.huy = false; this.noi.dang = cau; this.noi.giay = 0;
+          let rec;
+          try {
+            m.luong = await navigator.mediaDevices.getUserMedia({ audio: true });
+            if (m.huy || document.hidden) throw new Error('an');
+            rec = new MediaRecorder(m.luong, { audioBitsPerSecond: 32000 });
+          } catch (e) {
+            if (m.luong) m.luong.getTracks().forEach((x) => x.stop());
+            m.luong = null;
+            this.noi.dang = '';
+            if (e.message !== 'an') this.noi.loi = { ...this.noi.loi, [cau]: 'mic' };
+            return;
+          } finally { m.mo = false; }
+          const manh = [], ts = Date.now(), t0 = performance.now();
+          rec.ondataavailable = (e) => { if (e.data && e.data.size) manh.push(e.data); };
+          // `dataavailable` cuối luôn tới TRƯỚC `stop`.
+          rec.onstop = () => {
+            const dai = Math.max(1, Math.round(performance.now() - t0));
+            let loai = (rec.mimeType || (manh[0] && manh[0].type) || 'audio/webm').split(';')[0].trim().replace(/^video\//, 'audio/');
+            if (!/^audio\/(mp4|webm|ogg)$/.test(loai)) loai = 'audio/webm';
+            clearInterval(m.hen);
+            if (m.luong) m.luong.getTracks().forEach((x) => x.stop());
+            m.luong = null; m.rec = null;
+            this.noi.dang = '';
+            if (manh.length) {
+              m.cho[cau] = new Blob(manh, { type: loai });
+              this.noi.gui = { ...this.noi.gui, [cau]: { ts, dai: Math.min(dai, 185000), loai, dang: false, loi: '' } };
+              this.noiGui(cau);
+            }
+            const x = m.xong; m.xong = null; if (x) x();
+          };
+          m.luong.getAudioTracks().forEach((x) => { x.onended = () => this.noiDung(); });   // hệ thống ngắt micro
+          m.rec = rec;
+          rec.start();
+          this.noi.dang = cau; this.noi.giay = 0;
+          m.hen = setInterval(() => {
+            this.noi.giay = Math.floor((performance.now() - t0) / 1000);
+            if (this.noi.giay >= 180) this.noiDung();
+          }, 250);
+        },
+        // Dừng bản đang thu và chờ nó vào hàng gửi. Gọi nhiều lần vô hại.
+        noiDung() {
+          const m = this._noiM();
+          if (!m.rec || m.rec.state === 'inactive') return Promise.resolve();
+          if (m.xong) return new Promise((r) => { const x = m.xong; m.xong = () => { x(); r(); }; });
+          return new Promise((r) => { m.xong = r; m.rec.stop(); });
+        },
+        async noiGui(cau) {
+          const g = this.noi.gui[cau], m = this._noiM(), blob = m.cho[cau];
+          if (!g || g.dang || !blob) return;
+          g.dang = true; g.loi = '';
+          try {
+            const r = await fetch(this.noiDuong(cau, g), { method: 'PUT', body: blob,
+              headers: { 'x-progress-key': this.secret, 'content-type': g.loai } });
+            if (this.noiMatMa(r)) { g.loi = 'ma'; return; }
+            if (r.status === 409) { g.loi = 'du'; return; }
+            if (!r.ok) { g.loi = 'mang'; return; }
+            const b = await r.json();
+            const cu = (this.noi.ban[cau] || []).filter((x) => x.ts !== b.ts);
+            this.noi.ban = { ...this.noi.ban, [cau]: [{ ts: b.ts, dai: b.dai, size: b.size }, ...cu] };
+            delete m.cho[cau];
+            const { [cau]: _bo, ...con } = this.noi.gui; this.noi.gui = con;
+          } catch (e) { g.loi = 'mang'; }
+          finally { g.dang = false; }
+        },
+        noiBo(cau) {
+          if (!confirm('Bỏ bản vừa thu (chưa lưu được)?')) return;
+          delete this._noiM().cho[cau];
+          const { [cau]: _bo, ...con } = this.noi.gui; this.noi.gui = con;
+        },
+        async noiNghe(cau, b) {
+          const k = cau + '/' + b.ts, m = this._noiM();
+          if (this.noi.phat === k) { this.noiDungNghe(); return; }
+          if (this.noi.dang) return;
+          this.noiDungNghe();
+          if (this._player) { this._player.pause(); this._player = null; }
+          if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+          this._luotMau = (this._luotMau || 0) + 1;   // huỷ lượt «Nghe bài mẫu» đang chạy
+          this.noi.phat = k;
+          try {
+            if (!m.url[k]) {
+              const r = await fetch(this.noiDuong(cau, b), { headers: { 'x-progress-key': this.secret } });
+              if (this.noiMatMa(r) || !r.ok) throw new Error('HTTP ' + r.status);
+              m.url[k] = URL.createObjectURL(await r.blob());
+            }
+            if (this.noi.phat !== k) return;   // đã bấm thứ khác trong lúc tải
+            const a = new Audio(m.url[k]);
+            m.audio = a;
+            a.onended = () => { if (m.audio === a) { m.audio = null; this.noi.phat = ''; } };
+            await a.play();
+          } catch (e) { if (this.noi.phat === k) this.noi.phat = ''; }
+        },
+        async noiXoa(cau, b) {
+          if (!confirm(`Xoá bản thu ${this.noiGio(b.ts)} (${this.noiDai(b.dai)})?`)) return;
+          const k = cau + '/' + b.ts, m = this._noiM();
+          if (this.noi.phat === k) this.noiDungNghe();
+          try {
+            const r = await fetch(this.noiDuong(cau, b), { method: 'DELETE', headers: { 'x-progress-key': this.secret } });
+            if (this.noiMatMa(r) || (!r.ok && r.status !== 404)) throw new Error('HTTP ' + r.status);
+          } catch (e) { alert('Chưa xoá được — kiểm tra mạng rồi thử lại.'); return; }
+          if (m.url[k]) { URL.revokeObjectURL(m.url[k]); delete m.url[k]; }
+          this.noi.ban = { ...this.noi.ban, [cau]: (this.noi.ban[cau] || []).filter((x) => x.ts !== b.ts) };
+        },
+
+
         // ── Từ đã tra ────────────────────────────────────────────────────────
         // Gộp theo TỪ chứ không phải nhật ký từng lượt: câu đáng trả lời là "con
         // hay phải tra lại từ nào", và từ tra đi tra lại chính là từ chưa thuộc.
@@ -6956,7 +7112,8 @@ registerProcessor('thu-16k',T);`;
           </div></template>
 
           
-          <template x-if="show.speaking && speakings(sec).length"><div class="px-5 pb-1 space-y-3" data-luyen-noi>
+          <template x-if="show.speaking && speakings(sec).length"><div class="px-5 pb-1 space-y-3" data-luyen-noi
+               x-init="noiNap()" @lms-key.window="noi.nap = false; noiNap()">
           <p class="text-xs text-slate-500">Bài nói mẫu chỉ để <b>tham khảo</b>, không phải đáp án của trường. Thay phần <span class="rounded bg-yellow-100 px-0.5 border-b-2 border-dotted border-yellow-600">tô vàng</span> bằng chuyện của con, rồi tự nói 4–5 câu.</p>
           <template x-for="(sp, si) in speakings(sec)" :key="'k' + si">
             <div class="rounded-lg border border-orange-200 bg-orange-50/40 px-3 py-2.5">
@@ -6976,6 +7133,50 @@ registerProcessor('thu-16k',T);`;
                   <template x-for="(t, ti) in (sp.them || [])" :key="ti"><li x-html="slotHtml(t)"></li></template>
                 </ul>
               </div>
+
+              <div x-show="sp.id" class="mt-2 border-t border-orange-200 pt-2" data-thu-am>
+                <template x-if="!secret">
+                  <p class="text-xs text-slate-500">🎙 <button type="button" @click="askSecret()" class="underline hover:text-orange-700 py-2 -my-2">Nhập mã</button> để thu âm bài nói của con.</p>
+                </template>
+                <template x-if="secret"><div>
+                  <div class="flex items-center justify-between gap-2">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-orange-700">🎙 Bản thu của con <span class="font-normal" x-text="'(' + (noi.ban[sp.id] || []).length + '/5)'"></span></p>
+                    <button type="button" data-thu @click="noiThu(sp.id)" :disabled="noiKhoa(sp.id)"
+                            class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                            :class="noi.dang === sp.id ? 'bg-red-600 text-white' : 'border border-red-300 bg-white text-red-700 hover:border-red-500'">
+                      <span x-show="noi.dang !== sp.id">● Thu bài nói</span>
+                      <span x-show="noi.dang === sp.id" x-cloak class="inline-flex items-center gap-1.5"><span class="inline-block h-2.5 w-2.5 animate-pulse rounded-full bg-white"></span><span x-text="'■ Dừng · ' + noiDai(noi.giay * 1000)"></span></span>
+                    </button>
+                  </div>
+                  <p x-show="noiDu(sp.id) && noi.dang !== sp.id" x-cloak data-noi-du class="mt-1 text-xs text-amber-700">Đã đủ 5 bản — xoá bớt một bản rồi thu tiếp.</p>
+                  <p x-show="noi.loi[sp.id] === 'mic'" x-cloak class="mt-1 text-xs text-red-600">Không mở được micro — cho phép micro cho trang này trong Safari rồi thử lại.</p>
+                  <template x-if="noi.gui[sp.id]">
+                    <div class="mt-1 flex flex-wrap items-center gap-2 text-xs" data-noi-cho>
+                      <span x-show="noi.gui[sp.id].dang" class="text-slate-500">⏳ đang lưu…</span>
+                      <template x-if="!noi.gui[sp.id].dang && noi.gui[sp.id].loi">
+                        <span class="inline-flex flex-wrap items-center gap-2">
+                          <span class="text-red-600" x-text="noi.gui[sp.id].loi === 'du' ? 'Chưa lưu được: đã đủ 5 bản — xoá bớt một bản rồi bấm Thử lại.' : (noi.gui[sp.id].loi === 'ma' ? 'Chưa lưu được: mã bí mật không đúng.' : 'Chưa lưu được (mạng?).')"></span>
+                          <button type="button" @click="noiGui(sp.id)" class="rounded-full border border-slate-300 bg-white px-2.5 py-1 font-medium">Thử lại</button>
+                          <button type="button" @click="noiBo(sp.id)" class="text-slate-500 underline">Bỏ</button>
+                        </span>
+                      </template>
+                    </div>
+                  </template>
+                  <ul class="mt-1 divide-y divide-orange-100">
+                    <template x-for="b in (noi.ban[sp.id] || [])" :key="b.ts">
+                      <li class="flex items-center gap-2 py-1" data-ban>
+                        <button type="button" @click="noiNghe(sp.id, b)" :disabled="!!noi.dang" :title="noi.phat === sp.id + '/' + b.ts ? 'Dừng' : 'Nghe lại'"
+                                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-orange-300 bg-white text-orange-700 disabled:opacity-40"
+                                x-text="noi.phat === sp.id + '/' + b.ts ? '⏸' : '▶'"></button>
+                        <span class="flex-1 text-sm text-slate-700" x-text="noiGio(b.ts) + ' · ' + noiDai(b.dai)"></span>
+                        <button type="button" @click="noiXoa(sp.id, b)" :disabled="!!noi.dang" title="Xoá bản này" data-xoa
+                                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-40">🗑</button>
+                      </li>
+                    </template>
+                  </ul>
+                </div></template>
+              </div>
+
             </div>
           </template>
           </div></template>

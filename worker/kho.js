@@ -15,6 +15,7 @@
  */
 const QUYEN = [
   ["thu-am/", { doc: "ma", ghi: "ma" }],
+  ["noi/", { doc: "ma", ghi: "ma" }],        // bản thu Luyện nói ESL (worker/luyen_noi.js)
   ["tap-doc/am/", { doc: "cong-khai", ghi: "may" }],
   ["tai-lieu/", { doc: "cong-khai", ghi: "may" }],
 ];

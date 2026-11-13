@@ -9,6 +9,7 @@
  *   /api/toan      → Ôn tập Toán 6: lịch sử làm bài của trẻ (đọc D1, cần mã bí mật; ghi qua /api/study?course=toan-6, worker/toan.js)
  *   /api/tts       → đọc to bằng Google TTS, sinh lúc bấm, cache ở edge
  *   /api/tapdoc/*  → tập đọc: tiến độ + quiz (D1), bản thu âm (R2) — mọi đường đòi mã
+ *   /api/noi/*     → bản thu Luyện nói ESL (R2, ≤ 5 bản / câu; worker/luyen_noi.js) — mọi đường đòi mã
  *   /api/lookup    → tra nghĩa 1 từ / dịch 1 đoạn bằng Gemini (cần mã bí mật)
  *   /api/lookup/history → từ đã tra, gộp theo từ + số lần (cần mã bí mật)
  *   /api/cham-viet → Gemini chấm câu viết của tab «Bài tập» Math 5 (và bài viết ESL 5); 3 lượt/câu/ngày + chung trần 300 với tra cứu (worker/cham_viet.js; cần mã bí mật)
@@ -51,6 +52,7 @@ import { handleChamLai } from "./cham_lai.js";
 import { handleChamMo } from "./cham_mo.js";
 import { handleSttToken } from "./stt.js";
 import { handleTapdoc } from "./tapdoc.js";
+import { handleNoi } from "./luyen_noi.js";
 import { handleDiem, doiChieuTick, doiChieuSheet, doiTrangThai, soDu, an } from "./diem.js";
 import { handleQuantri } from "./quantri.js";
 import { laAm, phucVuAm } from "./range.js";
@@ -262,6 +264,7 @@ export default {
     }
     if (pathname.startsWith("/api/quantri/")) return handleQuantri(request, env, url);
     if (pathname.startsWith("/api/tapdoc/")) return handleTapdoc(request, env, url);
+    if (pathname.startsWith("/api/noi/")) return handleNoi(request, env, url);
     if (pathname === "/api/tts") return handleTts(request, env, url);
 
     if (pathname === "/api/lookup/history") return handleLookupHistory(request, env, url);
