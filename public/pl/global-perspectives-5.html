@@ -444,7 +444,7 @@ window.LS.ham();
     // Nhãn loại mục để dòng "Đang lọc" gọi tên chip đang bật. (tojson trong <script> — được.)
     var LOAI = { "page": "\ud83d\udcc4 v\u0103n b\u1ea3n","external": "\ud83d\udd17 li\u00ean k\u1ebft ngo\u00e0i", };
     var TIEN_DO_KEY = "pl/145790/";
-    var TONG_MUC = 38;
+    var TONG_MUC = 41;
     var CO_HW = true;
     /** State của TRANG MÔN. Trước đây nằm thẳng trong `x-data` của <body>; nay phải là hàm vì
         ô tìm dùng chung (`_timkiem.html`) chèn thêm thành viên — nhét vào thuộc tính HTML là
@@ -716,7 +716,7 @@ timMo: false,
             <span class="min-w-0 flex-1">Challenge 3 - Powering our lives: What are the costs of energy use?</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/3'"></span>
+                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/6'"></span>
             </template>
           </button>
         </li>
@@ -784,11 +784,11 @@ timMo: false,
         <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">Challenge 3 - Powering our lives: What are the costs of energy use?</span>
         <template x-if="p.online">
           <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
-                :class="moduleDone($el.closest('[data-module]'), p.done) === 3
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 6
                         ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
-                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/3'"></span>
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/6'"></span>
         </template>
-        <span class="text-xs text-slate-400 shrink-0">3 mục</span>
+        <span class="text-xs text-slate-400 shrink-0">6 mục</span>
       </button>
 
       <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
@@ -954,7 +954,85 @@ timMo: false,
         
         
         
-        <div data-item data-title="Renewable and Non-renewable Energy - Reading" data-type="external" data-sec="1"
+        <div data-item data-title="Identify how energy is used in our daily lives" data-type="external" data-sec="1"
+             data-pkey="pl/145790/9322137" data-hash="3d6a8b94860f44265f88eb664d7b968ee5eff928" data-ts="1794565980000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/145790/9322137'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/145790/9322137'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/145790/9322137']; $el.indeterminate = !!p.redo['pl/145790/9322137']"
+                     @change="await p.toggle('pl/145790/9322137', '3d6a8b94860f44265f88eb664d7b968ee5eff928'); $el.checked = !!p.done['pl/145790/9322137']; $el.indeterminate = !!p.redo['pl/145790/9322137']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://docs.google.com/presentation/d/1jRDCCA7WOVqcKtE27MPyh0hDBwnhChEv/edit?usp=drive_link&amp;ouid=111965366477095862136&amp;rtpof=true&amp;sd=true" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Identify how energy is used in our daily lives
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/145790/9322137', '3d6a8b94860f44265f88eb664d7b968ee5eff928')">
+                  <button @click.stop="p.seen('pl/145790/9322137', '3d6a8b94860f44265f88eb664d7b968ee5eff928')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 13/11</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-sechead data-title="Optional Activities" data-sec="2"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>Optional Activities</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="Renewable and Non-renewable Energy - Reading" data-type="external" data-sec="2"
              data-pkey="pl/145790/9251727" data-hash="f8f22fa0ff0a8285449738ca72f8a8999e3941bb" data-ts="1793961060000"
              
              
@@ -1006,6 +1084,146 @@ timMo: false,
                 
                 
                 <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 06/11</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Energy Sources - Reading" data-type="external" data-sec="2"
+             data-pkey="pl/145790/9322135" data-hash="6e28981e9b1b6ad380bf2da4c0e40150e1a03031" data-ts="1794565980000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/145790/9322135'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/145790/9322135'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/145790/9322135']; $el.indeterminate = !!p.redo['pl/145790/9322135']"
+                     @change="await p.toggle('pl/145790/9322135', '6e28981e9b1b6ad380bf2da4c0e40150e1a03031'); $el.checked = !!p.done['pl/145790/9322135']; $el.indeterminate = !!p.redo['pl/145790/9322135']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://drive.google.com/file/d/1ayAQA1f_XohaBebguPKEXR2NTjvmBTbg/view?usp=drive_link" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Energy Sources - Reading
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/145790/9322135', '6e28981e9b1b6ad380bf2da4c0e40150e1a03031')">
+                  <button @click.stop="p.seen('pl/145790/9322135', '6e28981e9b1b6ad380bf2da4c0e40150e1a03031')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 13/11</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-sechead data-title="Homework" data-sec="3"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>Homework</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="Energy Diary - Homework Sheet" data-type="external" data-sec="3"
+             data-pkey="pl/145790/9322133" data-hash="abd51db9e1e65f5aa5504189d1dadae9bedf3272" data-ts="1794565980000"
+             
+             data-hw="1"
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/145790/9322133'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/145790/9322133'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/145790/9322133']; $el.indeterminate = !!p.redo['pl/145790/9322133']"
+                     @change="await p.toggle('pl/145790/9322133', 'abd51db9e1e65f5aa5504189d1dadae9bedf3272'); $el.checked = !!p.done['pl/145790/9322133']; $el.indeterminate = !!p.redo['pl/145790/9322133']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://docs.google.com/document/d/1hPLn4BYtzHvwLDG_YQ6--dMe54pDcaVQ/edit?usp=drive_link&amp;ouid=111965366477095862136&amp;rtpof=true&amp;sd=true" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Energy Diary - Homework Sheet
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/145790/9322133', 'abd51db9e1e65f5aa5504189d1dadae9bedf3272')">
+                  <button @click.stop="p.seen('pl/145790/9322133', 'abd51db9e1e65f5aa5504189d1dadae9bedf3272')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 13/11</span>
                 
               </div>
 

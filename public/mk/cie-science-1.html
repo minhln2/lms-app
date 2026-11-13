@@ -444,7 +444,7 @@ window.LS.ham();
     // Nhãn loại mục để dòng "Đang lọc" gọi tên chip đang bật. (tojson trong <script> — được.)
     var LOAI = { "file": "\ud83d\udcce t\u00e0i li\u1ec7u","external": "\ud83d\udd17 li\u00ean k\u1ebft ngo\u00e0i", };
     var TIEN_DO_KEY = "mk/145788/";
-    var TONG_MUC = 38;
+    var TONG_MUC = 43;
     var CO_HW = true;
     /** State của TRANG MÔN. Trước đây nằm thẳng trong `x-data` của <body>; nay phải là hàm vì
         ô tìm dùng chung (`_timkiem.html`) chèn thêm thành viên — nhét vào thuộc tính HTML là
@@ -719,10 +719,10 @@ timMo: false,
         <li x-show="mucHien(1, f)">
           <button type="button" @click="toiMuc(1); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
-            <span class="min-w-0 flex-1">Week 12 (02.11.25 - 06.11.25) Topic 2.4 Changing Direction</span>
+            <span class="min-w-0 flex-1">End of Semester 1: Revision</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/6'"></span>
+                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/8'"></span>
             </template>
           </button>
         </li>
@@ -730,10 +730,10 @@ timMo: false,
         <li x-show="mucHien(2, f)">
           <button type="button" @click="toiMuc(2); menuMo = false"
                   class="w-full text-left px-2 py-2 rounded text-xs leading-snug text-slate-600 hover:bg-slate-50 flex items-start gap-2">
-            <span class="min-w-0 flex-1">End of Semester 1: Revision</span>
+            <span class="min-w-0 flex-1">Week 12 (02.11.25 - 06.11.25) Topic 2.4 Changing Direction</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-2'), p.done) + '/3'"></span>
+                    x-text="moduleDone(document.getElementById('mod-2'), p.done) + '/6'"></span>
             </template>
           </button>
         </li>
@@ -861,7 +861,562 @@ timMo: false,
     <!-- Một Tuần học / Bài học -->
     <section x-data="{ open: true }"
              x-effect="if (q || filtering) open = true"
-             id="mod-1" data-module data-title="Week 12 (02.11.25 - 06.11.25) Topic 2.4 Changing Direction"
+             id="mod-1" data-module data-title="End of Semester 1: Revision"
+             x-show="moduleMatches($el, f)"
+             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <button @click="open = !open"
+              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
+        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
+             :class="open ? 'rotate-90' : ''"
+             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">End of Semester 1: Revision</span>
+        <template x-if="p.online">
+          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 8
+                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/8'"></span>
+        </template>
+        <span class="text-xs text-slate-400 shrink-0">8 mục</span>
+      </button>
+
+      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-item data-title="Unit 2&amp;4 Review Booklet" data-type="file" data-sec="0"
+             data-pkey="mk/145788/9245060" data-hash="4ce2fef814c2a87e7be83bf43ffab6b58db8434f" data-ts="1793871225000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/145788/9245060'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/145788/9245060'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/145788/9245060']; $el.indeterminate = !!p.redo['mk/145788/9245060']"
+                     @change="await p.toggle('mk/145788/9245060', '4ce2fef814c2a87e7be83bf43ffab6b58db8434f'); $el.checked = !!p.done['mk/145788/9245060']; $el.indeterminate = !!p.redo['mk/145788/9245060']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-science-1/grade-1-science-units-2-and-4-review-booklet-1/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Unit 2&amp;4 Review Booklet
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/145788/9245060', '4ce2fef814c2a87e7be83bf43ffab6b58db8434f')">
+                  <button @click.stop="p.seen('mk/145788/9245060', '4ce2fef814c2a87e7be83bf43ffab6b58db8434f')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>6.7 MB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 05/11</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Science Safety - Sorting Game" data-type="external" data-sec="0"
+             data-pkey="mk/145788/9326813" data-hash="01d797b2d5fa7c7786f8eb0aa5bdc82ca6f24094" data-ts="1794566040000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/145788/9326813'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/145788/9326813'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/145788/9326813']; $el.indeterminate = !!p.redo['mk/145788/9326813']"
+                     @change="await p.toggle('mk/145788/9326813', '01d797b2d5fa7c7786f8eb0aa5bdc82ca6f24094'); $el.checked = !!p.done['mk/145788/9326813']; $el.indeterminate = !!p.redo['mk/145788/9326813']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://wordwall.net/en-us/community/science/safety" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Science Safety - Sorting Game
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/145788/9326813', '01d797b2d5fa7c7786f8eb0aa5bdc82ca6f24094')">
+                  <button @click.stop="p.seen('mk/145788/9326813', '01d797b2d5fa7c7786f8eb0aa5bdc82ca6f24094')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 13/11</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-sechead data-title="Unit 2: Forces &amp; Movement" data-sec="1"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>Unit 2: Forces &amp; Movement</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="G1 Science: Unit 2 Revision - Wordwall Activity" data-type="external" data-sec="1"
+             data-pkey="mk/145788/9232855" data-hash="76db38428cc89bab60d91b5beaa6f06d5c2ebe65" data-ts="1793874720000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/145788/9232855'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/145788/9232855'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/145788/9232855']; $el.indeterminate = !!p.redo['mk/145788/9232855']"
+                     @change="await p.toggle('mk/145788/9232855', '76db38428cc89bab60d91b5beaa6f06d5c2ebe65'); $el.checked = !!p.done['mk/145788/9232855']; $el.indeterminate = !!p.redo['mk/145788/9232855']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://wordwall.net/resource/102581441/g1-science-unit-2-revision" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                G1 Science: Unit 2 Revision - Wordwall Activity
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/145788/9232855', '76db38428cc89bab60d91b5beaa6f06d5c2ebe65')">
+                  <button @click.stop="p.seen('mk/145788/9232855', '76db38428cc89bab60d91b5beaa6f06d5c2ebe65')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 05/11</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Unit 2.2 Changing Shape - Wordwall Quiz" data-type="external" data-sec="1"
+             data-pkey="mk/145788/9321555" data-hash="45dd97f0f0c464e8b7df4c00445da5b99508dfdd" data-ts="1794566040000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/145788/9321555'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/145788/9321555'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/145788/9321555']; $el.indeterminate = !!p.redo['mk/145788/9321555']"
+                     @change="await p.toggle('mk/145788/9321555', '45dd97f0f0c464e8b7df4c00445da5b99508dfdd'); $el.checked = !!p.done['mk/145788/9321555']; $el.indeterminate = !!p.redo['mk/145788/9321555']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://wordwall.net/resource/99623230/unit-22-changing-shape" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Unit 2.2 Changing Shape - Wordwall Quiz
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/145788/9321555', '45dd97f0f0c464e8b7df4c00445da5b99508dfdd')">
+                  <button @click.stop="p.seen('mk/145788/9321555', '45dd97f0f0c464e8b7df4c00445da5b99508dfdd')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 13/11</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-sechead data-title="Unit 4: Human and Animals Grow" data-sec="2"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>Unit 4: Human and Animals Grow</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="Unit 4 Revision Quiz: Humans and Animals Grow" data-type="external" data-sec="2"
+             data-pkey="mk/145788/9245167" data-hash="b4623815389632398791068ef7f89f4057e361b5" data-ts="1793874720000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/145788/9245167'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/145788/9245167'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/145788/9245167']; $el.indeterminate = !!p.redo['mk/145788/9245167']"
+                     @change="await p.toggle('mk/145788/9245167', 'b4623815389632398791068ef7f89f4057e361b5'); $el.checked = !!p.done['mk/145788/9245167']; $el.indeterminate = !!p.redo['mk/145788/9245167']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://wordwall.net/resource/119765540/unit-4-revision-quiz-humans-and-animals-grow" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Unit 4 Revision Quiz: Humans and Animals Grow
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/145788/9245167', 'b4623815389632398791068ef7f89f4057e361b5')">
+                  <button @click.stop="p.seen('mk/145788/9245167', 'b4623815389632398791068ef7f89f4057e361b5')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 05/11</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Unit 4.1 Comparing Animals - Wordwall Quiz" data-type="external" data-sec="2"
+             data-pkey="mk/145788/9322136" data-hash="c4dcad9e504e85f676474c1e7e44709c26f05b7a" data-ts="1794566040000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/145788/9322136'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/145788/9322136'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/145788/9322136']; $el.indeterminate = !!p.redo['mk/145788/9322136']"
+                     @change="await p.toggle('mk/145788/9322136', 'c4dcad9e504e85f676474c1e7e44709c26f05b7a'); $el.checked = !!p.done['mk/145788/9322136']; $el.indeterminate = !!p.redo['mk/145788/9322136']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://wordwall.net/resource/105096239/41-comparing-animals" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Unit 4.1 Comparing Animals - Wordwall Quiz
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/145788/9322136', 'c4dcad9e504e85f676474c1e7e44709c26f05b7a')">
+                  <button @click.stop="p.seen('mk/145788/9322136', 'c4dcad9e504e85f676474c1e7e44709c26f05b7a')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 13/11</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Unit 4.4 Keeping Healthy Wordwall Quiz" data-type="external" data-sec="2"
+             data-pkey="mk/145788/9321999" data-hash="521d302fec4806d4a326a2ceb009ed03ed54a061" data-ts="1794566040000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/145788/9321999'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/145788/9321999'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/145788/9321999']; $el.indeterminate = !!p.redo['mk/145788/9321999']"
+                     @change="await p.toggle('mk/145788/9321999', '521d302fec4806d4a326a2ceb009ed03ed54a061'); $el.checked = !!p.done['mk/145788/9321999']; $el.indeterminate = !!p.redo['mk/145788/9321999']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://wordwall.net/resource/118834573/unit-44-keeping-healthy-quiz" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Unit 4.4 Keeping Healthy Wordwall Quiz
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/145788/9321999', '521d302fec4806d4a326a2ceb009ed03ed54a061')">
+                  <button @click.stop="p.seen('mk/145788/9321999', '521d302fec4806d4a326a2ceb009ed03ed54a061')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 13/11</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Unit 4.5 Teeth - Wordwall Quiz" data-type="external" data-sec="2"
+             data-pkey="mk/145788/9321998" data-hash="a263a3c29f97d26492fa089e895adcf34e6a4079" data-ts="1794566040000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['mk/145788/9321998'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['mk/145788/9321998'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['mk/145788/9321998']; $el.indeterminate = !!p.redo['mk/145788/9321998']"
+                     @change="await p.toggle('mk/145788/9321998', 'a263a3c29f97d26492fa089e895adcf34e6a4079'); $el.checked = !!p.done['mk/145788/9321998']; $el.indeterminate = !!p.redo['mk/145788/9321998']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
+              <a href="https://wordwall.net/resource/103056322/science/45-teeth-science" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Unit 4.5 Teeth - Wordwall Quiz
+                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('mk/145788/9321998', 'a263a3c29f97d26492fa089e895adcf34e6a4079')">
+                  <button @click.stop="p.seen('mk/145788/9321998', 'a263a3c29f97d26492fa089e895adcf34e6a4079')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                
+                
+                
+                
+                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 13/11</span>
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+      </div>
+    </section>
+    
+    <!-- Một Tuần học / Bài học -->
+    <section x-data="{ open: false }"
+             x-effect="if (q || filtering) open = true"
+             id="mod-2" data-module data-title="Week 12 (02.11.25 - 06.11.25) Topic 2.4 Changing Direction"
              x-show="moduleMatches($el, f)"
              class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <button @click="open = !open"
@@ -1272,251 +1827,6 @@ timMo: false,
                 
                 <span title="Cập nhật lần cuối tại nguồn">🕓 03/11</span>
                 
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-      </div>
-    </section>
-    
-    <!-- Một Tuần học / Bài học -->
-    <section x-data="{ open: false }"
-             x-effect="if (q || filtering) open = true"
-             id="mod-2" data-module data-title="End of Semester 1: Revision"
-             x-show="moduleMatches($el, f)"
-             class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <button @click="open = !open"
-              class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50">
-        <svg class="w-5 h-5 text-indigo-500 transition-transform duration-200 shrink-0"
-             :class="open ? 'rotate-90' : ''"
-             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-        </svg>
-        <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">End of Semester 1: Revision</span>
-        <template x-if="p.online">
-          <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
-                :class="moduleDone($el.closest('[data-module]'), p.done) === 3
-                        ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
-                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/3'"></span>
-        </template>
-        <span class="text-xs text-slate-400 shrink-0">3 mục</span>
-      </button>
-
-      <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
-        
-        
-        <div data-item data-title="Unit 2&amp;4 Review Booklet" data-type="file" data-sec="0"
-             data-pkey="mk/145788/9245060" data-hash="4ce2fef814c2a87e7be83bf43ffab6b58db8434f" data-ts="1793871225000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['mk/145788/9245060'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['mk/145788/9245060'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['mk/145788/9245060']; $el.indeterminate = !!p.redo['mk/145788/9245060']"
-                     @change="await p.toggle('mk/145788/9245060', '4ce2fef814c2a87e7be83bf43ffab6b58db8434f'); $el.checked = !!p.done['mk/145788/9245060']; $el.indeterminate = !!p.redo['mk/145788/9245060']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Tài liệu đã tải về local -->
-              <a href="doc/cie-science-1/grade-1-science-units-2-and-4-review-booklet-1/index.html" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                Unit 2&amp;4 Review Booklet
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('mk/145788/9245060', '4ce2fef814c2a87e7be83bf43ffab6b58db8434f')">
-                  <button @click.stop="p.seen('mk/145788/9245060', '4ce2fef814c2a87e7be83bf43ffab6b58db8434f')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                <span>6.7 MB</span>
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 05/11</span>
-                
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-sechead data-title="Unit 2: Forces &amp; Movement" data-sec="1"
-             x-show="headingMatches($el, f)"
-             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
-             style="padding-left: 1.0rem">
-          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
-          <template x-if="p.online">
-            <input type="checkbox" title="Đánh dấu cả nhóm này"
-                   x-effect="syncSecBox($el, p.done)"
-                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
-                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-          </template>
-          <span>Unit 2: Forces &amp; Movement</span>
-        </div>
-        
-        
-        
-        <div data-item data-title="G1 Science: Unit 2 Revision - Wordwall Activity" data-type="external" data-sec="1"
-             data-pkey="mk/145788/9232855" data-hash="76db38428cc89bab60d91b5beaa6f06d5c2ebe65" data-ts="1793874720000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['mk/145788/9232855'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['mk/145788/9232855'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['mk/145788/9232855']; $el.indeterminate = !!p.redo['mk/145788/9232855']"
-                     @change="await p.toggle('mk/145788/9232855', '76db38428cc89bab60d91b5beaa6f06d5c2ebe65'); $el.checked = !!p.done['mk/145788/9232855']; $el.indeterminate = !!p.redo['mk/145788/9232855']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
-              <a href="https://wordwall.net/resource/102581441/g1-science-unit-2-revision" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                G1 Science: Unit 2 Revision - Wordwall Activity
-                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                </svg>
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('mk/145788/9232855', '76db38428cc89bab60d91b5beaa6f06d5c2ebe65')">
-                  <button @click.stop="p.seen('mk/145788/9232855', '76db38428cc89bab60d91b5beaa6f06d5c2ebe65')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 05/11</span>
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-sechead data-title="Unit 4: Human and Animals Grow" data-sec="2"
-             x-show="headingMatches($el, f)"
-             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
-             style="padding-left: 1.0rem">
-          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
-          <template x-if="p.online">
-            <input type="checkbox" title="Đánh dấu cả nhóm này"
-                   x-effect="syncSecBox($el, p.done)"
-                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
-                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-          </template>
-          <span>Unit 4: Human and Animals Grow</span>
-        </div>
-        
-        
-        
-        <div data-item data-title="Unit 4 Revision Quiz: Humans and Animals Grow" data-type="external" data-sec="2"
-             data-pkey="mk/145788/9245167" data-hash="b4623815389632398791068ef7f89f4057e361b5" data-ts="1793874720000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['mk/145788/9245167'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['mk/145788/9245167'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['mk/145788/9245167']; $el.indeterminate = !!p.redo['mk/145788/9245167']"
-                     @change="await p.toggle('mk/145788/9245167', 'b4623815389632398791068ef7f89f4057e361b5'); $el.checked = !!p.done['mk/145788/9245167']; $el.indeterminate = !!p.redo['mk/145788/9245167']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="liên kết ngoài">🔗</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Link ngoài / link tới trang nguồn: luôn mở tab mới -->
-              <a href="https://wordwall.net/resource/119765540/unit-4-revision-quiz-humans-and-animals-grow" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                Unit 4 Revision Quiz: Humans and Animals Grow
-                <svg class="w-3.5 h-3.5 inline-block ml-0.5 -mt-0.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                </svg>
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">liên kết ngoài</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('mk/145788/9245167', 'b4623815389632398791068ef7f89f4057e361b5')">
-                  <button @click.stop="p.seen('mk/145788/9245167', 'b4623815389632398791068ef7f89f4057e361b5')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                
-                
-                
-                
-                <span title="Nguồn không cung cấp thời gian cho loại mục này — đây là thời điểm hệ thống ghi nhận lần đầu">➕ 05/11</span>
                 
               </div>
 
