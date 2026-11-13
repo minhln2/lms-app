@@ -130,7 +130,7 @@ window.LS.ham();
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
   <link rel="stylesheet" href="../assets/tw.33ae33e3.css">
-  
+  <link rel="stylesheet" href="../assets/andika.77cba689/font-face.css">
   
   <script type="module">
     import { sched, phatLai } from "../assets/lich_on.ebee479f.js";
@@ -6204,6 +6204,8 @@ registerProcessor('thu-16k',T);`;
 .mnho svg{display:block;width:100%;height:100%;max-width:100%;max-height:100%;margin:0}
 .mnsvg{display:block}
 
+    /* Khuôn thẻ hình (Science 1 lớp 1): phông Andika (tự host, `a.andika_css`) cho cả mục lẫn popup. */
+    .the-hinh { font-family: 'Andika', system-ui, sans-serif; }
     /* Tab Bài tập: ô số bị che (mockup: sọc tím nhạt). */
     .bt-an { background: repeating-linear-gradient(45deg, #e0e7ff, #e0e7ff 6px, #c7d2fe 6px, #c7d2fe 12px); color: #3730a3; }
     /* Chế độ IN trang tóm tắt. Bỏ mọi thứ chỉ có nghĩa khi bấm được:
@@ -7164,7 +7166,79 @@ registerProcessor('thu-16k',T);`;
             </template>
             <h3 class="text-lg font-bold text-indigo-900" x-html="hl(conceptName(sec.concept))"></h3>
             <p x-show="codesOf(sec.concept).length" class="mt-1 flex flex-wrap gap-1"><template x-for="cd in codesOf(sec.concept)" :key="cd"><span class="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-500" x-text="cd"></span></template></p>
+          </div><template x-if="sec.khuon === 'the_hinh'">
+<div class="the-hinh space-y-5 px-5 pb-6 pt-4 text-[22px] leading-snug text-slate-800 [&_b]:text-[#c2410c]">
+  
+  <template x-if="show.facts && !qq && (sec.infographics || []).length && sec.infographics[0].image">
+    <img data-the-hinh-ig @click.stop="zoom = 'study/img/cie-maths-1/' + sec.infographics[0].image"
+         :src="'study/img/cie-maths-1/' + sec.infographics[0].image" :alt="sec.infographics[0].title || ''" loading="lazy"
+         class="cursor-zoom-in w-full rounded-2xl border-2 border-slate-200 bg-white object-contain">
+  </template>
+
+  <template x-if="sec.big_en && (!qq || hit(sec.big_en))">
+    <div data-the-hinh-big class="flex items-center gap-3 rounded-[18px] border-[3px] border-orange-400 bg-orange-50 px-4 py-4 text-[30px] leading-[1.3]">
+      <button x-show="canSpeak" data-nghe @click.stop="speak(tron(sec.big_en))" type="button" title="Đọc to"
+              class="shrink-0 w-10 h-10 rounded-full bg-amber-200 text-xl leading-none">🔊</button>
+      <span x-html="tx(sec.big_en)"></span>
+    </div>
+  </template>
+
+  
+  <template x-if="show.facts && thePts(sec).length">
+    <div class="flex flex-col gap-3">
+      <template x-for="(pt, i) in thePts(sec)" :key="i">
+        <div data-the-hinh-y class="rounded-2xl border-2 border-slate-200 bg-white p-2.5">
+          <template x-if="pt.figure">
+            <img :src="'study/img/cie-maths-1/' + [].concat(pt.figure)[0]" alt="" loading="lazy"
+                 class="block w-full max-h-[300px] rounded-xl bg-white object-contain">
+          </template>
+          <div data-the-hinh-txt class="mt-1.5 flex flex-col gap-1.5">
+            <div class="flex items-start gap-2">
+              <input x-show="canMark && pt.mark" x-cloak type="checkbox" title="Đã thuộc" :checked="isKnown(pt.mark)"
+                     @change="setKnown([{id: pt.mark, c: pt.concept || sec.concept}], $event.target.checked)"
+                     class="mt-1.5 shrink-0 w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600">
+              <button x-show="canSpeak" data-nghe @click.stop="speak(tron(pt.t))" type="button" title="Đọc to"
+                      class="shrink-0 w-[34px] h-[34px] rounded-full bg-amber-200 text-[17px] leading-none">🔊</button>
+              <span data-the-hinh-t class="text-[25px] font-bold leading-[1.3]" x-html="tx(pt.t)"></span>
+            </div>
+            <template x-for="(su, si) in subs(pt)" :key="si">
+              <div class="flex items-start gap-2">
+                <button x-show="canSpeak" data-nghe @click.stop="speak(tron(su.t || su))" type="button" title="Đọc to"
+                        class="shrink-0 w-[34px] h-[34px] rounded-full bg-amber-200 text-[17px] leading-none">🔊</button>
+                <span data-the-hinh-sub class="text-[21px] leading-[1.35] text-[#333]" x-html="tx(su.t || su)"></span>
+              </div>
+            </template>
           </div>
+        </div>
+      </template>
+    </div>
+  </template>
+
+  
+  <template x-if="show.gloss && secGloss(sec).length">
+    <div>
+      <h4 class="mb-2.5 text-[22px] font-bold">New words</h4>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <template x-for="g in secGloss(sec)" :key="g.term">
+          <div class="relative">
+            <button data-tu-moi type="button" @click="popTu = g; speak(g.term)"
+                    class="flex w-full flex-col items-center gap-1.5 rounded-2xl border-2 border-slate-200 bg-white p-2 text-[20px] font-bold leading-tight">
+              <template x-if="g.image">
+                <img :src="'study/img/cie-maths-1/' + g.image" alt="" loading="lazy" class="w-full aspect-square bg-white object-contain">
+              </template>
+              <span x-html="hl(g.term)"></span>
+            </button>
+            <input x-show="canMark && g.card" x-cloak type="checkbox" title="Đã thuộc" :checked="isKnown(g.card)"
+                   @change="setKnown([{id: g.card, c: g.concept || sec.concept}], $event.target.checked)"
+                   class="absolute left-2.5 top-2.5 w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600">
+          </div>
+        </template>
+      </div>
+    </div>
+  </template>
+</div>
+</template>
+          <template x-if="sec.khuon !== 'the_hinh'"><div>
           <!-- Ý lớn: một câu, chữ to, để nhớ được cả mục -->
           <div x-show="sec.big_en && (!qq || hit(sec.big_en))" x-cloak class="px-5 py-4">
             <p class="text-base font-medium text-slate-800 leading-snug" x-html="hl(sec.big_en)"></p>
@@ -8075,7 +8149,7 @@ registerProcessor('thu-16k',T);`;
               <span class="px-2 py-0.5 text-xs rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100" x-html="hl(t)"></span>
             </template>
           </div>
-          
+          </div></template>
         </section>
         </div>
       </template>
@@ -14387,6 +14461,35 @@ registerProcessor('thu-16k',T);`;
     </div>
   </template>
   
+<template x-if="popTu">
+  <div data-tu-pop @click.self="popTu = null" @keydown.escape.window="popTu = null"
+       class="the-hinh fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-3 [&_b]:text-[#c2410c]">
+    <div class="relative max-h-[96vh] w-[min(92vw,560px)] overflow-y-auto rounded-3xl bg-[#fffdf7] px-5 pb-6 pt-4 text-slate-800">
+      <button data-dong @click="popTu = null" type="button" title="Đóng"
+              class="absolute right-3 top-2.5 w-10 h-10 rounded-full bg-slate-200 text-xl leading-none">✕</button>
+      <template x-if="popTu.image">
+        <img :src="'study/img/cie-maths-1/' + popTu.image" alt="" class="mt-8 max-h-[300px] w-full rounded-[14px] bg-white object-contain">
+      </template>
+      <div class="mb-1 mt-2 flex items-center gap-2.5 text-[40px] font-extrabold leading-tight">
+        <button x-show="canSpeak" data-nghe @click.stop="speak(tron(popTu.term))" type="button" title="Đọc to"
+                class="shrink-0 w-10 h-10 rounded-full bg-amber-200 text-xl leading-none">🔊</button>
+        <span x-text="popTu.term"></span>
+      </div>
+      <div class="my-2 flex items-center gap-2.5 text-[24px] leading-snug">
+        <button x-show="canSpeak" data-nghe @click.stop="speak(tron(popTu.def))" type="button" title="Đọc to"
+                class="shrink-0 w-10 h-10 rounded-full bg-amber-200 text-xl leading-none">🔊</button>
+        <span x-html="tx(popTu.def)"></span>
+      </div>
+      <div x-show="popTu.example" class="my-2 flex items-center gap-2.5 text-[24px] italic leading-snug text-slate-600">
+        <button x-show="canSpeak" data-nghe @click.stop="speak(tron(popTu.example))" type="button" title="Đọc to"
+                class="shrink-0 w-10 h-10 rounded-full bg-amber-200 text-xl leading-none not-italic">🔊</button>
+        <span x-html="tx(popTu.example)"></span>
+      </div>
+      <p x-show="popTu.def_vi" class="mt-1.5 text-[18px] text-cyan-700">🇻🇳 <span x-text="popTu.def_vi"></span></p>
+    </div>
+  </div>
+</template>
+
   <template x-if="zoom">
     <div data-zoom-lop @click="zoom = ''" @keydown.escape.window="zoom = ''"
          :class="zoomRong ? 'overflow-auto' : 'items-center justify-center'"
