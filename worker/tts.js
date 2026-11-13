@@ -95,6 +95,9 @@ async function sha1(s) {
  * lưu bản đã `tron()`. Luật `tron` phải giống hệt bên template.
  */
 export const tron = (s) => String(s || "").replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
+// Câu bài nói mẫu (`summary[].speaking[].model[]`): `[…]` đánh dấu chỗ con thay chi tiết của mình — đọc to thì bỏ ngoặc.
+// Luật phải giống hệt `noiMau()` của templates/study.html.
+export const noiMau = (s) => tron(String(s || "").replace(/[[\]]/g, ""));
 
 export function speakable(doc) {
   const set = new Set();
@@ -108,6 +111,7 @@ export function speakable(doc) {
     for (const g of s.glossary || []) { add(g.term); add(tron(g.def)); add(tron(g.example)); }  // g.term · nghĩa · ví dụ
     for (const ws of s.words || []) for (const it of ws.items || []) add(it.word);  // w.word
     for (const sd of s.sounds || []) for (const wd of sd.words || []) add(wd.en);   // wd.en
+    for (const sp of s.speaking || []) for (const ln of sp.model || []) add(noiMau(ln)); // luyện nói: từng câu bài mẫu
   }
   for (const c of doc.flashcards || []) add(c.front_en);   // learnCard.front_en · q.front_en
   for (const q of doc.quiz || []) add(q.stem_en);          // q.stem_en
