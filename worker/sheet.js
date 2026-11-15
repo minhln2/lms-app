@@ -199,10 +199,28 @@ async function readViaCsv(env) {
   return parseCsv(await r.text()).map((row) => row.map((t) => ({ text: t, link: "" })));
 }
 
-/** Ô tài khoản dòng 1 ("IXL\nuser\npass") → { ten, dong: [...] }; ô trống bỏ qua. */
+/** Một dòng tài khoản → mẩu [{ t, v? }]: `v` = giá trị (username / mật khẩu) để trang cho bấm chọn RIÊNG mẩu đó.
+ *  Giá trị = từ đứng ngay sau một từ kết thúc bằng ":" ("Teacher: Sydney1 - Pass: Sy@" → Sydney1, Sy@).
+ *  Dòng không có ":" (chỉ một chuỗi) thì cả dòng là giá trị. */
+export function manhDong(dong) {
+  if (!dong.includes(":")) return [{ t: dong, v: 1 }];
+  const out = [];
+  let sauNhan = false;
+  for (const p of dong.split(/(\s+)/)) {
+    if (!p) continue;
+    const la = /^\s+$/.test(p) ? false : sauNhan && !p.endsWith(":");
+    if (la) out.push({ t: p, v: 1 });
+    else if (out.length && !out.at(-1).v) out.at(-1).t += p;
+    else out.push({ t: p });
+    if (!/^\s+$/.test(p)) sauNhan = p.endsWith(":");
+  }
+  return out;
+}
+
+/** Ô tài khoản dòng 1 ("IXL\nuser\npass") → { ten, dong: [[mẩu…], …] }; ô / dòng trống bỏ qua. */
 export function tachTaiKhoan(o) {
   return o.map((t) => t.split("\n").map((x) => x.trim()).filter(Boolean))
-    .filter((d) => d.length).map(([ten, ...dong]) => ({ ten, dong }));
+    .filter((d) => d.length).map(([ten, ...dong]) => ({ ten, dong: dong.map(manhDong) }));
 }
 
 /** `tk` = người gọi có mã bí mật → trả thêm `tai_khoan` (ô dòng 1 từ cột TK_COL). Không có mã thì KHÔNG đọc. */

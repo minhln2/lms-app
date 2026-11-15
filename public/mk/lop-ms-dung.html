@@ -344,7 +344,8 @@ window.LS.ham();
       <p class="mt-1 text-xs">Nếu đang mở file cục bộ thì trang cần chạy trên website mới gọi được API.</p>
     </div>
 
-    <!-- Tài khoản học liệu (dòng 1 của sheet). Chữ thường, không phải ô nhập: bấm một dòng là chọn cả dòng để chép. -->
+    <!-- Tài khoản học liệu (dòng 1 của sheet). Chữ thường, không phải ô nhập: bấm vào username / mật khẩu (mẩu `v`) là chọn
+         đúng mẩu đó để chép; phần nhãn kéo chọn tự do. -->
     <section x-show="!loading && taiKhoan.length" x-cloak data-tai-khoan
              class="bg-white rounded-xl shadow-sm border border-slate-200 px-4 py-3">
       <h2 class="font-semibold text-slate-900 mb-2">🔑 Tài khoản</h2>
@@ -353,7 +354,8 @@ window.LS.ham();
           <div class="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm">
             <div class="font-medium text-indigo-700 mb-1" x-text="t.ten"></div>
             <template x-for="(v, vi) in t.dong" :key="vi">
-              <div class="font-mono text-slate-800 select-all break-all cursor-text" x-text="v"></div>
+              <div class="font-mono text-slate-800 break-words"><template x-for="(m, mi) in v" :key="mi"><span
+                :class="m.v ? 'select-all cursor-text rounded bg-indigo-50 text-indigo-900 px-0.5' : ''" x-text="m.t"></span></template></div>
             </template>
           </div>
         </template>
