@@ -184,14 +184,13 @@ export default {
     if (pathname === "/api/sheet") {
       if (request.method === "GET") {
         try {
-          const d = await readSheet(env);
-          if (d.error) return json({ error: d.error }, d.status || 500);
-          // Link tới sheet gốc CHỈ trả khi có mã bí mật. Bảng của lớp cho phép
+          // Link tới sheet gốc + ô tài khoản dòng 1 (có mật khẩu) CHỈ trả khi có mã bí mật. Bảng của lớp cho phép
           // sửa ẩn danh (xem ghi chú ở wrangler.toml), nên lộ id là ai vào site
-          // cũng sửa hoặc xoá được bảng chung của cả lớp. Nội dung ĐỌC thì vốn đã
-          // công khai qua chính endpoint này — thứ thêm ở đây đúng là quyền GHI.
+          // cũng sửa hoặc xoá được bảng chung của cả lớp.
           const secret = env.LMS_SECRET || "";
           const coMa = !!secret && (request.headers.get("x-progress-key") || "") === secret;
+          const d = await readSheet(env, coMa);
+          if (d.error) return json({ error: d.error }, d.status || 500);
           if (coMa && env.SHEET_ID) {
             d.source_url = `https://docs.google.com/spreadsheets/d/${env.SHEET_ID}/edit` +
               (env.SHEET_GID ? `#gid=${env.SHEET_GID}` : "");

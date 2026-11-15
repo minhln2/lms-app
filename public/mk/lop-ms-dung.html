@@ -10,7 +10,7 @@
   <title>Lớp Ms Dung — MK</title>
   <!-- CSS dựng sẵn lúc build (tên file có hash). Thiếu Node thì builder tự
        thay dòng này bằng Tailwind CDN. -->
-  <link rel="stylesheet" href="../assets/tw.2c878c6c.css">
+  <link rel="stylesheet" href="../assets/tw.0ea82c0c.css">
 <script>
 window.LS = (function () {
   var ve = null, goc = '', dang = 0, henCuon = null, cho = null;
@@ -121,6 +121,7 @@ window.LS.ham();
         diemUser: 'mk',      // điểm thưởng (ADR 0068): định danh gửi kèm API
         diemTracker: 'lop-ms-dung',
         du: null,                       // số dư ⭐ — null thì ẩn ô
+        taiKhoan: [],                   // ô tài khoản dòng 1 của sheet — chỉ có khi gửi đúng mã bí mật
 
         async init() { await this.load(); },
 
@@ -136,6 +137,7 @@ window.LS.ham();
             const d = await r.json();
             if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
             this.sourceUrl = d.source_url || '';
+            this.taiKhoan = d.tai_khoan || [];
             this.sessions = d.sessions || [];
             this.total = d.total || 0;
             this.done = d.done || 0;
@@ -341,6 +343,22 @@ window.LS.ham();
       <strong>Không đọc được bảng.</strong> <span x-text="err"></span>
       <p class="mt-1 text-xs">Nếu đang mở file cục bộ thì trang cần chạy trên website mới gọi được API.</p>
     </div>
+
+    <!-- Tài khoản học liệu (dòng 1 của sheet). Chữ thường, không phải ô nhập: bấm một dòng là chọn cả dòng để chép. -->
+    <section x-show="!loading && taiKhoan.length" x-cloak data-tai-khoan
+             class="bg-white rounded-xl shadow-sm border border-slate-200 px-4 py-3">
+      <h2 class="font-semibold text-slate-900 mb-2">🔑 Tài khoản</h2>
+      <div class="grid gap-3 sm:grid-cols-3">
+        <template x-for="(t, ti) in taiKhoan" :key="ti">
+          <div class="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm">
+            <div class="font-medium text-indigo-700 mb-1" x-text="t.ten"></div>
+            <template x-for="(v, vi) in t.dong" :key="vi">
+              <div class="font-mono text-slate-800 select-all break-all cursor-text" x-text="v"></div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </section>
 
     <template x-for="(s, si) in sessions" :key="si">
       <section x-show="!loading && !err && visible(s)" x-cloak

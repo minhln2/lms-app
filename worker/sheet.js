@@ -6,7 +6,7 @@
  *
  * Vì sao đọc qua Worker chứ không để trình duyệt gọi thẳng Google:
  *   1. Sheet chứa mật khẩu tài khoản IXL/Reading Eggs ở các cột phụ. Đọc qua
- *      Worker thì lọc bỏ được, trình duyệt không bao giờ nhận những cột đó.
+ *      Worker thì lọc bỏ được: trình duyệt chỉ nhận ô tài khoản dòng 1 (`tai_khoan`) khi gửi đúng mã bí mật.
  *   2. Sheet cho phép sửa ẩn danh — lộ id là ai cũng vào phá được. Để id trong
  *      secret nên trang web không hề biết địa chỉ sheet.
  *
@@ -21,6 +21,7 @@
  */
 
 const COL_LABEL = 1; // cột B: tên đầu mục
+const TK_COL = "G";  // dòng 1 từ cột G: ô tài khoản IXL / Reading Eggs / … (tên hệ thống + user + mật khẩu)
 const SESSION_RE = /^(OFF_)?(Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day/i;
 
 // ── CSV: tự viết vì phải xử lý ô có xuống dòng và dấu phẩy bên trong ──────────
@@ -144,7 +145,7 @@ function linkCuaO(c) {
 /** Đọc qua Sheets API — cách DUY NHẤT lấy được hyperlink gắn trong ô.
  *  Bản xuất CSV/gviz chỉ có text hiển thị, nên ô kiểu "Can You Name the baby
  *  Animals" gắn link sẽ mất link nếu đọc bằng CSV. */
-async function readViaApi(env, col) {
+async function readViaApi(env, col, tk) {
   const token = await accessToken(env);
   const auth = { authorization: `Bearer ${token}` };
   const id = env.SHEET_ID;
@@ -159,12 +160,16 @@ async function readViaApi(env, col) {
   const tab = (await meta.json()).sheets.find((s) => s.properties.sheetId === gid);
   if (!tab) throw new Error(`Không tìm thấy tab có gid=${gid}`);
 
-  // Chỉ lấy các cột an toàn (A..F). Cột G/H chứa mật khẩu tài khoản học liệu —
-  // không bao giờ được lọt ra khỏi Worker.
+  // Bảng chỉ lấy các cột an toàn (A..F). Cột G trở đi chứa mật khẩu tài khoản học liệu —
+  // chỉ ô dòng 1 được ra khỏi Worker, và chỉ khi có mã (`tk`).
   const lastCol = String.fromCharCode(65 + Math.max(col, 5));
+  const t = tab.properties.title;
+  // Ô tài khoản dòng 1 (G1 trở đi) chỉ đọc khi người gọi có mã bí mật (`tk`) — cùng một lượt gọi, range thứ hai.
+  const ranges = [`'${t}'!A:${lastCol}`].concat(tk ? [`'${t}'!${TK_COL}1:Z1`] : [])
+    .map((x) => `ranges=${encodeURIComponent(x)}`).join("&");
   const r = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${id}` +
-      `?includeGridData=true&ranges=${encodeURIComponent(`'${tab.properties.title}'!A:${lastCol}`)}` +
+      `?includeGridData=true&${ranges}` +
       `&fields=${encodeURIComponent(
         "sheets.data.rowData.values(formattedValue,hyperlink,textFormatRuns(format.link.uri),"
         + "chipRuns(chip.richLinkProperties.uri),dataValidation.condition.type)",
@@ -172,15 +177,17 @@ async function readViaApi(env, col) {
     { headers: auth },
   );
   if (!r.ok) throw new Error(`Sheets API ${r.status} khi đọc dữ liệu`);
-  const grid = (await r.json()).sheets?.[0]?.data?.[0]?.rowData || [];
-  return grid.map((row) =>
+  const data = (await r.json()).sheets?.[0]?.data || [];
+  const grid = data[0]?.rowData || [];
+  const tkO = (data[1]?.rowData?.[0]?.values || []).map((c) => c.formattedValue || "");
+  return { tkO, rows: grid.map((row) =>
     // Checkbox mới chèn mà chưa ai bấm: ô vẽ ô vuông trống nhưng KHÔNG có giá trị → coi là FALSE,
     // không thì dòng đó bị nhận nhầm thành tiêu đề nhóm rồi lọc mất (dòng 4–5 "Lớp Ms Dung").
     (row.values || []).map((c) => ({
       text: c.formattedValue || (c.dataValidation?.condition?.type === "BOOLEAN" ? "FALSE" : ""),
       link: linkCuaO(c),
     })),
-  );
+  ) };
 }
 
 /** Dự phòng khi chưa cấu hình service account: đọc bản CSV công khai.
@@ -192,22 +199,31 @@ async function readViaCsv(env) {
   return parseCsv(await r.text()).map((row) => row.map((t) => ({ text: t, link: "" })));
 }
 
-export async function readSheet(env) {
+/** Ô tài khoản dòng 1 ("IXL\nuser\npass") → { ten, dong: [...] }; ô trống bỏ qua. */
+export function tachTaiKhoan(o) {
+  return o.map((t) => t.split("\n").map((x) => x.trim()).filter(Boolean))
+    .filter((d) => d.length).map(([ten, ...dong]) => ({ ten, dong }));
+}
+
+/** `tk` = người gọi có mã bí mật → trả thêm `tai_khoan` (ô dòng 1 từ cột TK_COL). Không có mã thì KHÔNG đọc. */
+export async function readSheet(env, tk = false) {
   if (!env.SHEET_ID || !env.SHEET_GID) {
     return { error: "Chưa cấu hình SHEET_ID / SHEET_GID", status: 503 };
   }
   const col = Number(env.SHEET_COL ?? 4);
-  let rows, source = "api";
+  let rows, tkO = [], source = "api";
   try {
     if (!env.GOOGLE_SA_KEY) throw new Error("chưa có service account");
-    rows = await readViaApi(env, col);
+    ({ rows, tkO } = await readViaApi(env, col, tk));
   } catch (e) {
     rows = await readViaCsv(env);   // vẫn dùng được, chỉ thiếu hyperlink
+    tkO = (rows[0] || []).slice(TK_COL.charCodeAt(0) - 65).map((c) => c.text);
     source = "csv";
   }
   const sessions = toSessions(rows, col);
   const items = sessions.flatMap((s) => s.groups.flatMap((g) => g.items));
   return {
+    ...(tk ? { tai_khoan: tachTaiKhoan(tkO) } : {}),
     sessions,
     source,
     total: items.length,
