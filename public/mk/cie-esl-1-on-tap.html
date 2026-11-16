@@ -3270,6 +3270,7 @@ window.LS.ham();
           // Đặt TRƯỚC `chonGan` không được (nó khôi phục phạm vi đã nhớ) — nên đặt sau. Mục lạ / không có tóm tắt thì bỏ qua, như bấm mục mờ.
           const muc = new URLSearchParams(location.search).get('muc');
           if (muc && this.navCo(muc)) this.scope = muc;
+          else if (muc && this.mode === 'summary' && this.mucTomTat(muc)) this.toiBai(muc);   // LÁ của mục bài (vd c.esl6.eos1.uoe1): mở mục bài cha + cuộn tới lá, như «↪ bài»
           // Lớp phủ ảnh đóng (bằng cách nào cũng được) thì quay về kiểu phóng thường cho các chỗ dùng `zoom` khác.
           this.$watch('zoom', (v) => { if (!v) this.zoomRong = false; });
           // Back/hash (ADR 0067). Đăng ký SAU khi có dữ liệu để ve() đặt đúng mode.
@@ -4097,6 +4098,42 @@ timMo: false,
         // template dùng `.length` để quyết định có vẽ hay không.
         // Ý phụ của một ý chính; đang tìm thì chỉ giữ dòng chứa từ khoá (lọc tới từng dòng như danh sách).
         subs(pt) { const L = pt.sub || []; return this.qq ? L.filter(su => this.hit(su.t || su)) : L; },
+        // Bấm «↪ bài»: `id` có thể là LÁ — khối con nằm trong phần tóm tắt của MỤC BÀI cha, tự nó không có phần tóm tắt (đặt phạm vi = lá thì
+        // tab chỉ còn «Chưa có tóm tắt»). Đi lên `parent` tới tổ tiên đầu tiên có phần tóm tắt (≤ 50 bước, chặn vòng cha) → mở mục đó và cuộn lên đầu
+        // NGAY (dự phòng nếu không có khối lá), rồi chờ DOM vẽ xong (≤ 4 s, như toiKhoi) và cuộn tới khối lá `data-la` (scroll-mt chừa header dính).
+        // Bỏ ô tìm + bộ lọc như toiKhoi: lá bị lọc ẩn thì không có khối để cuộn tới.
+        // Tổ tiên đầu tiên (hoặc chính nó) có phần tóm tắt; id lạ / không có tổ tiên nào → null.
+        mucTomTat(id) {
+          const by = new Map((this.data?.concepts || []).map(c => [c.id, c])), co = new Set((this.data?.summary || []).map(x => x.concept));
+          let a = id, n = 0;
+          while (a && !co.has(a) && n++ < 50) a = by.get(a)?.parent;
+          return co.has(a) ? a : null;
+        },
+        toiBai(id) {
+          const a = this.mucTomTat(id);
+          this.setScope(a || id);
+          window.scrollTo(0, 0);
+          if (!a || a === id) return;
+          this.kw = '';
+          if (this.anyPick || this.onlyNew) this.boLoc();
+          // Ảnh tải lười ở phía trên làm trang giãn / co SAU cú cuộn → lá trôi khỏi vị trí: bám lại mỗi khung hình thêm ≤ 2,5 s; người đọc tự cuộn / bấm / gõ phím thì dừng ngay,
+          // bấm ý khác thì huỷ vòng cũ (một vòng bám duy nhất).
+          this._toiAc?.abort();
+          const t0 = Date.now(), ac = this._toiAc = new AbortController(); let t1 = 0;
+          ['wheel', 'touchstart', 'keydown', 'pointerdown'].forEach(ev => addEventListener(ev, () => ac.abort(), { signal: ac.signal, passive: true }));
+          const toiDo = () => {
+            if (ac.signal.aborted) return;
+            const e = Array.from(document.querySelectorAll('[data-la]')).find(x => x.dataset.la === id);
+            if (e) { e.scrollIntoView({ block: 'start' }); t1 = t1 || Date.now(); }
+            else if (Date.now() - t0 > 4000) return ac.abort();
+            if (!t1 || Date.now() - t1 < 2500) requestAnimationFrame(toiDo); else ac.abort();
+          };
+          this.$nextTick(toiDo);
+        },
+        // `ref` của ý (một id hoặc mảng 1–3 id) → các concept CÓ THẬT của môn; id rác bị bỏ. Chú thích «↪ bài gốc», không vào tìm kiếm / đánh dấu thuộc.
+        refs(pt) { const cs = this.data?.concepts || []; return [].concat(pt.ref || []).map(id => cs.find(c => c.id === id)).filter(Boolean); },
+        // `so_tay` của ý (id trang hoặc mảng id; builder đã kiểm có thật) → [{id, ten}]; tên lấy từ `data.so_tay_ten`, thiếu thì dùng id. Cùng dòng «↪» với refs.
+        soTays(pt) { return [].concat(pt.so_tay || []).filter(x => typeof x === 'string' && x).map(id => ({id, ten: this.data?.so_tay_ten?.[id] || id})); },
         tagged(list, leafId) {
           return this.fk(this.fq((list || []).filter(x => x && x.concept === leafId),
                          't', 'term', 'def', 'example', 'title', 'wrong', 'right',
@@ -7216,7 +7253,7 @@ registerProcessor('thu-16k',T);`;
             </template>
             
             <template x-if="pt.ref && (data?.concepts || []).some(c => c.id === pt.ref)">
-              <button data-the-hinh-ref type="button" @click.stop="setScope(pt.ref); window.scrollTo(0, 0)"
+              <button data-the-hinh-ref type="button" @click.stop="toiBai(pt.ref)"
                       class="self-end text-[15px] italic text-slate-500 underline decoration-dotted underline-offset-2 hover:text-indigo-700">↪ <span x-text="label((data?.concepts || []).find(c => c.id === pt.ref))"></span></button>
             </template>
           </div>
@@ -7815,7 +7852,7 @@ registerProcessor('thu-16k',T);`;
           <!-- Mục nào dùng khối kiểu Toán (topics) hoặc kiểu ESL (words) thì KHÔNG
                vẽ thẻ theo lá nữa: từ vựng đã gộp ở trên, thẻ lá còn lại rỗng ruột. -->
           <template x-for="leaf in ((tops(sec).length || (sec.words || []).length) ? [] : shownLeaves(sec))" :key="leaf.id">
-            <div class="mx-5 mb-4 rounded-xl border border-slate-200 overflow-hidden">
+            <div :data-la="leaf.id" class="scroll-mt-[calc(var(--hdr)+12px)] mx-5 mb-4 rounded-xl border border-slate-200 overflow-hidden">
               <div class="flex items-center gap-2 px-4 py-2 bg-slate-50 border-b border-slate-200">
                 <template x-if="canMark && knownState(leafAtoms(sec, leaf.id))">
                   <input type="checkbox" title="Đã thuộc cả phần này"
@@ -7875,6 +7912,15 @@ registerProcessor('thu-16k',T);`;
                       <template x-for="fg in [].concat(pt.figure || [])" :key="fg"><img @click.stop="zoom = 'study/img/cie-esl-1/' + fg" :src="'study/img/cie-esl-1/' + fg" alt="" loading="lazy"
                            class="cursor-zoom-in w-full max-w-2xl rounded-lg border border-sky-100 bg-white p-1.5"></template>
                     </div>
+                    <!-- `ref`: «↪ bài gốc» — chú thích nhỏ nghiêng xám, bấm = mở phần ôn tập của bài đó (trang ôn thi → bài Unit); `so_tay`: «📒 trang sổ tay» cùng dòng -->
+                    <template x-if="refs(pt).length || soTays(pt).length">
+                      <p class="mt-1 sm:ml-7 text-[13px] italic leading-snug text-slate-500">↪
+                        <template x-for="(rc, ri) in refs(pt)" :key="rc.id"><span><span x-show="ri"> · </span><button data-ref-bai type="button" @click.stop="toiBai(rc.id)"
+                          class="italic text-slate-500 underline decoration-dotted underline-offset-2 hover:text-indigo-700" x-text="label(rc)"></button></span></template>
+                        <template x-for="(st, si) in soTays(pt)" :key="st.id"><span><span x-show="si || refs(pt).length"> · </span><a data-so-tay-y :href="'so-tay/' + st.id + '.html'" @click.stop
+                          class="whitespace-nowrap italic text-slate-500 underline decoration-dotted underline-offset-2 hover:text-indigo-700">📒 <span x-text="st.ten"></span></a></span></template>
+                      </p>
+                    </template>
                   </li>
                 </template>
               </ol>
