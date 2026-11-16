@@ -148,7 +148,11 @@ window.LS.ham();
                  pointer-events:none; user-select:none; -webkit-user-select:none;
                  -webkit-user-drag:none; -webkit-touch-callout:none; }
   .khung > img.dong { position:absolute; width:auto; height:auto; object-fit:fill; }
-  .chu { position:absolute; inset:0; }
+  /* `content-visibility`: lớp chữ của trang ngoài màn hình khỏi vẽ / hit-test. Thiếu nó thì
+     mỗi nhịp cuộn đi lại ~9.000 span + 18.000 pseudo của CẢ quyển (ESL 1 LB: PrePaint + Paint
+     + HitTest 17,7 s / 40 nhịp, CPU 4×). Đặt trên `.chu` chứ không trên `.trang`: `.chu` phủ
+     kín khung nên cỡ đã biết, trang chưa xem không phải đoán chiều cao → mục lục nhảy đúng. */
+  .chu { position:absolute; inset:0; content-visibility:auto; }
   /* Dấu mờ ("SAMPLE") và tiêu đề chạy: vẫn ở đó cho lớp chữ trung thực với
      bản gốc, nhưng KHÔNG chắn tay người đọc. Thiếu dòng này thì kéo chuột qua
      một câu trong sách lại chọn trúng chữ `SAMPLE` phủ kín trang. */
@@ -805,6 +809,8 @@ window.LS.ham();
     let _nhay = false, _hNhay = null, _lNhay = null;
     // Bộ nghe cuộn của `theoDoiTrang()` — giữ để chỉ đăng ký một lần.
     let _theoDoi = null;
+    // Mốc cuộn cuối, cho `canhChuLuoi()` hoãn nắn tới lúc ngừng cuộn (0 = chưa gắn bộ nghe).
+    let _cuonLuc = 0;
     return {
       
       che: null,
@@ -1288,19 +1294,50 @@ window.LS.ham();
        * đống việc cho 259 trang chưa ai đọc. Ảnh trang vốn đã nạp lười
        * (`loading="lazy"`) — chỗ này chỉ là cho lớp chữ theo cùng nguyên tắc.
        */
+      /* ⚠ HOÃN tới lúc NGỪNG cuộn, rồi MỖI KHUNG HÌNH MỘT TRANG. Nắn ngay trong
+       * lúc cuộn thì mỗi trang là ~6 lượt ghi style/span + một lượt đọc ép dựng
+       * hình cả quyển: đo ESL 1 LB (178 trang, CPU 4×), cuộn 60 nhịp = 75 task
+       * dài, 10,6 s, có task 0,5–1 s — người dùng thấy khựng 1–2 s (2026-11-15).
+       * Lớp chữ trong suốt, lúc cuộn không ai nhìn; chỉ cần xong trước khi bôi. */
       canhChuLuoi() {
         if (this._ql) this._ql.disconnect();
+        const hang = new Set(), sau = [];
+        let hen = 0;
+        const chay = () => {
+          hen = 0;
+          const cho = _cuonLuc + 150 - performance.now();
+          if (cho > 0) { hen = setTimeout(chay, cho); return; }
+          // Hai mẩu, hai khung hình: nắn bề rộng rồi mới tới vùng bắt (`_hang` + `_vungGhi`,
+          // O(n²) theo số span) — trang dày chữ cả lô là ~0,65 s ở CPU 4×, cuộn lại đúng lúc
+          // đó là khựng. Mẩu đang chạy không ngắt được, nên mẩu càng nhỏ càng tốt.
+          const v = sau.shift();
+          if (v) { if (v.clientWidth) this._vungGhi(this._hang(v)); }
+          else {
+            const k = hang.values().next().value;
+            if (!k) return;
+            hang.delete(k);
+            if (k._rong !== k.clientWidth) { this.canhChu(k, true); sau.push(k); }   // cuộn ngược lại: đã nắn, bỏ qua
+          }
+          if (hang.size || sau.length) hen = requestAnimationFrame(chay);
+        };
+        if (!_cuonLuc) {
+          _cuonLuc = 1;
+          addEventListener('scroll', () => { _cuonLuc = performance.now(); }, { passive: true });
+        }
         this._ql = new IntersectionObserver((muc) => {
-          for (const m of muc) if (m.isIntersecting) this.canhChu(m.target);
+          for (const m of muc) { if (m.isIntersecting) hang.add(m.target); else hang.delete(m.target); }
+          if (hang.size && !hen) hen = requestAnimationFrame(chay);
         }, { rootMargin: '1200px 0px' });
-        document.querySelectorAll('.khung').forEach((k) => this._ql.observe(k));
+        document.querySelectorAll('.khung').forEach((k) => { k._rong = 0; this._ql.observe(k); });
       },
 
-      canhChu(chi) {
+      /** `chiNan`: chỉ nắn bề rộng, bỏ vùng bắt — `canhChuLuoi()` tự làm nó ở khung hình sau. */
+      canhChu(chi, chiNan) {
         const ds = chi ? [chi] : Array.from(document.querySelectorAll('.khung'));
         ds.forEach((k) => {
           k._hang = null;                                       // mô hình hàng cũ theo khổ cũ
           const w = k.clientWidth; if (!w) return;
+          k._rong = w;
           const sp = Array.from(k.querySelectorAll('.chu span'));
           for (const s of sp) s.style.transform = '';           // ghi hết
           const rong = sp.map((s) => s.offsetWidth);            // ĐỌC hết
@@ -1310,6 +1347,7 @@ window.LS.ham();
             if (dich && rong[i]) sp[i].style.transform = 'scaleX(' + sp[i]._k + ')';
           }
         });
+        if (chiNan) return;
         // Vùng bắt (§3.7): ĐỌC mô hình hàng của mọi trang trước, GHI sau — một
         // lượt dựng hình cho cả lô thay vì một lượt mỗi trang. Trang đang ẩn
         // (chế độ 📄, bề rộng 0) bỏ qua: `doiCheDo('doc')` sẽ nắn lại.
