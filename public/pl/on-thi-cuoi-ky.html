@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <title>Ôn thi cuối kỳ I — PL</title>
-  <link rel="stylesheet" href="../assets/tw.368e0ce9.css">
+  <link rel="stylesheet" href="../assets/tw.cfd5bfc7.css">
   
 </head>
 <body class="bg-slate-100 text-slate-900">
@@ -37,7 +37,7 @@
       </div>
       
       <div data-ngay="2026-11-30" data-den="2026-11-30" class="rounded-xl border border-slate-200 bg-white px-2 py-2 text-center">
-        <p class="text-[13px] font-semibold leading-tight">Lịch sử – Địa lý</p>
+        <p class="text-[13px] font-semibold leading-tight">LSĐL</p>
         <p data-con class="text-lg font-bold text-indigo-700"></p>
         <p class="text-xs text-slate-500">T2 30/11</p>
       </div>
@@ -55,10 +55,10 @@
       </div>
       
     </div>
-    <p class="text-xs text-slate-500">Môn xếp theo ngày thi. Lịch sử – Địa lý chỉ có lịch. Mỗi dòng bấm vào là mở đúng chỗ trên trang môn.</p>
+    <p class="text-xs text-slate-500">Môn xếp theo ngày thi. LSĐL (Lịch sử – Địa lý) chỉ có lịch. Mỗi dòng bấm vào là mở đúng chỗ trên trang môn.</p>
 
     
-    <details data-mon="science" data-ngay="2026-11-25" data-den="2026-11-25" class="group rounded-2xl border border-slate-200 bg-white" open>
+    <details id="science" data-mon="science" data-ngay="2026-11-25" data-den="2026-11-25" class="group rounded-2xl border border-slate-200 bg-white" open>
       <summary class="cursor-pointer list-none px-4 py-3 flex items-center gap-3">
         <span class="text-2xl">🔬</span>
         <span class="min-w-0 flex-1"><b class="text-[17px]">Science</b><br><span class="text-[13px] text-slate-500">Unit 1 · Unit 2 · Unit 5 (5.1–5.2) · không thi food chain · T4 25/11</span></span>
@@ -147,7 +147,7 @@
       </div>
     </details>
     
-    <details data-mon="esl" data-ngay="2026-11-27" data-den="2026-11-27" class="group rounded-2xl border border-slate-200 bg-white" >
+    <details id="esl" data-mon="esl" data-ngay="2026-11-27" data-den="2026-11-27" class="group rounded-2xl border border-slate-200 bg-white" >
       <summary class="cursor-pointer list-none px-4 py-3 flex items-center gap-3">
         <span class="text-2xl">📝</span>
         <span class="min-w-0 flex-1"><b class="text-[17px]">ESL</b><br><span class="text-[13px] text-slate-500">Speaking 16–20/11 · Viết T6 27/11: Unit 1–4 · Reading · Listening · Use of English · Writing</span></span>
@@ -249,7 +249,7 @@
       </div>
     </details>
     
-    <details data-mon="tieng-viet" data-ngay="2026-12-01" data-den="2026-12-01" class="group rounded-2xl border border-slate-200 bg-white" >
+    <details id="tieng-viet" data-mon="tieng-viet" data-ngay="2026-12-01" data-den="2026-12-01" class="group rounded-2xl border border-slate-200 bg-white" >
       <summary class="cursor-pointer list-none px-4 py-3 flex items-center gap-3">
         <span class="text-2xl">📖</span>
         <span class="min-w-0 flex-1"><b class="text-[17px]">Tiếng Việt</b><br><span class="text-[13px] text-slate-500">3 chủ điểm: Thế giới tuổi thơ · Thiên nhiên kì thú · Trên con đường học tập · T3 1/12</span></span>
@@ -345,7 +345,7 @@
       </div>
     </details>
     
-    <details data-mon="maths" data-ngay="2026-12-03" data-den="2026-12-03" class="group rounded-2xl border border-slate-200 bg-white" >
+    <details id="maths" data-mon="maths" data-ngay="2026-12-03" data-den="2026-12-03" class="group rounded-2xl border border-slate-200 bg-white" >
       <summary class="cursor-pointer list-none px-4 py-3 flex items-center gap-3">
         <span class="text-2xl">➗</span>
         <span class="min-w-0 flex-1"><b class="text-[17px]">Maths</b><br><span class="text-[13px] text-slate-500">Unit 1–6 · Unit 8 (không Unit 7) · T5 3/12</span></span>
@@ -463,6 +463,9 @@
         .filter((e) => !e.classList.contains('opacity-50')).map((e) => e.dataset.ngay).sort()[0];
       const dau = mon.filter(ganNhat).sort((x, y) => (ganNhat(x) < ganNhat(y) ? -1 : 1))[0];
       if (dau) mon.forEach((d) => { d.open = d === dau; });
+      // `#<môn>` (ô lịch ở trang chủ): mở đúng thẻ đó thay cho thẻ gần nhất, cuộn tới — kể cả môn đã thi.
+      const dich = mon.find((d) => '#' + d.id === location.hash);
+      if (dich) { mon.forEach((d) => { d.open = d === dich; }); dich.scrollIntoView(); }
     })();
   </script>
 </body>
