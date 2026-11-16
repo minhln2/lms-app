@@ -3815,7 +3815,9 @@ timMo: false,
         openAncestors(cid) {
           const by = new Map((this.data?.concepts || []).map(c => [c.id, c]));
           let c = by.get(cid);
-          while (c) {
+          const qua = new Set();   // chặn chu trình parent (dữ liệu hỏng) — không treo trang
+          while (c && !qua.has(c.id)) {
+            qua.add(c.id);
             this.openMap[c.id] = true;
             c = c.parent ? by.get(c.parent) : null;
           }
@@ -7916,7 +7918,7 @@ registerProcessor('thu-16k',T);`;
                     <!-- `figure`: một tên tệp hoặc danh sách (hai hình cắt sách cạnh nhau, vd cơ quan nam / nữ) -->
                     <div x-show="pt.figure" class="mt-1.5 sm:ml-7 grid gap-1.5" :class="[].concat(pt.figure || []).length > 1 ? 'sm:grid-cols-2' : ''">
                       <template x-for="fg in [].concat(pt.figure || [])" :key="fg"><img @click.stop="zoom = 'study/img/cie-science-1/' + fg" :src="'study/img/cie-science-1/' + fg" alt="" loading="lazy"
-                           class="cursor-zoom-in w-full max-w-2xl rounded-lg border border-sky-100 bg-white p-1.5"></template>
+                           class="cursor-zoom-in w-full max-w-2xl object-contain rounded-lg border border-sky-100 bg-white p-1.5"></template>
                     </div>
                     <!-- `ref`: «↪ bài gốc» — chú thích nhỏ nghiêng xám, bấm = mở phần ôn tập của bài đó (trang ôn thi → bài Unit); `so_tay`: «📒 trang sổ tay» cùng dòng -->
                     <template x-if="refs(pt).length || soTays(pt).length">
