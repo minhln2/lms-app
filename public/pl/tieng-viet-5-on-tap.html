@@ -3040,6 +3040,11 @@ window.LS.ham();
         l1ClsCham(st) { return st === 'dung' ? 'h-6 w-6 bg-emerald-500' : st === 'sai' ? 'h-6 w-6 bg-rose-500' : st === 'dang' ? 'h-6 w-6 bg-sky-500 ring-4 ring-sky-200' : 'h-6 w-6 bg-slate-200'; },
         // 🔊 của khuôn lớp 1: chữ ĐÃ bỏ `**` (tron — cùng luật danh sách trắng của /api/tts), ngôn ngữ = `tieng` cấp tệp (vắng → ngôn ngữ môn).
         l1Noi(s) { return this.speak(this.tron(s), false, BE.doc.tieng); },
+        // Đề ③ / ④: tranh DÙNG CHUNG cho nhiều câu cùng mục (vd một khung tranh cho 8 câu giới từ) chỉ hiện ở câu đầu tiên dùng nó.
+        l1AnhDau(m, c) {
+          for (const e of m.es) for (const x of (e.bai.cau || [])) { if (x === c) return true; if (x.anh_url && x.anh_url === c.anh_url) return false; }
+          return true;
+        },
         // Nhãn mức ở ①: CHỈ lượt Luyện. `beMucMap` (máy ESL) tính cả câu Đề (cacCau) → sau khi nộp Đề, thanh «0/8» đi kèm «Làm được». Bộ nhớ theo đối tượng `beMucMap` (máy ESL gán đối tượng mới mỗi lần tính lại; bộ nhớ nằm ngoài trạng thái phản ứng).
         l1Nhan(kt) {
           const k = this.beMucMap;
@@ -13704,6 +13709,13 @@ registerProcessor('thu-16k',T);`;
         <template x-for="c in [l1M().cs[0]]" :key="c.id">
         <div class="space-y-5">
           <p class="text-[20px] leading-snug text-slate-500" x-html="l1M().bai.yeu_cau_html"></p>
+          
+          <template x-if="l1M().bai.bai_doc">
+          <div data-l1-bai-doc class="rounded-2xl border-2 border-amber-200 bg-amber-50 px-4 py-3 text-[22px] leading-relaxed text-slate-900">
+            <p class="mb-1 font-bold" x-html="l1M().bai.bai_doc.tieu_de_html || ''"></p>
+            <p class="whitespace-pre-line" x-html="l1M().bai.bai_doc.chu_html || ''"></p>
+          </div>
+          </template>
           <div class="flex items-start gap-3">
             <button type="button" data-l1-nghe="cau" @click="l1Noi(c.noi)" aria-label="Listen to the question"
                     class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
@@ -13907,6 +13919,12 @@ registerProcessor('thu-16k',T);`;
           <button type="button" data-l1-nghe="yc" @click="l1Noi(e.bai.yeu_cau)" aria-label="Listen to the instruction" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
           <p class="min-w-0 flex-1 text-[22px] leading-snug text-slate-600" x-html="e.bai.yeu_cau_html"></p>
         </div>
+        <template x-if="e.bai.bai_doc">
+          <div data-l1-bai-doc class="rounded-2xl border-2 border-amber-200 bg-amber-50 px-4 py-3 text-[22px] leading-relaxed text-slate-900">
+            <p class="mb-1 font-bold" x-html="e.bai.bai_doc.tieu_de_html || ''"></p>
+            <p class="whitespace-pre-line" x-html="e.bai.bai_doc.chu_html || ''"></p>
+          </div>
+          </template>
 
         
         <template x-if="e.bai.kieu === 'abc' || e.bai.kieu === 'khung'">
@@ -13924,7 +13942,7 @@ registerProcessor('thu-16k',T);`;
                 </template>
               </div>
             </div>
-            <template x-if="c.anh_url"><img data-l1-anh :src="c.anh_url" alt="Picture" class="mx-auto block max-h-[300px] w-auto max-w-full rounded-3xl border-2 border-slate-200 bg-white object-contain"></template>
+            <template x-if="c.anh_url && l1AnhDau(m, c)"><img data-l1-anh :src="c.anh_url" alt="Picture" class="mx-auto block max-h-[300px] w-auto max-w-full rounded-3xl border-2 border-slate-200 bg-white object-contain"></template>
             <template x-for="ch in [l1LcCau(e.bai, c)]" :key="c.id">
             <div data-l1-lcs :class="l1Cot(ch)" class="grid gap-4">
               <template x-for="o in ch" :key="o.k">
@@ -14081,6 +14099,12 @@ registerProcessor('thu-16k',T);`;
       </div>
       <template x-for="e in m.es" :key="e.key">
         <div class="space-y-4">
+        <template x-if="e.bai.bai_doc">
+          <div data-l1-bai-doc class="rounded-2xl border-2 border-amber-200 bg-amber-50 px-4 py-3 text-[22px] leading-relaxed text-slate-900">
+            <p class="mb-1 font-bold" x-html="e.bai.bai_doc.tieu_de_html || ''"></p>
+            <p class="whitespace-pre-line" x-html="e.bai.bai_doc.chu_html || ''"></p>
+          </div>
+        </template>
         <template x-for="(c, ci) in e.bai.cau" :key="c.id">
         <div data-l1-q :data-id="c.rid" :data-st="beKq[c.id]" :class="beKq[c.id] === 'dung' ? 'border-emerald-500 bg-emerald-50' : 'border-rose-400 bg-rose-50'" class="rounded-3xl border-[3px] p-4">
           <template x-for="r in [l1KqCau(e, c, ci)]" :key="c.id">
@@ -14088,7 +14112,7 @@ registerProcessor('thu-16k',T);`;
             <div class="flex items-start gap-3">
               <span class="w-10 shrink-0 text-[40px] font-bold leading-none" :class="beKq[c.id] === 'dung' ? 'text-emerald-600' : 'text-rose-600'" x-text="beKq[c.id] === 'dung' ? '✓' : '✗'" aria-hidden="true"></span>
               <div class="min-w-0 flex-1 space-y-2">
-                <template x-if="r.q.anh"><img :src="r.q.anh" alt="Picture" class="max-h-[160px] w-auto max-w-full rounded-2xl border-2 border-slate-200 bg-white object-contain"></template>
+                <template x-if="r.q.anh && l1AnhDau(m, c)"><img :src="r.q.anh" alt="Picture" class="max-h-[160px] w-auto max-w-full rounded-2xl border-2 border-slate-200 bg-white object-contain"></template>
                 <template x-if="r.q.t"><p class="text-[26px] font-bold leading-snug text-slate-900" x-text="r.q.t"></p></template>
               </div>
             </div>
