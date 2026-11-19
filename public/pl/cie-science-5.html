@@ -442,9 +442,9 @@ window.LS.ham();
     }
 
     // Nhãn loại mục để dòng "Đang lọc" gọi tên chip đang bật. (tojson trong <script> — được.)
-    var LOAI = { "assignment": "\ud83d\udcdd b\u00e0i t\u1eadp", };
+    var LOAI = { "file": "\ud83d\udcce t\u00e0i li\u1ec7u","assignment": "\ud83d\udcdd b\u00e0i t\u1eadp", };
     var TIEN_DO_KEY = "pl/80432/";
-    var TONG_MUC = 17;
+    var TONG_MUC = 20;
     var CO_HW = false;
     /** State của TRANG MÔN. Trước đây nằm thẳng trong `x-data` của <body>; nay phải là hàm vì
         ô tìm dùng chung (`_timkiem.html`) chèn thêm thành viên — nhét vào thuộc tính HTML là
@@ -625,6 +625,10 @@ timMo: false,
       <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Loại mục</p>
       <div class="flex flex-wrap gap-2">
         
+        <button type="button" @click="toggle('file')"
+                :class="types.includes('file') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
+                class="px-3 py-2 text-xs rounded-full border">📎 tài liệu</button>
+        
         <button type="button" @click="toggle('assignment')"
                 :class="types.includes('assignment') ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:border-indigo-400'"
                 class="px-3 py-2 text-xs rounded-full border">📝 bài tập</button>
@@ -714,7 +718,7 @@ timMo: false,
             <span class="min-w-0 flex-1">Unit 5 - Forces and Electricity (Grade 5)</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/2'"></span>
+                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/5'"></span>
             </template>
           </button>
         </li>
@@ -833,14 +837,194 @@ timMo: false,
         <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">Unit 5 - Forces and Electricity (Grade 5)</span>
         <template x-if="p.online">
           <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
-                :class="moduleDone($el.closest('[data-module]'), p.done) === 2
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 5
                         ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
-                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/2'"></span>
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/5'"></span>
         </template>
-        <span class="text-xs text-slate-400 shrink-0">2 mục</span>
+        <span class="text-xs text-slate-400 shrink-0">5 mục</span>
       </button>
 
       <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-item data-title="Unit 2 Knowledge Recap.pdf" data-type="file" data-sec="0"
+             data-pkey="pl/80432/9370342" data-hash="df23235e48f8b924f20375bf156aff93cfde441b" data-ts="1795083495000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/80432/9370342'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80432/9370342'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80432/9370342']; $el.indeterminate = !!p.redo['pl/80432/9370342']"
+                     @change="await p.toggle('pl/80432/9370342', 'df23235e48f8b924f20375bf156aff93cfde441b'); $el.checked = !!p.done['pl/80432/9370342']; $el.indeterminate = !!p.redo['pl/80432/9370342']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-science-5/unit-2-knowledge-recap/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Unit 2 Knowledge Recap.pdf
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80432/9370342', 'df23235e48f8b924f20375bf156aff93cfde441b')">
+                  <button @click.stop="p.seen('pl/80432/9370342', 'df23235e48f8b924f20375bf156aff93cfde441b')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>1.4 MB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/11</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Science Unit 1 Recap.pdf" data-type="file" data-sec="0"
+             data-pkey="pl/80432/9370343" data-hash="943d026777c6e5f4ca96a6dcafe6f919199633f1" data-ts="1795083510000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/80432/9370343'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80432/9370343'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80432/9370343']; $el.indeterminate = !!p.redo['pl/80432/9370343']"
+                     @change="await p.toggle('pl/80432/9370343', '943d026777c6e5f4ca96a6dcafe6f919199633f1'); $el.checked = !!p.done['pl/80432/9370343']; $el.indeterminate = !!p.redo['pl/80432/9370343']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-science-5/science-unit-1-recap/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Science Unit 1 Recap.pdf
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80432/9370343', '943d026777c6e5f4ca96a6dcafe6f919199633f1')">
+                  <button @click.stop="p.seen('pl/80432/9370343', '943d026777c6e5f4ca96a6dcafe6f919199633f1')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>1.1 MB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/11</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Control, independent and dependent variables.pdf" data-type="file" data-sec="0"
+             data-pkey="pl/80432/9370344" data-hash="0cb5855c3955f7080861cd766d6b4c8037a3f73f" data-ts="1795083577000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/80432/9370344'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/80432/9370344'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/80432/9370344']; $el.indeterminate = !!p.redo['pl/80432/9370344']"
+                     @change="await p.toggle('pl/80432/9370344', '0cb5855c3955f7080861cd766d6b4c8037a3f73f'); $el.checked = !!p.done['pl/80432/9370344']; $el.indeterminate = !!p.redo['pl/80432/9370344']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-science-5/control-independent-and-dependent-variables/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Control, independent and dependent variables.pdf
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/80432/9370344', '0cb5855c3955f7080861cd766d6b4c8037a3f73f')">
+                  <button @click.stop="p.seen('pl/80432/9370344', '0cb5855c3955f7080861cd766d6b4c8037a3f73f')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>3.8 MB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/11</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
         
         
         <div data-item data-title="EOS 1 Practice" data-type="assignment" data-sec="0"
