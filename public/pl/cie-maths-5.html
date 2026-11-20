@@ -444,7 +444,7 @@ window.LS.ham();
     // Nhãn loại mục để dòng "Đang lọc" gọi tên chip đang bật. (tojson trong <script> — được.)
     var LOAI = { "page": "\ud83d\udcc4 v\u0103n b\u1ea3n","file": "\ud83d\udcce t\u00e0i li\u1ec7u","external": "\ud83d\udd17 li\u00ean k\u1ebft ngo\u00e0i", };
     var TIEN_DO_KEY = "pl/79608/";
-    var TONG_MUC = 176;
+    var TONG_MUC = 186;
     var CO_HW = true;
     /** State của TRANG MÔN. Trước đây nằm thẳng trong `x-data` của <body>; nay phải là hàm vì
         ô tìm dùng chung (`_timkiem.html`) chèn thêm thành viên — nhét vào thuộc tính HTML là
@@ -726,7 +726,7 @@ timMo: false,
             <span class="min-w-0 flex-1">End of Semester 1 Revision</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/10'"></span>
+                    x-text="moduleDone(document.getElementById('mod-1'), p.done) + '/16'"></span>
             </template>
           </button>
         </li>
@@ -737,7 +737,7 @@ timMo: false,
             <span class="min-w-0 flex-1">Week 14 - 5.2 Rotational Symmetry</span>
             <template x-if="p.online">
               <span class="shrink-0 tabular-nums text-[0.65rem] text-slate-400"
-                    x-text="moduleDone(document.getElementById('mod-2'), p.done) + '/7'"></span>
+                    x-text="moduleDone(document.getElementById('mod-2'), p.done) + '/11'"></span>
             </template>
           </button>
         </li>
@@ -988,14 +988,390 @@ timMo: false,
         <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">End of Semester 1 Revision</span>
         <template x-if="p.online">
           <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
-                :class="moduleDone($el.closest('[data-module]'), p.done) === 10
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 16
                         ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
-                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/10'"></span>
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/16'"></span>
         </template>
-        <span class="text-xs text-slate-400 shrink-0">10 mục</span>
+        <span class="text-xs text-slate-400 shrink-0">16 mục</span>
       </button>
 
       <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-sechead data-title="Optional Activities" data-sec="1"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>Optional Activities</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="Unit 1 Review &amp; Self-Assessment_ Decimals.docx" data-type="file" data-sec="1"
+             data-pkey="pl/79608/9375336" data-hash="443cfdd63e3ca76093f5db5de8dca93ae18f3758" data-ts="1795160779000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/9375336'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/9375336'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/9375336']; $el.indeterminate = !!p.redo['pl/79608/9375336']"
+                     @change="await p.toggle('pl/79608/9375336', '443cfdd63e3ca76093f5db5de8dca93ae18f3758'); $el.checked = !!p.done['pl/79608/9375336']; $el.indeterminate = !!p.redo['pl/79608/9375336']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/unit-1-review-self-assessment-decimals/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Unit 1 Review &amp; Self-Assessment_ Decimals.docx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/9375336', '443cfdd63e3ca76093f5db5de8dca93ae18f3758')">
+                  <button @click.stop="p.seen('pl/79608/9375336', '443cfdd63e3ca76093f5db5de8dca93ae18f3758')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>744.0 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 20/11</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Unit 2 Review &amp; Self-Assessment.docx" data-type="file" data-sec="1"
+             data-pkey="pl/79608/9375335" data-hash="4642d7f07958ce2fb28bef3f715ccefcf3ec2ea2" data-ts="1795160780000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/9375335'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/9375335'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/9375335']; $el.indeterminate = !!p.redo['pl/79608/9375335']"
+                     @change="await p.toggle('pl/79608/9375335', '4642d7f07958ce2fb28bef3f715ccefcf3ec2ea2'); $el.checked = !!p.done['pl/79608/9375335']; $el.indeterminate = !!p.redo['pl/79608/9375335']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/unit-2-review-self-assessment/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Unit 2 Review &amp; Self-Assessment.docx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/9375335', '4642d7f07958ce2fb28bef3f715ccefcf3ec2ea2')">
+                  <button @click.stop="p.seen('pl/79608/9375335', '4642d7f07958ce2fb28bef3f715ccefcf3ec2ea2')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>743.4 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 20/11</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Unit 3 Review &amp; Self-Assessment.docx" data-type="file" data-sec="1"
+             data-pkey="pl/79608/9375334" data-hash="910d6003e3a6a96f0f616c983ba238191009b38c" data-ts="1795160781000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/9375334'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/9375334'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/9375334']; $el.indeterminate = !!p.redo['pl/79608/9375334']"
+                     @change="await p.toggle('pl/79608/9375334', '910d6003e3a6a96f0f616c983ba238191009b38c'); $el.checked = !!p.done['pl/79608/9375334']; $el.indeterminate = !!p.redo['pl/79608/9375334']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/unit-3-review-self-assessment/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Unit 3 Review &amp; Self-Assessment.docx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/9375334', '910d6003e3a6a96f0f616c983ba238191009b38c')">
+                  <button @click.stop="p.seen('pl/79608/9375334', '910d6003e3a6a96f0f616c983ba238191009b38c')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>195.6 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 20/11</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Unit 4 Review_ Self-Assessment &amp; Code Breaker.docx" data-type="file" data-sec="1"
+             data-pkey="pl/79608/9375333" data-hash="645cf2e182e3c43d5d3973afc3e48fb9030a1067" data-ts="1795160782000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/9375333'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/9375333'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/9375333']; $el.indeterminate = !!p.redo['pl/79608/9375333']"
+                     @change="await p.toggle('pl/79608/9375333', '645cf2e182e3c43d5d3973afc3e48fb9030a1067'); $el.checked = !!p.done['pl/79608/9375333']; $el.indeterminate = !!p.redo['pl/79608/9375333']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/unit-4-review-self-assessment-code-breaker/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Unit 4 Review_ Self-Assessment &amp; Code Breaker.docx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/9375333', '645cf2e182e3c43d5d3973afc3e48fb9030a1067')">
+                  <button @click.stop="p.seen('pl/79608/9375333', '645cf2e182e3c43d5d3973afc3e48fb9030a1067')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>978.6 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 20/11</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Unit 6 Review &amp; Self-Assessment.docx" data-type="file" data-sec="1"
+             data-pkey="pl/79608/9375332" data-hash="89b7256d03b3e63a307496e8746a2f05ccfb2abb" data-ts="1795160782000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/9375332'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/9375332'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/9375332']; $el.indeterminate = !!p.redo['pl/79608/9375332']"
+                     @change="await p.toggle('pl/79608/9375332', '89b7256d03b3e63a307496e8746a2f05ccfb2abb'); $el.checked = !!p.done['pl/79608/9375332']; $el.indeterminate = !!p.redo['pl/79608/9375332']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/unit-6-review-self-assessment/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Unit 6 Review &amp; Self-Assessment.docx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/9375332', '89b7256d03b3e63a307496e8746a2f05ccfb2abb')">
+                  <button @click.stop="p.seen('pl/79608/9375332', '89b7256d03b3e63a307496e8746a2f05ccfb2abb')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>737.9 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 20/11</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="Unit 5 Review &amp; Self-Assessment.docx" data-type="file" data-sec="1"
+             data-pkey="pl/79608/9375331" data-hash="54d7843e78efa9927fef00e0eaedcea837d4eda2" data-ts="1795160783000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/9375331'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/9375331'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/9375331']; $el.indeterminate = !!p.redo['pl/79608/9375331']"
+                     @change="await p.toggle('pl/79608/9375331', '54d7843e78efa9927fef00e0eaedcea837d4eda2'); $el.checked = !!p.done['pl/79608/9375331']; $el.indeterminate = !!p.redo['pl/79608/9375331']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/unit-5-review-self-assessment/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Unit 5 Review &amp; Self-Assessment.docx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/9375331', '54d7843e78efa9927fef00e0eaedcea837d4eda2')">
+                  <button @click.stop="p.seen('pl/79608/9375331', '54d7843e78efa9927fef00e0eaedcea837d4eda2')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>1.5 MB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 20/11</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
         
         
         <div data-item data-title="Maths EOS1 Revision Guide.pdf" data-type="file" data-sec="0"
@@ -1598,22 +1974,6 @@ timMo: false,
         
         
         
-        <div data-sechead data-title="Optional Activities" data-sec="1"
-             x-show="headingMatches($el, f)"
-             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
-             style="padding-left: 1.0rem">
-          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
-          <template x-if="p.online">
-            <input type="checkbox" title="Đánh dấu cả nhóm này"
-                   x-effect="syncSecBox($el, p.done)"
-                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
-                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-          </template>
-          <span>Optional Activities</span>
-        </div>
-        
-        
-        
       </div>
     </section>
     
@@ -1633,14 +1993,390 @@ timMo: false,
         <span class="text-slate-900 flex-1" :class="moduleIsRecent($el.closest('[data-module]')) ? 'font-bold' : 'font-semibold'">Week 14 - 5.2 Rotational Symmetry</span>
         <template x-if="p.online">
           <span class="text-xs shrink-0 px-1.5 py-0.5 rounded"
-                :class="moduleDone($el.closest('[data-module]'), p.done) === 7
+                :class="moduleDone($el.closest('[data-module]'), p.done) === 11
                         ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'"
-                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/7'"></span>
+                x-text="moduleDone($el.closest('[data-module]'), p.done) + '/11'"></span>
         </template>
-        <span class="text-xs text-slate-400 shrink-0">7 mục</span>
+        <span class="text-xs text-slate-400 shrink-0">11 mục</span>
       </button>
 
       <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
+        
+        
+        <div data-sechead data-title="Class Resources" data-sec="2"
+             x-show="headingMatches($el, f)"
+             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
+             style="padding-left: 1.0rem">
+          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
+          <template x-if="p.online">
+            <input type="checkbox" title="Đánh dấu cả nhóm này"
+                   x-effect="syncSecBox($el, p.done)"
+                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
+                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+          </template>
+          <span>Class Resources</span>
+        </div>
+        
+        
+        
+        <div data-item data-title="4. 6Gg.08 Identify rotational symmetry in familiar shapes, patterns or images..pptx" data-type="file" data-sec="2"
+             data-pkey="pl/79608/9362321" data-hash="008fe2fc347d084b9c55e8f24dc014d339366d5b" data-ts="1795150552000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/9362321'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/9362321'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/9362321']; $el.indeterminate = !!p.redo['pl/79608/9362321']"
+                     @change="await p.toggle('pl/79608/9362321', '008fe2fc347d084b9c55e8f24dc014d339366d5b'); $el.checked = !!p.done['pl/79608/9362321']; $el.indeterminate = !!p.redo['pl/79608/9362321']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/4-6gg-08-identify-rotational-symmetry-in-familiar-shapes-patterns-or-images/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                4. 6Gg.08 Identify rotational symmetry in familiar shapes, patterns or images..pptx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/9362321', '008fe2fc347d084b9c55e8f24dc014d339366d5b')">
+                  <button @click.stop="p.seen('pl/79608/9362321', '008fe2fc347d084b9c55e8f24dc014d339366d5b')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>1.2 MB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 20/11</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="4. To answer exam style questions on 2D shapes.pptx" data-type="file" data-sec="2"
+             data-pkey="pl/79608/9362324" data-hash="104f812f16a7b669c86d1441aa726fd8e9ce78a1" data-ts="1795150558000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/9362324'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/9362324'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/9362324']; $el.indeterminate = !!p.redo['pl/79608/9362324']"
+                     @change="await p.toggle('pl/79608/9362324', '104f812f16a7b669c86d1441aa726fd8e9ce78a1'); $el.checked = !!p.done['pl/79608/9362324']; $el.indeterminate = !!p.redo['pl/79608/9362324']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/4-to-answer-exam-style-questions-on-2d-shapes/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                4. To answer exam style questions on 2D shapes.pptx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/9362324', '104f812f16a7b669c86d1441aa726fd8e9ce78a1')">
+                  <button @click.stop="p.seen('pl/79608/9362324', '104f812f16a7b669c86d1441aa726fd8e9ce78a1')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>716.6 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 20/11</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="5. To consolidate my understanding of quadrilaterals.pptx" data-type="file" data-sec="2"
+             data-pkey="pl/79608/9362328" data-hash="4c2396820f4949575f2af96e826b2caed26110c2" data-ts="1795150563000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/9362328'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/9362328'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/9362328']; $el.indeterminate = !!p.redo['pl/79608/9362328']"
+                     @change="await p.toggle('pl/79608/9362328', '4c2396820f4949575f2af96e826b2caed26110c2'); $el.checked = !!p.done['pl/79608/9362328']; $el.indeterminate = !!p.redo['pl/79608/9362328']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/5-to-consolidate-my-understanding-of-quadrilaterals/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                5. To consolidate my understanding of quadrilaterals.pptx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/9362328', '4c2396820f4949575f2af96e826b2caed26110c2')">
+                  <button @click.stop="p.seen('pl/79608/9362328', '4c2396820f4949575f2af96e826b2caed26110c2')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>142.9 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 20/11</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="6. To consolidate my understanding of circles.pptx" data-type="file" data-sec="2"
+             data-pkey="pl/79608/9375193" data-hash="c28d0650fee8441f1d55789b1e9e09e882ffda32" data-ts="1795150595000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/9375193'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/9375193'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/9375193']; $el.indeterminate = !!p.redo['pl/79608/9375193']"
+                     @change="await p.toggle('pl/79608/9375193', 'c28d0650fee8441f1d55789b1e9e09e882ffda32'); $el.checked = !!p.done['pl/79608/9375193']; $el.indeterminate = !!p.redo['pl/79608/9375193']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/6-to-consolidate-my-understanding-of-circles/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                6. To consolidate my understanding of circles.pptx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/9375193', 'c28d0650fee8441f1d55789b1e9e09e882ffda32')">
+                  <button @click.stop="p.seen('pl/79608/9375193', 'c28d0650fee8441f1d55789b1e9e09e882ffda32')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>710.7 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 20/11</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="2. 6Gg.08 Identify rotational symmetry in familiar shapes, patterns or images..pptx" data-type="file" data-sec="2"
+             data-pkey="pl/79608/9362313" data-hash="762cfeae9c69617c2b81768c57f3ee25bb279ca7" data-ts="1795070612000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/9362313'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/9362313'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/9362313']; $el.indeterminate = !!p.redo['pl/79608/9362313']"
+                     @change="await p.toggle('pl/79608/9362313', '762cfeae9c69617c2b81768c57f3ee25bb279ca7'); $el.checked = !!p.done['pl/79608/9362313']; $el.indeterminate = !!p.redo['pl/79608/9362313']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/2-6gg-08-identify-rotational-symmetry-in-familiar-shapes-patterns-or-images/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                2. 6Gg.08 Identify rotational symmetry in familiar shapes, patterns or images..pptx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/9362313', '762cfeae9c69617c2b81768c57f3ee25bb279ca7')">
+                  <button @click.stop="p.seen('pl/79608/9362313', '762cfeae9c69617c2b81768c57f3ee25bb279ca7')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>1.2 MB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/11</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
+        <div data-item data-title="3. 6Gg.08 Identify rotational symmetry in familiar shapes, patterns or images. - Copy.pptx" data-type="file" data-sec="2"
+             data-pkey="pl/79608/9362320" data-hash="b66d31013823dea2722f33dc50482c1543b93ca0" data-ts="1795080640000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/9362320'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/9362320'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/9362320']; $el.indeterminate = !!p.redo['pl/79608/9362320']"
+                     @change="await p.toggle('pl/79608/9362320', 'b66d31013823dea2722f33dc50482c1543b93ca0'); $el.checked = !!p.done['pl/79608/9362320']; $el.indeterminate = !!p.redo['pl/79608/9362320']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/3-6gg-08-identify-rotational-symmetry-in-familiar-shapes-patterns-or-images-copy/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                3. 6Gg.08 Identify rotational symmetry in familiar shapes, patterns or images. - Copy.pptx
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/9362320', 'b66d31013823dea2722f33dc50482c1543b93ca0')">
+                  <button @click.stop="p.seen('pl/79608/9362320', 'b66d31013823dea2722f33dc50482c1543b93ca0')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>427.1 KB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/11</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
         
         
         <div data-sechead data-title="Homework" data-sec="1"
@@ -1742,7 +2478,7 @@ timMo: false,
         
         
         <div data-item data-title="Rotational-Symmetry-Worksheet-B-A6.pdf" data-type="file" data-sec="3"
-             data-pkey="pl/79608/9362329" data-hash="0d1fe4239e82e45d3f9566855fb1a0645a2e2e48" data-ts="1794964120000"
+             data-pkey="pl/79608/9362329" data-hash="0d1fe4239e82e45d3f9566855fb1a0645a2e2e48" data-ts="1795070674000"
              
              
              x-show="itemMatches($el, f)"
@@ -1789,7 +2525,7 @@ timMo: false,
                 
                 
                 
-                <span title="Cập nhật lần cuối tại nguồn">🕓 18/11</span>
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/11</span>
                 
                 
               </div>
@@ -1802,7 +2538,7 @@ timMo: false,
         
         
         <div data-item data-title="Rotational Symmetry Shapes.pdf" data-type="file" data-sec="3"
-             data-pkey="pl/79608/9362364" data-hash="f95c3623b296f29ab6a98d0ca08d658932681a2a" data-ts="1794964591000"
+             data-pkey="pl/79608/9362364" data-hash="f95c3623b296f29ab6a98d0ca08d658932681a2a" data-ts="1795070720000"
              
              
              x-show="itemMatches($el, f)"
@@ -1849,7 +2585,7 @@ timMo: false,
                 
                 
                 
-                <span title="Cập nhật lần cuối tại nguồn">🕓 18/11</span>
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/11</span>
                 
                 
               </div>
@@ -1862,7 +2598,7 @@ timMo: false,
         
         
         <div data-item data-title="Symmetry and Rotational Symmetry booklet.pdf" data-type="file" data-sec="3"
-             data-pkey="pl/79608/9362365" data-hash="d8fa30d95289217663b9064f5285b8a9c2e0af75" data-ts="1794964592000"
+             data-pkey="pl/79608/9362365" data-hash="d8fa30d95289217663b9064f5285b8a9c2e0af75" data-ts="1795097229000"
              
              
              x-show="itemMatches($el, f)"
@@ -1909,7 +2645,7 @@ timMo: false,
                 
                 
                 
-                <span title="Cập nhật lần cuối tại nguồn">🕓 18/11</span>
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/11</span>
                 
                 
               </div>
@@ -1922,7 +2658,7 @@ timMo: false,
         
         
         <div data-item data-title="Rotational-Symmetry-pdf.pdf" data-type="file" data-sec="3"
-             data-pkey="pl/79608/9362369" data-hash="bca424d927240f1df178fb55140bec76aeb08869" data-ts="1794964652000"
+             data-pkey="pl/79608/9362369" data-hash="bca424d927240f1df178fb55140bec76aeb08869" data-ts="1795083232000"
              
              
              x-show="itemMatches($el, f)"
@@ -1969,143 +2705,7 @@ timMo: false,
                 
                 
                 
-                <span title="Cập nhật lần cuối tại nguồn">🕓 18/11</span>
-                
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-sechead data-title="Class Resources" data-sec="2"
-             x-show="headingMatches($el, f)"
-             class="flex items-center gap-2 px-4 py-2 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500"
-             style="padding-left: 1.0rem">
-          <!-- Tick cả nhóm; tự phản ánh trạng thái các mục con -->
-          <template x-if="p.online">
-            <input type="checkbox" title="Đánh dấu cả nhóm này"
-                   x-effect="syncSecBox($el, p.done)"
-                   @change="p.setMany(secEntries($el.closest('[data-sechead]')), $el.checked)"
-                   class="shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-          </template>
-          <span>Class Resources</span>
-        </div>
-        
-        
-        
-        <div data-item data-title="2. 6Gg.08 Identify rotational symmetry in familiar shapes, patterns or images..pptx" data-type="file" data-sec="2"
-             data-pkey="pl/79608/9362313" data-hash="762cfeae9c69617c2b81768c57f3ee25bb279ca7" data-ts="1794964082000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['pl/79608/9362313'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79608/9362313'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79608/9362313']; $el.indeterminate = !!p.redo['pl/79608/9362313']"
-                     @change="await p.toggle('pl/79608/9362313', '762cfeae9c69617c2b81768c57f3ee25bb279ca7'); $el.checked = !!p.done['pl/79608/9362313']; $el.indeterminate = !!p.redo['pl/79608/9362313']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Tài liệu đã tải về local -->
-              <a href="doc/cie-maths-5/2-6gg-08-identify-rotational-symmetry-in-familiar-shapes-patterns-or-images/index.html" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                2. 6Gg.08 Identify rotational symmetry in familiar shapes, patterns or images..pptx
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79608/9362313', '762cfeae9c69617c2b81768c57f3ee25bb279ca7')">
-                  <button @click.stop="p.seen('pl/79608/9362313', '762cfeae9c69617c2b81768c57f3ee25bb279ca7')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                <span>1.2 MB</span>
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 18/11</span>
-                
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="3. 6Gg.08 Identify rotational symmetry in familiar shapes, patterns or images. - Copy.pptx" data-type="file" data-sec="2"
-             data-pkey="pl/79608/9362320" data-hash="b66d31013823dea2722f33dc50482c1543b93ca0" data-ts="1794964083000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['pl/79608/9362320'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79608/9362320'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79608/9362320']; $el.indeterminate = !!p.redo['pl/79608/9362320']"
-                     @change="await p.toggle('pl/79608/9362320', 'b66d31013823dea2722f33dc50482c1543b93ca0'); $el.checked = !!p.done['pl/79608/9362320']; $el.indeterminate = !!p.redo['pl/79608/9362320']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Tài liệu đã tải về local -->
-              <a href="doc/cie-maths-5/3-6gg-08-identify-rotational-symmetry-in-familiar-shapes-patterns-or-images-copy/index.html" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                3. 6Gg.08 Identify rotational symmetry in familiar shapes, patterns or images. - Copy.pptx
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79608/9362320', 'b66d31013823dea2722f33dc50482c1543b93ca0')">
-                  <button @click.stop="p.seen('pl/79608/9362320', 'b66d31013823dea2722f33dc50482c1543b93ca0')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                <span>427.1 KB</span>
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 18/11</span>
+                <span title="Cập nhật lần cuối tại nguồn">🕓 19/11</span>
                 
                 
               </div>
@@ -2163,7 +2763,7 @@ timMo: false,
         
         
         <div data-item data-title="1-2. 6Gg.01 Identify, describe, classify and sketch quadrilaterals, including reference to angles, symmetrical properties, parallel sides and diagonals..pptx" data-type="file" data-sec="2"
-             data-pkey="pl/79608/9288764" data-hash="017090de02a207d9358d7fe8905617ed637a40d9" data-ts="1794360222000"
+             data-pkey="pl/79608/9288764" data-hash="017090de02a207d9358d7fe8905617ed637a40d9" data-ts="1794830843000"
              
              
              x-show="itemMatches($el, f)"
@@ -2210,7 +2810,7 @@ timMo: false,
                 
                 
                 
-                <span title="Cập nhật lần cuối tại nguồn">🕓 11/11</span>
+                <span title="Cập nhật lần cuối tại nguồn">🕓 16/11</span>
                 
                 
               </div>
@@ -2223,7 +2823,7 @@ timMo: false,
         
         
         <div data-item data-title="3. 6Gg.01 Identify, describe, classify and sketch quadrilaterals, including reference to angles, symmetrical properties, parallel sides and diagonals..pptx" data-type="file" data-sec="2"
-             data-pkey="pl/79608/9288765" data-hash="d29ef9edb9c8444e10deb595da0e6e7dfd906198" data-ts="1794460632000"
+             data-pkey="pl/79608/9288765" data-hash="d29ef9edb9c8444e10deb595da0e6e7dfd906198" data-ts="1794746639000"
              
              
              x-show="itemMatches($el, f)"
@@ -2270,7 +2870,7 @@ timMo: false,
                 
                 
                 
-                <span title="Cập nhật lần cuối tại nguồn">🕓 12/11</span>
+                <span title="Cập nhật lần cuối tại nguồn">🕓 15/11</span>
                 
                 
               </div>
@@ -2283,7 +2883,7 @@ timMo: false,
         
         
         <div data-item data-title="4. 6Gg.01 Identify, describe, classify and sketch quadrilaterals, including reference to angles, symmetrical properties, parallel sides and diagonals..pptx" data-type="file" data-sec="2"
-             data-pkey="pl/79608/9288766" data-hash="4a24b9dfc6fdeec5cf78ab46e47e757740a71bc0" data-ts="1794470361000"
+             data-pkey="pl/79608/9288766" data-hash="4a24b9dfc6fdeec5cf78ab46e47e757740a71bc0" data-ts="1794831010000"
              
              
              x-show="itemMatches($el, f)"
@@ -2330,7 +2930,7 @@ timMo: false,
                 
                 
                 
-                <span title="Cập nhật lần cuối tại nguồn">🕓 12/11</span>
+                <span title="Cập nhật lần cuối tại nguồn">🕓 16/11</span>
                 
                 
               </div>
@@ -2343,7 +2943,7 @@ timMo: false,
         
         
         <div data-item data-title="5. 6Gg.02 Identify the parts of a circle..pptx" data-type="file" data-sec="2"
-             data-pkey="pl/79608/9316523" data-hash="1c3d6b2a461df6e66d434467ff8a5b2618f1f001" data-ts="1794470354000"
+             data-pkey="pl/79608/9316523" data-hash="1c3d6b2a461df6e66d434467ff8a5b2618f1f001" data-ts="1794902819000"
              
              
              x-show="itemMatches($el, f)"
@@ -2390,7 +2990,7 @@ timMo: false,
                 
                 
                 
-                <span title="Cập nhật lần cuối tại nguồn">🕓 12/11</span>
+                <span title="Cập nhật lần cuối tại nguồn">🕓 17/11</span>
                 
                 
               </div>
@@ -2403,7 +3003,7 @@ timMo: false,
         
         
         <div data-item data-title="6. 6Gg.11 Construct circles of a specified radius or diameter..pptx" data-type="file" data-sec="2"
-             data-pkey="pl/79608/9324113" data-hash="c18e6db382acdd6efbef02b3258f006b94344edc" data-ts="1794546905000"
+             data-pkey="pl/79608/9324113" data-hash="c18e6db382acdd6efbef02b3258f006b94344edc" data-ts="1794902836000"
              
              
              x-show="itemMatches($el, f)"
@@ -2450,7 +3050,7 @@ timMo: false,
                 
                 
                 
-                <span title="Cập nhật lần cuối tại nguồn">🕓 13/11</span>
+                <span title="Cập nhật lần cuối tại nguồn">🕓 17/11</span>
                 
                 
               </div>
@@ -2955,6 +3555,66 @@ timMo: false,
       <div x-show="open" x-cloak class="border-t border-slate-100 divide-y divide-slate-100">
         
         
+        <div data-item data-title="Maths Workbook" data-type="file" data-sec="0"
+             data-pkey="pl/79608/9305309" data-hash="733faaf62d35d7fe8654bc2d47236bc2bb547b73" data-ts="1794831003000"
+             
+             
+             x-show="itemMatches($el, f)"
+             x-data="{ o: false }"
+             class="group" :class="p.done['pl/79608/9305309'] ? 'bg-emerald-50/60' : ''">
+          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
+            <!-- Đánh dấu đã học -->
+            <template x-if="p.online">
+              
+              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
+                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
+              <input type="checkbox"
+                     :title="p.redo['pl/79608/9305309'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
+                     x-effect="$el.checked = !!p.done['pl/79608/9305309']; $el.indeterminate = !!p.redo['pl/79608/9305309']"
+                     @change="await p.toggle('pl/79608/9305309', '733faaf62d35d7fe8654bc2d47236bc2bb547b73'); $el.checked = !!p.done['pl/79608/9305309']; $el.indeterminate = !!p.redo['pl/79608/9305309']"
+                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+              
+            </template>
+            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
+            <div class="min-w-0 flex-1">
+              
+              <!-- Tài liệu đã tải về local -->
+              <a href="doc/cie-maths-5/math6wb/index.html" target="_blank" rel="noopener"
+                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
+                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
+                Maths Workbook
+              </a>
+              
+
+              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
+                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
+                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
+                <template x-if="p.stale('pl/79608/9305309', '733faaf62d35d7fe8654bc2d47236bc2bb547b73')">
+                  <button @click.stop="p.seen('pl/79608/9305309', '733faaf62d35d7fe8654bc2d47236bc2bb547b73')"
+                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
+                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
+                    ⟳ có cập nhật mới
+                  </button>
+                </template>
+                
+                
+                <span>47.0 MB</span>
+                
+                
+                
+                <span title="Cập nhật lần cuối tại nguồn">🕓 16/11</span>
+                
+                
+              </div>
+
+              
+            </div>
+          </div>
+        </div>
+        
+        
+        
         <div data-item data-title="Maths Learner Book" data-type="file" data-sec="0"
              data-pkey="pl/79608/9305310" data-hash="1d831008a5080e2eb70ece46b45b93514119c8eb" data-ts="1794389897000"
              
@@ -3000,66 +3660,6 @@ timMo: false,
                 
                 
                 <span>77.9 MB</span>
-                
-                
-                
-                <span title="Cập nhật lần cuối tại nguồn">🕓 11/11</span>
-                
-                
-              </div>
-
-              
-            </div>
-          </div>
-        </div>
-        
-        
-        
-        <div data-item data-title="Maths Workbook" data-type="file" data-sec="0"
-             data-pkey="pl/79608/9305309" data-hash="733faaf62d35d7fe8654bc2d47236bc2bb547b73" data-ts="1794360176000"
-             
-             
-             x-show="itemMatches($el, f)"
-             x-data="{ o: false }"
-             class="group" :class="p.done['pl/79608/9305309'] ? 'bg-emerald-50/60' : ''">
-          <div class="flex items-start gap-3 px-4 py-2.5" style="padding-left: 1.0rem">
-            <!-- Đánh dấu đã học -->
-            <template x-if="p.online">
-              
-              <!-- Sau mỗi lần bấm, ép DOM khớp lại trạng thái thật: nếu ghi
-                   thất bại (sai mã, mất mạng) thì ô tick tự bật về như cũ -->
-              <input type="checkbox"
-                     :title="p.redo['pl/79608/9305309'] ? 'Đang thực hiện — bài này đã được cập nhật sau khi bạn đánh dấu học xong. Bấm để đánh dấu đã học lại.' : 'Đánh dấu đã học'"
-                     x-effect="$el.checked = !!p.done['pl/79608/9305309']; $el.indeterminate = !!p.redo['pl/79608/9305309']"
-                     @change="await p.toggle('pl/79608/9305309', '733faaf62d35d7fe8654bc2d47236bc2bb547b73'); $el.checked = !!p.done['pl/79608/9305309']; $el.indeterminate = !!p.redo['pl/79608/9305309']"
-                     class="mt-1 shrink-0 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-              
-            </template>
-            <span class="mt-0.5 shrink-0 text-base leading-none" title="tài liệu">📎</span>
-            <div class="min-w-0 flex-1">
-              
-              <!-- Tài liệu đã tải về local -->
-              <a href="doc/cie-maths-5/math6wb/index.html" target="_blank" rel="noopener"
-                 class="text-sm text-slate-800 hover:text-indigo-700 hover:underline py-2"
-                 :class="isRecentEl($el.closest('[data-item]')) ? 'font-bold' : 'font-medium'">
-                Maths Workbook
-              </a>
-              
-
-              <div class="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-slate-400">
-                <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">tài liệu</span>
-                <!-- Bài đã đánh dấu học nhưng nội dung đổi từ sau đó.
-                     KHÔNG tự bỏ tick — để người dùng tự quyết sau khi xem lại. -->
-                <template x-if="p.stale('pl/79608/9305309', '733faaf62d35d7fe8654bc2d47236bc2bb547b73')">
-                  <button @click.stop="p.seen('pl/79608/9305309', '733faaf62d35d7fe8654bc2d47236bc2bb547b73')"
-                          title="Bài này đã được cập nhật sau khi bạn đánh dấu đã học. Bấm để xác nhận đã xem lại."
-                          class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-medium">
-                    ⟳ có cập nhật mới
-                  </button>
-                </template>
-                
-                
-                <span>47.0 MB</span>
                 
                 
                 
