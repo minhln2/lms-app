@@ -2903,6 +2903,15 @@ window.LS.ham();
     // Task 7: sap_xep dùng lại `l1Cham` (tl = mảng chỉ số thẻ). noi / xep_gio = màn cả bài (`chiCau` null, mỗi cặp / món một câu): chạm vế trái / món (`l1Pick`) rồi vế phải / giỏ (`l1Dich`) = chấm ngay;
     // sai lần 1 → giải thích + bỏ chọn (chạm lại để thử lại), sai lần 2 → nối / thả đúng hộ. Câu xong luôn nằm ở chỗ ĐÚNG (`c.dap`) nên không cần bảng «món → giỏ».
     function baiTapLop1Store() {
+      // Chữ giao diện cố định theo ngôn ngữ môn (`BE.doc.tieng`; `vi` → Việt, còn lại → Anh). Thêm chữ mới = thêm khoá vào CẢ HAI cột.
+      const L1_CHU = {
+        en: { thu_lai: 'Try again ↻', tiep: 'Next ›', quay_lai: '‹ Back', lai_luot: 'Play again', ve_ds: 'Back to the list', lam_tiep: 'Keep going', nop_luon: 'Submit now', nop: 'Submit',
+              hinh: 'Picture', nghe: 'Listen: ', nghe_cau: 'Listen to the question', nghe_yc: 'Listen to the instruction', nghe_ly: 'Listen to the explanation', nghe_tieu_de: 'Listen to the title',
+              de_moi: 'New test', luyen: 'Practice: ', nut: { 'Bắt đầu': 'Start', 'Làm tiếp': 'Continue', 'Làm lại': 'Again' } },
+        vi: { thu_lai: 'Thử lại ↻', tiep: 'Tiếp ›', quay_lai: '‹ Quay lại', lai_luot: 'Chơi lại', ve_ds: 'Về danh sách', lam_tiep: 'Làm tiếp', nop_luon: 'Nộp luôn', nop: 'Nộp bài',
+              hinh: 'Hình', nghe: 'Nghe: ', nghe_cau: 'Nghe câu hỏi', nghe_yc: 'Nghe yêu cầu', nghe_ly: 'Nghe giải thích', nghe_tieu_de: 'Nghe tên bài',
+              de_moi: 'Đề mới', luyen: 'Luyện: ', nut: {} },
+      };
       return {
         l1Man: [], l1I: 0, l1Lan: {}, l1Dung: 0, l1Xong: false,
         l1Kq: {},          // {idCâu: 'dung' | 'sai'} = kết quả lần chạm ĐẦU (màu chấm; x của «x / y đúng»)
@@ -2910,6 +2919,9 @@ window.LS.ham();
         l1Fin: {},         // {idCâu: true} câu ĐÃ XONG (đúng, hoặc lần 2 lộ đáp án): chấm tiến độ, vế đã nối, món đã vào giỏ
         l1Muc: 0, l1Sel: {},   // Đề (Task 8): chỉ số mục Booklet đang xem (③ và ④) · {idBài 'd:…': chỉ số vế trái / món đang chọn | null} (noi / xep_gio; chỉ trong bộ nhớ)
         l1Cd: null, l1Bad: -1, l1Xep: [],      // câu vừa chạm (khối giải thích) · noi / xep_gio: vế phải / giỏ vừa chọn nhầm · sap_xep: chỉ số thẻ đã đặt, theo thứ tự
+        l1Vi() { return !!BE.doc && BE.doc.tieng === 'vi'; },
+        l1t(k) { return L1_CHU[this.l1Vi() ? 'vi' : 'en'][k]; },
+        l1Nut(n) { return L1_CHU[this.l1Vi() ? 'vi' : 'en'].nut[n] || n; },     // nhãn nút dòng Đề: `r.nut` (data) đã là tiếng Việt → bản Anh dịch, bản Việt giữ nguyên
         l1MoLuot(kt) {
           clearTimeout(this.l1Hen);
           let man = [];
@@ -6810,6 +6822,7 @@ registerProcessor('thu-16k',T);`;
       <p class="text-xs font-bold uppercase tracking-wide text-slate-400 mb-1.5">Môn học</p>
       <select onchange="if(this.value) location.href = this.value"
               class="w-full mb-4 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-sm text-slate-800">
+        <option value="tieng-viet-1-on-tap.html">Tiếng Việt 1</option>
         <option value="cie-maths-1-on-tap.html">CIE Maths 1</option>
         <option value="cie-esl-1-on-tap.html" selected>CIE ESL 1</option>
         <option value="cie-science-1-on-tap.html">CIE Science 1</option>
@@ -13715,9 +13728,9 @@ registerProcessor('thu-16k',T);`;
 </template>
 
     <!-- ── Bài tập khuôn lớp 1 (MK): màn ① danh sách bài + Đề — markup + logic ở templates/_bt_lop1.html ── -->
-<style>@keyframes l1-nay{0%{transform:translateY(-16px)}35%{transform:translateY(0)}50%{transform:translateX(-8px)}65%{transform:translateX(8px)}80%{transform:translateX(-4px)}100%{transform:none}}.l1-nay{animation:l1-nay .6s ease-out}@media (prefers-reduced-motion:reduce){.l1-nay{animation:none}}</style>
+<style>@keyframes l1-nay{0%{transform:translateY(-16px)}35%{transform:translateY(0)}50%{transform:translateX(-8px)}65%{transform:translateX(8px)}80%{transform:translateX(-4px)}100%{transform:none}}.l1-nay{animation:l1-nay .6s ease-out}@media (prefers-reduced-motion:reduce){.l1-nay{animation:none}}.l1-cam [data-l1-nghe]{display:none!important}</style>
 <template x-if="mode === 'bt' && beOk && beL1">
-<div data-l1 class="font-[Andika,system-ui,sans-serif] space-y-4 text-slate-800">
+<div data-l1 :class="BE.doc && BE.doc.am === false ? 'l1-cam' : ''" class="font-[Andika,system-ui,sans-serif] space-y-4 text-slate-800">
 
   
   <template x-if="beScr === 'tong'">
@@ -13762,12 +13775,12 @@ registerProcessor('thu-16k',T);`;
               <span class="block text-[24px] font-bold leading-snug" x-text="r.de.ten"></span>
               <span data-l1-de-sub class="block text-[16px] text-indigo-100" x-text="l1DeSub(r)"></span>
             </span>
-            <span class="shrink-0 text-[20px] font-bold" x-text="({ 'Bắt đầu': 'Start', 'Làm tiếp': 'Continue', 'Làm lại': 'Again' })[r.nut] || r.nut"></span>
+            <span class="shrink-0 text-[20px] font-bold" x-text="l1Nut(r.nut)"></span>
           </button>
           <template x-if="r.moi.de">
             <button type="button" data-l1-moi :data-ma="r.moi.de.ma" :data-khoa="r.moi.mo ? '0' : '1'" :disabled="!r.moi.mo" @click="r.moi.mo && beMoDe(r.moi.de.ma)"
                     :class="r.moi.mo ? 'border-indigo-600 bg-white text-indigo-700' : 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'"
-                    class="flex min-h-[72px] w-full items-center justify-center gap-3 rounded-3xl border-[3px] px-5 py-3 text-[22px] font-bold" x-text="r.moi.mo ? '🔄 New test' : '🔒 New test'"></button>
+                    class="flex min-h-[72px] w-full items-center justify-center gap-3 rounded-3xl border-[3px] px-5 py-3 text-[22px] font-bold" x-text="(r.moi.mo ? '🔄 ' : '🔒 ') + l1t('de_moi')"></button>
           </template>
         </div>
       </template>
@@ -13800,7 +13813,7 @@ registerProcessor('thu-16k',T);`;
           </div>
           </template>
           <div class="flex items-start gap-3">
-            <button type="button" data-l1-nghe="cau" @click="l1Noi(c.noi)" aria-label="Listen to the question"
+            <button type="button" data-l1-nghe="cau" @click="l1Noi(c.noi)" :aria-label="l1t('nghe_cau')"
                     class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
             <div class="min-w-0 flex-1">
               <template x-if="l1M().bai.kieu === 'abc'">
@@ -13811,18 +13824,18 @@ registerProcessor('thu-16k',T);`;
               </template>
             </div>
           </div>
-          <template x-if="c.anh_url"><img data-l1-anh :src="c.anh_url" alt="Picture" class="mx-auto block max-h-[300px] w-auto max-w-full rounded-3xl border-2 border-slate-200 bg-white object-contain"></template>
+          <template x-if="c.anh_url"><img data-l1-anh :src="c.anh_url" :alt="l1t('hinh')" class="mx-auto block max-h-[300px] w-auto max-w-full rounded-3xl border-2 border-slate-200 bg-white object-contain"></template>
           <div data-l1-lcs :class="l1Cot()" class="grid gap-4">
             <template x-for="o in l1Ch" :key="o.k">
               <div class="relative flex flex-col">
-                <button type="button" data-l1-lc :data-k="o.k" :data-st="l1StLc(o.k)" :aria-label="o.t || ('Picture ' + o.k)" @click="l1Cham(l1M().bai, c, o.k)" :class="l1ClsLc(o.k)"
+                <button type="button" data-l1-lc :data-k="o.k" :data-st="l1StLc(o.k)" :aria-label="o.t || (l1t('hinh') + ' ' + o.k)" @click="l1Cham(l1M().bai, c, o.k)" :class="l1ClsLc(o.k)"
                         class="flex min-h-[88px] w-full flex-1 flex-col items-center justify-center gap-2 rounded-3xl border-[4px] p-3 text-center shadow-sm">
-                  <template x-if="o.anh"><img :src="o.anh" :alt="'Picture ' + o.k" class="h-[160px] w-full rounded-2xl bg-white object-contain"></template>
+                  <template x-if="o.anh"><img :src="o.anh" :alt="l1t('hinh') + ' ' + o.k" class="h-[160px] w-full rounded-2xl bg-white object-contain"></template>
                   <template x-if="o.t"><span class="flex min-h-[64px] w-full items-center justify-center pr-[72px] text-[28px] font-bold leading-snug text-slate-900" x-html="o.html"></span></template>
                 </button>
                 <span x-show="l1StLc(o.k) === 'dung'" class="pointer-events-none absolute left-4 top-3 text-[34px] font-bold text-emerald-600" aria-hidden="true">✓</span>
                 <span x-show="l1StLc(o.k) === 'sai'" class="pointer-events-none absolute left-4 top-3 text-[34px] font-bold text-rose-600" aria-hidden="true">✗</span>
-                <template x-if="o.t"><button type="button" data-l1-nghe="lc" @click="l1Noi(o.t)" :aria-label="'Listen: ' + o.t"
+                <template x-if="o.t"><button type="button" data-l1-nghe="lc" @click="l1Noi(o.t)" :aria-label="l1t('nghe') + o.t"
                         class="absolute bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
               </div>
             </template>
@@ -13835,7 +13848,7 @@ registerProcessor('thu-16k',T);`;
       
       <template x-if="['noi', 'xep_gio', 'sap_xep'].includes(l1Loai())">
         <div class="flex items-center gap-3">
-          <button type="button" data-l1-nghe="yc" @click="l1Noi(l1M().bai.yeu_cau)" aria-label="Listen to the instruction" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
+          <button type="button" data-l1-nghe="yc" @click="l1Noi(l1M().bai.yeu_cau)" :aria-label="l1t('nghe_yc')" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
           <p data-l1-cau class="min-w-0 flex-1 text-[26px] font-bold leading-snug text-slate-900" x-html="l1M().bai.yeu_cau_html"></p>
         </div>
       </template>
@@ -13846,28 +13859,28 @@ registerProcessor('thu-16k',T);`;
         <div class="flex flex-col gap-4">
           <template x-for="(v, i) in l1M().bai.trai" :key="i">
             <div class="relative flex">
-              <button type="button" data-l1-noi-l :data-k="i" :data-st="l1NoiSt(i)" :disabled="l1NoiSt(i) === 'dung'" :aria-label="v.t || v.nhan || 'Picture'" @click="l1Pick(i)" :class="l1ClsVe(l1NoiSt(i))"
+              <button type="button" data-l1-noi-l :data-k="i" :data-st="l1NoiSt(i)" :disabled="l1NoiSt(i) === 'dung'" :aria-label="v.t || v.nhan || l1t('hinh')" @click="l1Pick(i)" :class="l1ClsVe(l1NoiSt(i))"
                       class="flex min-h-[88px] w-full flex-col items-center justify-center gap-1 rounded-3xl border-[4px] p-3 text-center shadow-sm transition-transform">
-                <template x-if="v.anh_url"><img :src="v.anh_url" alt="Picture" class="h-[120px] w-full rounded-2xl bg-white object-contain"></template>
+                <template x-if="v.anh_url"><img :src="v.anh_url" :alt="l1t('hinh')" class="h-[120px] w-full rounded-2xl bg-white object-contain"></template>
                 <template x-if="v.nhan"><span class="text-[22px] font-bold leading-snug text-slate-700" x-text="v.nhan"></span></template>
                 <template x-if="v.t"><span class="flex min-h-[64px] w-full items-center justify-center pr-[72px] text-[26px] font-bold leading-snug text-slate-900" x-html="v.t_html"></span></template>
               </button>
               <span x-show="l1NoiSt(i) === 'dung'" class="pointer-events-none absolute left-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-[20px] font-bold text-white" aria-hidden="true" x-text="i + 1"></span>
-              <template x-if="v.t"><button type="button" data-l1-nghe="noi" @click="l1Noi(v.t)" :aria-label="'Listen: ' + v.t" class="absolute bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
+              <template x-if="v.t"><button type="button" data-l1-nghe="noi" @click="l1Noi(v.t)" :aria-label="l1t('nghe') + v.t" class="absolute bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
             </div>
           </template>
         </div>
         <div class="flex flex-col gap-4">
           <template x-for="v in l1Ch" :key="v.k">
             <div class="relative flex">
-              <button type="button" data-l1-noi-r :data-k="v.k" :data-st="l1NoiSt(v.k, true)" :disabled="l1NoiSt(v.k, true) === 'dung'" :aria-label="v.t || v.nhan || 'Picture'" @click="l1Dich(v.k)" :class="l1ClsVe(l1NoiSt(v.k, true))"
+              <button type="button" data-l1-noi-r :data-k="v.k" :data-st="l1NoiSt(v.k, true)" :disabled="l1NoiSt(v.k, true) === 'dung'" :aria-label="v.t || v.nhan || l1t('hinh')" @click="l1Dich(v.k)" :class="l1ClsVe(l1NoiSt(v.k, true))"
                       class="flex min-h-[88px] w-full flex-col items-center justify-center gap-1 rounded-3xl border-[4px] p-3 text-center shadow-sm transition-transform">
-                <template x-if="v.anh_url"><img :src="v.anh_url" alt="Picture" class="h-[120px] w-full rounded-2xl bg-white object-contain"></template>
+                <template x-if="v.anh_url"><img :src="v.anh_url" :alt="l1t('hinh')" class="h-[120px] w-full rounded-2xl bg-white object-contain"></template>
                 <template x-if="v.nhan"><span class="text-[22px] font-bold leading-snug text-slate-700" x-text="v.nhan"></span></template>
                 <template x-if="v.t"><span class="flex min-h-[64px] w-full items-center justify-center pr-[72px] text-[26px] font-bold leading-snug text-slate-900" x-html="v.t_html"></span></template>
               </button>
               <span x-show="l1NoiSt(v.k, true) === 'dung'" class="pointer-events-none absolute left-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-[20px] font-bold text-white" aria-hidden="true" x-text="v.k + 1"></span>
-              <template x-if="v.t"><button type="button" data-l1-nghe="noi" @click="l1Noi(v.t)" :aria-label="'Listen: ' + v.t" class="absolute bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
+              <template x-if="v.t"><button type="button" data-l1-nghe="noi" @click="l1Noi(v.t)" :aria-label="l1t('nghe') + v.t" class="absolute bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
             </div>
           </template>
         </div>
@@ -13880,11 +13893,11 @@ registerProcessor('thu-16k',T);`;
         <div data-l1-khay :class="l1M().cs.length >= 4 ? 'grid-cols-4' : l1M().cs.length === 3 ? 'grid-cols-3' : 'grid-cols-2'" class="grid gap-3">
           <template x-for="x in l1Mon(-1)" :key="x.c.id">
             <div :class="l1ClsVe(l1StMon(x)) + (l1StMon(x) === 'sai' ? ' l1-nay' : '')" class="flex flex-col items-center gap-1 rounded-2xl border-[4px] p-2 shadow-sm transition-transform">
-              <button type="button" data-l1-mon :data-k="x.i" :data-st="l1StMon(x)" :aria-label="x.c.t || 'Picture'" @click="l1Pick(x.i)" class="flex min-h-[64px] w-full flex-col items-center justify-center gap-1">
-                <template x-if="x.c.anh_url"><img :src="x.c.anh_url" alt="Picture" class="h-[96px] w-full rounded-xl bg-white object-contain"></template>
+              <button type="button" data-l1-mon :data-k="x.i" :data-st="l1StMon(x)" :aria-label="x.c.t || l1t('hinh')" @click="l1Pick(x.i)" class="flex min-h-[64px] w-full flex-col items-center justify-center gap-1">
+                <template x-if="x.c.anh_url"><img :src="x.c.anh_url" :alt="l1t('hinh')" class="h-[96px] w-full rounded-xl bg-white object-contain"></template>
                 <template x-if="x.c.t"><span class="block text-[22px] font-bold leading-snug text-slate-900" x-html="x.c.t_html"></span></template>
               </button>
-              <template x-if="x.c.t"><button type="button" data-l1-nghe="mon" @click="l1Noi(x.c.t)" :aria-label="'Listen: ' + x.c.t" class="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
+              <template x-if="x.c.t"><button type="button" data-l1-nghe="mon" @click="l1Noi(x.c.t)" :aria-label="l1t('nghe') + x.c.t" class="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
             </div>
           </template>
         </div>
@@ -13898,13 +13911,13 @@ registerProcessor('thu-16k',T);`;
                 <span class="flex flex-wrap gap-2">
                   <template x-for="x in l1Mon(j)" :key="x.c.id">
                     <span data-l1-mon :data-k="x.i" class="inline-flex items-center gap-2 rounded-xl border-[3px] border-emerald-500 bg-emerald-50 px-2 py-1 text-[20px] font-bold leading-snug text-slate-900">
-                      <template x-if="x.c.anh_url"><img :src="x.c.anh_url" alt="Picture" class="h-[56px] w-[56px] rounded-lg bg-white object-contain"></template>
+                      <template x-if="x.c.anh_url"><img :src="x.c.anh_url" :alt="l1t('hinh')" class="h-[56px] w-[56px] rounded-lg bg-white object-contain"></template>
                       <template x-if="x.c.t"><span x-html="x.c.t_html"></span></template>
                     </span>
                   </template>
                 </span>
               </button>
-              <button type="button" data-l1-nghe="gio" @click="l1Noi(g)" :aria-label="'Listen: ' + g" class="absolute right-2 top-2 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
+              <button type="button" data-l1-nghe="gio" @click="l1Noi(g)" :aria-label="l1t('nghe') + g" class="absolute right-2 top-2 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
             </div>
           </template>
         </div>
@@ -13916,7 +13929,7 @@ registerProcessor('thu-16k',T);`;
       <div class="space-y-5">
         <template x-for="c in [l1M().cs[0]]" :key="c.id">
         <div class="space-y-5">
-          <template x-if="c.anh_url"><img data-l1-anh :src="c.anh_url" alt="Picture" class="mx-auto block max-h-[240px] w-auto max-w-full rounded-3xl border-2 border-slate-200 bg-white object-contain"></template>
+          <template x-if="c.anh_url"><img data-l1-anh :src="c.anh_url" :alt="l1t('hinh')" class="mx-auto block max-h-[240px] w-auto max-w-full rounded-3xl border-2 border-slate-200 bg-white object-contain"></template>
           <div data-l1-xep :data-st="l1St" :class="l1St === 'dung' ? 'border-emerald-500 bg-emerald-50' : l1St === 'sai1' || l1St === 'sai2' ? 'border-rose-500 bg-rose-50' : 'border-slate-400 bg-slate-50'"
                class="flex min-h-[104px] flex-wrap items-center gap-3 rounded-3xl border-[4px] border-dashed p-3">
             <template x-for="(k, pos) in l1Xep" :key="k">
@@ -13931,7 +13944,7 @@ registerProcessor('thu-16k',T);`;
             <template x-for="o in l1Ch" :key="o.k">
               <div class="flex items-center gap-1 rounded-2xl border-[3px] border-slate-300 bg-white p-1">
                 <button type="button" data-l1-manh :data-k="o.k" :disabled="l1Xep.includes(o.k)" @click="l1XepThem(o.k)" :class="l1Xep.includes(o.k) ? 'opacity-30' : 'active:bg-sky-50'" class="min-h-[64px] min-w-[64px] rounded-xl px-4 text-[28px] font-bold leading-snug text-slate-900" x-html="o.html"></button>
-                <button type="button" data-l1-nghe="manh" @click="l1Noi(o.t)" :aria-label="'Listen: ' + o.t" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
+                <button type="button" data-l1-nghe="manh" @click="l1Noi(o.t)" :aria-label="l1t('nghe') + o.t" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
               </div>
             </template>
           </div>
@@ -13946,25 +13959,25 @@ registerProcessor('thu-16k',T);`;
           <template x-for="c in [l1Cd]" :key="c.id">
             <div data-l1-ly class="rounded-3xl border-2 border-rose-200 bg-rose-50 p-4">
               <div class="flex items-start gap-3">
-                <template x-if="c.ly_en"><button type="button" data-l1-nghe="ly" @click="l1Noi(c.ly_en)" aria-label="Listen to the explanation" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white text-[30px] active:bg-indigo-100">🔊</button></template>
+                <template x-if="c.ly_en"><button type="button" data-l1-nghe="ly" @click="l1Noi(c.ly_en)" :aria-label="l1t('nghe_ly')" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white text-[30px] active:bg-indigo-100">🔊</button></template>
                 <div class="min-w-0 flex-1">
                   <p class="text-[24px] leading-snug text-slate-900" x-html="c.ly_en_html"></p>
-                  <p class="mt-1 text-[16px] leading-snug text-slate-500" x-html="c.ly_html"></p>
+                  <template x-if="!l1Vi()"><p class="mt-1 text-[16px] leading-snug text-slate-500" x-html="c.ly_html"></p></template>
                 </div>
               </div>
             </div>
           </template>
           <template x-if="l1St === 'sai1' && l1Lai()">
-            <button type="button" data-l1-thu-lai @click="l1ThuLai()" class="mx-auto flex min-h-[72px] items-center justify-center rounded-full bg-sky-600 px-12 text-[26px] font-bold text-white active:bg-sky-700">Try again ↻</button>
+            <button type="button" data-l1-thu-lai @click="l1ThuLai()" class="mx-auto flex min-h-[72px] items-center justify-center rounded-full bg-sky-600 px-12 text-[26px] font-bold text-white active:bg-sky-700"><span x-text="l1t('thu_lai')"></span></button>
           </template>
           <template x-if="l1St === 'sai2' && l1Lai()">
-            <button type="button" data-l1-tiep @click="l1Sang()" class="mx-auto flex min-h-[72px] items-center justify-center rounded-full bg-sky-600 px-12 text-[26px] font-bold text-white active:bg-sky-700">Next ›</button>
+            <button type="button" data-l1-tiep @click="l1Sang()" class="mx-auto flex min-h-[72px] items-center justify-center rounded-full bg-sky-600 px-12 text-[26px] font-bold text-white active:bg-sky-700"><span x-text="l1t('tiep')"></span></button>
           </template>
         </div>
       </template>
       
       <template x-if="!l1Lai() && l1Het()">
-        <button type="button" data-l1-tiep @click="l1Sang()" x-init="$nextTick(() => $el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }))" class="mx-auto flex min-h-[72px] items-center justify-center rounded-full bg-sky-600 px-12 text-[26px] font-bold text-white active:bg-sky-700">Next ›</button>
+        <button type="button" data-l1-tiep @click="l1Sang()" x-init="$nextTick(() => $el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }))" class="mx-auto flex min-h-[72px] items-center justify-center rounded-full bg-sky-600 px-12 text-[26px] font-bold text-white active:bg-sky-700"><span x-text="l1t('tiep')"></span></button>
       </template>
     </div>
     </template>
@@ -13974,8 +13987,8 @@ registerProcessor('thu-16k',T);`;
         <template x-if="l1Y() > 0"><p class="text-[56px] font-bold leading-tight text-slate-900" x-text="l1Dung + ' / ' + l1Y() + ' đúng'"></p></template>
         <template x-if="l1Y() === 0"><p class="text-[24px] text-slate-600">Bài này chưa có câu để luyện.</p></template>
         <div class="flex flex-wrap items-center justify-center gap-4">
-          <template x-if="l1Y() > 0"><button type="button" data-l1-luot-nua @click="l1MoLuot(beKt)" class="min-h-[80px] min-w-[220px] rounded-full bg-sky-600 px-10 text-[26px] font-bold text-white active:bg-sky-700">Play again</button></template>
-          <button type="button" data-l1-ve-ds @click="beVeTong()" class="min-h-[80px] min-w-[220px] rounded-full border-[3px] border-slate-300 bg-white px-10 text-[24px] font-bold text-slate-700 active:bg-slate-100">Back to the list</button>
+          <template x-if="l1Y() > 0"><button type="button" data-l1-luot-nua @click="l1MoLuot(beKt)" class="min-h-[80px] min-w-[220px] rounded-full bg-sky-600 px-10 text-[26px] font-bold text-white active:bg-sky-700"><span x-text="l1t('lai_luot')"></span></button></template>
+          <button type="button" data-l1-ve-ds @click="beVeTong()" class="min-h-[80px] min-w-[220px] rounded-full border-[3px] border-slate-300 bg-white px-10 text-[24px] font-bold text-slate-700 active:bg-slate-100"><span x-text="l1t('ve_ds')"></span></button>
         </div>
       </div>
     </template>
@@ -13993,13 +14006,13 @@ registerProcessor('thu-16k',T);`;
         <span class="shrink-0 text-[18px] font-bold text-slate-500" x-text="(l1Muc + 1) + ' / ' + l1Mucs().length"></span>
       </div>
       <div data-l1-muc :data-i="l1Muc" :data-n="l1Mucs().length" :data-ten="m.ten" class="flex items-center gap-3">
-        <button type="button" data-l1-nghe="muc" @click="l1Noi(m.ten)" aria-label="Listen to the title" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
+        <button type="button" data-l1-nghe="muc" @click="l1Noi(m.ten)" :aria-label="l1t('nghe_tieu_de')" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
         <h2 class="min-w-0 flex-1 text-[30px] font-bold leading-snug text-slate-900" x-text="m.ten"></h2>
       </div>
       <template x-for="e in m.es" :key="e.key">
       <section data-l1-phan :data-kieu="e.bai.kieu" class="space-y-5 rounded-3xl border-2 border-slate-200 bg-white p-4">
         <div class="flex items-center gap-3">
-          <button type="button" data-l1-nghe="yc" @click="l1Noi(e.bai.yeu_cau)" aria-label="Listen to the instruction" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
+          <button type="button" data-l1-nghe="yc" @click="l1Noi(e.bai.yeu_cau)" :aria-label="l1t('nghe_yc')" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
           <p class="min-w-0 flex-1 text-[22px] leading-snug text-slate-600" x-html="e.bai.yeu_cau_html"></p>
         </div>
         <template x-if="e.bai.bai_doc">
@@ -14015,7 +14028,7 @@ registerProcessor('thu-16k',T);`;
           <template x-for="c in e.bai.cau" :key="c.id">
           <div data-l1-q :data-id="c.rid" class="space-y-4">
             <div class="flex items-start gap-3">
-              <button type="button" data-l1-nghe="cau" @click="l1Noi(c.noi)" aria-label="Listen to the question" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
+              <button type="button" data-l1-nghe="cau" @click="l1Noi(c.noi)" :aria-label="l1t('nghe_cau')" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
               <div class="min-w-0 flex-1">
                 <template x-if="e.bai.kieu === 'abc'">
                   <p data-l1-cau class="text-[30px] font-bold leading-snug text-slate-900"><span x-html="c.t_html"></span><template x-if="c.bao_html"><span class="ml-2 text-[24px] font-normal text-slate-600" x-html="c.bao_html"></span></template></p>
@@ -14025,18 +14038,18 @@ registerProcessor('thu-16k',T);`;
                 </template>
               </div>
             </div>
-            <template x-if="c.anh_url && l1AnhDau(m, c)"><img data-l1-anh :src="c.anh_url" alt="Picture" class="mx-auto block max-h-[300px] w-auto max-w-full rounded-3xl border-2 border-slate-200 bg-white object-contain"></template>
+            <template x-if="c.anh_url && l1AnhDau(m, c)"><img data-l1-anh :src="c.anh_url" :alt="l1t('hinh')" class="mx-auto block max-h-[300px] w-auto max-w-full rounded-3xl border-2 border-slate-200 bg-white object-contain"></template>
             <template x-for="ch in [l1LcCau(e.bai, c)]" :key="c.id">
             <div data-l1-lcs :class="l1Cot(ch)" class="grid gap-4">
               <template x-for="o in ch" :key="o.k">
                 <div class="relative flex flex-col">
-                  <button type="button" data-l1-lc :data-k="o.k" :data-st="beTL[c.id] === o.k ? 'chon' : ''" :aria-label="o.t || ('Picture ' + o.k)" @click="l1DeDat(c, o.k)"
+                  <button type="button" data-l1-lc :data-k="o.k" :data-st="beTL[c.id] === o.k ? 'chon' : ''" :aria-label="o.t || (l1t('hinh') + ' ' + o.k)" @click="l1DeDat(c, o.k)"
                           :class="beTL[c.id] === o.k ? 'border-sky-500 bg-sky-50 ring-4 ring-sky-200' : 'border-slate-300 bg-white active:border-sky-500 active:bg-sky-50'"
                           class="flex min-h-[88px] w-full flex-1 flex-col items-center justify-center gap-2 rounded-3xl border-[4px] p-3 text-center shadow-sm">
-                    <template x-if="o.anh"><img :src="o.anh" :alt="'Picture ' + o.k" class="h-[160px] w-full rounded-2xl bg-white object-contain"></template>
+                    <template x-if="o.anh"><img :src="o.anh" :alt="l1t('hinh') + ' ' + o.k" class="h-[160px] w-full rounded-2xl bg-white object-contain"></template>
                     <template x-if="o.t"><span class="flex min-h-[64px] w-full items-center justify-center pr-[72px] text-[28px] font-bold leading-snug text-slate-900" x-html="o.html"></span></template>
                   </button>
-                  <template x-if="o.t"><button type="button" data-l1-nghe="lc" @click="l1Noi(o.t)" :aria-label="'Listen: ' + o.t" class="absolute bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
+                  <template x-if="o.t"><button type="button" data-l1-nghe="lc" @click="l1Noi(o.t)" :aria-label="l1t('nghe') + o.t" class="absolute bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
                 </div>
               </template>
             </div>
@@ -14052,28 +14065,28 @@ registerProcessor('thu-16k',T);`;
           <div class="flex flex-col gap-4">
             <template x-for="(v, i) in e.bai.trai" :key="i">
               <div class="relative flex">
-                <button type="button" data-l1-noi-l :data-k="i" :data-st="l1DeSt(e, i)" :aria-label="v.t || v.nhan || 'Picture'" @click="l1DePick(e, i)" :class="l1ClsVe(l1DeSt(e, i))"
+                <button type="button" data-l1-noi-l :data-k="i" :data-st="l1DeSt(e, i)" :aria-label="v.t || v.nhan || l1t('hinh')" @click="l1DePick(e, i)" :class="l1ClsVe(l1DeSt(e, i))"
                         class="flex min-h-[88px] w-full flex-col items-center justify-center gap-1 rounded-3xl border-[4px] p-3 text-center shadow-sm transition-transform">
-                  <template x-if="v.anh_url"><img :src="v.anh_url" alt="Picture" class="h-[120px] w-full rounded-2xl bg-white object-contain"></template>
+                  <template x-if="v.anh_url"><img :src="v.anh_url" :alt="l1t('hinh')" class="h-[120px] w-full rounded-2xl bg-white object-contain"></template>
                   <template x-if="v.nhan"><span class="text-[22px] font-bold leading-snug text-slate-700" x-text="v.nhan"></span></template>
                   <template x-if="v.t"><span class="flex min-h-[64px] w-full items-center justify-center pr-[72px] text-[26px] font-bold leading-snug text-slate-900" x-html="v.t_html"></span></template>
                 </button>
                 <span x-show="l1DeSt(e, i) === 'dat'" class="pointer-events-none absolute left-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-sky-500 text-[20px] font-bold text-white" aria-hidden="true" x-text="i + 1"></span>
-                <template x-if="v.t"><button type="button" data-l1-nghe="noi" @click="l1Noi(v.t)" :aria-label="'Listen: ' + v.t" class="absolute bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
+                <template x-if="v.t"><button type="button" data-l1-nghe="noi" @click="l1Noi(v.t)" :aria-label="l1t('nghe') + v.t" class="absolute bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
               </div>
             </template>
           </div>
           <div class="flex flex-col gap-4">
             <template x-for="v in l1DePhai(e)" :key="v.k">
               <div class="relative flex">
-                <button type="button" data-l1-noi-r :data-k="v.k" :data-st="l1DeChu(e, v.k) >= 0 ? 'dat' : ''" :aria-label="v.t || v.nhan || 'Picture'" @click="l1DeDich(e, v.k)" :class="l1ClsVe(l1DeChu(e, v.k) >= 0 ? 'dat' : '')"
+                <button type="button" data-l1-noi-r :data-k="v.k" :data-st="l1DeChu(e, v.k) >= 0 ? 'dat' : ''" :aria-label="v.t || v.nhan || l1t('hinh')" @click="l1DeDich(e, v.k)" :class="l1ClsVe(l1DeChu(e, v.k) >= 0 ? 'dat' : '')"
                         class="flex min-h-[88px] w-full flex-col items-center justify-center gap-1 rounded-3xl border-[4px] p-3 text-center shadow-sm transition-transform">
-                  <template x-if="v.anh_url"><img :src="v.anh_url" alt="Picture" class="h-[120px] w-full rounded-2xl bg-white object-contain"></template>
+                  <template x-if="v.anh_url"><img :src="v.anh_url" :alt="l1t('hinh')" class="h-[120px] w-full rounded-2xl bg-white object-contain"></template>
                   <template x-if="v.nhan"><span class="text-[22px] font-bold leading-snug text-slate-700" x-text="v.nhan"></span></template>
                   <template x-if="v.t"><span class="flex min-h-[64px] w-full items-center justify-center pr-[72px] text-[26px] font-bold leading-snug text-slate-900" x-html="v.t_html"></span></template>
                 </button>
                 <span x-show="l1DeChu(e, v.k) >= 0" class="pointer-events-none absolute left-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-sky-500 text-[20px] font-bold text-white" aria-hidden="true" x-text="l1DeChu(e, v.k) + 1"></span>
-                <template x-if="v.t"><button type="button" data-l1-nghe="noi" @click="l1Noi(v.t)" :aria-label="'Listen: ' + v.t" class="absolute bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
+                <template x-if="v.t"><button type="button" data-l1-nghe="noi" @click="l1Noi(v.t)" :aria-label="l1t('nghe') + v.t" class="absolute bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
               </div>
             </template>
           </div>
@@ -14086,11 +14099,11 @@ registerProcessor('thu-16k',T);`;
           <div data-l1-khay :class="e.bai.cau.length >= 4 ? 'grid-cols-4' : e.bai.cau.length === 3 ? 'grid-cols-3' : 'grid-cols-2'" class="grid gap-3">
             <template x-for="x in l1DeMon(e, -1)" :key="x.c.id">
               <div :class="l1ClsVe(l1DeSt(e, x.i))" class="flex flex-col items-center gap-1 rounded-2xl border-[4px] p-2 shadow-sm transition-transform">
-                <button type="button" data-l1-mon :data-k="x.i" :data-st="l1DeSt(e, x.i)" :aria-label="x.c.t || 'Picture'" @click="l1DePick(e, x.i)" class="flex min-h-[64px] w-full flex-col items-center justify-center gap-1">
-                  <template x-if="x.c.anh_url"><img :src="x.c.anh_url" alt="Picture" class="h-[96px] w-full rounded-xl bg-white object-contain"></template>
+                <button type="button" data-l1-mon :data-k="x.i" :data-st="l1DeSt(e, x.i)" :aria-label="x.c.t || l1t('hinh')" @click="l1DePick(e, x.i)" class="flex min-h-[64px] w-full flex-col items-center justify-center gap-1">
+                  <template x-if="x.c.anh_url"><img :src="x.c.anh_url" :alt="l1t('hinh')" class="h-[96px] w-full rounded-xl bg-white object-contain"></template>
                   <template x-if="x.c.t"><span class="block text-[22px] font-bold leading-snug text-slate-900" x-html="x.c.t_html"></span></template>
                 </button>
-                <template x-if="x.c.t"><button type="button" data-l1-nghe="mon" @click="l1Noi(x.c.t)" :aria-label="'Listen: ' + x.c.t" class="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
+                <template x-if="x.c.t"><button type="button" data-l1-nghe="mon" @click="l1Noi(x.c.t)" :aria-label="l1t('nghe') + x.c.t" class="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
               </div>
             </template>
           </div>
@@ -14103,13 +14116,13 @@ registerProcessor('thu-16k',T);`;
                   <span class="flex flex-wrap gap-2">
                     <template x-for="x in l1DeMon(e, j)" :key="x.c.id">
                       <span role="button" data-l1-mon :data-k="x.i" @click.stop="l1DePick(e, x.i)" class="inline-flex min-h-[64px] items-center gap-2 rounded-xl border-[3px] border-sky-500 bg-sky-50 px-2 py-1 text-[20px] font-bold leading-snug text-slate-900">
-                        <template x-if="x.c.anh_url"><img :src="x.c.anh_url" alt="Picture" class="h-[56px] w-[56px] rounded-lg bg-white object-contain"></template>
+                        <template x-if="x.c.anh_url"><img :src="x.c.anh_url" :alt="l1t('hinh')" class="h-[56px] w-[56px] rounded-lg bg-white object-contain"></template>
                         <template x-if="x.c.t"><span x-html="x.c.t_html"></span></template>
                       </span>
                     </template>
                   </span>
                 </button>
-                <button type="button" data-l1-nghe="gio" @click="l1Noi(g)" :aria-label="'Listen: ' + g" class="absolute right-2 top-2 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
+                <button type="button" data-l1-nghe="gio" @click="l1Noi(g)" :aria-label="l1t('nghe') + g" class="absolute right-2 top-2 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
               </div>
             </template>
           </div>
@@ -14121,7 +14134,7 @@ registerProcessor('thu-16k',T);`;
         <div class="space-y-6">
           <template x-for="c in e.bai.cau" :key="c.id">
           <div data-l1-q :data-id="c.rid" class="space-y-4">
-            <template x-if="c.anh_url"><img data-l1-anh :src="c.anh_url" alt="Picture" class="mx-auto block max-h-[240px] w-auto max-w-full rounded-3xl border-2 border-slate-200 bg-white object-contain"></template>
+            <template x-if="c.anh_url"><img data-l1-anh :src="c.anh_url" :alt="l1t('hinh')" class="mx-auto block max-h-[240px] w-auto max-w-full rounded-3xl border-2 border-slate-200 bg-white object-contain"></template>
             <div data-l1-xep class="flex min-h-[104px] flex-wrap items-center gap-3 rounded-3xl border-[4px] border-dashed border-slate-400 bg-slate-50 p-3">
               <template x-for="(k, pos) in (beTL[c.id] || [])" :key="k">
                 <button type="button" data-l1-dat :data-k="k" @click="l1DeXepBo(c, pos)" class="min-h-[64px] min-w-[64px] rounded-2xl border-[3px] border-sky-500 bg-white px-4 text-[28px] font-bold leading-snug text-slate-900" x-html="c.manh_html[k]"></button>
@@ -14132,7 +14145,7 @@ registerProcessor('thu-16k',T);`;
               <template x-for="o in l1Dao(c.id, c.manh.map((t, i) => ({ k: i, t, html: c.manh_html[i] })))" :key="o.k">
                 <div class="flex items-center gap-1 rounded-2xl border-[3px] border-slate-300 bg-white p-1">
                   <button type="button" data-l1-manh :data-k="o.k" :disabled="(beTL[c.id] || []).includes(o.k)" @click="l1DeXep(c, o.k)" :class="(beTL[c.id] || []).includes(o.k) ? 'opacity-30' : 'active:bg-sky-50'" class="min-h-[64px] min-w-[64px] rounded-xl px-4 text-[28px] font-bold leading-snug text-slate-900" x-html="o.html"></button>
-                  <button type="button" data-l1-nghe="manh" @click="l1Noi(o.t)" :aria-label="'Listen: ' + o.t" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
+                  <button type="button" data-l1-nghe="manh" @click="l1Noi(o.t)" :aria-label="l1t('nghe') + o.t" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
                 </div>
               </template>
             </div>
@@ -14148,17 +14161,17 @@ registerProcessor('thu-16k',T);`;
           <div data-l1-xn class="space-y-3 rounded-3xl border-[3px] border-amber-400 bg-amber-50 p-4 text-center">
             <p class="text-[24px] font-bold leading-snug text-slate-900" x-text="'Còn ' + beDeTrong() + ' câu chưa làm. Nộp bài luôn không?'"></p>
             <div class="flex gap-3">
-              <button type="button" data-l1-lam-tiep @click="beDeXn = false" class="min-h-[72px] flex-1 rounded-full border-[3px] border-slate-300 bg-white text-[24px] font-bold text-slate-700 active:bg-slate-100">Keep going</button>
-              <button type="button" data-l1-nop-luon :disabled="beDeBan" @click="beNop()" class="min-h-[72px] flex-1 rounded-full bg-indigo-600 text-[24px] font-bold text-white active:bg-indigo-700">Submit now</button>
+              <button type="button" data-l1-lam-tiep @click="beDeXn = false" class="min-h-[72px] flex-1 rounded-full border-[3px] border-slate-300 bg-white text-[24px] font-bold text-slate-700 active:bg-slate-100"><span x-text="l1t('lam_tiep')"></span></button>
+              <button type="button" data-l1-nop-luon :disabled="beDeBan" @click="beNop()" class="min-h-[72px] flex-1 rounded-full bg-indigo-600 text-[24px] font-bold text-white active:bg-indigo-700"><span x-text="l1t('nop_luon')"></span></button>
             </div>
           </div>
         </template>
         <template x-if="beDeLoi"><p class="text-center text-[18px] leading-snug text-rose-600" x-text="beDeLoi"></p></template>
         <p class="text-center text-[16px] text-slate-500" x-text="beDeDem()"></p>
         <div class="flex gap-3">
-          <template x-if="l1Muc > 0"><button type="button" data-l1-truoc @click="l1DiMuc(-1)" class="min-h-[72px] flex-1 rounded-full border-[3px] border-slate-300 bg-white text-[26px] font-bold text-slate-700 active:bg-slate-100">‹ Back</button></template>
-          <template x-if="!l1Cuoi()"><button type="button" data-l1-tiep @click="l1DiMuc(1)" class="min-h-[72px] flex-1 rounded-full bg-sky-600 text-[26px] font-bold text-white active:bg-sky-700">Next ›</button></template>
-          <template x-if="l1Cuoi()"><button type="button" data-l1-nop :disabled="beDeBan" @click="beNopBam()" class="min-h-[72px] flex-1 rounded-full bg-indigo-600 text-[26px] font-bold text-white active:bg-indigo-700">Submit</button></template>
+          <template x-if="l1Muc > 0"><button type="button" data-l1-truoc @click="l1DiMuc(-1)" class="min-h-[72px] flex-1 rounded-full border-[3px] border-slate-300 bg-white text-[26px] font-bold text-slate-700 active:bg-slate-100"><span x-text="l1t('quay_lai')"></span></button></template>
+          <template x-if="!l1Cuoi()"><button type="button" data-l1-tiep @click="l1DiMuc(1)" class="min-h-[72px] flex-1 rounded-full bg-sky-600 text-[26px] font-bold text-white active:bg-sky-700"><span x-text="l1t('tiep')"></span></button></template>
+          <template x-if="l1Cuoi()"><button type="button" data-l1-nop :disabled="beDeBan" @click="beNopBam()" class="min-h-[72px] flex-1 rounded-full bg-indigo-600 text-[26px] font-bold text-white active:bg-indigo-700"><span x-text="l1t('nop')"></span></button></template>
         </div>
       </div>
     </div>
@@ -14176,7 +14189,7 @@ registerProcessor('thu-16k',T);`;
     <template x-for="m in [l1MucNow()]" :key="l1Muc">
     <div class="space-y-4">
       <div data-l1-muc :data-i="l1Muc" :data-n="l1Mucs().length" :data-ten="m.ten" class="flex items-center gap-3">
-        <button type="button" data-l1-nghe="muc" @click="l1Noi(m.ten)" aria-label="Listen to the title" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
+        <button type="button" data-l1-nghe="muc" @click="l1Noi(m.ten)" :aria-label="l1t('nghe_tieu_de')" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button>
         <h2 class="min-w-0 flex-1 text-[30px] font-bold leading-snug text-slate-900" x-text="m.ten"></h2>
         <span class="shrink-0 text-[24px] font-bold text-slate-700" x-text="l1MucDiem(m)"></span>
       </div>
@@ -14195,19 +14208,19 @@ registerProcessor('thu-16k',T);`;
             <div class="flex items-start gap-3">
               <span class="w-10 shrink-0 text-[40px] font-bold leading-none" :class="beKq[c.id] === 'dung' ? 'text-emerald-600' : 'text-rose-600'" x-text="beKq[c.id] === 'dung' ? '✓' : '✗'" aria-hidden="true"></span>
               <div class="min-w-0 flex-1 space-y-2">
-                <template x-if="r.q.anh && l1AnhDau(m, c)"><img :src="r.q.anh" alt="Picture" class="max-h-[160px] w-auto max-w-full rounded-2xl border-2 border-slate-200 bg-white object-contain"></template>
+                <template x-if="r.q.anh && l1AnhDau(m, c)"><img :src="r.q.anh" :alt="l1t('hinh')" class="max-h-[160px] w-auto max-w-full rounded-2xl border-2 border-slate-200 bg-white object-contain"></template>
                 <template x-if="r.q.t"><p class="text-[26px] font-bold leading-snug text-slate-900" x-text="r.q.t"></p></template>
               </div>
             </div>
-            <div data-l1-con class="flex flex-wrap items-center gap-3"><span class="w-[96px] shrink-0 text-[16px] text-slate-500">Con chọn</span><span :class="beKq[c.id] === &#39;dung&#39; ? &#39;border-emerald-500&#39; : &#39;border-rose-500&#39;" class="inline-flex min-h-[64px] items-center gap-3 rounded-2xl border-[3px] bg-white px-3 py-2"><template x-if="r.con.anh"><img :src="r.con.anh" alt="Picture" class="h-[96px] w-auto max-w-[220px] rounded-xl object-contain"></template><template x-if="r.con.t"><span class="text-[26px] font-bold leading-snug text-slate-900" x-text="r.con.t"></span></template><template x-if="!r.con.anh && !r.con.t"><span class="text-[20px] text-slate-400">(chưa chọn)</span></template></span></div>
+            <div data-l1-con class="flex flex-wrap items-center gap-3"><span class="w-[96px] shrink-0 text-[16px] text-slate-500">Con chọn</span><span :class="beKq[c.id] === &#39;dung&#39; ? &#39;border-emerald-500&#39; : &#39;border-rose-500&#39;" class="inline-flex min-h-[64px] items-center gap-3 rounded-2xl border-[3px] bg-white px-3 py-2"><template x-if="r.con.anh"><img :src="r.con.anh" :alt="l1t('hinh')" class="h-[96px] w-auto max-w-[220px] rounded-xl object-contain"></template><template x-if="r.con.t"><span class="text-[26px] font-bold leading-snug text-slate-900" x-text="r.con.t"></span></template><template x-if="!r.con.anh && !r.con.t"><span class="text-[20px] text-slate-400">(chưa chọn)</span></template></span></div>
             <template x-if="beKq[c.id] !== 'dung'">
-              <div data-l1-dap class="flex flex-wrap items-center gap-3"><span class="w-[96px] shrink-0 text-[16px] text-slate-500">Đáp án</span><span :class="&#39;border-emerald-500&#39;" class="inline-flex min-h-[64px] items-center gap-3 rounded-2xl border-[3px] bg-white px-3 py-2"><template x-if="r.dap.anh"><img :src="r.dap.anh" alt="Picture" class="h-[96px] w-auto max-w-[220px] rounded-xl object-contain"></template><template x-if="r.dap.t"><span class="text-[26px] font-bold leading-snug text-slate-900" x-text="r.dap.t"></span></template><template x-if="!r.dap.anh && !r.dap.t"><span class="text-[20px] text-slate-400">(chưa chọn)</span></template></span></div>
+              <div data-l1-dap class="flex flex-wrap items-center gap-3"><span class="w-[96px] shrink-0 text-[16px] text-slate-500">Đáp án</span><span :class="&#39;border-emerald-500&#39;" class="inline-flex min-h-[64px] items-center gap-3 rounded-2xl border-[3px] bg-white px-3 py-2"><template x-if="r.dap.anh"><img :src="r.dap.anh" :alt="l1t('hinh')" class="h-[96px] w-auto max-w-[220px] rounded-xl object-contain"></template><template x-if="r.dap.t"><span class="text-[26px] font-bold leading-snug text-slate-900" x-text="r.dap.t"></span></template><template x-if="!r.dap.anh && !r.dap.t"><span class="text-[20px] text-slate-400">(chưa chọn)</span></template></span></div>
             </template>
             <div data-l1-ly class="flex items-start gap-3 rounded-2xl bg-white/70 p-3">
-              <template x-if="c.ly_en"><button type="button" data-l1-nghe="ly" @click="l1Noi(c.ly_en)" aria-label="Listen to the explanation" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
+              <template x-if="c.ly_en"><button type="button" data-l1-nghe="ly" @click="l1Noi(c.ly_en)" :aria-label="l1t('nghe_ly')" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[30px] active:bg-indigo-100">🔊</button></template>
               <div class="min-w-0 flex-1">
                 <p class="text-[22px] leading-snug text-slate-900" x-html="c.ly_en_html"></p>
-                <p class="mt-1 text-[16px] leading-snug text-slate-500" x-html="c.ly_html"></p>
+                <template x-if="!l1Vi()"><p class="mt-1 text-[16px] leading-snug text-slate-500" x-html="c.ly_html"></p></template>
               </div>
             </div>
           </div>
@@ -14217,16 +14230,16 @@ registerProcessor('thu-16k',T);`;
         </div>
       </template>
       <div class="flex gap-3 pt-2">
-        <template x-if="l1Muc > 0"><button type="button" data-l1-truoc @click="l1DiMuc(-1)" class="min-h-[72px] flex-1 rounded-full border-[3px] border-slate-300 bg-white text-[26px] font-bold text-slate-700 active:bg-slate-100">‹ Back</button></template>
-        <template x-if="!l1Cuoi()"><button type="button" data-l1-tiep @click="l1DiMuc(1)" class="min-h-[72px] flex-1 rounded-full bg-sky-600 text-[26px] font-bold text-white active:bg-sky-700">Next ›</button></template>
+        <template x-if="l1Muc > 0"><button type="button" data-l1-truoc @click="l1DiMuc(-1)" class="min-h-[72px] flex-1 rounded-full border-[3px] border-slate-300 bg-white text-[26px] font-bold text-slate-700 active:bg-slate-100"><span x-text="l1t('quay_lai')"></span></button></template>
+        <template x-if="!l1Cuoi()"><button type="button" data-l1-tiep @click="l1DiMuc(1)" class="min-h-[72px] flex-1 rounded-full bg-sky-600 text-[26px] font-bold text-white active:bg-sky-700"><span x-text="l1t('tiep')"></span></button></template>
       </div>
     </div>
     </template>
     <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
       <template x-for="kt in [...new Set(beKd.phan.map(p => p.kt).filter(Boolean))]" :key="kt">
-        <button type="button" data-l1-luyen :data-kt="kt" @click="beKdLuyen(kt)" class="min-h-[80px] rounded-full bg-sky-600 px-8 text-[22px] font-bold text-white active:bg-sky-700" x-text="'Practice: ' + beKdMangTen(kt)"></button>
+        <button type="button" data-l1-luyen :data-kt="kt" @click="beKdLuyen(kt)" class="min-h-[80px] rounded-full bg-sky-600 px-8 text-[22px] font-bold text-white active:bg-sky-700" x-text="l1t('luyen') + beKdMangTen(kt)"></button>
       </template>
-      <button type="button" data-l1-ve-ds @click="beVeTong()" class="min-h-[80px] min-w-[220px] rounded-full border-[3px] border-slate-300 bg-white px-10 text-[24px] font-bold text-slate-700 active:bg-slate-100">Back to the list</button>
+      <button type="button" data-l1-ve-ds @click="beVeTong()" class="min-h-[80px] min-w-[220px] rounded-full border-[3px] border-slate-300 bg-white px-10 text-[24px] font-bold text-slate-700 active:bg-slate-100"><span x-text="l1t('ve_ds')"></span></button>
     </div>
   </div>
   </template>
