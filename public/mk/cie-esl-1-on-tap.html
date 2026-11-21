@@ -3192,6 +3192,12 @@ window.LS.ham();
           return 'tom-tat';
         },
         laLopPhu(t) { return t === 'loc' || t === 'menu' || t === 'anh'; },
+        // Môn CHỈ có bài tập (vd Tiếng Việt 1 của MK: không tóm tắt / thẻ / trắc nghiệm): mở thẳng tab Bài tập, ẩn ba tab trống (2026-11-21).
+        // Cần tài liệu bài tập đã nạp được (btOk / beOk) — nạp hỏng thì giữ đủ tab như cũ, không để trang không còn tab nào.
+        get chiBaiTap() {
+          const d = this.data || {};
+          return (this.btOk || this.beOk) && !(d.summary || []).length && !(d.flashcards || []).length && !(d.quiz || []).length;
+        },
         async ve(tk) {
           this.veN++;
           this.dangVe = true;
@@ -3207,6 +3213,7 @@ window.LS.ham();
             if (tk === 'loc') { this.locMo = true; this.navOpen = false; return; }
             if (tk === 'menu') { this.navOpen = true; this.locMo = false; return; }
             this.locMo = false; this.navOpen = false;
+            if (this.chiBaiTap && !tk.startsWith('bai-tap') && tk !== 'tu-tra') tk = 'bai-tap';   // tab trống đã ẩn (liên kết cũ #tom-tat / #the / Back về gốc)
             if (tk === 'xong') { this.screen = 'done'; return; }
             if (tk === 'tu-tra') { this.go('hist'); return; }
             // Tab Bài tập ESL: 'bai-tap' (①) · 'bai-tap/luyen/<kt>' (②) · 'bai-tap/de/<ma>' (③) · 'bai-tap/kq/<ma>' (④) — beVe chọn màn; thiếu dữ liệu thì rơi xuống dưới (Tóm tắt)
@@ -3287,8 +3294,9 @@ window.LS.ham();
           this.flushBuffer();
           this.traGan();
           this.chonGan();
-          if (location.hash.startsWith('#bai-tap')) await btNap;   // mở thẳng #bai-tap (hoặc #bai-tap/u/<Unit> · /de/<ma> của Math): phải có dữ liệu trước khi LS vẽ lại màn hình
-          if (location.hash.startsWith('#bai-tap')) await beNap;   // … và #bai-tap/luyen/<kt> của môn ESL
+          const _khongTomTat = !(this.data?.summary || []).length;   // có thể là môn chỉ có bài tập (chiBaiTap) → cần btOk / beOk trước khi chọn tab gốc
+          if (location.hash.startsWith('#bai-tap') || _khongTomTat) await btNap;   // mở thẳng #bai-tap (hoặc #bai-tap/u/<Unit> · /de/<ma> của Math): phải có dữ liệu trước khi LS vẽ lại màn hình
+          if (location.hash.startsWith('#bai-tap') || _khongTomTat) await beNap;   // … và #bai-tap/luyen/<kt> của môn ESL
           // `?muc=<concept>` (trang dẫn đường ôn thi /{id}/on-thi-cuoi-ky.html): mở đúng mục trên cây cho Tóm tắt / Thẻ (tab do `#…` quyết).
           // Đặt TRƯỚC `chonGan` không được (nó khôi phục phạm vi đã nhớ) — nên đặt sau. Mục lạ / không có tóm tắt thì bỏ qua, như bấm mục mờ.
           const muc = new URLSearchParams(location.search).get('muc');
@@ -3304,7 +3312,7 @@ window.LS.ham();
             else if (!moMoi && moCu) LS.dong(moi, true);   // bấm mục lục có thể đổi màn ngay lúc đóng (mục con → bài tập)
             else LS.di(moi);
           });
-          LS.nghe((tk) => this.ve(tk), 'tom-tat');
+          LS.nghe((tk) => this.ve(tk), this.chiBaiTap ? 'bai-tap' : 'tom-tat');
           this.ready = true;
         },
 
@@ -6685,8 +6693,8 @@ registerProcessor('thu-16k',T);`;
     
     
     <div :class="(btOk || beOk) ? 'flex-wrap' : ''" class="max-w-5xl mx-auto px-2 sm:px-4 pb-2 flex items-center gap-1 sm:gap-1.5">
-      <template x-for="m in [{k:'summary', n:'📄 Tóm tắt', t:'📄 Tóm tắt'}, {k:'cards', n:'🃏 Thẻ', t:'🃏 Thẻ ghi nhớ'},
-                             {k:'quiz', n:'✍️ Trắc nghiệm', t:'✍️ Trắc nghiệm'},
+      <template x-for="m in [...(chiBaiTap ? [] : [{k:'summary', n:'📄 Tóm tắt', t:'📄 Tóm tắt'}, {k:'cards', n:'🃏 Thẻ', t:'🃏 Thẻ ghi nhớ'},
+                             {k:'quiz', n:'✍️ Trắc nghiệm', t:'✍️ Trắc nghiệm'}]),
                              ...(btOk ? [{k:'bt', n:'📐 Bài tập', t:'📐 Bài tập'}] : beOk ? [{k:'bt', n:'📝 Bài tập', t:'📝 Bài tập'}] : []), {k:'hist', n:'📒 Từ tra', t:'📒 Từ đã tra'}]" :key="m.k">
         <button @click="go(m.k)" data-tab type="button"
                 :class="(mode === m.k ? 'bg-indigo-600 text-white border-indigo-600'
@@ -7280,7 +7288,7 @@ registerProcessor('thu-16k',T);`;
             
             <template x-if="pt.ref && (data?.concepts || []).some(c => c.id === pt.ref)">
               <button data-the-hinh-ref type="button" @click.stop="toiBai(pt.ref)"
-                      class="self-end text-[15px] italic text-slate-500 underline decoration-dotted underline-offset-2 hover:text-indigo-700">↪ <span x-text="label((data?.concepts || []).find(c => c.id === pt.ref))"></span></button>
+                      class="self-end py-1.5 -my-1.5 text-[15px] italic text-slate-500 underline decoration-dotted underline-offset-2 hover:text-indigo-700">↪ <span x-text="label((data?.concepts || []).find(c => c.id === pt.ref))"></span></button>
             </template>
           </div>
         </div>
