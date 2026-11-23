@@ -3657,6 +3657,8 @@ timMo: false,
         // → tô từ khoá CHỈ trên đoạn chữ thường. Cùng HTML với `chu()` của Python (txChu ở đầu script).
         tx(v) { return txChu(v, this.qq); },
         // Chuỗi gửi /api/tts của khuôn thẻ hình: bỏ `**`, gộp khoảng trắng — PHẢI giống hệt `tron` của worker/tts.js (danh sách trắng lưu bản đã tron).
+        // Chỗ trống `___` → "blank" / "chỗ trống", phẩy hai bên để nghỉ ngắn. Luật giống hệt `docTrong` của worker/tts.js.
+        docTrong(s, vi) { return String(s || '').replace(/\s*_+\s*/g, vi ? ', chỗ trống, ' : ', blank, ').replace(/^,\s*/, '').replace(/,\s*([.,?!;:])/g, '$1').trim(); },
         tron(s) { return String(s || '').replace(/\*\*/g, '').replace(/\s+/g, ' ').trim(); },
         // Câu bài nói mẫu đọc to: bỏ ngoặc `[…]` (chỗ thay chi tiết). PHẢI giống hệt `noiMau` của worker/tts.js (danh sách được đọc).
         noiMau(s) { return this.tron(String(s || '').replace(/[[\]]/g, '')); },
@@ -4353,7 +4355,9 @@ timMo: false,
               const h = (tinCay && this.secret) ? { headers: { 'x-progress-key': this.secret } } : undefined;
               // `lang`: môn dạy bằng tiếng Việt (LSĐL, Tiếng Việt) đọc bằng giọng vi-VN.
               const lang = (nn || this.traNgonNgu()) === 'vi' ? '&lang=vi' : '';   // `nn` (tuỳ chọn, khuôn lớp 1: `tieng` của tệp bài tập) thay ngôn ngữ của môn
-              const r = await fetch(`/api/tts?user=${this.user}&course=${this.course}${lang}&text=${encodeURIComponent(text)}`, h);
+              // `&tr=1`: câu có chỗ trống đổi URL để trình duyệt không phát lại MP3 cũ (immutable 1 năm) còn đọc "underscore".
+              const tr = text.includes('_') ? '&tr=1' : '';
+              const r = await fetch(`/api/tts?user=${this.user}&course=${this.course}${lang}${tr}&text=${encodeURIComponent(text)}`, h);
               if (!r.ok) throw new Error('HTTP ' + r.status);
               src = URL.createObjectURL(await r.blob());
               this._nhoBlob(text, src);
@@ -4364,8 +4368,8 @@ timMo: false,
         },
         speakLocal(text, nn) {
           if (!('speechSynthesis' in window)) return;
-          const u = new SpeechSynthesisUtterance(text);
           const vi = (nn || this.traNgonNgu()) === 'vi';
+          const u = new SpeechSynthesisUtterance(this.docTrong(text, vi));
           u.lang = vi ? 'vi-VN' : 'en-US'; u.rate = 0.9;
           const v = window.speechSynthesis.getVoices().find(x => (vi ? /^vi[-_]VN/i : /^en[-_]US/i).test(x.lang));
           if (v) u.voice = v;

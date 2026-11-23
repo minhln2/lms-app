@@ -102,6 +102,11 @@ export const tron = (s) => String(s || "").replace(/\*\*/g, "").replace(/\s+/g, 
 // Luật phải giống hệt `noiMau()` của templates/study.html.
 export const noiMau = (s) => tron(String(s || "").replace(/[[\]]/g, ""));
 
+// Chỗ trống `_`/`___` trong đề: Google đọc thành "underscore" → đọc "blank" / "chỗ trống", dấu phẩy hai bên để nghỉ ngắn.
+// Chạy SAU đối chiếu danh sách trắng (trang vẫn gửi câu gốc). Luật phải giống hệt `docTrong()` của templates/study.html.
+export const docTrong = (s, vi) => String(s || "").replace(/\s*_+\s*/g, vi ? ", chỗ trống, " : ", blank, ")
+  .replace(/^,\s*/, "").replace(/,\s*([.,?!;:])/g, "$1").trim();
+
 export function speakable(doc) {
   const set = new Set();
   const add = (s) => { const t = (s == null ? "" : String(s)).trim(); if (t) set.add(t); };
@@ -158,7 +163,8 @@ export async function handleTts(request, env, url) {
   // Cache TRƯỚC khi đối chiếu học liệu: câu đã có thì không parse JSON, không gọi Google.
   const cache = caches.default;
   const ns = tinCay ? "/__tts/k/" : "/__tts/";
-  const ckey = new Request(new URL(ns + await sha1(voice + "|" + enc + "|" + user + "|" + course + "|" + text), url).toString());
+  const noi = docTrong(text, vi);   // câu thật sự đọc; nằm trong khoá cache để MP3 cũ ("underscore") không bị dùng lại
+  const ckey = new Request(new URL(ns + await sha1(voice + "|" + enc + "|" + user + "|" + course + "|" + noi), url).toString());
   const hit = await cache.match(ckey);
   if (hit) return hit;
 
@@ -172,7 +178,7 @@ export async function handleTts(request, env, url) {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
-      input: { text },
+      input: { text: noi },
       voice: { languageCode: voice.slice(0, 5), name: voice },
       audioConfig: { ...AUDIO, audioEncoding: enc },
     }),
